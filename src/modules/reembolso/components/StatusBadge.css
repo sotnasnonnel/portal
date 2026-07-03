@@ -1,0 +1,30 @@
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.status-em_analise {
+  background: var(--status-analise-bg);
+  color: var(--status-analise-fg);
+}
+
+.status-aprovado {
+  background: var(--status-aprovado-bg);
+  color: var(--status-aprovado-fg);
+}
+
+.status-reprovado {
+  background: var(--status-reprovado-bg);
+  color: var(--status-reprovado-fg);
+}
+
+.status-cancelado {
+  background: var(--status-cancelado-bg);
+  color: var(--status-cancelado-fg);
+}

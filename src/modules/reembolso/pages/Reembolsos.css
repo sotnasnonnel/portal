@@ -1,0 +1,413 @@
+.page {
+  padding: var(--space-6);
+  max-width: none;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: var(--space-4);
+    gap: var(--space-4);
+  }
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+@media (max-width: 540px) {
+  .page-actions {
+    width: 100%;
+  }
+  .page-actions .btn {
+    flex: 1;
+  }
+}
+
+.page-header h2 {
+  font-size: 22px;
+  color: var(--ink);
+}
+
+.page-sub {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.page-actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+@media (max-width: 800px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 400px) {
+  .kpi-grid {
+    gap: var(--space-3);
+  }
+}
+
+.kpi {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: var(--shadow-sm);
+}
+
+.kpi span {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.kpi strong {
+  font-size: 22px;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.kpi-warning strong,
+.kpi-success strong { color: var(--ink); }
+
+/* KPIs clicáveis funcionam como atalho de filtro */
+.reembolso-root .kpi-clickable {
+  background: var(--bg);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.05s;
+}
+
+.kpi-clickable:hover {
+  border-color: var(--terracotta);
+  box-shadow: var(--shadow-md);
+}
+
+.kpi-clickable.is-active {
+  border-color: var(--terracotta);
+  box-shadow: 0 0 0 2px var(--terracotta-soft);
+}
+
+.list-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.list-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-4) var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.list-card-head h3 {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--terracotta);
+}
+
+.list-see-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--terracotta);
+}
+
+.filters {
+  display: flex;
+  gap: 6px;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.chip {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--bg-soft);
+  color: var(--ink-soft);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.chip:hover { background: var(--border); }
+
+.chip:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
+.chip.is-active {
+  background: var(--terracotta);
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .filters::-webkit-scrollbar {
+    display: none;
+  }
+  .chip {
+    flex-shrink: 0;
+    min-height: 36px;
+  }
+}
+
+.chip-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1;
+  background: rgba(0, 0, 0, 0.08);
+  color: inherit;
+}
+
+.chip.is-active .chip-count {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Status + tempo de espera na lista */
+.status-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.aging {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--status-analise-fg);
+}
+
+.pay-pending,
+.pay-scheduled {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.pay-pending { color: var(--status-reprovado-fg); }
+.pay-scheduled { color: var(--green-dark); }
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table thead th {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  text-align: left;
+  padding: 12px var(--space-4);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-soft);
+}
+
+.table th.num,
+.table td.num {
+  text-align: right;
+}
+
+/* valor original (riscado) ao lado do valor aprovado com desconto */
+.total-discounted {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+/* pílula de status da prestação de contas (coluna só do adiantamento) */
+.acc-pill {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.acc-pill.acc-pendente { background: var(--status-analise-bg); color: var(--status-analise-fg); }
+.acc-pill.acc-em_analise { background: var(--status-analise-bg); color: var(--status-analise-fg); }
+.acc-pill.acc-acertado { background: var(--status-aprovado-bg); color: var(--status-aprovado-fg); }
+
+.table tbody tr {
+  cursor: pointer;
+  transition: background-color 0.12s;
+}
+
+.table tbody tr:hover {
+  background: var(--terracotta-soft);
+}
+
+.table tbody tr:focus-visible {
+  outline: none;
+  background: var(--terracotta-light);
+  box-shadow: inset 3px 0 0 var(--terracotta);
+}
+
+.table tbody td {
+  padding: 14px var(--space-4);
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table a {
+  font-weight: 600;
+}
+
+/* ── Tabela vira lista de cards no mobile ─────────────────────────
+   Cada linha é um cartão; os rótulos da coluna voltam via data-label. */
+@media (max-width: 640px) {
+  .table-responsive thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .table-responsive tbody tr {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .table-responsive tbody tr:hover {
+    background: var(--terracotta-light);
+  }
+
+  .table-responsive tbody td {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: 0;
+    border-bottom: none;
+    text-align: right;
+  }
+
+  .table-responsive tbody td::before {
+    content: attr(data-label);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    text-align: left;
+    flex-shrink: 0;
+  }
+
+  /* Primeira célula (solicitante) vira o título do card */
+  .table-responsive tbody td:first-child {
+    font-size: 15px;
+    font-weight: 700;
+    padding-bottom: 2px;
+  }
+  .table-responsive tbody td:first-child::before {
+    display: none;
+  }
+
+  .table-responsive tbody td.num {
+    font-weight: 700;
+  }
+
+  /* Status fica alinhado à direita, mas com os selos quebrando bem */
+  .table-responsive .status-cell {
+    justify-content: flex-end;
+  }
+}
+
+.list-empty {
+  padding: var(--space-7) var(--space-4);
+  text-align: center;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.list-empty p {
+  margin: 0;
+  max-width: 38ch;
+  line-height: 1.5;
+}
+
+.list-empty svg {
+  color: var(--terracotta);
+}
+
+/* Ícone do estado vazio dentro de um círculo suave (não o spinner) */
+.list-empty > svg:first-child:not(.spin) {
+  width: 56px;
+  height: 56px;
+  padding: 12px;
+  border-radius: 50%;
+  background: var(--terracotta-light);
+  box-sizing: content-box;
+}
+
+.list-empty .spin {
+  color: var(--terracotta);
+}

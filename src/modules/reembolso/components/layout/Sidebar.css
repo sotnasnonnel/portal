@@ -1,0 +1,327 @@
+.reembolso-root .sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  background: var(--bg);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.reembolso-root .sidebar-head {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.reembolso-root .sidebar-head .sidebar-logo {
+  flex: 1;
+  border-bottom: none;
+}
+
+.reembolso-root .sidebar-collapse-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin-right: 10px;
+  border-radius: 8px;
+  color: var(--muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.reembolso-root .sidebar-collapse-btn:hover {
+  background: var(--bg-soft);
+  color: var(--ink);
+}
+
+.reembolso-root .sidebar-collapse-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.reembolso-root .sidebar-logo {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.reembolso-root .sidebar-nav {
+  flex: 1;
+  padding: var(--space-4) var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+}
+
+.reembolso-root .sidebar-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 6px 12px 6px;
+}
+
+.reembolso-root .sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: var(--radius-md);
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.reembolso-root .sidebar-link:hover {
+  background: var(--bg-soft);
+  color: var(--ink);
+}
+
+.reembolso-root .sidebar-link:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.reembolso-root .sidebar-link.active {
+  background: var(--terracotta-light);
+  color: var(--terracotta);
+  font-weight: 600;
+}
+
+.reembolso-root .sidebar-link.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.reembolso-root .sidebar-link em {
+  margin-left: auto;
+  font-style: normal;
+  font-size: 9.5px;
+  text-transform: uppercase;
+  background: var(--bg-soft);
+  color: var(--muted);
+  padding: 2px 6px;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+}
+
+.reembolso-root .sidebar-footer {
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.reembolso-root .sidebar-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--terracotta) 0%, var(--terracotta-dark) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.reembolso-root .sidebar-user {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.reembolso-root .sidebar-user strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reembolso-root .sidebar-user small {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.reembolso-root .sidebar-logout {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.reembolso-root .sidebar-logout:hover {
+  background: var(--status-reprovado-bg);
+  color: var(--status-reprovado-fg);
+}
+
+.reembolso-root .sidebar-logout:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.reembolso-root .sidebar-help {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.reembolso-root .sidebar-help:hover {
+  background: var(--terracotta-light);
+  color: var(--terracotta);
+}
+
+.reembolso-root .sidebar-help:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* Desktop: sidebar recolhida = trilho estreito só de ícones */
+@media (min-width: 769px) {
+  .reembolso-root.is-collapsed .sidebar {
+    width: var(--sidebar-collapsed-w, 64px);
+    min-width: var(--sidebar-collapsed-w, 64px);
+  }
+
+  .reembolso-root.is-collapsed .app-switcher,
+  .reembolso-root.is-collapsed .sidebar-link span,
+  .reembolso-root.is-collapsed .sidebar-link em,
+  .reembolso-root.is-collapsed .sidebar-user,
+  .reembolso-root.is-collapsed .sidebar-logo .logo-reembolso-word {
+    display: none;
+  }
+
+  .reembolso-root.is-collapsed .sidebar-head {
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 0;
+  }
+  .reembolso-root.is-collapsed .sidebar-head .sidebar-logo {
+    flex: none;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+  }
+  .reembolso-root.is-collapsed .sidebar-collapse-btn {
+    margin: 0;
+  }
+  .reembolso-root.is-collapsed .sidebar-link {
+    justify-content: center;
+    gap: 0;
+    padding: 10px 0;
+  }
+  .reembolso-root.is-collapsed .sidebar-footer {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 0;
+  }
+}
+
+/* Mobile: sidebar vira barra horizontal no topo */
+@media (max-width: 768px) {
+  .reembolso-root .sidebar-collapse-btn {
+    display: none;
+  }
+  .reembolso-root .sidebar-head {
+    border-bottom: none;
+  }
+  .reembolso-root .sidebar {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    flex-direction: row;
+    align-items: center;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    z-index: 100;
+    position: sticky;
+    top: 0;
+    box-shadow: var(--shadow-sm);
+  }
+  .reembolso-root .sidebar-logo {
+    border-bottom: none;
+    padding: 10px 14px;
+    flex-shrink: 0;
+  }
+  /* no topo horizontal do mobile, mostra só o ícone da logo (sem o texto) */
+  .reembolso-root .sidebar-logo .logo-reembolso-word {
+    display: none;
+  }
+  .reembolso-root .sidebar-nav {
+    flex-direction: row;
+    flex: 1;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0 var(--space-2);
+    gap: var(--space-2);
+    overflow-x: auto;
+  }
+  .reembolso-root .sidebar-section-label {
+    display: none;
+  }
+  /* No mobile o link mostra ícone + rótulo curto; vira "pílula" tocável */
+  .reembolso-root .sidebar-link {
+    flex-shrink: 0;
+    min-height: 40px;
+    padding: 8px 14px;
+  }
+  .reembolso-root .sidebar-link em {
+    display: none;
+  }
+  .reembolso-root .sidebar-footer {
+    border-top: none;
+    border-left: 1px solid var(--border);
+    padding: 8px 12px;
+    gap: var(--space-2);
+  }
+  .reembolso-root .sidebar-user {
+    display: none;
+  }
+  .reembolso-root .sidebar-logout,
+  .reembolso-root .sidebar-help {
+    width: var(--touch-min);
+    height: var(--touch-min);
+  }
+}
+
+/* Em telas muito estreitas, esconde o texto do link e deixa só o ícone */
+@media (max-width: 420px) {
+  .reembolso-root .sidebar-link span {
+    display: none;
+  }
+  .reembolso-root .sidebar-link {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    justify-content: center;
+  }
+}

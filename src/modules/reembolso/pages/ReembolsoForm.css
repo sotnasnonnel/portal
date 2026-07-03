@@ -1,0 +1,511 @@
+.form-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.form-header h2 {
+  font-size: 22px;
+}
+
+.reembolso-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.form-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  box-shadow: var(--shadow-sm);
+}
+
+@media (max-width: 540px) {
+  .form-card {
+    padding: var(--space-4);
+  }
+}
+
+.form-card h3 {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--terracotta);
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4) var(--space-5);
+}
+
+@media (max-width: 720px) {
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Campos do formulário (escopados p/ não afetar outras telas) ── */
+.reembolso-form .field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.reembolso-form .field > span {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.reembolso-form .field-full {
+  grid-column: 1 / -1;
+}
+
+.reembolso-form .field input,
+.reembolso-form .field select,
+.reembolso-form .field textarea {
+  width: 100%;
+  height: 42px;
+  padding: 0 13px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--border);
+  background: #fff;
+  color: var(--ink);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.reembolso-form .field textarea {
+  height: auto;
+  min-height: 76px;
+  padding: 10px 13px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.reembolso-form .field input::placeholder,
+.reembolso-form .field textarea::placeholder {
+  color: #a0a8b8;
+}
+
+.reembolso-form .field input:hover:not(:disabled),
+.reembolso-form .field select:hover,
+.reembolso-form .field textarea:hover {
+  border-color: var(--border-strong);
+}
+
+.reembolso-form .field input:focus,
+.reembolso-form .field select:focus,
+.reembolso-form .field textarea:focus {
+  border-color: var(--terracotta);
+  box-shadow: 0 0 0 3px rgba(195, 94, 30, 0.15);
+}
+
+.reembolso-form .field input:disabled {
+  background: var(--bg-soft);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+/* select com a mesma cara dos inputs + chevron custom */
+.reembolso-form .field select {
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  padding-right: 34px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+
+.items-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.items-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.items-actions .btn-ghost {
+  border: 1px solid var(--border);
+}
+
+@media (max-width: 540px) {
+  .items-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .items-actions {
+    width: 100%;
+  }
+  .items-actions .btn {
+    flex: 1 1 auto;
+  }
+}
+
+.nf-import-error {
+  background: var(--status-reprovado-bg);
+  color: var(--status-reprovado-fg);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  font-size: 12px;
+}
+
+.nf-importing {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--terracotta);
+}
+
+.nf-attachments {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.nf-attachments-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.nf-thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.nf-thumb {
+  position: relative;
+  width: 84px;
+}
+
+.nf-thumb img {
+  width: 84px;
+  height: 84px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  cursor: zoom-in;
+  transition: border-color 0.15s ease;
+}
+
+.nf-thumb img:hover {
+  border-color: var(--terracotta);
+}
+
+.nf-thumb-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--status-reprovado-fg, #b85236);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.1s ease;
+}
+
+.nf-thumb-remove:hover {
+  transform: scale(1.1);
+}
+
+.nf-thumb-remove:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.nf-thumb img:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.nf-thumb-label {
+  display: block;
+  margin-top: 2px;
+  font-size: 10px;
+  color: var(--muted);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.items-table {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.items-row {
+  display: grid;
+  grid-template-columns: 56px 1.3fr 124px 104px 96px 1.2fr 1.2fr 32px;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Adiantamento: sem colunas "Data", "Nº NF" e "Local" (não há nota ao pedir) */
+.items-table--no-nf .items-row {
+  grid-template-columns: 56px 1.3fr 104px 1.2fr 32px;
+}
+
+.items-row-head {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  padding: 0 4px;
+}
+
+/* Cada coluna é um <label> (item-cell); no desktop só o input aparece */
+.item-cell {
+  display: block;
+  min-width: 0;
+}
+
+.item-cell-label {
+  display: none;
+}
+
+/* Número da linha — só aparece no layout de cards (mobile) */
+.items-row-num {
+  display: none;
+}
+
+.items-row input {
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--ink);
+  outline: none;
+  font-size: 13px;
+  min-width: 0;
+  transition: border-color var(--ease), box-shadow var(--ease);
+}
+
+.items-row input:hover {
+  border-color: var(--border-strong);
+}
+
+.items-row input:focus {
+  border-color: var(--terracotta);
+  box-shadow: 0 0 0 3px rgba(195, 94, 30, 0.12);
+}
+
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.icon-btn:hover:not(:disabled) {
+  background: var(--status-reprovado-bg);
+  color: var(--status-reprovado-fg);
+}
+
+.icon-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.icon-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.items-total {
+  margin-top: var(--space-2);
+  align-self: flex-end;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  background: var(--terracotta-soft);
+  color: var(--terracotta-dark);
+  font-weight: 600;
+}
+
+.items-total strong {
+  font-size: 18px;
+}
+
+@media (max-width: 720px) {
+  .items-total {
+    align-self: stretch;
+    justify-content: space-between;
+  }
+}
+
+.form-error {
+  background: var(--status-reprovado-bg);
+  color: var(--status-reprovado-fg);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  font-size: 13px;
+}
+
+.form-reject-note {
+  background: var(--status-reprovado-bg);
+  color: var(--status-reprovado-fg);
+  border: 1px solid var(--status-reprovado-fg);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+.field-note {
+  margin: 0;
+  padding: 9px 12px;
+  border-radius: var(--radius-md);
+  background: var(--status-aprovado-bg);
+  color: var(--status-aprovado-fg);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+@media (max-width: 540px) {
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+  .form-actions .btn {
+    width: 100%;
+  }
+}
+
+/* ── Tablet largo: grade mais compacta, ainda em colunas ──────── */
+@media (max-width: 1024px) and (min-width: 861px) {
+  .items-row {
+    grid-template-columns: 48px 1.2fr 112px 92px 80px 1fr 1fr 32px;
+    gap: 6px;
+  }
+  .items-table--no-nf .items-row {
+    grid-template-columns: 48px 1.2fr 92px 1fr 32px;
+  }
+}
+
+/* ── Tablet estreito / mobile: cada item vira um card rotulado ───
+   Mais legível e acessível que manter 8 colunas espremidas. */
+@media (max-width: 860px) {
+  .items-row-head {
+    display: none;
+  }
+
+  .items-table {
+    gap: var(--space-3);
+  }
+
+  .items-row {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    padding-top: 36px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-soft);
+  }
+
+  /* Número do item no topo do card */
+  .items-row-num {
+    display: inline-grid;
+    place-items: center;
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--terracotta-soft);
+    color: var(--terracotta-dark);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .item-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .item-cell-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+  }
+
+  /* Item, Local e Observações ocupam a linha inteira */
+  .item-cell[data-field="Item"],
+  .item-cell[data-field="Local"],
+  .item-cell[data-field="Observações"] {
+    grid-column: 1 / -1;
+  }
+
+  .items-row input {
+    min-height: 42px;
+    font-size: 14px; /* evita zoom automático no iOS */
+  }
+
+  /* Botão de remover no canto superior direito do card */
+  .items-row .icon-btn {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    width: var(--touch-min);
+    height: var(--touch-min);
+  }
+}
+
+/* Telas bem estreitas: um campo por linha dentro do card */
+@media (max-width: 360px) {
+  .items-row {
+    grid-template-columns: 1fr;
+  }
+}

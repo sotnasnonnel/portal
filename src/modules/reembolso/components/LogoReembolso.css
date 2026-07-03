@@ -1,0 +1,61 @@
+/* Cores controladas por variáveis: o default serve fundo claro (sidebar);
+   contextos escuros (login) sobrescrevem --logo-ink / --logo-accent. */
+.logo-reembolso {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.logo-reembolso-mark {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: linear-gradient(140deg, var(--terracotta) 0%, var(--terracotta-dark) 100%);
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(195, 94, 30, 0.4);
+  flex-shrink: 0;
+}
+
+.logo-reembolso-word {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.02;
+}
+
+.logo-reembolso-word strong {
+  font-size: 27px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: var(--logo-ink, var(--ink));
+}
+
+.logo-reembolso-word > span {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--logo-accent, var(--terracotta));
+}
+
+/* Variante compacta (sidebar) */
+.logo-reembolso--sm {
+  gap: 10px;
+}
+
+.logo-reembolso--sm .logo-reembolso-mark {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  box-shadow: 0 4px 12px rgba(195, 94, 30, 0.35);
+}
+
+.logo-reembolso--sm .logo-reembolso-word strong {
+  font-size: 19px;
+}
+
+.logo-reembolso--sm .logo-reembolso-word > span {
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+}

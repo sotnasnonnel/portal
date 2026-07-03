@@ -1,0 +1,177 @@
+/*
+ * feedback.css — Toasts e modal de confirmação do módulo reembolso.
+ *
+ * ATENÇÃO: O FeedbackProvider renderiza .toast-stack e .modal-overlay como
+ * irmãos de .reembolso-root (não dentro dele), portanto as regras aqui ficam
+ * GLOBAIS (sem escopo .reembolso-root). Para que os tokens do módulo fiquem
+ * disponíveis sem dependência de herança CSS, eles são declarados diretamente
+ * nos elementos-raiz de cada feedback. Os nomes de classe são específicos
+ * suficientes para não colidir com o shell DP.
+ */
+
+/* ── Tokens injetados nas raízes de feedback (herdam para todos os filhos) ── */
+.toast-stack,
+.modal-overlay {
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --bg: #ffffff;
+  --bg-soft: #f2f2f2;
+  --border: #e3e3e3;
+  --muted: #6b7280;
+  --ink: #1b2735;
+  --ink-soft: #3a4654;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.12);
+  --focus-ring: 0 0 0 3px rgba(195, 94, 30, 0.35);
+  --green: #00a49a;
+  --green-dark: #008078;
+  --status-reprovado-fg: #a8311a;
+  --status-analise-fg: #8a6300;
+  --blue: #26405d;
+  --terracotta-red: #b85236;
+}
+
+/* ── Toasts ── */
+.toast-stack {
+  position: fixed;
+  top: var(--space-5);
+  right: var(--space-5);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: min(360px, calc(100vw - 32px));
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 12px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--muted);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  font-size: 13.5px;
+  color: var(--ink);
+  animation: toast-in 0.18s ease-out;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.toast-icon { flex-shrink: 0; }
+.toast-msg { flex: 1; }
+
+.toast-close {
+  display: inline-flex;
+  align-items: center;
+  color: var(--muted);
+  padding: 2px;
+  border-radius: var(--radius-sm);
+}
+.toast-close:hover { background: var(--bg-soft); color: var(--ink); }
+
+.toast-success { border-left-color: var(--green); }
+.toast-success .toast-icon { color: var(--green-dark); }
+.toast-error { border-left-color: var(--status-reprovado-fg); }
+.toast-error .toast-icon { color: var(--status-reprovado-fg); }
+.toast-warning { border-left-color: var(--status-analise-fg); }
+.toast-warning .toast-icon { color: var(--status-analise-fg); }
+.toast-info { border-left-color: var(--blue); }
+.toast-info .toast-icon { color: var(--blue); }
+
+/* ── Modal de confirmação ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+  background: rgba(15, 23, 42, 0.45);
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  animation: overlay-in 0.15s ease-out;
+}
+
+@keyframes overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-box {
+  background: var(--bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-5);
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  animation: modal-in 0.18s ease-out;
+}
+
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.modal-title { font-size: 17px; }
+
+.modal-message {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.modal-body {
+  max-height: 50vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.btn-danger-solid {
+  background: var(--status-reprovado-fg);
+  color: #fff;
+}
+.btn-danger-solid:hover { background: var(--terracotta-red); }
+
+.toast-close:focus-visible,
+.btn-danger-solid:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* Mobile: toasts ocupam a largura disponível e o modal empilha as ações */
+@media (max-width: 540px) {
+  .toast-stack {
+    top: auto;
+    bottom: var(--space-4);
+    left: var(--space-3);
+    right: var(--space-3);
+    max-width: none;
+  }
+  .modal-actions {
+    flex-direction: column-reverse;
+  }
+  .modal-actions .btn {
+    width: 100%;
+  }
+}

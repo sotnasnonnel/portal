@@ -1,0 +1,416 @@
+/* Sidebar do DP no padrão visual do Reembolso (tema compartilhado em styles/theme.css).
+   Desktop: coluna branca fixa de 240px com borda à direita.
+   Mobile: off-canvas com overlay (comportamento preservado). */
+
+.layout .sidebar-overlay {
+  display: none;
+}
+
+.layout .sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--sidebar-w);
+  height: 100vh;
+  background: var(--bg);
+  border-right: 1px solid var(--border);
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  transition: transform var(--transition-slow), width var(--transition-slow);
+  overflow-y: auto;
+}
+
+/* ===== Identidade do módulo ===== */
+.layout .sidebar-head {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.layout .sidebar-head .sidebar-logo {
+  flex: 1;
+  border-bottom: none;
+}
+
+.layout .sidebar-collapse-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin-right: 10px;
+  border-radius: 8px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.layout .sidebar-collapse-btn:hover {
+  background: var(--bg-soft);
+  color: var(--ink);
+}
+
+.layout .sidebar-collapse-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.layout .sidebar-logo {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.layout .sidebar-logo img {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+}
+
+.layout .sidebar-logo-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.layout .sidebar-logo-text span:first-child {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  color: var(--ink);
+}
+
+.layout .sidebar-logo-text span:last-child {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+/* ===== Navegação ===== */
+.layout .sidebar-nav {
+  flex: 1;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.layout .sidebar-section-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  padding: 6px 12px;
+}
+
+.layout .sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  cursor: pointer;
+  position: relative;
+  text-decoration: none;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.layout .sidebar-link:hover {
+  background: var(--bg-soft);
+  color: var(--ink);
+}
+
+.layout .sidebar-link:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.layout .sidebar-link.active {
+  background: var(--terracotta-light);
+  color: var(--terracotta);
+  font-weight: 600;
+}
+
+.layout .sidebar-link svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* Itens travados (recurso em breve) */
+.layout .sidebar-link.sidebar-locked {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.layout .sidebar-link.sidebar-locked:hover {
+  background: none;
+  color: var(--muted);
+}
+
+.layout .sidebar-lock-icon {
+  margin-left: auto;
+  width: 13px !important;
+  height: 13px !important;
+}
+
+/* Grupos expansíveis */
+.layout .sidebar-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.layout .sidebar-group-header {
+  font-weight: 500;
+}
+
+.layout .sidebar-chevron {
+  margin-left: auto;
+  width: 14px !important;
+  height: 14px !important;
+  transition: transform var(--transition-fast);
+}
+
+.layout .sidebar-group-header.expanded .sidebar-chevron {
+  transform: rotate(180deg);
+}
+
+/* Quando há badge no cabeçalho, o badge empurra o par pra direita
+   e o chevron fica colado nele. */
+.layout .sidebar-group-header .sidebar-badge {
+  margin-left: auto;
+}
+
+.layout .sidebar-group-header .sidebar-badge + .sidebar-chevron {
+  margin-left: 6px;
+}
+
+.layout .sidebar-group-children {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-left: 19px;
+  padding-left: 10px;
+  border-left: 1px solid var(--border);
+}
+
+.layout .sidebar-sublink {
+  font-weight: 500;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.layout .sidebar-sublink svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Rótulo encolhe/trunca para o badge nunca ser cortado na borda da sidebar. */
+.layout .sidebar-link > span:not(.sidebar-badge) {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.layout .sidebar-badge,
+.layout .sidebar-chevron,
+.layout .sidebar-lock-icon {
+  flex-shrink: 0;
+}
+
+/* Pílula de contagem de pendências */
+.layout .sidebar-badge {
+  margin-left: auto;
+  background: var(--terracotta);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  min-width: 20px;
+  text-align: center;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+}
+
+/* ===== Rodapé com usuário ===== */
+.layout .sidebar-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.layout .sidebar-footer-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.layout .sidebar-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--terracotta) 0%, var(--terracotta-dark) 100%);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.layout .sidebar-user-info {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.layout .sidebar-user-info .name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.layout .sidebar-user-info .role {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.layout .sidebar-logout {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.layout .sidebar-logout:hover {
+  background: var(--status-reprovado-bg);
+  color: var(--status-reprovado-fg);
+}
+
+.layout .sidebar-logout:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* ===== Desktop: sidebar recolhida = trilho estreito só de ícones ===== */
+@media (min-width: 769px) {
+  .layout-collapsed .sidebar {
+    width: var(--sidebar-collapsed-w, 64px);
+  }
+
+  /* Some o texto/rótulos, badges, chevrons e o seletor de app — fica só o ícone. */
+  .layout-collapsed .sidebar-logo-text,
+  .layout-collapsed .app-switcher,
+  .layout-collapsed .sidebar-link > span,
+  .layout-collapsed .sidebar-badge,
+  .layout-collapsed .sidebar-chevron,
+  .layout-collapsed .sidebar-lock-icon,
+  .layout-collapsed .sidebar-user-info,
+  .layout-collapsed .sidebar-logout {
+    display: none;
+  }
+
+  /* Cabeçalho: logo em cima, botão de expandir embaixo, centralizados. */
+  .layout-collapsed .sidebar-head {
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 0;
+  }
+  .layout-collapsed .sidebar-head .sidebar-logo {
+    flex: none;
+    padding: 0;
+    justify-content: center;
+  }
+  .layout-collapsed .sidebar-collapse-btn {
+    margin-right: 0;
+  }
+
+  /* Ícones centralizados no trilho. */
+  .layout-collapsed .sidebar-nav {
+    padding: 12px 8px;
+  }
+  .layout-collapsed .sidebar-link {
+    justify-content: center;
+    gap: 0;
+    padding: 10px 0;
+  }
+  .layout-collapsed .sidebar-group-children {
+    margin-left: 0;
+    padding-left: 0;
+    border-left: none;
+  }
+  .layout-collapsed .sidebar-footer {
+    padding: 12px 0;
+  }
+  .layout-collapsed .sidebar-footer-user {
+    justify-content: center;
+  }
+}
+
+/* ===== Mobile: off-canvas com overlay ===== */
+@media (max-width: 768px) {
+  .layout .sidebar {
+    width: min(86vw, 320px);
+    transform: translateX(-100%);
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+  }
+
+  /* O drawer mobile fecha pelo overlay/Esc; o botão de recolher é só desktop. */
+  .layout .sidebar-collapse-btn {
+    display: none;
+  }
+
+  .layout .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .layout .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 99;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-normal);
+  }
+
+  .layout .sidebar-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}

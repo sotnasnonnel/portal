@@ -1,0 +1,101 @@
+.cam-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.85);
+  padding: var(--space-4);
+}
+
+.cam-box {
+  position: relative;
+  width: min(640px, 100%);
+  background: #000;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg, 0 12px 40px rgba(0, 0, 0, 0.5));
+}
+
+.cam-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  cursor: pointer;
+}
+
+.cam-video {
+  display: block;
+  width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  background: #000;
+}
+
+.cam-error {
+  color: #fff;
+  padding: var(--space-6) var(--space-5);
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.cam-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  background: #111;
+}
+
+.cam-icon-btn,
+.cam-spacer {
+  width: 44px;
+  height: 44px;
+}
+
+.cam-icon-btn {
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+}
+
+.cam-icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.cam-shutter {
+  display: inline-grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border: 4px solid #fff;
+  border-radius: 50%;
+  background: var(--terracotta);
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+.cam-shutter:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+.cam-shutter:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

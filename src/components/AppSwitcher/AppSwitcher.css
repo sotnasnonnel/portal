@@ -1,0 +1,140 @@
+/* Seletor de app compartilhado pelas 3 sidebars.
+   Usa só tokens estáveis do tema (terracota/neutros) + branco fixo, porque
+   --bg/--surface têm sentidos diferentes entre os módulos (.solicRoot inverte). */
+.app-switcher {
+  position: relative;
+  margin-bottom: 8px;
+}
+
+/* compound com .app-switcher: especificidade (0,2,0) vence resets de button de
+   outros módulos, ex.: .reembolso-root button { background: none } (0,1,1). */
+.app-switcher .app-switcher-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.app-switcher .app-switcher-btn:hover {
+  background: var(--bg-soft);
+  border-color: var(--border-strong);
+}
+
+.app-switcher .app-switcher-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.app-switcher-icon {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  color: var(--terracotta);
+}
+
+.app-switcher-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  min-width: 0;
+  flex: 1;
+}
+
+.app-switcher-text small {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.app-switcher-text strong {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-switcher-chevron {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  color: var(--muted);
+  transition: transform 0.18s ease;
+}
+
+.app-switcher-chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.app-switcher-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+
+.app-switcher-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 41;
+  display: grid;
+  gap: 2px;
+  padding: 6px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
+}
+
+/* compound com .app-switcher p/ vencer resets de link de outros módulos
+   (ex.: .solicRoot a:hover { text-decoration: underline }) */
+.app-switcher .app-switcher-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 0.15s ease;
+}
+
+.app-switcher .app-switcher-item:hover {
+  background: var(--bg-soft);
+  text-decoration: none;
+}
+
+/* Sidebar recolhida (desktop): esconde texto/chevron, centraliza o botão.
+   Cada módulo marca o recolhido com sua própria classe de raiz. */
+.isCollapsed .app-switcher-text,
+.isCollapsed .app-switcher-chevron,
+.sidebar.collapsed .app-switcher-text,
+.sidebar.collapsed .app-switcher-chevron {
+  display: none;
+}
+
+.isCollapsed .app-switcher-btn,
+.sidebar.collapsed .app-switcher-btn {
+  justify-content: center;
+  gap: 0;
+  padding: 10px;
+}

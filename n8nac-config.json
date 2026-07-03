@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "activeInstanceId": "instance-9e4ef8a3",
+  "instances": [
+    {
+      "id": "instance-9e4ef8a3",
+      "name": "procint.phdengenharia.tech",
+      "host": "https://procint.phdengenharia.tech/mcp-server/http",
+      "syncFolder": "workflows",
+      "projectId": "personal",
+      "projectName": "Personal",
+      "verification": {
+        "status": "failed",
+        "lastCheckedAt": "2026-04-14T11:14:21.341Z",
+        "lastError": "Unable to resolve the authenticated n8n user."
+      }
+    }
+  ],
+  "host": "https://procint.phdengenharia.tech/mcp-server/http",
+  "syncFolder": "workflows",
+  "projectId": "personal",
+  "projectName": "Personal"
+}

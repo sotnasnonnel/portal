@@ -1,0 +1,91 @@
+.food-overage {
+  border: 1px solid var(--status-reprovado-fg);
+  background: var(--status-reprovado-bg);
+  color: var(--ink);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.food-overage-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--status-reprovado-fg);
+  font-size: 14px;
+}
+
+.food-overage-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.food-overage-list li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.food-overage-item {
+  font-weight: 600;
+}
+
+.food-overage-detail {
+  color: var(--ink-soft);
+}
+
+.food-overage-detail em {
+  font-style: normal;
+  color: var(--status-reprovado-fg);
+}
+
+.food-overage-totals {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px dashed var(--status-reprovado-fg);
+}
+
+.food-overage-totals > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.food-overage-totals span {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+}
+
+.food-overage-totals strong {
+  font-size: 16px;
+  color: var(--ink);
+}
+
+.food-overage-over strong {
+  color: var(--status-reprovado-fg);
+}
+
+@media (max-width: 540px) {
+  .food-overage-totals {
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
+  }
+  .food-overage-totals > div {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+}

@@ -1,0 +1,38 @@
+.acc-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.acc-summary > div {
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.acc-summary span { font-size: 12px; color: var(--muted); }
+.acc-summary strong { font-size: 18px; color: var(--ink); }
+.acc-diff.acc-sobra { border-color: var(--status-analise-fg); }
+.acc-diff.acc-falta { border-color: var(--status-reprovado-fg); }
+.acc-diff.acc-falta strong { color: var(--status-reprovado-fg); }
+.acc-diff.acc-exato { border-color: var(--status-aprovado-fg); }
+@media (max-width: 540px) { .acc-summary { grid-template-columns: 1fr; } }
+
+.acc-actions-bar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.acc-submit-hint {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: var(--status-analise-bg);
+  color: var(--status-analise-fg);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.acc-submit-hint strong { color: var(--status-analise-fg); }

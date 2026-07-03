@@ -1,0 +1,542 @@
+[
+  {
+    "codigo": 133,
+    "nome": "TOPOGRAFO"
+  },
+  {
+    "codigo": 1,
+    "nome": "ADMINISTRADOR"
+  },
+  {
+    "codigo": 2,
+    "nome": "ANALISTA ADMINISTRATIVO"
+  },
+  {
+    "codigo": 3,
+    "nome": "ANALISTA ADMINISTRATIVO I"
+  },
+  {
+    "codigo": 4,
+    "nome": "ANALISTA ADMINISTRATIVO II"
+  },
+  {
+    "codigo": 5,
+    "nome": "ANALISTA ADMINISTRATIVO III"
+  },
+  {
+    "codigo": 6,
+    "nome": "ANALISTA ADMINISTRATIVO IV"
+  },
+  {
+    "codigo": 7,
+    "nome": "ANALISTA COMERCIAL"
+  },
+  {
+    "codigo": 8,
+    "nome": "ANALISTA COMERCIAL I"
+  },
+  {
+    "codigo": 9,
+    "nome": "ANALISTA COMERCIAL II"
+  },
+  {
+    "codigo": 10,
+    "nome": "ANALISTA COMERCIAL III"
+  },
+  {
+    "codigo": 11,
+    "nome": "ANALISTA COMERCIAL IV"
+  },
+  {
+    "codigo": 12,
+    "nome": "ANALISTA DE DADOS"
+  },
+  {
+    "codigo": 13,
+    "nome": "ANALISTA DE DADOS I"
+  },
+  {
+    "codigo": 14,
+    "nome": "ANALISTA DE DADOS II"
+  },
+  {
+    "codigo": 15,
+    "nome": "ANALISTA DE DADOS III"
+  },
+  {
+    "codigo": 16,
+    "nome": "ANALISTA DE DADOS IV"
+  },
+  {
+    "codigo": 104,
+    "nome": "ANALISTA DE DADOS PLENO"
+  },
+  {
+    "codigo": 17,
+    "nome": "ANALISTA DE DEPARTAMENTO PESSOAL I"
+  },
+  {
+    "codigo": 18,
+    "nome": "ANALISTA DE DEPARTAMENTO PESSOAL I"
+  },
+  {
+    "codigo": 19,
+    "nome": "ANALISTA DE DEPARTAMENTO PESSOAL III"
+  },
+  {
+    "codigo": 20,
+    "nome": "ANALISTA DE DEPARTAMENTO PESSOAL IV"
+  },
+  {
+    "codigo": 21,
+    "nome": "ANALISTA DE FACILITIES"
+  },
+  {
+    "codigo": 22,
+    "nome": "ANALISTA DE MARKETING"
+  },
+  {
+    "codigo": 23,
+    "nome": "ANALISTA DE MARKETING I"
+  },
+  {
+    "codigo": 24,
+    "nome": "ANALISTA DE MARKETING II"
+  },
+  {
+    "codigo": 25,
+    "nome": "ANALISTA DE MARKETING III"
+  },
+  {
+    "codigo": 26,
+    "nome": "ANALISTA DE PMO I"
+  },
+  {
+    "codigo": 27,
+    "nome": "ANALISTA DE PMO II"
+  },
+  {
+    "codigo": 28,
+    "nome": "ANALISTA DE PMO III"
+  },
+  {
+    "codigo": 29,
+    "nome": "ANALISTA DE PMO IV"
+  },
+  {
+    "codigo": 98,
+    "nome": "ANALISTA DE RECURSOS HUMANOS"
+  },
+  {
+    "codigo": 30,
+    "nome": "ANALISTA DE RECURSOS HUMANOS I"
+  },
+  {
+    "codigo": 31,
+    "nome": "ANALISTA DE RECURSOS HUMANOS II"
+  },
+  {
+    "codigo": 32,
+    "nome": "ANALISTA DE RECURSOS HUMANOS III"
+  },
+  {
+    "codigo": 33,
+    "nome": "ANALISTA DE RECURSOS HUMANOS IV"
+  },
+  {
+    "codigo": 107,
+    "nome": "ANALISTA DEP. PESSOAL E BENEFICIOS"
+  },
+  {
+    "codigo": 34,
+    "nome": "ANALISTA E DESENVOLVEDOR DE SISTEMAS"
+  },
+  {
+    "codigo": 100,
+    "nome": "ANALISTA FINANCEIRO"
+  },
+  {
+    "codigo": 35,
+    "nome": "ANALISTA FINANCEIRO I"
+  },
+  {
+    "codigo": 36,
+    "nome": "ANALISTA FINANCEIRO II"
+  },
+  {
+    "codigo": 106,
+    "nome": "ANALISTA MARKETING"
+  },
+  {
+    "codigo": 37,
+    "nome": "ASSISTENTE ADMINISTRATIVO"
+  },
+  {
+    "codigo": 38,
+    "nome": "ASSISTENTE DE MARKETING I"
+  },
+  {
+    "codigo": 39,
+    "nome": "ASSISTENTE DE RECURSOS HUMANOS"
+  },
+  {
+    "codigo": 40,
+    "nome": "AUXILAIR DE PLANEJAMENTO I"
+  },
+  {
+    "codigo": 41,
+    "nome": "AUXILIAR ADMINISTRATIVO"
+  },
+  {
+    "codigo": 42,
+    "nome": "AUXILIAR COMERCIAL"
+  },
+  {
+    "codigo": 43,
+    "nome": "AUXILIAR DE PLANEJAMENTO"
+  },
+  {
+    "codigo": 44,
+    "nome": "AUXILIAR DE SERVIÇOS GERAIS"
+  },
+  {
+    "codigo": 132,
+    "nome": "AUXILIAR DE TOPOGRAFIA PLENO"
+  },
+  {
+    "codigo": 45,
+    "nome": "CONSULTOR BIM"
+  },
+  {
+    "codigo": 122,
+    "nome": "CONSULTOR BIM JUNIOR"
+  },
+  {
+    "codigo": 111,
+    "nome": "CONSULTOR BIM PLENO"
+  },
+  {
+    "codigo": 108,
+    "nome": "CONSULTOR BIM SENIOR"
+  },
+  {
+    "codigo": 46,
+    "nome": "CONSULTOR DE GESTAO E PLANEJAMENTO"
+  },
+  {
+    "codigo": 47,
+    "nome": "CONSULTOR DE GESTAO E PLANEJAMENTO I"
+  },
+  {
+    "codigo": 48,
+    "nome": "CONSULTOR DE GESTAO E PLANEJAMENTO II"
+  },
+  {
+    "codigo": 49,
+    "nome": "CONSULTOR DE GESTAO E PLANEJAMENTO III"
+  },
+  {
+    "codigo": 121,
+    "nome": "CONSULTOR DE GESTAO E PLANEJAMENTO V"
+  },
+  {
+    "codigo": 50,
+    "nome": "CONSULTOR DE PLANEJAMENTO"
+  },
+  {
+    "codigo": 53,
+    "nome": "CONSULTOR LEAN"
+  },
+  {
+    "codigo": 129,
+    "nome": "CONSULTOR LEAN PLENO"
+  },
+  {
+    "codigo": 119,
+    "nome": "CONSULTOR LEAN SENIOR"
+  },
+  {
+    "codigo": 130,
+    "nome": "CONSULTOR LEAN SENIOR"
+  },
+  {
+    "codigo": 103,
+    "nome": "CONSULTOR PLANEJAMENTO PLENO"
+  },
+  {
+    "codigo": 110,
+    "nome": "CONSULTOR PLANEJAMENTO SENIOR"
+  },
+  {
+    "codigo": 51,
+    "nome": "CONSULTOR SENIOR DE GESTAO E PLANEJAMENTO"
+  },
+  {
+    "codigo": 52,
+    "nome": "CONSULTORA DE GESTAO E PLANEJAMENTO"
+  },
+  {
+    "codigo": 54,
+    "nome": "CONTROLLER"
+  },
+  {
+    "codigo": 56,
+    "nome": "COORDENADOR ADMINISTRATIVO"
+  },
+  {
+    "codigo": 114,
+    "nome": "COORDENADOR BIM"
+  },
+  {
+    "codigo": 112,
+    "nome": "COORDENADOR COMERCIAL"
+  },
+  {
+    "codigo": 134,
+    "nome": "COORDENADOR DE GENTE E CULTURA"
+  },
+  {
+    "codigo": 55,
+    "nome": "COORDENADOR DE PLANEJAMENTOS"
+  },
+  {
+    "codigo": 58,
+    "nome": "COORDENADOR DE PMO"
+  },
+  {
+    "codigo": 128,
+    "nome": "COORDENADOR FINANCEIRO"
+  },
+  {
+    "codigo": 57,
+    "nome": "DESENHISTA PROJETISTA"
+  },
+  {
+    "codigo": 59,
+    "nome": "DIRETOR ADMINISTRATIVO"
+  },
+  {
+    "codigo": 60,
+    "nome": "ENGENHEIRO"
+  },
+  {
+    "codigo": 61,
+    "nome": "ENGENHEIRO DE MEDICAO"
+  },
+  {
+    "codigo": 62,
+    "nome": "ENGENHEIRO DE MEDICAO II"
+  },
+  {
+    "codigo": 63,
+    "nome": "ENGENHEIRO DE MEDICAO JUNIOR"
+  },
+  {
+    "codigo": 64,
+    "nome": "ENGENHEIRO DE PLANEJAMENTO"
+  },
+  {
+    "codigo": 65,
+    "nome": "ENGENHEIRO DE PLANEJAMENTO JUNIOR"
+  },
+  {
+    "codigo": 66,
+    "nome": "ENGENHEIRO DE PLANEJAMENTO PLENO"
+  },
+  {
+    "codigo": 120,
+    "nome": "ESPECIALISTA DE BIM  PLENO"
+  },
+  {
+    "codigo": 67,
+    "nome": "ESPECIALISTA DE BIM I"
+  },
+  {
+    "codigo": 135,
+    "nome": "ESPECIALISTA DE LEAN"
+  },
+  {
+    "codigo": 68,
+    "nome": "ESPECIALISTA DE PLANEJAMENTO"
+  },
+  {
+    "codigo": 115,
+    "nome": "ESPECIALISTA DE PLANEJAMENTO PLENO"
+  },
+  {
+    "codigo": 116,
+    "nome": "ESPECIALISTA DE PLANEJAMENTO SENIOR"
+  },
+  {
+    "codigo": 126,
+    "nome": "ESPECIALISTA DE R&S"
+  },
+  {
+    "codigo": 123,
+    "nome": "ESPECIALISTA PMO"
+  },
+  {
+    "codigo": 127,
+    "nome": "GERENTE ADMINISTRATIVO FINANCEIRO"
+  },
+  {
+    "codigo": 124,
+    "nome": "GERENTE COMERCIAL"
+  },
+  {
+    "codigo": 69,
+    "nome": "GERENTE DE MARKETING"
+  },
+  {
+    "codigo": 70,
+    "nome": "GERENTE DE OPERACOES"
+  },
+  {
+    "codigo": 71,
+    "nome": "GERENTE DE PLANEJAMENTO"
+  },
+  {
+    "codigo": 113,
+    "nome": "GERENTE DE PLANEJAMENTO"
+  },
+  {
+    "codigo": 109,
+    "nome": "GERENTE DE PMO"
+  },
+  {
+    "codigo": 125,
+    "nome": "GERENTE DE RECURSOS HUMANOS"
+  },
+  {
+    "codigo": 117,
+    "nome": "HEAD BIM"
+  },
+  {
+    "codigo": 118,
+    "nome": "HEAD QUALIDADE"
+  },
+  {
+    "codigo": 72,
+    "nome": "PEDAGOGO"
+  },
+  {
+    "codigo": 73,
+    "nome": "PLANEJAMENTO DE OBRA"
+  },
+  {
+    "codigo": 74,
+    "nome": "PLANEJAMENTO E ORCAMENTO"
+  },
+  {
+    "codigo": 75,
+    "nome": "RECEPCIONISTA"
+  },
+  {
+    "codigo": 76,
+    "nome": "SISTEMA DE INFORMACAO"
+  },
+  {
+    "codigo": 77,
+    "nome": "SUPERVISOR DE PLANEJAMENTO"
+  },
+  {
+    "codigo": 105,
+    "nome": "TEC. PLANEJ. MEDICAO SENIOR"
+  },
+  {
+    "codigo": 78,
+    "nome": "TECNICO DE MATERIAIS"
+  },
+  {
+    "codigo": 79,
+    "nome": "TECNICO DE MEDICAO"
+  },
+  {
+    "codigo": 80,
+    "nome": "TECNICO DE MEDICAO II"
+  },
+  {
+    "codigo": 82,
+    "nome": "TECNICO DE PLANEJAMENTO"
+  },
+  {
+    "codigo": 81,
+    "nome": "TECNICO DE PLANEJAMENTO E MEDICAO III"
+  },
+  {
+    "codigo": 83,
+    "nome": "TECNICO DE PLANEJAMENTO I"
+  },
+  {
+    "codigo": 84,
+    "nome": "TECNICO DE PLANEJAMENTO II"
+  },
+  {
+    "codigo": 85,
+    "nome": "TECNICO DE PLANEJAMENTO III"
+  },
+  {
+    "codigo": 86,
+    "nome": "TECNICO DE PLANEJAMENTO IV"
+  },
+  {
+    "codigo": 89,
+    "nome": "TECNICO DE PLANEJAMENTO JUNIOR"
+  },
+  {
+    "codigo": 90,
+    "nome": "TECNICO DE PLANEJAMENTO PLENO"
+  },
+  {
+    "codigo": 91,
+    "nome": "TECNICO DE PLANEJAMENTO SENIOR"
+  },
+  {
+    "codigo": 87,
+    "nome": "TECNICO DE PLANEJAMENTO V"
+  },
+  {
+    "codigo": 88,
+    "nome": "TECNICO DE PLANEJAMENTO VI"
+  },
+  {
+    "codigo": 92,
+    "nome": "TECNICO DE PRODUCAO"
+  },
+  {
+    "codigo": 93,
+    "nome": "TECNICO DE QUALIDADE"
+  },
+  {
+    "codigo": 94,
+    "nome": "TECNICO DE SEGURANÇA DO TRABALHO II"
+  },
+  {
+    "codigo": 95,
+    "nome": "TECNICO EM ELETROMECANICA"
+  },
+  {
+    "codigo": 96,
+    "nome": "TECNICO EM MINERACAO"
+  },
+  {
+    "codigo": 97,
+    "nome": "TECNICO EM PROCESSAMENTO DE DADOS"
+  },
+  {
+    "codigo": 101,
+    "nome": "TECNICO PLANEJAMENTO MEDICAO"
+  },
+  {
+    "codigo": 102,
+    "nome": "TECNICO PLANEJAMENTO MEDICAO PLENO"
+  },
+  {
+    "codigo": 99,
+    "nome": "TECNICO PLANEJAMENTO MEDICAO SENIOR"
+  },
+  {
+    "codigo": 131,
+    "nome": "TOPOGRAFO SENIOR"
+  }
+]

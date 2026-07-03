@@ -1,0 +1,5 @@
+Cor Principal - Terracotta #c35e1e
+Terracota Avermelhado #b85236
+Azul #26405d
+Verde #00a49a
+Branco gelo #f2f2f2

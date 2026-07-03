@@ -1,0 +1,52 @@
+.forbidden-notice {
+  border: 1px solid var(--status-reprovado-fg);
+  background: var(--status-reprovado-bg);
+  color: var(--ink);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.forbidden-notice-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--status-reprovado-fg);
+  font-size: 14px;
+}
+
+.forbidden-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.forbidden-list li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.forbidden-item {
+  font-weight: 600;
+}
+
+.forbidden-reason {
+  color: var(--status-reprovado-fg);
+  font-weight: 600;
+}
+
+.forbidden-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}

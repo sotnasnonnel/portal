@@ -1,0 +1,392 @@
+/* Home do portal — hero centrado sobre fundo claro com ondas PHD */
+
+.home-hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: #f2f2f2; /* fallback enquanto a imagem carrega */
+  background-image: url('../../assets/fundo_home.png');
+  background-size: cover;
+  background-position: center;
+}
+
+/* ---------- topo ---------- */
+
+.home-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 32px;
+}
+
+/* Logo PHD Engenharia em terracota, sem caixa branca (recolorida via mask) */
+.home-logo-brand {
+  display: block;
+  width: 220px;   /* proporção 2000x288 do PNG → ~32px de altura */
+  height: 32px;
+  background-color: var(--color-primary, #c35e1e);
+  -webkit-mask: url('../../assets/logo-phd.png') left center / contain no-repeat;
+  mask: url('../../assets/logo-phd.png') left center / contain no-repeat;
+}
+
+/* Logo + bandeirinha do Brasil centralizada embaixo */
+.home-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Bandeira do Brasil em CSS (verde + losango amarelo + círculo azul) */
+.home-flag {
+  position: relative;
+  width: 42px;
+  height: 29px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: #009c3b;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.home-flag:hover {
+  transform: scale(1.1) rotate(-4deg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+.home-flag:focus-visible {
+  outline: 2px solid var(--color-primary, #c35e1e);
+  outline-offset: 2px;
+}
+.home-flag-diamond {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 18px;
+  height: 18px;
+  background: #ffdf00;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.home-flag-circle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #002776;
+  transform: translate(-50%, -50%);
+}
+
+/* ---------- animação Copa do Mundo ---------- */
+.copa-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  cursor: pointer;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 38%, rgba(0, 60, 30, 0.55), rgba(0, 0, 0, 0.78));
+  animation: copa-fade 0.3s ease;
+}
+@keyframes copa-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.copa-confete {
+  position: absolute;
+  top: -24px;
+  width: 10px;
+  height: 14px;
+  border-radius: 2px;
+  animation-name: copa-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+@keyframes copa-fall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(106vh) rotate(720deg); opacity: 0.9; }
+}
+
+.copa-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  animation: copa-pop 0.5s cubic-bezier(0.2, 1.5, 0.4, 1) both;
+}
+@keyframes copa-pop {
+  from { transform: translate(-50%, -50%) scale(0.2); opacity: 0; }
+  to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+.copa-ball {
+  font-size: 76px;
+  line-height: 1;
+  animation: copa-bounce 1s ease-in-out infinite;
+}
+@keyframes copa-bounce {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-34px) rotate(180deg); }
+}
+
+.copa-title {
+  margin-top: 10px;
+  font-size: 46px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  color: #ffdf00;
+  text-shadow: 0 3px 0 #009c3b, 0 7px 20px rgba(0, 0, 0, 0.5);
+  animation: copa-pulse 0.8s ease-in-out infinite alternate;
+}
+@keyframes copa-pulse {
+  from { transform: scale(1); }
+  to { transform: scale(1.07); }
+}
+
+.copa-sub {
+  margin-top: 6px;
+  font-size: 23px;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+.copa-hint {
+  margin-top: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .copa-ball, .copa-title, .copa-confete { animation: none; }
+}
+
+.home-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.home-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #26405d;
+  background: rgba(38, 64, 93, 0.10);
+  border: 1px solid rgba(38, 64, 93, 0.18);
+}
+
+.home-user-name {
+  color: #26405d;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.home-logout {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 9999px;
+  border: 1px solid rgba(38, 64, 93, 0.20);
+  background: #ffffff;
+  color: #26405d;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.home-logout:hover {
+  background: rgba(38, 64, 93, 0.06);
+}
+
+/* ---------- centro ---------- */
+
+.home-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px 48px;
+  text-align: center;
+}
+
+.home-main h1 {
+  margin: 0 0 8px;
+  color: #26405d;
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.home-sub {
+  margin: 0 0 40px;
+  color: rgba(38, 64, 93, 0.65);
+  font-size: 16px;
+}
+
+.home-cards {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 22px;
+  width: 100%;
+  max-width: 980px;
+}
+
+.home-card {
+  flex: 0 1 290px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  padding: 26px 24px 22px;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid rgba(38, 64, 93, 0.12);
+  box-shadow: 0 8px 24px rgba(38, 64, 93, 0.08);
+  text-decoration: none;
+  color: #26405d;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.home-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(38, 64, 93, 0.14);
+}
+
+.home-card-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.home-card-icon.tone-blue {
+  background: rgba(38, 64, 93, 0.10);
+  color: #26405d;
+}
+
+.home-card-icon.tone-terracotta {
+  background: rgba(195, 94, 30, 0.12);
+  color: #c35e1e;
+}
+
+.home-card-icon.tone-teal {
+  background: rgba(0, 164, 154, 0.12);
+  color: #00a49a;
+}
+
+.home-card-icon.tone-slate {
+  background: rgba(27, 39, 53, 0.10);
+  color: #1b2735;
+}
+
+.home-card h2 {
+  margin: 0 0 6px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.home-card p {
+  margin: 0 0 18px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: rgba(38, 64, 93, 0.68);
+}
+
+.home-card-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #c35e1e;
+  transition: gap 150ms ease;
+}
+
+.home-card:hover .home-card-cta {
+  gap: 9px;
+}
+
+/* ---------- card sem acesso (cadeado + esmaecido) ---------- */
+
+.home-card-locked {
+  position: relative;
+  opacity: 0.55;
+  cursor: default;
+}
+
+.home-card-locked:hover {
+  transform: none;
+  box-shadow: 0 8px 24px rgba(38, 64, 93, 0.08);
+}
+
+.home-card-lock {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(38, 64, 93, 0.10);
+  color: #26405d;
+}
+
+.home-card-cta-locked {
+  color: rgba(38, 64, 93, 0.55);
+}
+
+/* ---------- rodapé ---------- */
+
+.home-footer {
+  padding: 18px;
+  text-align: center;
+  color: rgba(38, 64, 93, 0.5);
+  font-size: 12.5px;
+  letter-spacing: 0.04em;
+}
+
+/* ---------- mobile ---------- */
+
+@media (max-width: 640px) {
+  .home-topbar {
+    padding: 16px 18px;
+  }
+
+  .home-logo-brand {
+    width: 160px;
+    height: 23px;
+  }
+
+  .home-user-name {
+    display: none;
+  }
+
+  .home-cards {
+    gap: 14px;
+  }
+
+  .home-card {
+    flex-basis: 100%;
+  }
+}

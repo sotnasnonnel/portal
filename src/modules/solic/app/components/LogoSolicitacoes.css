@@ -1,0 +1,60 @@
+/* Mesmo desenho do LogoReembolso, com o tile terracota (tema compartilhado). */
+.logo-solicitacoes {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.logo-solicitacoes-mark {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: linear-gradient(140deg, var(--terracotta) 0%, var(--terracotta-dark) 100%);
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(195, 94, 30, 0.4);
+  flex-shrink: 0;
+}
+
+.logo-solicitacoes-word {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.02;
+}
+
+.logo-solicitacoes-word strong {
+  font-size: 27px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: var(--logo-ink, var(--ink, #1b2735));
+}
+
+.logo-solicitacoes-word > span {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--logo-accent, var(--terracotta));
+}
+
+/* Variante compacta (sidebar) */
+.logo-solicitacoes--sm {
+  gap: 10px;
+}
+
+.logo-solicitacoes--sm .logo-solicitacoes-mark {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  box-shadow: 0 4px 12px rgba(195, 94, 30, 0.35);
+}
+
+.logo-solicitacoes--sm .logo-solicitacoes-word strong {
+  font-size: 19px;
+}
+
+.logo-solicitacoes--sm .logo-solicitacoes-word > span {
+  font-size: 10px;
+  letter-spacing: 0.13em;
+}

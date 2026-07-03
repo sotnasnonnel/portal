@@ -1,0 +1,762 @@
+/* =====================================================================
+   Módulo Solicitações — estilos portados de globals.css (Next app).
+   TUDO escopado em .solicRoot (div raiz do AppShell do módulo) para:
+   - não vazar resets/elementos (input, table, a...) para o shell e outros módulos;
+   - não brigar com os tokens :root do shell e do módulo reembolso
+     (--bg, --border, --radius-sm etc. têm valores diferentes lá).
+   Os tokens abaixo são herdados por todos os descendentes (CSS custom props),
+   então os *.module.css do módulo continuam funcionando sem alteração.
+===================================================================== */
+
+.solicRoot{
+  /* Paleta — alinhada ao tema compartilhado do portal (src/styles/theme.css).
+     Os NOMES dos tokens são os consumidos pelos *.module.css do módulo;
+     apenas os VALORES foram realinhados ao padrão do Reembolso. */
+  --bg: #f2f2f2;            /* branco gelo (= --bg-soft/--ice do tema) */
+  --surface: #ffffff;       /* cartões (= --bg do tema) */
+  --text: #1b2735;          /* = --ink do tema */
+  --muted: #6b7280;         /* = --muted do tema */
+  --border: #e3e3e3;        /* = --border do tema */
+  --border-strong: #cfcfcf; /* = --border-strong do tema */
+
+  --primary: #c35e1e;       /* terracotta (= --terracotta) */
+  --primary-hover: #9c4a17; /* = --terracotta-dark */
+  --teal: #00a49a;          /* verde/teal (= --green) */
+  --danger: #b85236;        /* terracota avermelhado (= --terracotta-red) */
+
+  /* tints utilitários (alinhados ao tema) */
+  --primary-tint: #fdf3ec;  /* = --terracotta-light (bg de item ativo) */
+  --teal-tint: rgba(0,164,154,0.10);
+  --danger-tint: rgba(184,82,54,0.10);
+  --blue-tint: #f2f2f2;     /* hover neutro (= --bg-soft do tema) */
+
+  /* raios — escala do tema (sm 6 / md 10 / lg 16) */
+  --radius: 16px;          /* = --radius-lg — cards principais / modais */
+  --radius-sm: 10px;       /* = --radius-md — inputs, botões, cards secundários */
+  --radius-pill: 9999px;
+  --radius-xs: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* elevação (= sombras do tema) */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.12);
+
+  /* foco (= --focus-ring do tema) */
+  --ring-teal: 0 0 0 3px rgba(0,164,154,0.30);
+  --ring-primary: 0 0 0 3px rgba(195,94,30,0.35);
+
+  color: var(--text);
+}
+
+.solicRoot *{
+  box-sizing: border-box;
+}
+
+.solicRoot button, .solicRoot input, .solicRoot textarea, .solicRoot select{
+  font: inherit;
+}
+
+.solicRoot a{
+  color: inherit;
+  text-decoration: none;
+}
+
+.solicRoot a:hover{
+  text-decoration: underline;
+}
+
+/* link de texto padrão (terracotta) */
+.solicRoot .link, .solicRoot .textLink{
+  color: var(--primary);
+  font-weight: 800;
+  transition: color 0.15s ease;
+}
+.solicRoot .textLink:hover{ color: var(--primary-hover); }
+
+/* =========================
+   Layout Helpers
+========================= */
+
+.solicRoot .container{
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+/* Form em card estreito e centralizado */
+.solicRoot .formCard{
+  max-width: 560px;
+  margin: 32px auto 0;
+  width: 100%;
+}
+
+/* Linhas/colunas utilitárias */
+.solicRoot .row{
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.solicRoot .col{
+  flex: 1;
+  min-width: 200px;
+}
+
+.solicRoot hr{
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 18px 0;
+}
+
+/* Seletor de abas (segmented control) */
+.solicRoot .segmented{
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--blue-tint);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  width: fit-content;
+}
+
+.solicRoot .segItem{
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 800;
+  font-size: 14px;
+  padding: 8px 20px;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.solicRoot .segItem:hover{ color: var(--text); }
+
+.solicRoot .segActive{
+  background: var(--surface);
+  color: var(--primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* =========================
+   Page header pattern
+========================= */
+
+.solicRoot .pageHeader{
+  margin-bottom: 4px;
+}
+
+.solicRoot .pageTitle{
+  font-size: 23px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin: 0;
+}
+
+.solicRoot .pageSubtitle{
+  margin-top: 6px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* =========================
+   Cards
+========================= */
+
+.solicRoot .card{
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  box-shadow: var(--shadow-md);
+}
+
+.solicRoot .cardTitle{
+  font-weight: 800;
+  font-size: 16.5px;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  color: var(--text);
+}
+
+.solicRoot .cardSubtitle{
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.solicRoot .small{
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.solicRoot .label{
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: rgba(38,64,93,0.72);
+  margin: 0 0 8px;
+}
+
+/* =========================
+   Stat cards (dashboard)
+========================= */
+
+.solicRoot .statGrid{
+  display: grid;
+  /* responsivo como o DP (auto-fit/minmax) em vez de 5 colunas fixas que esticam */
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+.solicRoot .statCard{
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 18px 18px 20px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: box-shadow 0.15s ease, transform 0.12s ease;
+}
+
+.solicRoot .statCard:hover{
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.solicRoot .statCard::before{
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--accent, var(--text));
+  border-radius: 0 4px 4px 0;
+}
+
+.solicRoot .statLabel{
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.solicRoot .statValue{
+  margin-top: 6px;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--accent, var(--text));
+}
+
+@media (max-width: 1100px){
+  .solicRoot .statGrid{ grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 640px){
+  .solicRoot .statGrid{ grid-template-columns: repeat(2, 1fr); }
+}
+
+/* =========================
+   Inputs
+========================= */
+
+.solicRoot input, .solicRoot textarea, .solicRoot select{
+  width: 100%;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+  padding: 0 14px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.solicRoot select{
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2326405d' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 40px;
+}
+
+.solicRoot input::placeholder, .solicRoot textarea::placeholder{
+  color: rgba(38,64,93,0.42);
+}
+
+.solicRoot input:focus, .solicRoot textarea:focus, .solicRoot select:focus{
+  border-color: var(--primary);
+  box-shadow: var(--ring-primary);
+}
+
+/* =========================
+   Buttons
+========================= */
+
+.solicRoot button{
+  border: none;
+  background: transparent;
+}
+
+.solicRoot .primary{
+  height: 44px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 1px 2px rgba(195,94,30,0.20);
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease;
+}
+
+.solicRoot .primary:hover{
+  background: var(--primary-hover);
+  box-shadow: 0 4px 14px rgba(195,94,30,0.28);
+}
+
+.solicRoot .primary:active{
+  background: var(--primary-hover);
+  transform: translateY(1px);
+}
+
+.solicRoot .primary:disabled{
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Botão de ação destrutiva */
+.solicRoot .danger{
+  height: 44px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: var(--danger);
+  color: #fff;
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 1px 2px rgba(184,82,54,0.20);
+  transition: filter 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease;
+}
+
+.solicRoot .danger:hover{
+  filter: brightness(1.05);
+  box-shadow: 0 4px 14px rgba(184,82,54,0.26);
+}
+
+.solicRoot .danger:active{ transform: translateY(1px); }
+
+.solicRoot .danger:disabled{
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Ação secundária / positiva (teal) */
+.solicRoot .secondary{
+  height: 44px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: var(--teal);
+  color: #fff;
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 1px 2px rgba(0,164,154,0.20);
+  transition: filter 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease;
+}
+
+.solicRoot .secondary:hover{
+  filter: brightness(1.05);
+  box-shadow: 0 4px 14px rgba(0,164,154,0.26);
+}
+
+.solicRoot .secondary:active{ transform: translateY(1px); }
+
+.solicRoot .secondary:disabled{
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Botão neutro com contorno */
+.solicRoot .ghost{
+  height: 44px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.solicRoot .ghost:hover{
+  background: var(--blue-tint);
+  border-color: rgba(38,64,93,0.30);
+}
+
+.solicRoot .ghost:disabled{
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* =========================
+   Tables
+========================= */
+
+.solicRoot table{
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.solicRoot th, .solicRoot td{
+  padding: 12px 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.solicRoot th{
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(38,64,93,0.55);
+  font-weight: 800;
+}
+
+.solicRoot td{
+  font-size: 14px;
+  color: var(--text);
+}
+
+.solicRoot tbody tr{
+  transition: background 0.12s ease;
+}
+
+.solicRoot tbody tr:hover{
+  background: var(--blue-tint);
+}
+
+.solicRoot tbody tr:last-child td{
+  border-bottom: none;
+}
+
+/* ===== Tabela estilizada (.table) ===== */
+.solicRoot .table thead th{
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 800;
+  color: rgba(38,64,93,0.55);
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-strong);
+  white-space: nowrap;
+}
+
+.solicRoot .table tbody td{
+  padding: 14px 14px;
+  font-size: 14px;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.solicRoot .table tbody tr{
+  transition: background 0.12s ease;
+}
+
+.solicRoot .table tbody tr:hover{
+  background: var(--blue-tint);
+}
+
+.solicRoot .table tbody tr:last-child td{
+  border-bottom: none;
+}
+
+/* =========================
+   States: loading / empty
+========================= */
+
+.solicRoot .spinner{
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2.5px solid rgba(38,64,93,0.18);
+  border-top-color: var(--primary);
+  animation: phdspin 0.7s linear infinite;
+  display: inline-block;
+}
+
+@keyframes phdspin{ to{ transform: rotate(360deg); } }
+
+.solicRoot .loadingRow{
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.solicRoot .emptyState{
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* =========================
+   Modal
+========================= */
+
+.solicRoot .modalOverlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,0.5);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  z-index: 9999;
+  animation: phdfade 0.15s ease;
+}
+
+@keyframes phdfade{ from{ opacity: 0; } to{ opacity: 1; } }
+
+.solicRoot .modal{
+  width: min(860px, 100%);
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  animation: phdslideup 0.18s ease;
+}
+
+@keyframes phdslideup{
+  from{ opacity: 0; transform: translateY(8px) scale(0.99); }
+  to{ opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.solicRoot .modalHeader{
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.solicRoot .modalBody{
+  padding: 20px;
+}
+
+/* =========================
+   Utility badges (opcional)
+========================= */
+
+.solicRoot .badge{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 800;
+  background: rgba(255,255,255,0.7);
+}
+
+.solicRoot .badgeBlue{ border-color: rgba(38,64,93,0.25); background: rgba(38,64,93,0.10); color: var(--text); }
+.solicRoot .badgeTeal{ border-color: rgba(0,164,154,0.30); background: rgba(0,164,154,0.12); color: var(--teal); }
+.solicRoot .badgeOrange{ border-color: rgba(195,94,30,0.30); background: rgba(195,94,30,0.12); color: var(--primary); }
+.solicRoot .badgeRed{ border-color: rgba(184,82,54,0.35); background: rgba(184,82,54,0.12); color: var(--danger); }
+
+/* =========================
+   Scrollbar (leve)
+========================= */
+
+.solicRoot ::-webkit-scrollbar{
+  width: 10px;
+  height: 10px;
+}
+
+.solicRoot ::-webkit-scrollbar-thumb{
+  background: rgba(38,64,93,0.18);
+  border-radius: 999px;
+}
+
+.solicRoot ::-webkit-scrollbar-track{
+  background: rgba(255,255,255,0.35);
+}
+
+/* Nova Solicitação - Urgente + Botão */
+.solicRoot .urgentRow {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 6px;
+}
+
+.solicRoot .urgentLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.solicRoot .urgentLabel:hover{
+  border-color: rgba(195,94,30,0.35);
+  background: var(--primary-tint);
+}
+
+.solicRoot .urgentCheck {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary); /* laranja principal */
+  cursor: pointer;
+}
+
+.solicRoot .urgentText {
+  font-weight: 800;
+  color: var(--text);
+}
+
+/* Botão laranja padrão do sistema */
+.solicRoot .btnOrange {
+  width: auto;
+  min-width: 180px;
+  max-width: 100%;
+  height: 44px;
+  padding: 0 18px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 14px;
+  color: #fff;
+  background: var(--primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 1px 2px rgba(195,94,30,0.20);
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease;
+}
+
+.solicRoot .btnOrange:hover {
+  background: var(--primary-hover);
+  box-shadow: 0 4px 14px rgba(195,94,30,0.28);
+}
+
+.solicRoot .btnOrange:active {
+  background: var(--primary-hover);
+  transform: translateY(1px);
+}
+
+.solicRoot .btnOrange:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.solicRoot textarea {
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  padding: 12px 14px;
+  outline: none;
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  line-height: 1.5;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.solicRoot textarea:focus {
+  border-color: var(--primary);
+  box-shadow: var(--ring-primary);
+}
+
+/* ===== Shell do módulo (grid sidebar + conteúdo) ===== */
+.solicRoot.solicShell {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  min-height: 100vh;
+  background: var(--bg-soft);
+  transition: grid-template-columns 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.solicRoot.solicShell.isCollapsed {
+  grid-template-columns: 64px 1fr;
+}
+
+.solicRoot .solicMain {
+  padding: 24px 24px 56px;
+  background: var(--bg-soft);
+  min-width: 0;
+  flex: 1;
+}
+
+/* Mobile: a sidebar vira drawer (position fixed) e a barra de topo entra no fluxo —
+   o grid precisa virar coluna única, senão o conteúdo fica espremido na faixa de 240px. */
+@media (max-width: 980px) {
+  .solicRoot.solicShell,
+  .solicRoot.solicShell.isCollapsed {
+    grid-template-columns: 1fr;
+  }
+
+  .solicRoot .solicMain {
+    padding: 14px 14px 40px;
+  }
+}

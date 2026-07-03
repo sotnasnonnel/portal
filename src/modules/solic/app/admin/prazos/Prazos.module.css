@@ -1,0 +1,173 @@
+.wrapper{
+  display: grid;
+  gap: 14px;
+}
+
+.headerCard{
+  background: var(--surface, #fff);
+  border: 1px solid rgba(38,64,93,0.12);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 6px 18px rgba(38,64,93,0.06);
+}
+
+.title{
+  font-weight: 900;
+  font-size: 16px;
+  color: #26405d;
+  margin-bottom: 6px;
+}
+
+.subtitle{
+  font-size: 13px;
+  color: rgba(38,64,93,0.68);
+  line-height: 1.45;
+}
+
+.error{
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 900;
+  color: #b85236;
+}
+
+/* Kanban grid */
+.kanban{
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.col{
+  background: rgba(255,255,255,0.75);
+  border: 1px solid rgba(38,64,93,0.12);
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 520px;
+}
+
+.colHeader{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 12px;
+  border-bottom: 1px solid rgba(38,64,93,0.10);
+  background: rgba(242,242,242,0.65);
+}
+
+.colTitle{
+  font-weight: 900;
+  color: #26405d;
+}
+
+.colCount{
+  min-width: 30px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(38,64,93,0.08);
+  color: rgba(38,64,93,0.85);
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+
+.drop{
+  padding: 10px;
+  display: grid;
+  gap: 10px;
+  flex: 1;
+}
+
+/* Card */
+.cardItem{
+  position: relative;
+  display: grid;
+  grid-template-columns: 6px 1fr;
+  border-radius: 14px;
+  border: 1px solid rgba(38,64,93,0.12);
+  background: #fff;
+  box-shadow: 0 8px 18px rgba(38,64,93,0.06);
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.cardItem:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(38,64,93,0.08);
+}
+
+.dragging{
+  box-shadow: 0 16px 36px rgba(38,64,93,0.18);
+}
+
+.bar{
+  width: 6px;
+  height: 100%;
+}
+
+.cardBody{
+  padding: 10px 10px 11px;
+}
+
+.top{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.code{
+  font-weight: 900;
+  color: #26405d;
+}
+
+.pill{
+  border: 1px solid rgba(38,64,93,0.14);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-weight: 900;
+  font-size: 12px;
+  background: rgba(255,255,255,0.7);
+}
+
+.name{
+  font-weight: 900;
+  color: rgba(38,64,93,0.85);
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.meta{
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  color: rgba(38,64,93,0.72);
+  line-height: 1.35;
+}
+
+.empty{
+  padding: 10px;
+  color: rgba(38,64,93,0.55);
+  font-weight: 800;
+  text-align: center;
+  border: 1px dashed rgba(38,64,93,0.18);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.65);
+}
+
+/* Responsive */
+@media (max-width: 1100px){
+  .kanban{ grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 640px){
+  .kanban{ grid-template-columns: 1fr; }
+}

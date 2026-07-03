@@ -1,0 +1,192 @@
+/* Guia compartilhado. Surfaces em #fff (no .solicRoot --bg é cinza) e cores do
+   tema terracota; espaçamentos em px para não depender de escalas diferentes
+   entre os módulos. */
+.guia-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+  padding: 16px;
+  animation: guiaFadeIn 0.2s ease;
+}
+
+@keyframes guiaFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes guiaScaleIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.guia-modal {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+  overflow: hidden;
+  animation: guiaScaleIn 0.25s ease;
+}
+
+.guia-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.guia-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--terracotta);
+}
+
+.guia-modal .guia-close {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 999px;
+  background: var(--bg-soft);
+  color: var(--muted);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.guia-modal .guia-close:hover {
+  background: var(--status-reprovado-bg);
+  color: var(--status-reprovado-fg);
+}
+
+.guia-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 32px 24px 24px;
+}
+
+.guia-hero-icon {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 999px;
+  background: var(--terracotta-light);
+  color: var(--terracotta);
+  margin-bottom: 18px;
+}
+
+.guia-body h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 8px;
+}
+
+.guia-body p {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.65;
+  max-width: 42ch;
+  margin: 0;
+}
+
+.guia-dots {
+  display: flex;
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.guia-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--border-strong);
+  transition: width 0.2s ease, background-color 0.2s ease;
+}
+
+.guia-dot.active {
+  width: 22px;
+  background: var(--terracotta);
+}
+
+.guia-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px 20px;
+  border-top: 1px solid var(--border);
+}
+
+.guia-skip {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 6px;
+  cursor: pointer;
+}
+
+.guia-skip:hover {
+  color: var(--ink);
+}
+
+.guia-nav {
+  display: flex;
+  gap: 8px;
+}
+
+/* compound com .guia-modal: especificidade (0,2,0) vence os resets de button
+   dos módulos (.reembolso-root button / .solicRoot button = (0,1,1)) que
+   deixavam o botão sem fundo (texto branco invisível até o hover). */
+.guia-modal .guia-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.guia-modal .guia-btn-ghost {
+  background: var(--bg-soft);
+  color: var(--ink);
+}
+
+.guia-modal .guia-btn-ghost:hover {
+  background: var(--border);
+}
+
+.guia-modal .guia-btn-primary {
+  background: var(--terracotta);
+  color: #fff;
+}
+
+.guia-modal .guia-btn-primary:hover {
+  background: var(--terracotta-dark);
+}
+
+@media (max-width: 768px) {
+  .guia-modal {
+    max-width: 100%;
+  }
+  .guia-body {
+    padding: 24px 18px 18px;
+  }
+}

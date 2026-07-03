@@ -1,0 +1,123 @@
+/* Barra superior compartilhada. Usa #fff fixo (no .solicRoot --bg é cinza) e
+   tokens estáveis do tema terracota. */
+.portal-header {
+  height: var(--topbar-h, 64px);
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  flex-shrink: 0;
+}
+
+.portal-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.portal-header-menu {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--ink);
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.portal-header-menu:hover {
+  background: var(--bg-soft);
+}
+
+.portal-header-greeting {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+  min-width: 0;
+}
+
+.portal-header-greeting .hello {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.portal-header-greeting .name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.portal-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.portal-header .portal-header-help {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.portal-header .portal-header-help:hover {
+  background: var(--terracotta-light);
+  color: var(--terracotta);
+}
+
+.portal-header .portal-header-help:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.portal-header-date {
+  font-size: 13px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--bg-soft);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.portal-header-date svg {
+  color: var(--terracotta);
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .portal-header {
+    padding: 0 16px;
+  }
+
+  .portal-header-menu {
+    display: flex;
+  }
+
+  .portal-header-date {
+    display: none;
+  }
+
+  .portal-header-greeting .name {
+    font-size: 15px;
+  }
+}
