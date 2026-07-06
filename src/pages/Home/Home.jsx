@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, Receipt, BarChart3, ShieldCheck, LogOut, ArrowRight, Lock } from 'lucide-react';
+import { Users, Receipt, BarChart3, Clock, ShieldCheck, LogOut, ArrowRight, Lock } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { isSuperAdmin } from '../../config/superAdmin';
 import './Home.css';
@@ -63,6 +63,14 @@ export default function Home() {
       tone: 'teal',
       title: 'Solicitações',
       desc: 'Demandas de BI, contratos e prazos',
+    },
+    {
+      // Módulo aberto a todos: card sempre visível, sem gate de permissão.
+      to: '/horas/apontar',
+      icon: Clock,
+      tone: 'teal',
+      title: 'Controle de Horas',
+      desc: 'Apontamento de horas por projeto e atividade',
     },
     isSuperAdmin(user) && {
       to: '/portal-admin',
