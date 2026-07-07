@@ -78,11 +78,12 @@ do Coordenador.
 - `perfilLabel.coordenador = 'Coordenador'`.
 - Badges do `Layout.jsx` valem para coordenador como valem para gestor.
 
-### Hook compartilhado `useEquipeIds()` (`src/hooks/useEquipeIds.js`)
+### Service compartilhado `getEquipeIds()` (`src/services/equipe.js`)
 
-- Chama a RPC `get_minha_equipe()` uma vez e devolve
-  `{ ids, loading, error }`. Para coordenador retorna a equipe direta; para
-  gestor inclui as equipes dos coordenadores abaixo.
+- Função async que chama a RPC `get_minha_equipe()` e devolve os ids. Para
+  coordenador retorna a equipe direta; para gestor inclui as equipes dos
+  coordenadores abaixo. (Service simples em vez de hook: as telas já têm seus
+  próprios efeitos de carga; só trocam a origem da lista.)
 - As 6 consultas por `superior_id` passam a buscar colaboradores com
   `.in('id', ids)` (ou `.in('colaborador_id', ids)` nas tabelas de ausência).
 - Fallback: se a RPC falhar, comportamento atual (`.eq('superior_id', user.id)`)
