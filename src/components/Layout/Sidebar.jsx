@@ -10,6 +10,7 @@ import {
   List,
   CalendarDays,
   FileText,
+  Network,
   PlusCircle,
   Workflow,
   ChevronDown,
@@ -28,6 +29,7 @@ const menuConfig = {
     { label: 'Listagem', icon: List, path: '/admin/listagem' },
     { label: 'Requisições DP', icon: FileText, path: '/admin/solicitacoes', solicitacaoBadge: true },
     { label: 'Fluxos de Aprovação', icon: Workflow, path: '/admin/fluxos' },
+    { label: 'Organograma', icon: Network, path: '/organograma' },
   ],
   gestor: [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/gestor' },
@@ -54,10 +56,12 @@ const menuConfig = {
         { label: 'Acompanhar', icon: ClipboardCheck, path: '/gestor/solicitacoes/acompanhar', solicitacaoBadge: true },
       ],
     },
+    { label: 'Organograma', icon: Network, path: '/organograma' },
   ],
   rh: [
     { label: 'Nova Requisição', icon: PlusCircle, path: '/gestor/solicitacoes/nova' },
     { label: 'Requisições', icon: ClipboardCheck, path: '/gestor/solicitacoes/acompanhar', solicitacaoBadge: true },
+    { label: 'Organograma', icon: Network, path: '/organograma' },
   ],
   usuario: [
     { label: 'Minha Ausência', icon: CalendarDays, path: '/usuario', locked: true },
