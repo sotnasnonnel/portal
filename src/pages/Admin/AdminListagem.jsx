@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../services/supabase';
 import { PERFIL_OPCOES, PERFIL_LABEL, precisaSuperior, candidatosASuperior } from '../../config/perfis';
 import { formatarData, formatarMoeda } from '../../utils/formatters';
@@ -39,6 +39,33 @@ export default function AdminListagem() {
   const [editForm, setEditForm] = useState(initialEditForm);
   const [confirmandoDesativacao, setConfirmandoDesativacao] = useState(initialConfirmacao);
   const [ausenciasColab, setAusenciasColab] = useState(null);
+
+  // Barra de rolagem horizontal espelhada acima da tabela (sincroniza com a de baixo).
+  const topScrollRef = useRef(null);
+  const tableScrollRef = useRef(null);
+  const [scrollWidth, setScrollWidth] = useState(0); // 0 = sem overflow, barra oculta
+
+  useEffect(() => {
+    const el = tableScrollRef.current;
+    if (loading || !el) return undefined;
+    const medir = () => setScrollWidth(el.scrollWidth > el.clientWidth ? el.scrollWidth : 0);
+    medir();
+    const ro = new ResizeObserver(medir);
+    ro.observe(el);
+    if (el.firstElementChild) ro.observe(el.firstElementChild);
+    return () => ro.disconnect();
+  }, [loading]);
+
+  const syncFromTop = () => {
+    if (tableScrollRef.current && topScrollRef.current) {
+      tableScrollRef.current.scrollLeft = topScrollRef.current.scrollLeft;
+    }
+  };
+  const syncFromTable = () => {
+    if (tableScrollRef.current && topScrollRef.current) {
+      topScrollRef.current.scrollLeft = tableScrollRef.current.scrollLeft;
+    }
+  };
 
   useEffect(() => {
     const carregarColaboradores = async () => {
@@ -330,7 +357,12 @@ export default function AdminListagem() {
             </button>
           </div>
         </div>
-        <div className="table-scroll">
+        {scrollWidth > 0 && (
+          <div className="table-scroll-top" ref={topScrollRef} onScroll={syncFromTop} aria-hidden="true">
+            <div style={{ width: scrollWidth }} />
+          </div>
+        )}
+        <div className="table-scroll" ref={tableScrollRef} onScroll={syncFromTable}>
           <table className="data-table">
             <thead>
               <tr>
@@ -348,7 +380,13 @@ export default function AdminListagem() {
             </thead>
             <tbody>
               {filtrados.map((u) => (
-                <tr key={u.id}>
+                <tr
+                  key={u.id}
+                  onDoubleClick={(e) => {
+                    // Duplo clique nos botões de ação não deve abrir o modal por cima.
+                    if (!e.target.closest('button')) abrirModalEdicao(u);
+                  }}
+                >
                   <td className="admin-colaborador-nome" title={u.nome}>{u.nome}</td>
                   <td className="admin-colaborador-email" title={u.email}>{u.email}</td>
                   <td>

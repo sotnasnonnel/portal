@@ -8,6 +8,17 @@
   box-shadow: var(--shadow-card-hover);
 }
 
+/* Barra de rolagem horizontal espelhada acima da tabela de colaboradores
+   (sincronizada via JS com a .table-scroll de baixo). */
+.table-scroll-top {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.table-scroll-top > div {
+  height: 1px;
+}
+
 .admin-colaborador-nome {
   font-weight: 600;
   max-width: 240px;
@@ -146,7 +157,8 @@
     margin-top: var(--space-md);
   }
 
-  .admin-page .table-scroll {
+  .admin-page .table-scroll,
+  .admin-page .table-scroll-top {
     display: none;
   }
 
