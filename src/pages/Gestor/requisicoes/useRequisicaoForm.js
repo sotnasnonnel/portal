@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { supabase } from '../../../services/supabase';
+import { getEquipeIds } from '../../../services/equipe';
 import { buscarFluxoGeral, buscarFluxoPorTipo, montarEtapasDeConfig } from '../../../config/aprovacao';
 
 /**
@@ -21,12 +22,15 @@ export function useRequisicaoForm() {
     let vivo = true;
     (async () => {
       setLoadingEquipe(true);
-      const { data } = await supabase
-        .from('colaboradores')
-        .select('id, nome, funcao, salario')
-        .eq('superior_id', user.id)
-        .eq('ativo', true)
-        .order('nome');
+      const ids = await getEquipeIds().catch(() => []);
+      const { data } = ids.length
+        ? await supabase
+            .from('colaboradores')
+            .select('id, nome, funcao, salario')
+            .in('id', ids)
+            .eq('ativo', true)
+            .order('nome')
+        : { data: [] };
       if (vivo) { setEquipe(data || []); setLoadingEquipe(false); }
     })();
     return () => { vivo = false; };

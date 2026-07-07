@@ -118,7 +118,7 @@ export function AuthProvider({ children }) {
       setBlocked(null);
       const rhDp = colab.rh_dp === true;
       // Perfil efetivo no DP: RH que não é gestor/admin navega como 'rh' (perfil real fica no banco).
-      const perfilEfetivo = (rhDp && colab.perfil !== 'gestor' && colab.perfil !== 'admin') ? 'rh' : colab.perfil;
+      const perfilEfetivo = (rhDp && !['gestor', 'admin', 'coordenador'].includes(colab.perfil)) ? 'rh' : colab.perfil;
       setUser({
         id: colab.id,
         nome: colab.nome,
@@ -177,8 +177,8 @@ export function AuthProvider({ children }) {
   }, []);
 
   const modules = useMemo(() => ({
-    // DP liberado só para gestor e admin (RH) por enquanto; usuário comum fica bloqueado.
-    dp: (user?.perfil === 'gestor' || user?.perfil === 'admin' || user?.perfil === 'rh') ? user.perfil : null,
+    // DP liberado para gestor, coordenador e admin (RH); usuário comum fica bloqueado.
+    dp: ['gestor', 'coordenador', 'admin', 'rh'].includes(user?.perfil) ? user.perfil : null,
     // Reembolso temporariamente bloqueado para todos os usuários.
     reembolso: null,                           // (reembolsoProfile?.role) — desativado por enquanto
     solic: solicProfile?.role ?? null,         // user | admin

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../services/supabase';
+import { getEquipeIds } from '../../services/equipe';
 import { formatarData, getStatusCalculado } from '../../utils/formatters';
 import { CalendarClock, UserCheck, AlertTriangle, Clock, Timer, FileSpreadsheet, Users } from 'lucide-react';
 import '../../components/UI/Components.css';
@@ -58,11 +59,10 @@ export default function GestorAusencia() {
     const fetchDados = async () => {
       setLoading(true);
       try {
-        const { data: cols, error: colsError } = await supabase
-          .from('colaboradores')
-          .select('*')
-          .eq('superior_id', user.id)
-          .order('nome');
+        const idsEquipe = await getEquipeIds();
+        const { data: cols, error: colsError } = idsEquipe.length
+          ? await supabase.from('colaboradores').select('*').in('id', idsEquipe).order('nome')
+          : { data: [], error: null };
 
         if (colsError) throw colsError;
 

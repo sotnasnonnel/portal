@@ -175,7 +175,7 @@ export default function AppRoutes() {
             path="/gestor"
             element={
               <ModuleRoute module="dp">
-                <ProtectedRoute allowedRoles={['gestor']}>
+                <ProtectedRoute allowedRoles={['gestor', 'coordenador']}>
                   <LazyPage>
                     <GestorDashboard />
                   </LazyPage>
@@ -187,7 +187,7 @@ export default function AppRoutes() {
             path="/gestor/aprovacoes"
             element={
               <ModuleRoute module="dp">
-                <ProtectedRoute allowedRoles={['gestor']}>
+                <ProtectedRoute allowedRoles={['gestor', 'coordenador']}>
                   <LazyPage>
                     <GestorAprovacoes />
                   </LazyPage>
@@ -199,7 +199,7 @@ export default function AppRoutes() {
             path="/gestor/aprovacoes/:id"
             element={
               <ModuleRoute module="dp">
-                <ProtectedRoute allowedRoles={['gestor']}>
+                <ProtectedRoute allowedRoles={['gestor', 'coordenador']}>
                   <LazyPage>
                     <GestorDetalhes />
                   </LazyPage>
@@ -211,7 +211,7 @@ export default function AppRoutes() {
             path="/gestor/equipe"
             element={
               <ModuleRoute module="dp">
-                <ProtectedRoute allowedRoles={['gestor']}>
+                <ProtectedRoute allowedRoles={['gestor', 'coordenador']}>
                   <LazyPage>
                     <GestorEquipe />
                   </LazyPage>
@@ -223,7 +223,7 @@ export default function AppRoutes() {
             path="/gestor/ausencia"
             element={
               <ModuleRoute module="dp">
-                <ProtectedRoute allowedRoles={['gestor']}>
+                <ProtectedRoute allowedRoles={['gestor', 'coordenador']}>
                   <LazyPage>
                     <GestorAusencia />
                   </LazyPage>
@@ -235,7 +235,7 @@ export default function AppRoutes() {
             path="/gestor/minha-ausencia"
             element={
               <ModuleRoute module="dp">
-                <ProtectedRoute allowedRoles={['gestor']}>
+                <ProtectedRoute allowedRoles={['gestor', 'coordenador']}>
                   <LazyPage>
                     <UsuarioDashboard />
                   </LazyPage>
@@ -255,7 +255,7 @@ export default function AppRoutes() {
             path="/gestor/solicitacoes/nova"
             element={
               <ModuleRoute module="dp">
-                <ProtectedRoute allowedRoles={['gestor', 'rh']}>
+                <ProtectedRoute allowedRoles={['gestor', 'coordenador', 'rh']}>
                   <LazyPage>
                     <RequisicoesHub />
                   </LazyPage>
@@ -267,7 +267,7 @@ export default function AppRoutes() {
             path="/gestor/solicitacoes/nova/:tipo"
             element={
               <ModuleRoute module="dp">
-                <ProtectedRoute allowedRoles={['gestor', 'rh']}>
+                <ProtectedRoute allowedRoles={['gestor', 'coordenador', 'rh']}>
                   <LazyPage>
                     <NovaRequisicao />
                   </LazyPage>
@@ -279,7 +279,7 @@ export default function AppRoutes() {
             path="/gestor/solicitacoes/acompanhar"
             element={
               <ModuleRoute module="dp">
-                <ProtectedRoute allowedRoles={['gestor', 'rh']}>
+                <ProtectedRoute allowedRoles={['gestor', 'coordenador', 'rh']}>
                   <LazyPage>
                     <AcompanharRequisicoes />
                   </LazyPage>
@@ -292,7 +292,7 @@ export default function AppRoutes() {
             path="/organograma"
             element={
               <ModuleRoute module="dp">
-                <ProtectedRoute allowedRoles={['gestor', 'admin', 'rh']}>
+                <ProtectedRoute allowedRoles={['gestor', 'coordenador', 'admin', 'rh']}>
                   <LazyPage>
                     <ConsultaOrganograma />
                   </LazyPage>

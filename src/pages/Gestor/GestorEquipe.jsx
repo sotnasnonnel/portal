@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../services/supabase';
+import { getEquipeIds } from '../../services/equipe';
 import { formatarData, formatarMoeda, calcularSaldoAusencia } from '../../utils/formatters';
 import { Users, Search, FileSpreadsheet } from 'lucide-react';
 import '../../components/UI/Components.css';
@@ -16,38 +17,42 @@ export default function GestorEquipe() {
   useEffect(() => {
     const fetchEquipe = async () => {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('colaboradores')
-        .select('*')
-        .eq('superior_id', user.id)
-        .order('nome');
+      try {
+        const idsEquipe = await getEquipeIds();
+        const { data, error } = idsEquipe.length
+          ? await supabase.from('colaboradores').select('*').in('id', idsEquipe).order('nome')
+          : { data: [], error: null };
 
-      if (!error && data) {
-        setEquipe(data);
+        if (!error && data) {
+          setEquipe(data);
 
-        // Busca os ciclos da equipe e calcula o saldo de dias por colaborador.
-        const ids = data.map((c) => c.id);
-        if (ids.length > 0) {
-          const { data: cics, error: cicsError } = await supabase
-            .from('ciclos_ausencia')
-            .select('*')
-            .in('colaborador_id', ids);
+          // Busca os ciclos da equipe e calcula o saldo de dias por colaborador.
+          const ids = data.map((c) => c.id);
+          if (ids.length > 0) {
+            const { data: cics, error: cicsError } = await supabase
+              .from('ciclos_ausencia')
+              .select('*')
+              .in('colaborador_id', ids);
 
-          if (!cicsError && cics) {
-            const porColaborador = cics.reduce((acc, c) => {
-              (acc[c.colaborador_id] = acc[c.colaborador_id] || []).push(c);
-              return acc;
-            }, {});
+            if (!cicsError && cics) {
+              const porColaborador = cics.reduce((acc, c) => {
+                (acc[c.colaborador_id] = acc[c.colaborador_id] || []).push(c);
+                return acc;
+              }, {});
 
-            const mapaSaldos = {};
-            data.forEach((c) => {
-              mapaSaldos[c.id] = calcularSaldoAusencia(porColaborador[c.id] || []).saldoDisponivel;
-            });
-            setSaldos(mapaSaldos);
+              const mapaSaldos = {};
+              data.forEach((c) => {
+                mapaSaldos[c.id] = calcularSaldoAusencia(porColaborador[c.id] || []).saldoDisponivel;
+              });
+              setSaldos(mapaSaldos);
+            }
           }
         }
+      } catch (err) {
+        console.error('Erro ao carregar equipe:', err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     if (user?.id) fetchEquipe();

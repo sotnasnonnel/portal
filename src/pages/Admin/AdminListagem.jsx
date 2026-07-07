@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../services/supabase';
+import { PERFIL_OPCOES, PERFIL_LABEL, precisaSuperior, candidatosASuperior } from '../../config/perfis';
 import { formatarData, formatarMoeda } from '../../utils/formatters';
 import { Search, Edit3, ToggleLeft, ToggleRight, Users, X, Loader2, FileSpreadsheet, CalendarClock } from 'lucide-react';
 import AdminAusenciasModal from './AdminAusenciasModal';
@@ -61,19 +62,17 @@ export default function AdminListagem() {
     return acc;
   }, {});
 
-  const gestores = colaboradoresData
-    .filter((colaborador) => colaborador.perfil === 'gestor' && colaborador.id !== editForm.id)
-    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  const candidatosSuperior = candidatosASuperior(editForm.perfil, colaboradoresData, editForm.id);
 
-  // Superior é obrigatório para usuários; para gestores é opcional (podem ter um superior acima).
-  const superiorObrigatorio = editForm.perfil !== 'gestor';
+  // Gestor é topo de hierarquia; coordenador e usuário precisam de superior.
+  const superiorObrigatorio = precisaSuperior(editForm.perfil);
 
   const todosColaboradores = colaboradoresData.map((u) => {
     const superior = colaboradoresPorId[u.superior_id];
 
     return {
       ...u,
-      perfilLabel: u.perfil === 'gestor' ? 'Gestor' : (u.perfil === 'admin' ? 'Admin' : 'Usuário'),
+      perfilLabel: PERFIL_LABEL[u.perfil] || 'Usuário',
       dataAdmissaoFormatada: u.data_admissao || u.dataAdmissao,
       dataNascimento: u.data_nascimento || '',
       ultimoAumento: u.ultimo_aumento || '',
@@ -131,6 +130,8 @@ export default function AdminListagem() {
     setEditForm((prev) => ({
       ...prev,
       [name]: value,
+      // Trocar o perfil muda a lista de candidatos a superior — zera a escolha.
+      ...(name === 'perfil' ? { superior: '' } : {}),
     }));
   };
 
@@ -447,8 +448,9 @@ export default function AdminListagem() {
                       onChange={handleEditChange}
                       required
                     >
-                      <option value="usuario">Usuário</option>
-                      <option value="gestor">Gestor</option>
+                      {PERFIL_OPCOES.map((o) => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
                     </select>
                   </div>
 
@@ -492,7 +494,7 @@ export default function AdminListagem() {
                       <option value="">
                         {superiorObrigatorio ? 'Selecione o superior...' : 'Sem superior'}
                       </option>
-                      {gestores.map((g) => (
+                      {candidatosSuperior.map((g) => (
                         <option key={g.id} value={g.id}>{g.nome}</option>
                       ))}
                     </select>

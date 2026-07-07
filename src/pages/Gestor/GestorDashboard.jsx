@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../services/supabase';
+import { getEquipeIds } from '../../services/equipe';
 import { getStatusCalculado, formatarData } from '../../utils/formatters';
 import { Users, ClipboardCheck, CalendarClock, TrendingUp, AlertCircle, ClipboardList, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -29,11 +30,10 @@ export default function GestorDashboard() {
       if (!user?.id) return;
       setLoading(true);
       try {
-        const { data: cols, error: colsError } = await supabase
-          .from('colaboradores')
-          .select('*')
-          .eq('superior_id', user.id)
-          .order('nome');
+        const idsEquipe = await getEquipeIds();
+        const { data: cols, error: colsError } = idsEquipe.length
+          ? await supabase.from('colaboradores').select('*').in('id', idsEquipe).order('nome')
+          : { data: [], error: null };
 
         if (colsError) throw colsError;
         setEquipe(cols || []);

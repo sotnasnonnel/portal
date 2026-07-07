@@ -6,6 +6,7 @@ import PortalHeader from '../PortalHeader/PortalHeader';
 import GuiaModal from '../Guia/GuiaModal';
 import { DP_GUIA } from '../Guia/guides';
 import { supabase } from '../../services/supabase';
+import { getEquipeIds } from '../../services/equipe';
 import { acaoDisponivel, APROVADORES } from '../../config/aprovacao';
 import './Layout.css';
 
@@ -34,28 +35,25 @@ export default function Layout() {
   };
 
   const fetchPendingCount = async () => {
-    if (user?.perfil === 'gestor') {
-      const { data: cols } = await supabase
-        .from('colaboradores')
-        .select('id')
-        .eq('superior_id', user.id);
+    if (user?.perfil !== 'gestor' && user?.perfil !== 'coordenador') return;
+    try {
+      const ids = await getEquipeIds();
+      if (!ids.length) { setPendingCount(0); return; }
+      const { count, error } = await supabase
+        .from('ciclos_ausencia')
+        .select('*', { count: 'exact', head: true })
+        .in('colaborador_id', ids)
+        .eq('status_atual', 'Marcação Pendente')
+        .not('ausencia_agendada_inicio', 'is', null);
 
-      if (cols) {
-        const ids = cols.map((c) => c.id);
-        const { count, error } = await supabase
-          .from('ciclos_ausencia')
-          .select('*', { count: 'exact', head: true })
-          .in('colaborador_id', ids)
-          .eq('status_atual', 'Marcação Pendente')
-          .not('ausencia_agendada_inicio', 'is', null);
-
-        if (!error) setPendingCount(count || 0);
-      }
+      if (!error) setPendingCount(count || 0);
+    } catch (err) {
+      console.error('Erro ao contar pendências:', err);
     }
   };
 
   const fetchSolicitacaoCount = async () => {
-    if (!['admin', 'gestor', 'rh'].includes(user?.perfil)) return;
+    if (!['admin', 'gestor', 'coordenador', 'rh'].includes(user?.perfil)) return;
     const { data, error } = await supabase
       .from('solicitacoes_rh')
       .select('id, gestor_id, status, concluida_em, etapas:solicitacoes_rh_etapas(id, ordem, aprovador_id, tipo_etapa, status)');
@@ -64,7 +62,7 @@ export default function Layout() {
 
     // parcela 1: requisições aguardando a ação do usuário
     let aguardando = 0;
-    if (user.perfil === 'gestor') {
+    if (user.perfil === 'gestor' || user.perfil === 'coordenador') {
       aguardando = lista.filter((s) => acaoDisponivel(user.id, s.etapas) !== null).length;
     } else if (user.perfil === 'admin') {
       // a execução é fixada no admin executor; qualquer admin deve ver o badge de executar
@@ -78,7 +76,7 @@ export default function Layout() {
     const novasConcluidas = lista.filter((s) => {
       if (s.status !== 'concluida' || !s.concluida_em) return false;
       if (new Date(s.concluida_em).getTime() <= visto) return false;
-      return user.perfil === 'gestor' ? s.gestor_id === user.id : true; // admin/rh: todas
+      return ['gestor', 'coordenador'].includes(user.perfil) ? s.gestor_id === user.id : true; // admin/rh: todas
     }).length;
 
     setSolicitacaoCount(aguardando + novasConcluidas);
