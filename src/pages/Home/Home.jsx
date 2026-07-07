@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Users, Receipt, BarChart3, ShieldCheck, LogOut, ArrowRight, Lock } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -15,27 +14,9 @@ function iniciais(nome) {
   return (primeira + ultima).toUpperCase();
 }
 
-const CONFETE_CORES = ['#009c3b', '#ffdf00', '#002776', '#ffffff'];
-
-// Confetes gerados uma vez no load do módulo (fora de render/effect).
-const CONFETES = Array.from({ length: 50 }, (_, i) => ({
-  left: `${Math.random() * 100}%`,
-  background: CONFETE_CORES[i % CONFETE_CORES.length],
-  animationDelay: `${Math.random() * 0.9}s`,
-  animationDuration: `${1.8 + Math.random() * 1.8}s`,
-}));
-
 export default function Home() {
   const { user, modules, logout } = useAuth();
   const primeiroNome = user?.nome?.split(' ')[0];
-  const [copa, setCopa] = useState(false);
-
-  // A festa some sozinha depois de uns segundos (ou clica pra fechar).
-  useEffect(() => {
-    if (!copa) return undefined;
-    const t = setTimeout(() => setCopa(false), 5500);
-    return () => clearTimeout(t);
-  }, [copa]);
 
   const cards = [
     {
@@ -78,16 +59,6 @@ export default function Home() {
       <header className="home-topbar">
         <div className="home-brand">
           <span className="home-logo-brand" role="img" aria-label="PHD Engenharia" />
-          <button
-            type="button"
-            className="home-flag"
-            onClick={() => setCopa(true)}
-            title="Vai, Brasil! 🇧🇷"
-            aria-label="Comemorar a Copa do Mundo"
-          >
-            <span className="home-flag-diamond" />
-            <span className="home-flag-circle" />
-          </button>
         </div>
         <div className="home-user">
           <span className="home-avatar">{iniciais(user?.nome)}</span>
@@ -140,20 +111,6 @@ export default function Home() {
       </main>
 
       <footer className="home-footer">PHD Engenharia</footer>
-
-      {copa && (
-        <div className="copa-overlay" onClick={() => setCopa(false)}>
-          {CONFETES.map((c, i) => (
-            <span key={i} className="copa-confete" style={c} />
-          ))}
-          <div className="copa-center">
-            <div className="copa-ball">⚽</div>
-            <div className="copa-title">BRASIL! 🇧🇷</div>
-            <div className="copa-sub">Rumo ao Hexa! 🏆</div>
-            <div className="copa-hint">(clique para fechar)</div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
