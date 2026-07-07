@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabaseBackoffice } from '../../../../services/supabaseBackoffice';
+import { supabaseBackoffice } from '../../../services/supabaseBackoffice';
 import { mapAlocacoes, distinctMonths } from './organogramaData';
 
 /**

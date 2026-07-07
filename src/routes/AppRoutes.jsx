@@ -19,6 +19,7 @@ const GestorAusencia = lazy(() => import('../pages/Gestor/GestorAusencia'));
 const RequisicoesHub = lazy(() => import('../pages/Gestor/requisicoes/RequisicoesHub'));
 const NovaRequisicao = lazy(() => import('../pages/Gestor/requisicoes/NovaRequisicao'));
 const AcompanharRequisicoes = lazy(() => import('../pages/Gestor/requisicoes/AcompanharRequisicoes'));
+const ConsultaOrganograma = lazy(() => import('../pages/Gestor/organograma/ConsultaOrganograma'));
 const UsuarioDashboard = lazy(() => import('../pages/Usuario/UsuarioDashboard'));
 const AdminSolicitacoes = lazy(() => import('../pages/Admin/AdminSolicitacoes'));
 const AdminFluxos = lazy(() => import('../pages/Admin/AdminFluxos'));
@@ -281,6 +282,19 @@ export default function AppRoutes() {
                 <ProtectedRoute allowedRoles={['gestor', 'rh']}>
                   <LazyPage>
                     <AcompanharRequisicoes />
+                  </LazyPage>
+                </ProtectedRoute>
+              </ModuleRoute>
+            }
+          />
+
+          <Route
+            path="/organograma"
+            element={
+              <ModuleRoute module="dp">
+                <ProtectedRoute allowedRoles={['gestor', 'admin', 'rh']}>
+                  <LazyPage>
+                    <ConsultaOrganograma />
                   </LazyPage>
                 </ProtectedRoute>
               </ModuleRoute>

@@ -8,7 +8,6 @@ import FormContratacao from './FormContratacao';
 import FormMapeamento from './FormMapeamento';
 import FormAjudaCusto from './FormAjudaCusto';
 import FormNovaVaga from './FormNovaVaga';
-import ConsultaOrganograma from './ConsultaOrganograma';
 import HistoricoRequisicoes from './HistoricoRequisicoes';
 import EmConstrucao from './EmConstrucao';
 import '../Gestor.css';
@@ -42,21 +41,6 @@ export default function NovaRequisicao() {
   if (!req) return <Navigate to="/gestor/solicitacoes/nova" replace />;
 
   const Icon = req.icon;
-
-  // Consulta Organograma é uma visualização read-only, não um formulário:
-  // renderiza direto, sem as abas Nova requisição / Histórico.
-  if (req.slug === 'consulta-organograma') {
-    return (
-      <div className="gestor-page animate-fade-in-up">
-        <button type="button" className="btn btn-ghost btn-sm" style={{ marginBottom: 'var(--space-md)' }}
-          onClick={() => navigate('/gestor/solicitacoes/nova')}>
-          <ArrowLeft size={16} /> Voltar para requisições
-        </button>
-        <h1 className="page-title"><Icon size={28} /> {req.label}</h1>
-        <ConsultaOrganograma />
-      </div>
-    );
-  }
 
   const Form = req.status === 'pronto' ? FORMS[req.slug] : null;
 
