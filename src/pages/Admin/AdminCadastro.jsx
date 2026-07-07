@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../services/supabase';
+import { PERFIL_OPCOES, precisaSuperior, candidatosASuperior } from '../../config/perfis';
 import { UserPlus, CheckCircle, Loader2, UserCog } from 'lucide-react';
 import '../../components/UI/Components.css';
 import './Admin.css';
@@ -14,13 +15,15 @@ const FORM_INICIAL = {
 export default function AdminCadastro() {
   const [aba, setAba] = useState('novo'); // 'novo' (pré-cadastro) | 'editar' (existente)
   const [colaboradores, setColaboradores] = useState([]);
-  const [gestores, setGestores] = useState([]);
   const [selecionadoId, setSelecionadoId] = useState('');
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState(FORM_INICIAL);
   const [sucesso, setSucesso] = useState('');
 
-  const superiorObrigatorio = formData.perfil !== 'gestor';
+  const superiorObrigatorio = precisaSuperior(formData.perfil);
+  const candidatosSuperior = candidatosASuperior(
+    formData.perfil, colaboradores, aba === 'editar' ? selecionadoId : null,
+  );
   const selecionado = colaboradores.find((c) => c.id === selecionadoId) || null;
 
   useEffect(() => {
@@ -29,7 +32,6 @@ export default function AdminCadastro() {
         .from('colaboradores').select('*').eq('ativo', true).order('nome');
       const lista = (data || []).filter((c) => c.perfil !== 'admin');
       setColaboradores(lista);
-      setGestores(lista.filter((c) => c.perfil === 'gestor'));
     };
     carregar();
   }, []);
@@ -69,7 +71,8 @@ export default function AdminCadastro() {
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-      ...(name === 'perfil' && value === 'gestor' ? { superior: '' } : {}),
+      // Trocar o perfil muda a lista de candidatos a superior — zera a escolha.
+      ...(name === 'perfil' ? { superior: '' } : {}),
     }));
     setSucesso('');
   };
@@ -102,9 +105,6 @@ export default function AdminCadastro() {
     if (error) throw error;
     if (created && created.perfil !== 'admin') {
       setColaboradores((prev) => [...prev, created].sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR')));
-      if (created.perfil === 'gestor') {
-        setGestores((prev) => [...prev, created].sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR')));
-      }
     }
     setFormData(FORM_INICIAL);
     setSucesso('Colaborador cadastrado! Ao logar com a conta Microsoft deste e-mail, o acesso será vinculado.');
@@ -205,8 +205,9 @@ export default function AdminCadastro() {
                 <div className="form-group">
                   <label className="form-label">Perfil <span className="required">*</span></label>
                   <select className="form-select" name="perfil" value={formData.perfil} onChange={handleChange} required>
-                    <option value="usuario">Usuário</option>
-                    <option value="gestor">Gestor</option>
+                    {PERFIL_OPCOES.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
                   </select>
                 </div>
 
@@ -233,7 +234,7 @@ export default function AdminCadastro() {
                     <label className="form-label">Superior <span className="required">*</span></label>
                     <select className="form-select" name="superior" value={formData.superior} onChange={handleChange} required={superiorObrigatorio}>
                       <option value="">Selecione o superior...</option>
-                      {gestores.filter((g) => g.id !== selecionadoId).map((g) => (
+                      {candidatosSuperior.map((g) => (
                         <option key={g.id} value={g.id}>{g.nome}</option>
                       ))}
                     </select>
