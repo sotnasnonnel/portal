@@ -58,6 +58,33 @@ const menuConfig = {
     },
     { label: 'Organograma', icon: Network, path: '/organograma' },
   ],
+  coordenador: [
+    { label: 'Dashboard', icon: LayoutDashboard, path: '/gestor' },
+    { label: 'Minha Equipe', icon: Users, path: '/gestor/equipe' },
+    {
+      group: true,
+      key: 'ausencias',
+      label: 'Ausências',
+      icon: CalendarClock,
+      locked: true,
+      children: [
+        { label: 'Aprovações', icon: ClipboardCheck, path: '/gestor/aprovacoes', badge: true },
+        { label: 'Gestão de Ausência', icon: CalendarClock, path: '/gestor/ausencia' },
+        { label: 'Minha Ausência', icon: CalendarDays, path: '/gestor/minha-ausencia' },
+      ],
+    },
+    {
+      group: true,
+      key: 'solicitacoes',
+      label: 'Requisições DP',
+      icon: FileText,
+      children: [
+        { label: 'Requisição', icon: PlusCircle, path: '/gestor/solicitacoes/nova' },
+        { label: 'Acompanhar', icon: ClipboardCheck, path: '/gestor/solicitacoes/acompanhar', solicitacaoBadge: true },
+      ],
+    },
+    { label: 'Organograma', icon: Network, path: '/organograma' },
+  ],
   rh: [
     { label: 'Nova Requisição', icon: PlusCircle, path: '/gestor/solicitacoes/nova' },
     { label: 'Requisições', icon: ClipboardCheck, path: '/gestor/solicitacoes/acompanhar', solicitacaoBadge: true },
@@ -112,6 +139,7 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
   const perfilLabel = {
     admin: 'Administrador',
     gestor: 'Gestor',
+    coordenador: 'Coordenador',
     usuario: 'Colaborador',
     rh: 'RH / DP',
   };
