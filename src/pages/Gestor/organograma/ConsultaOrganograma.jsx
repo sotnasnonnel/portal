@@ -1,11 +1,12 @@
 import { useMemo, useState, useEffect } from 'react';
-import { Search, RefreshCw } from 'lucide-react';
-import { useOrganograma } from './organograma/useOrganograma';
+import { Search, RefreshCw, Network } from 'lucide-react';
+import { useOrganograma } from './useOrganograma';
 import {
   resolveDefaultMonth, deriveFilterOptions, applyFilters,
   formatPercent, formatMonthLabel, countColaboradores,
-} from './organograma/organogramaData';
-import './organograma/ConsultaOrganograma.css';
+} from './organogramaData';
+import '../Gestor.css';
+import './ConsultaOrganograma.css';
 
 export default function ConsultaOrganograma() {
   const [mes, setMes] = useState('');
@@ -35,7 +36,9 @@ export default function ConsultaOrganograma() {
   );
 
   return (
-    <div className="org-consulta">
+    <div className="gestor-page animate-fade-in-up">
+      <h1 className="page-title"><Network size={28} /> Consulta Organograma</h1>
+      <div className="org-consulta">
       <div className="org-filtros">
         <label className="org-filtro">
           <span>Mês</span>
@@ -110,6 +113,7 @@ export default function ConsultaOrganograma() {
           )}
         </>
       )}
+      </div>
     </div>
   );
 }

@@ -8,7 +8,7 @@ import FormContratacao from './FormContratacao';
 import FormMapeamento from './FormMapeamento';
 import FormAjudaCusto from './FormAjudaCusto';
 import FormNovaVaga from './FormNovaVaga';
-import ConsultaOrganograma from './ConsultaOrganograma';
+import ConsultaOrganograma from '../organograma/ConsultaOrganograma';
 import HistoricoRequisicoes from './HistoricoRequisicoes';
 import EmConstrucao from './EmConstrucao';
 import '../Gestor.css';
