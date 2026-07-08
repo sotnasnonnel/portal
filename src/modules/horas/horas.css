@@ -1,0 +1,633 @@
+/* ==========================================================================
+   Controle de Horas — estilos escopados em .horasRoot (portados do protótipo
+   referencia/controle-horas.html). Não vazam para o resto do portal.
+   ========================================================================== */
+.horasRoot {
+  --h-primary: #c44a28;
+  --h-brand-50: #fdf0eb;
+  --h-brand-700: #9a3412;
+  --h-blue: #26405d;
+  --h-green: #00a49a;
+  --h-ink: #0f172a;
+  --h-muted: #64748b;
+  --h-border: #e2e8f0;
+  --h-panel: #fff;
+  --h-bg: #f8fafc;
+  --h-gray-50: #f8fafc;
+  --h-gray-100: #f1f5f9;
+  --h-gray-200: #e2e8f0;
+  --h-gray-300: #cbd5e1;
+  --h-gray-500: #64748b;
+  --h-gray-600: #475569;
+  --h-gray-700: #334155;
+  --h-red: #ef4444;
+  --h-radius-md: 8px;
+  --h-radius-lg: 12px;
+  --h-radius-xl: 16px;
+  --h-radius-full: 9999px;
+  --h-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --h-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --h-shadow-lg: 0 10px 24px -3px rgba(0, 0, 0, 0.12), 0 4px 8px -2px rgba(0, 0, 0, 0.06);
+
+  display: flex;
+  min-height: 100vh;
+  background: var(--h-bg);
+  color: var(--h-ink);
+  font-size: 14px;
+}
+.horasRoot * {
+  box-sizing: border-box;
+}
+
+/* ---- área principal ---- */
+.horasMain {
+  flex: 1;
+  min-width: 0;
+  padding: 26px 32px 60px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+.horasCol {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+/* ---- tipografia ---- */
+.horasRoot h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 4px;
+}
+.horas-sub {
+  font-size: 0.875rem;
+  color: var(--h-muted);
+  line-height: 1.5;
+  margin-bottom: 22px;
+}
+.horas-sec {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--h-blue);
+  margin-bottom: 12px;
+}
+
+/* ---- sidebar ---- */
+.horasSb {
+  width: 256px;
+  flex-shrink: 0;
+  background: #fff;
+  border-right: 1px solid var(--h-border);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+.horasSb-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 64px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--h-gray-100);
+}
+.horasSb-logo {
+  width: 34px;
+  height: 34px;
+  background: var(--h-primary);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  flex-shrink: 0;
+}
+.horasSb-brandtext strong {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.horasSb-brandtext span {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--h-muted);
+}
+.horasSb-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 8px;
+  flex: 1;
+  overflow-y: auto;
+}
+.horasSb-seclabel {
+  color: #94a3b8;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 12px 12px 4px;
+  text-transform: uppercase;
+}
+.horasSb-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 8px;
+  color: var(--h-gray-600);
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 9px 12px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+.horasSb-link:hover {
+  background: var(--h-gray-50);
+  color: var(--h-ink);
+}
+.horasSb-link.is-active {
+  background: var(--h-brand-50);
+  color: var(--h-brand-700);
+  font-weight: 600;
+}
+.horasSb-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid var(--h-gray-100);
+  padding: 12px;
+}
+.horasSb-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--h-primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.horasSb-userinfo {
+  flex: 1;
+  min-width: 0;
+}
+.horasSb-userinfo strong {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.horasSb-userinfo span {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--h-muted);
+}
+.horasSb-logout {
+  background: none;
+  border: none;
+  color: var(--h-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  display: flex;
+}
+.horasSb-logout:hover {
+  background: var(--h-gray-100);
+  color: var(--h-red);
+}
+
+/* ---- grid 2 colunas ---- */
+.horas-g2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 760px) {
+  .horas-g2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---- stat cards ---- */
+.horas-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.horas-stat {
+  background: #fff;
+  border: 1px solid var(--h-border);
+  border-radius: var(--h-radius-lg);
+  box-shadow: var(--h-shadow-sm);
+  padding: 16px 18px;
+  position: relative;
+  overflow: hidden;
+}
+.horas-stat::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  background: var(--h-primary);
+}
+.horas-stat .k {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--h-muted);
+  font-weight: 600;
+}
+.horas-stat .v {
+  font-size: 1.7rem;
+  font-weight: 700;
+  margin-top: 6px;
+  letter-spacing: -0.02em;
+  color: var(--h-ink);
+}
+
+/* ---- chart ---- */
+.horas-chart-wrap {
+  position: relative;
+  height: 240px;
+  width: 100%;
+}
+
+/* ---- cards ---- */
+.horas-card {
+  background: var(--h-panel);
+  border: 1px solid var(--h-border);
+  border-radius: var(--h-radius-lg);
+  box-shadow: var(--h-shadow-sm);
+  padding: 18px 20px;
+  margin-bottom: 16px;
+}
+
+/* ---- inputs ---- */
+.horas-fld {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.horas-fld label {
+  font-size: 0.8rem;
+  color: var(--h-gray-700);
+  font-weight: 600;
+}
+.horasRoot input[type='text'],
+.horasRoot input[type='date'],
+.horasRoot input[type='datetime-local'],
+.horasRoot select,
+.horasRoot textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.5px solid var(--h-border);
+  border-radius: var(--h-radius-md);
+  background: #fff;
+  color: var(--h-ink);
+  font-size: 0.875rem;
+  min-height: 40px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.horasRoot input:focus,
+.horasRoot select:focus,
+.horasRoot textarea:focus {
+  border-color: var(--h-primary);
+  box-shadow: 0 0 0 3px rgba(196, 74, 40, 0.08);
+}
+
+/* ---- botões ---- */
+.horas-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid transparent;
+  border-radius: var(--h-radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  min-height: 38px;
+  padding: 0 16px;
+  cursor: pointer;
+  background: var(--h-primary);
+  color: #fff;
+  white-space: nowrap;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.horas-btn:hover {
+  background: var(--h-brand-700);
+}
+.horas-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.horas-btn.grn {
+  background: var(--h-green);
+}
+.horas-btn.grn:hover {
+  background: #00857d;
+}
+.horas-btn.red {
+  background: var(--h-red);
+}
+.horas-btn.red:hover {
+  background: #dc2626;
+}
+.horas-btn2 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  background: #fff;
+  border: 1px solid var(--h-border);
+  border-radius: var(--h-radius-md);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--h-blue);
+  min-height: 38px;
+  padding: 0 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.horas-btn2:hover {
+  background: var(--h-gray-50);
+  border-color: var(--h-gray-300);
+}
+.horas-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: var(--h-radius-md);
+  color: var(--h-muted);
+  cursor: pointer;
+}
+.horas-btn-icon:hover {
+  background: var(--h-gray-100);
+  color: var(--h-red);
+}
+
+/* ---- timer ---- */
+.horas-timer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.horas-timer-display {
+  font-size: 46px;
+  font-weight: 300;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 2px;
+  text-align: center;
+  padding: 8px;
+}
+.horas-timer-display.running {
+  color: var(--h-green);
+}
+.horas-timer-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.horas-live {
+  font-size: 0.78rem;
+  color: var(--h-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-weight: 500;
+  margin-top: 14px;
+}
+.horas-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--h-green);
+  display: inline-block;
+  animation: horasPulse 1.4s infinite;
+}
+@keyframes horasPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* ---- tabela ---- */
+.horas-table-wrap {
+  padding: 0;
+  overflow-x: auto;
+}
+.horasRoot table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.horasRoot th {
+  background: var(--h-gray-50);
+  text-align: left;
+  padding: 11px 14px;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--h-gray-500);
+  font-weight: 700;
+  border-bottom: 1px solid var(--h-border);
+  white-space: nowrap;
+}
+.horasRoot td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--h-gray-100);
+  vertical-align: middle;
+}
+.horasRoot tbody tr:last-child td {
+  border-bottom: none;
+}
+.horasRoot tbody tr:hover td {
+  background: var(--h-gray-50);
+}
+.horas-right {
+  text-align: right;
+}
+.horas-muted {
+  color: var(--h-muted);
+}
+.horas-tag {
+  display: inline-block;
+  background: var(--h-gray-100);
+  border: 1px solid var(--h-gray-200);
+  padding: 2px 9px;
+  border-radius: var(--h-radius-full);
+  font-size: 0.72rem;
+  color: var(--h-gray-600);
+  margin: 1px 3px 1px 0;
+  font-weight: 500;
+}
+.horas-pill {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--h-primary);
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+/* ---- toolbar / hint / empty ---- */
+.horas-toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+.horas-toolbar .horas-spacer {
+  flex: 1;
+}
+.horas-hint {
+  background: var(--h-gray-50);
+  border-left: 3px solid var(--h-primary);
+  border-radius: 0 var(--h-radius-md) var(--h-radius-md) 0;
+  padding: 12px 15px;
+  font-size: 0.82rem;
+  color: var(--h-gray-600);
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+.horas-empty {
+  color: var(--h-muted);
+  text-align: center;
+  padding: 36px;
+  font-size: 0.875rem;
+}
+
+/* ---- config chips ---- */
+.horas-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0;
+}
+.horas-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid var(--h-border);
+  padding: 6px 12px;
+  border-radius: var(--h-radius-full);
+  font-size: 0.85rem;
+  box-shadow: var(--h-shadow-xs);
+}
+.horas-chip button {
+  background: none;
+  border: none;
+  color: var(--h-red);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+}
+.horas-add-inline {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.horas-add-inline input {
+  flex: 1;
+}
+.horas-cfg-block {
+  border: 1px solid var(--h-border);
+  border-radius: var(--h-radius-lg);
+  padding: 16px;
+  margin-bottom: 14px;
+  background: var(--h-gray-50);
+}
+.horas-cfg-block h4 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+.horas-lbl-edit {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.horas-lbl-edit span {
+  font-size: 0.72rem;
+  color: var(--h-muted);
+  font-weight: 600;
+}
+.horas-lbl-edit input {
+  max-width: 280px;
+}
+
+/* ---- modal ---- */
+.horas-modal-bg {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+}
+.horas-modal {
+  background: var(--h-panel);
+  border: 1px solid var(--h-border);
+  border-radius: var(--h-radius-xl);
+  box-shadow: var(--h-shadow-lg);
+  padding: 26px;
+  width: 460px;
+  max-width: 100%;
+  max-height: 90vh;
+  overflow: auto;
+}
+.horas-modal h3 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin: 0 0 16px;
+}
+.horas-modal .horas-fld {
+  margin-bottom: 13px;
+}
+
+@media (max-width: 900px) {
+  .horasSb {
+    display: none;
+  }
+  .horasMain {
+    padding: 18px 14px 48px;
+  }
+}

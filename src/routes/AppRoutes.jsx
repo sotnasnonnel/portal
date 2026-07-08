@@ -5,6 +5,7 @@ import Layout from '../components/Layout/Layout';
 import { FeedbackProvider } from '../modules/reembolso/context/FeedbackContext';
 import ReembolsoAppLayout from '../modules/reembolso/components/layout/AppLayout';
 import SolicShell from '../modules/solic/app/components/AppShell';
+import HorasShell from '../modules/horas/app/components/AppShell';
 
 const Login = lazy(() => import('../pages/Login/Login'));
 const Home = lazy(() => import('../pages/Home/Home'));
@@ -36,6 +37,10 @@ const SolicAdminPrazos = lazy(() => import('../modules/solic/app/admin/prazos/pa
 const SolicAdminCadastros = lazy(() => import('../modules/solic/app/admin/cadastros/page'));
 const SolicAdminUsuarios = lazy(() => import('../modules/solic/app/admin/usuarios/page'));
 const SolicAdminContractNew = lazy(() => import('../modules/solic/app/admin/contracts/new/page'));
+const HorasApontar = lazy(() => import('../modules/horas/app/apontar/page'));
+const HorasRegistros = lazy(() => import('../modules/horas/app/registros/page'));
+const HorasDashboard = lazy(() => import('../modules/horas/app/dashboard/page'));
+const HorasProjetos = lazy(() => import('../modules/horas/app/projetos/page'));
 
 function RouteFallback() {
   return <div style={{ padding: 'var(--space-3xl)', textAlign: 'center' }}>Carregando...</div>;
@@ -357,6 +362,22 @@ export default function AppRoutes() {
           <Route path="admin/cadastros" element={<SolicAdminRoute><LazyPage><SolicAdminCadastros /></LazyPage></SolicAdminRoute>} />
           <Route path="admin/usuarios" element={<SolicAdminRoute><LazyPage><SolicAdminUsuarios /></LazyPage></SolicAdminRoute>} />
           <Route path="admin/contracts/new" element={<SolicAdminRoute><LazyPage><SolicAdminContractNew /></LazyPage></SolicAdminRoute>} />
+        </Route>
+
+        <Route
+          path="/horas"
+          element={
+            <ProtectedRoute>
+              {/* Módulo aberto a todos os usuários logados (sem gate de permissão). */}
+              <HorasShell />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="/horas/apontar" replace />} />
+          <Route path="apontar" element={<LazyPage><HorasApontar /></LazyPage>} />
+          <Route path="dashboard" element={<LazyPage><HorasDashboard /></LazyPage>} />
+          <Route path="registros" element={<LazyPage><HorasRegistros /></LazyPage>} />
+          <Route path="projetos" element={<LazyPage><HorasProjetos /></LazyPage>} />
         </Route>
 
         <Route path="*" element={<Navigate to="/home" replace />} />

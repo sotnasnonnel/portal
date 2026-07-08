@@ -4,6 +4,7 @@ import { clearSupabaseCache as clearReembolsoCache } from '../modules/reembolso/
 import { resetPreload } from '../modules/reembolso/services/dataPreload.js';
 import { clearSolicIdentity } from '../modules/solic/lib/identity.ts';
 import { clearSupabaseCache as clearSolicCache } from '../modules/solic/lib/supabaseCache.ts';
+import { isSuperAdmin } from '../config/superAdmin';
 
 const AuthContext = createContext(null);
 
@@ -182,6 +183,9 @@ export function AuthProvider({ children }) {
     // Reembolso temporariamente bloqueado para todos os usuários.
     reembolso: null,                           // (reembolsoProfile?.role) — desativado por enquanto
     solic: solicProfile?.role ?? null,         // user | admin
+    // Controle de Horas (Clockify): aberto a todos os logados. Papel derivado do
+    // portal — admin do portal (ou super-admin) administra; os demais são membros.
+    horas: user ? (user.perfil === 'admin' || isSuperAdmin(user) ? 'admin' : 'membro') : null,
   }), [user, solicProfile]);
 
   const value = useMemo(() => ({
