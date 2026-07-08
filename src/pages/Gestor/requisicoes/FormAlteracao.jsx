@@ -12,7 +12,7 @@ import '../Gestor.css';
 const OUTRO = '__outro__';
 
 const FORM_VAZIO = {
-  colaborador_id: '', salario_proposto: '', funcao_proposta: '', funcao_outro: '', cargo_proposto: '', justificativa: '',
+  colaborador_id: '', salario_proposto: '', funcao_proposta: '', funcao_outro: '', justificativa: '',
 };
 
 export default function FormAlteracao() {
@@ -57,9 +57,8 @@ export default function FormAlteracao() {
     if (!form.colaborador_id || !form.justificativa) return;
     const temValor = form.salario_proposto !== '';
     const temFuncao = form.funcao_proposta === OUTRO ? !!form.funcao_outro.trim() : !!form.funcao_proposta;
-    const temCargo = !!form.cargo_proposto.trim();
-    if (!temValor && !temFuncao && !temCargo) {
-      setErro('Preencha pelo menos uma alteração: novo valor, nova função ou novo cargo.');
+    if (!temValor && !temFuncao) {
+      setErro('Preencha pelo menos uma alteração: novo valor ou nova função.');
       return;
     }
     setSubmitting(true);
@@ -71,7 +70,6 @@ export default function FormAlteracao() {
         colaborador_id: form.colaborador_id,
         salario_proposto: temValor ? parseCurrency(form.salario_proposto) : null,
         funcao_proposta: funcaoFinal,
-        cargo_proposto: temCargo ? form.cargo_proposto.trim() : null,
         justificativa: form.justificativa,
         status: 'pendente',
       });
@@ -160,13 +158,6 @@ export default function FormAlteracao() {
               </span>
             </div>
           )}
-
-          <div className="form-group" style={{ marginBottom: 'var(--space-lg)' }}>
-            <label className="form-label">Novo cargo</label>
-            <input className="form-input" type="text" placeholder="Ex: Coordenador"
-              value={form.cargo_proposto}
-              onChange={(e) => setForm((p) => ({ ...p, cargo_proposto: e.target.value }))} />
-          </div>
 
           <div className="form-group" style={{ marginBottom: 'var(--space-lg)' }}>
             <label className="form-label">Justificativa <span className="required">*</span></label>

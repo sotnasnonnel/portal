@@ -26,6 +26,14 @@ export const MODALIDADES_CONTRATACAO = [
 
 export const TIPOS_VAGA = ['Aumento de Quadro', 'Substituição'];
 
+export const EQUIPAMENTOS = [
+  'Notebook Padrão',
+  'Gamer 16RAM + 512SSD',
+  'Gamer 32RAM + 512SSD',
+  'Gamer 32RAM + 1TB',
+  'Gamer 32RAM + 2TBSSD',
+];
+
 export const CAMPOS_NOVA_VAGA = [
   { id: 'previsao', n: 1, secao: 'Dados básicos', label: 'Data de necessidade', tipo: 'date', obrigatorio: true },
 
@@ -34,28 +42,29 @@ export const CAMPOS_NOVA_VAGA = [
 
   { id: 'funcao', n: 4, secao: 'Dados da vaga', label: 'Função', tipo: 'funcao', obrigatorio: true },
   { id: 'tipo_vaga', n: 5, secao: 'Dados da vaga', label: 'Tipo de vaga', tipo: 'select', obrigatorio: true, opcoes: TIPOS_VAGA, placeholder: 'Selecione o tipo de vaga' },
+  { id: 'equipamento', n: 6, secao: 'Dados da vaga', label: 'Equipamento', tipo: 'select', obrigatorio: true, opcoes: EQUIPAMENTOS, placeholder: 'Selecione o equipamento' },
 
-  { id: 'unidade', n: 6, secao: 'Informações adicionais', label: 'Gerência', tipo: 'text', obrigatorio: true },
-  { id: 'nome_cliente', n: 7, secao: 'Informações adicionais', label: 'Nome do Cliente', tipo: 'text', obrigatorio: true },
-  { id: 'codigo_cliente', n: 8, secao: 'Informações adicionais', label: 'Codigo do Cliente', tipo: 'text', obrigatorio: true },
-  { id: 'valor_orcado_contrato', n: 9, secao: 'Informações adicionais', label: 'Valor do profissional orçado no contrato Comercial (R$)', tipo: 'moeda', obrigatorio: true },
-  { id: 'valor_margem_proposta', n: 10, secao: 'Informações adicionais', label: 'Valor/margem salarial para a proposta ao Candidato (R$)', tipo: 'moeda', obrigatorio: true },
-  { id: 'tipo_transporte', n: 11, secao: 'Informações adicionais', label: 'Tipo Transporte', tipo: 'text', obrigatorio: true },
-  { id: 'modalidade_contratacao', n: 12, secao: 'Informações adicionais', label: 'Modalidade de Contratação', tipo: 'select', obrigatorio: true, opcoes: MODALIDADES_CONTRATACAO, placeholder: 'Selecione a modalidade' },
-  { id: 'horario_trabalho', n: 13, secao: 'Informações adicionais', label: 'Horário de Trabalho', tipo: 'text', obrigatorio: true },
-  { id: 'custo_projeto_100', n: 14, secao: 'Informações adicionais', label: 'Se o profissional estará 100% no custo do projeto', tipo: 'bool', obrigatorio: true },
-  { id: 'tipo_moradia', n: 15, secao: 'Informações adicionais', label: 'Tipo de Moradia', tipo: 'text', obrigatorio: true },
-  { id: 'tipo_alimentacao', n: 16, secao: 'Informações adicionais', label: 'Tipo Alimentação', tipo: 'text', obrigatorio: true },
-  { id: 'folga_campo', n: 17, secao: 'Informações adicionais', label: 'Folga de Campo', tipo: 'text', obrigatorio: true },
-  { id: 'formacao', n: 18, secao: 'Informações adicionais', label: 'Formação', tipo: 'text', obrigatorio: true },
-  { id: 'tempo_experiencia', n: 19, secao: 'Informações adicionais', label: 'Tempo de Experiência', tipo: 'text', obrigatorio: true },
-  { id: 'cidade_atuacao', n: 20, secao: 'Informações adicionais', label: 'Cidade de Atuação', tipo: 'text', obrigatorio: true },
-  { id: 'estado_atuacao', n: 21, secao: 'Informações adicionais', label: 'Estado de Atuação', tipo: 'uf', obrigatorio: true },
-  { id: 'requisitos_desejados', n: 22, secao: 'Informações adicionais', label: 'Requisitos Desejados', tipo: 'textarea', obrigatorio: true },
-  { id: 'atividades_cargo', n: 23, secao: 'Informações adicionais', label: 'Atividades do Cargo', tipo: 'textarea', obrigatorio: true },
-  { id: 'requisitos_obrigatorios', n: 24, secao: 'Informações adicionais', label: 'Requisitos Obrigatórios', tipo: 'textarea', obrigatorio: true },
-  { id: 'desconsiderar_perfis', n: 25, secao: 'Informações adicionais', label: 'Desconsiderar Perfis', tipo: 'textarea', obrigatorio: false },
-  { id: 'justificativa', n: 26, secao: 'Informações adicionais', label: 'Justificativa', tipo: 'textarea', obrigatorio: true, placeholder: 'Insira a justificativa da vaga.' },
+  { id: 'unidade', n: 7, secao: 'Informações adicionais', label: 'Gerência', tipo: 'text', obrigatorio: true },
+  { id: 'nome_cliente', n: 8, secao: 'Informações adicionais', label: 'Nome do Cliente', tipo: 'text', obrigatorio: true },
+  { id: 'codigo_cliente', n: 9, secao: 'Informações adicionais', label: 'Codigo do Cliente', tipo: 'text', obrigatorio: true },
+  { id: 'valor_orcado_contrato', n: 10, secao: 'Informações adicionais', label: 'Valor do profissional orçado no contrato Comercial (R$)', tipo: 'moeda', obrigatorio: true },
+  { id: 'valor_margem_proposta', n: 11, secao: 'Informações adicionais', label: 'Valor/margem salarial para a proposta ao Candidato (R$)', tipo: 'moeda', obrigatorio: true },
+  { id: 'tipo_transporte', n: 12, secao: 'Informações adicionais', label: 'Tipo Transporte', tipo: 'text', obrigatorio: true },
+  { id: 'modalidade_contratacao', n: 13, secao: 'Informações adicionais', label: 'Modalidade de Contratação', tipo: 'select', obrigatorio: true, opcoes: MODALIDADES_CONTRATACAO, placeholder: 'Selecione a modalidade' },
+  { id: 'horario_trabalho', n: 14, secao: 'Informações adicionais', label: 'Horário de Trabalho', tipo: 'text', obrigatorio: true },
+  { id: 'custo_projeto_100', n: 15, secao: 'Informações adicionais', label: 'Se o profissional estará 100% no custo do projeto', tipo: 'bool', obrigatorio: true },
+  { id: 'tipo_moradia', n: 16, secao: 'Informações adicionais', label: 'Tipo de Moradia', tipo: 'text', obrigatorio: true },
+  { id: 'tipo_alimentacao', n: 17, secao: 'Informações adicionais', label: 'Tipo Alimentação', tipo: 'text', obrigatorio: true },
+  { id: 'folga_campo', n: 18, secao: 'Informações adicionais', label: 'Folga de Campo', tipo: 'text', obrigatorio: true },
+  { id: 'formacao', n: 19, secao: 'Informações adicionais', label: 'Formação', tipo: 'text', obrigatorio: true },
+  { id: 'tempo_experiencia', n: 20, secao: 'Informações adicionais', label: 'Tempo de Experiência', tipo: 'text', obrigatorio: true },
+  { id: 'cidade_atuacao', n: 21, secao: 'Informações adicionais', label: 'Cidade de Atuação', tipo: 'text', obrigatorio: true },
+  { id: 'estado_atuacao', n: 22, secao: 'Informações adicionais', label: 'Estado de Atuação', tipo: 'uf', obrigatorio: true },
+  { id: 'requisitos_desejados', n: 23, secao: 'Informações adicionais', label: 'Requisitos Desejados', tipo: 'textarea', obrigatorio: true },
+  { id: 'atividades_cargo', n: 24, secao: 'Informações adicionais', label: 'Atividades do Cargo', tipo: 'textarea', obrigatorio: true },
+  { id: 'requisitos_obrigatorios', n: 25, secao: 'Informações adicionais', label: 'Requisitos Obrigatórios', tipo: 'textarea', obrigatorio: true },
+  { id: 'desconsiderar_perfis', n: 26, secao: 'Informações adicionais', label: 'Desconsiderar Perfis', tipo: 'textarea', obrigatorio: false },
+  { id: 'justificativa', n: 27, secao: 'Informações adicionais', label: 'Justificativa', tipo: 'textarea', obrigatorio: true, placeholder: 'Insira a justificativa da vaga.' },
 ];
 
 /** Seções na ordem de exibição; o anexo entra no final do formulário. */
