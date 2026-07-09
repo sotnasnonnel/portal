@@ -4,7 +4,6 @@ import { clearSupabaseCache as clearReembolsoCache } from '../modules/reembolso/
 import { resetPreload } from '../modules/reembolso/services/dataPreload.js';
 import { clearSolicIdentity } from '../modules/solic/lib/identity.ts';
 import { clearSupabaseCache as clearSolicCache } from '../modules/solic/lib/supabaseCache.ts';
-import { isSuperAdmin } from '../config/superAdmin';
 
 const AuthContext = createContext(null);
 
@@ -185,8 +184,10 @@ export function AuthProvider({ children }) {
     reembolso: null,                           // (reembolsoProfile?.role) — desativado por enquanto
     solic: solicProfile?.role ?? null,         // user | admin
     // Controle de Horas: aberto a todos os logados. O papel é próprio do módulo
-    // (colaboradores.horas_role), editável em /portal-admin. Super-admin sempre admin.
-    horas: user ? (user.horasRole === 'admin' || isSuperAdmin(user) ? 'admin' : 'membro') : null,
+    // (colaboradores.horas_role) e é a ÚNICA fonte da verdade na UI — sem override
+    // de super-admin, senão o seletor de /portal-admin não teria efeito visível
+    // para quem o edita. (A RLS ainda dá passe livre ao super-admin no banco.)
+    horas: user?.horasRole === 'admin' ? 'admin' : user ? 'membro' : null,
   }), [user, solicProfile]);
 
   const value = useMemo(() => ({
