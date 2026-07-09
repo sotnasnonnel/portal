@@ -129,6 +129,7 @@ export function AuthProvider({ children }) {
         solicVistoEm: colab.solic_visto_em || null,
         funcao: colab.funcao || null,
         dataAdmissao: colab.data_admissao || null,
+        horasRole: colab.horas_role || 'usuario',   // papel próprio do Controle de Horas
         authId: authUser.id,
       });
       setReembolsoProfile(reemRes.data ?? null);
@@ -183,9 +184,9 @@ export function AuthProvider({ children }) {
     // Reembolso temporariamente bloqueado para todos os usuários.
     reembolso: null,                           // (reembolsoProfile?.role) — desativado por enquanto
     solic: solicProfile?.role ?? null,         // user | admin
-    // Controle de Horas (Clockify): aberto a todos os logados. Papel derivado do
-    // portal — admin do portal (ou super-admin) administra; os demais são membros.
-    horas: user ? (user.perfil === 'admin' || isSuperAdmin(user) ? 'admin' : 'membro') : null,
+    // Controle de Horas: aberto a todos os logados. O papel é próprio do módulo
+    // (colaboradores.horas_role), editável em /portal-admin. Super-admin sempre admin.
+    horas: user ? (user.horasRole === 'admin' || isSuperAdmin(user) ? 'admin' : 'membro') : null,
   }), [user, solicProfile]);
 
   const value = useMemo(() => ({

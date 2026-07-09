@@ -37,13 +37,12 @@ export default function Sidebar() {
 
   return (
     <aside className="horasSb">
-      <div className="horasSb-brand">
-        <span className="horasSb-logo">PHD</span>
-        <div className="horasSb-brandtext">
-          <strong>PHD ERP</strong>
-          <span>Controle de Horas</span>
-        </div>
-      </div>
+      <Link to="/home" className="horasSb-brand" title="Voltar ao início" aria-label="Voltar ao início">
+        <span className="horasSb-logo" aria-hidden="true">
+          <Clock size={20} />
+        </span>
+        <strong className="horasSb-brandtext">Controle de Horas</strong>
+      </Link>
 
       <nav className="horasSb-nav">
         <AppSwitcher currentKey="horas" />

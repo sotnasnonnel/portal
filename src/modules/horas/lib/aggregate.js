@@ -6,8 +6,12 @@ export function somaMs(list) {
   return list.reduce((s, a) => s + (a.duracao || 0), 0);
 }
 
+// Converte ms -> horas SEM perder registros curtos. Arredondar para 2 casas
+// zeraria um apontamento de 10s (0,00277h) e o gráfico não mostraria nada.
+const emHoras = (ms) => Math.round((ms / 3600000) * 1e6) / 1e6;
+
 // Agrupa por chave (função) somando duração; retorna array recharts-friendly,
-// ordenado por horas desc. Ex.: [{ name: 'Projeto X', horas: 3.5, ms }]
+// ordenado por duração desc. `ms` é a fonte de verdade (usada nos tooltips).
 export function agruparHoras(list, keyFn) {
   const m = new Map();
   for (const a of list) {
@@ -15,11 +19,11 @@ export function agruparHoras(list, keyFn) {
     m.set(k, (m.get(k) || 0) + (a.duracao || 0));
   }
   return [...m.entries()]
-    .map(([name, ms]) => ({ name, ms, horas: +(ms / 3600000).toFixed(2) }))
+    .map(([name, ms]) => ({ name, ms, horas: emHoras(ms) }))
     .sort((x, y) => y.ms - x.ms);
 }
 
-// Série diária dos últimos `dias` dias: [{ name: 'dd/mm', horas, dayStart }]
+// Série diária dos últimos `dias` dias: [{ name: 'dd/mm', horas, ms, dayStart }]
 export function serieDiaria(list, dias = 14, agora = Date.now()) {
   const out = [];
   for (let i = dias - 1; i >= 0; i--) {
@@ -31,7 +35,8 @@ export function serieDiaria(list, dias = 14, agora = Date.now()) {
     out.push({
       dayStart,
       name: new Date(dayStart).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-      horas: +(ms / 3600000).toFixed(2),
+      ms,
+      horas: emHoras(ms),
     });
   }
   return out;

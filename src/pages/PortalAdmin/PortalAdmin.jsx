@@ -22,6 +22,11 @@ const SOLIC_ROLES = [
   ["user", "Usuário"],
   ["admin", "Admin"],
 ];
+// Controle de Horas: todos têm acesso; o papel define quem administra o módulo.
+const HORAS_ROLES = [
+  ["usuario", "Usuário"],
+  ["admin", "Admin"],
+];
 
 export default function PortalAdmin() {
   const { user } = useAuth();
@@ -35,7 +40,7 @@ export default function PortalAdmin() {
     setLoading(true);
     setErr("");
     const [colab, reemb, solic] = await Promise.all([
-      supabase.from("colaboradores").select("id, nome, email, perfil, rh_dp, auth_id, ativo").order("nome"),
+      supabase.from("colaboradores").select("id, nome, email, perfil, rh_dp, horas_role, auth_id, ativo").order("nome"),
       supabase.from("reembolso_profiles").select("id, email, role"),
       supabase.from("solic_profiles").select("id, email, role"),
     ]);
@@ -58,6 +63,7 @@ export default function PortalAdmin() {
         jaLogou: !!c.auth_id,
         dpRole: c.perfil,
         dpRh: c.rh_dp === true,
+        horasRole: c.horas_role || "usuario",
         reembId: r?.id ?? null,
         reembRole: r?.role ?? null,
         solicId: s?.id ?? null,
@@ -88,6 +94,10 @@ export default function PortalAdmin() {
         res = await supabase.from("colaboradores").update({ rh_dp: false, perfil: stored }).eq("id", row.colabId);
         patch = { dpRole: stored, dpRh: false };
       }
+    } else if (app === "horas") {
+      // Papel próprio do módulo, guardado em colaboradores.horas_role.
+      res = await supabase.from("colaboradores").update({ horas_role: value }).eq("id", row.colabId);
+      patch = { horasRole: value };
     } else if (app === "reembolso") {
       res = await supabase.from("reembolso_profiles").update({ role: value }).eq("id", row.reembId);
       patch = { reembRole: value };
@@ -196,6 +206,7 @@ export default function PortalAdmin() {
                 <th>Gestão de Pessoas</th>
                 <th>Reembolso</th>
                 <th>Solicitações</th>
+                <th>Controle de Horas</th>
               </tr>
             </thead>
             <tbody>
@@ -239,11 +250,15 @@ export default function PortalAdmin() {
                       hasAccess={!!row.solicId}
                     />
                   </td>
+                  <td>
+                    {/* Módulo aberto a todos: sempre editável (Usuário/Admin). */}
+                    <RoleSelect row={row} app="horas" value={row.horasRole} options={HORAS_ROLES} hasAccess />
+                  </td>
                 </tr>
               ))}
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="pa-empty-cell">
+                  <td colSpan={6} className="pa-empty-cell">
                     Ninguém encontrado.
                   </td>
                 </tr>
