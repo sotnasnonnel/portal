@@ -185,6 +185,16 @@ export default function FormNovaVaga() {
         </select>
       );
     }
+    if (c.tipo === 'check') {
+      return (
+        <div className="contratacao-opcoes">
+          <label className={`contratacao-opcao ${val === true ? 'active' : ''}`}>
+            <input type="checkbox" checked={val === true} onChange={(e) => set(c.id, e.target.checked)} />
+            <span>{c.textoCheck || 'Sim'}</span>
+          </label>
+        </div>
+      );
+    }
     if (c.tipo === 'bool') {
       return (
         <div className="contratacao-opcoes">

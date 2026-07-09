@@ -223,6 +223,7 @@ export default function AcompanharRequisicoes() {
                         {TIPO_LABEL[s.tipo]}
                         {s.iniciativa && <span className="sol-card-iniciativa"> · {INICIATIVA_LABEL[s.iniciativa]}</span>}
                         {nomeColab && <span className="sol-card-iniciativa"> · Solicitado por {nomeSolic}</span>}
+                        {s.created_at && <span className="sol-card-iniciativa"> · Aberta em {new Date(s.created_at).toLocaleDateString('pt-BR')}</span>}
                       </div>
                     </div>
                   </div>
