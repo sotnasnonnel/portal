@@ -383,6 +383,7 @@ export default function AdminSolicitacoes() {
                         {TIPO_LABEL[s.tipo]}
                         {s.iniciativa && <span className="sol-card-iniciativa"> · {INICIATIVA_LABEL[s.iniciativa]}</span>}
                         {s.gestor?.nome && <span> · solicitado por {s.gestor.nome}</span>}
+                        {s.created_at && <span className="sol-card-iniciativa"> · Aberta em {new Date(s.created_at).toLocaleDateString('pt-BR')}</span>}
                       </div>
                     </div>
                   </div>
