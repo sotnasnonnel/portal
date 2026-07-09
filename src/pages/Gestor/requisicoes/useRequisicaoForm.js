@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { supabase } from '../../../services/supabase';
 import { getEquipeIds } from '../../../services/equipe';
+import { notificarAprovadorSolic } from '../../../services/notificarAprovadorSolic';
 import { buscarFluxoGeral, buscarFluxoPorTipo, montarEtapasDeConfig } from '../../../config/aprovacao';
 
 /**
@@ -82,6 +83,7 @@ export function useRequisicaoForm() {
       await supabase.from('solicitacoes_rh').delete().eq('id', sol.id);
       throw err;
     }
+    notificarAprovadorSolic(sol.id);
     window.dispatchEvent(new Event('solicitacoes_rh_atualizadas'));
     return sol.id;
   }, [resolverCadeia, user]);
@@ -120,6 +122,7 @@ export function useRequisicaoForm() {
       throw eDet;
     }
 
+    notificarAprovadorSolic(sol.id);
     window.dispatchEvent(new Event('solicitacoes_rh_atualizadas'));
     return sol.id;
   }, [resolverCadeia, user]);

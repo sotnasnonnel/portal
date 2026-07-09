@@ -10,6 +10,7 @@ import {
 } from '../../../config/aprovacao';
 import ModalRespostas, { DETALHE, buscarRespostas } from './ModalRespostas';
 import RequisicoesRh from './RequisicoesRh';
+import { notificarAprovadorSolic } from '../../../services/notificarAprovadorSolic';
 import BotaoPdfRequisicao from '../../../components/BotaoPdfRequisicao';
 import '../../../components/UI/Components.css';
 import '../Gestor.css';
@@ -132,6 +133,8 @@ export default function AcompanharRequisicoes() {
           .update({ status: 'reprovada', updated_at: agora })
           .eq('id', sol.id);
         if (e2) throw e2;
+      } else {
+        notificarAprovadorSolic(sol.id);
       }
       setDecisao(null);
       setComentario('');
