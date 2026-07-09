@@ -9,7 +9,14 @@ export function fmtDur(ms) {
   return [h, m, x].map((n) => String(n).padStart(2, '0')).join(':');
 }
 
+// Duração legível e adaptativa: 10s · 45min · 1,5h
+// (evita mostrar "0,0h" para registros curtos).
 export function fmtHoras(ms) {
+  if (!ms || ms <= 0) return '0h';
+  const seg = Math.round(ms / 1000);
+  if (seg < 60) return `${seg}s`;
+  const min = Math.round(ms / 60000);
+  if (min < 60) return `${min}min`;
   return (ms / 3600000).toFixed(1).replace('.', ',') + 'h';
 }
 
@@ -59,10 +66,18 @@ export function periodoPadrao(dias = 30, agora = Date.now()) {
   return { de: toDateInput(agora - (dias - 1) * 86400000), ate: toDateInput(agora) };
 }
 
-// Converte {de, ate} (yyyy-mm-dd) em timestamps para consulta (fim inclusivo).
+// Meia-noite LOCAL de 'yyyy-mm-dd'. (new Date('2026-07-09') seria meia-noite UTC,
+// o que no Brasil cortaria o dia às 21h.)
+function meiaNoiteLocal(yyyyMmDd) {
+  const [y, m, d] = yyyyMmDd.split('-').map(Number);
+  return new Date(y, m - 1, d).getTime();
+}
+
+// Converte {de, ate} (yyyy-mm-dd) em timestamps para consulta.
+// ateTs é o INÍCIO do dia seguinte (limite exclusivo), cobrindo o dia inteiro.
 export function intervaloTs({ de, ate }) {
   return {
-    sinceTs: de ? new Date(de).getTime() : null,
-    ateTs: ate ? new Date(ate).getTime() + 86400000 : null,
+    sinceTs: de ? meiaNoiteLocal(de) : null,
+    ateTs: ate ? meiaNoiteLocal(ate) + 86400000 : null,
   };
 }

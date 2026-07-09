@@ -44,7 +44,7 @@ export async function fetchApontamentos({ role, colaboradorId, sinceTs, ateTs } 
   let q = supabase.from('horas_apontamentos').select('*').order('inicio', { ascending: false });
   if (role !== 'admin') q = q.eq('colaborador_id', colaboradorId);
   if (sinceTs != null) q = q.gte('inicio', new Date(sinceTs).toISOString());
-  if (ateTs != null) q = q.lte('inicio', new Date(ateTs).toISOString());
+  if (ateTs != null) q = q.lt('inicio', new Date(ateTs).toISOString()); // ateTs = início do dia seguinte
   const { data, error } = await q;
   if (error) throw error;
   return (data || []).map(normalizeApont);
@@ -72,10 +72,12 @@ export async function deleteApontamento(id) {
   if (error) throw error;
 }
 
-// Colaboradores (id, nome, função) para as visões de admin: nomes nas tabelas
-// e quebra "por função". Admin lê `colaboradores` pela RLS; membro não usa.
+// Colaboradores (id, nome, função) para as visões de admin: nomes nas tabelas e
+// quebra "por função". Vem de uma RPC que devolve SÓ esses campos (nunca
+// salário/senha) e apenas para admin do módulo — assim um admin do Horas que não
+// é admin do portal também enxerga os nomes, sem expor dados sensíveis.
 export async function fetchColaboradores() {
-  const { data, error } = await supabase.from('colaboradores').select('id, nome, funcao').order('nome');
+  const { data, error } = await supabase.rpc('horas_colaboradores');
   if (error) throw error;
   return data || [];
 }

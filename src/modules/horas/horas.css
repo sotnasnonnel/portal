@@ -89,6 +89,7 @@
   top: 0;
   height: 100vh;
 }
+/* Marca: ícone de relógio + nome do módulo. Clicável -> volta ao início. */
 .horasSb-brand {
   display: flex;
   align-items: center;
@@ -96,6 +97,13 @@
   height: 64px;
   padding: 0 16px;
   border-bottom: 1px solid var(--h-gray-100);
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.horasSb-brand:hover {
+  background: var(--h-gray-50);
 }
 .horasSb-logo {
   width: 34px;
@@ -106,20 +114,13 @@
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-size: 8px;
-  font-weight: 800;
-  letter-spacing: 1.5px;
   flex-shrink: 0;
 }
-.horasSb-brandtext strong {
-  display: block;
-  font-size: 0.9rem;
+.horasSb-brandtext {
+  font-size: 0.95rem;
   font-weight: 700;
-}
-.horasSb-brandtext span {
-  display: block;
-  font-size: 0.72rem;
-  color: var(--h-muted);
+  color: var(--h-ink);
+  white-space: nowrap;
 }
 .horasSb-nav {
   display: flex;
@@ -265,8 +266,13 @@
 /* ---- chart ---- */
 .horas-chart-wrap {
   position: relative;
-  height: 240px;
+  height: 340px;
   width: 100%;
+}
+@media (max-width: 760px) {
+  .horas-chart-wrap {
+    height: 280px;
+  }
 }
 
 /* ---- cards ---- */
