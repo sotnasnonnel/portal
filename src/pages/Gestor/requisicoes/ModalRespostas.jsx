@@ -33,6 +33,7 @@ export async function buscarRespostas(sol) {
 }
 
 export const fmtResposta = (c, v) => {
+  if (c.tipo === 'check') return v === true ? 'Sim' : 'Não';
   if (v == null || v === '') return '—';
   if (c.tipo === 'bool') return v ? 'Sim' : 'Não';
   if (c.tipo === 'checkbox') return Array.isArray(v) && v.length ? v.join('; ') : '—';
