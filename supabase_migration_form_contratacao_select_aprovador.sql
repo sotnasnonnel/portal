@@ -1,4 +1,4 @@
--- Migration: form_contratacao_select_aprovador (projeto bogsuuhrgvopzgcceoqz)
+-- Migration: form_contratacao_select_aprovador (aplicada em 2026-07-09 no projeto bogsuuhrgvopzgcceoqz)
 
 -- Bug: aprovadores da cadeia não viam as respostas do Formulário de Contratação
 -- ("Ver respostas" vazio). A form_select só permitia admin, criador e RH/DP —
