@@ -12,6 +12,7 @@ import {
 } from '../../config/aprovacao';
 import ModalRespostas, { DETALHE, buscarRespostas } from '../Gestor/requisicoes/ModalRespostas';
 import BotaoPdfRequisicao from '../../components/BotaoPdfRequisicao';
+import { notificarAprovadorSolic } from '../../services/notificarAprovadorSolic';
 import '../../components/UI/Components.css';
 import '../Gestor/requisicoes/Requisicoes.css';
 import './Admin.css';
@@ -136,6 +137,7 @@ export default function AdminSolicitacoes() {
           .eq('status', 'pendente')
           .eq('id', atual.id);
         if (error) throw error;
+        notificarAprovadorSolic(sol.id);
       } else {
         const { error: e1 } = await supabase
           .from('solicitacoes_rh_etapas')
@@ -209,6 +211,7 @@ export default function AdminSolicitacoes() {
         .eq('id', atual.id)
         .eq('status', 'pendente');
       if (error) throw error;
+      notificarAprovadorSolic(reatribuirSol.id);
       setReatribuirSol(null);
       setReatribuirId('');
       await fetchSolicitacoes();
@@ -242,6 +245,8 @@ export default function AdminSolicitacoes() {
           .update({ status: 'concluida', concluida_em: agora, updated_at: agora })
           .eq('id', sol.id);
         if (e2) throw e2;
+      } else {
+        notificarAprovadorSolic(sol.id);
       }
       await fetchSolicitacoes();
       window.dispatchEvent(new Event('solicitacoes_rh_atualizadas'));
