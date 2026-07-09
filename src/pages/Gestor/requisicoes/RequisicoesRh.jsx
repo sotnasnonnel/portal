@@ -74,6 +74,7 @@ export default function RequisicoesRh({ participa, nomes, loading }) {
             <table className="data-table">
               <thead>
                 <tr>
+                  <th>Nº</th>
                   <th>Tipo</th>
                   <th>Solicitante</th>
                   <th>Colaborador</th>
@@ -86,6 +87,7 @@ export default function RequisicoesRh({ participa, nomes, loading }) {
                   const tomB = TOM_BADGE[tomDe(s)] || TOM_BADGE.pendente;
                   return (
                     <tr key={s.id} style={{ cursor: 'pointer' }} onClick={() => setAberta(s)}>
+                      <td style={{ fontWeight: 600 }}>{s.numero ?? '—'}</td>
                       <td style={{ fontWeight: 600 }}>{TIPO_LABEL[s.tipo] || s.tipo}</td>
                       <td>{nomeSolic(s)}</td>
                       <td>{nomeColab(s) || '—'}</td>
@@ -109,7 +111,7 @@ export default function RequisicoesRh({ participa, nomes, loading }) {
           <div className="modal-overlay" onClick={() => setAberta(null)}>
             <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 560, width: '100%' }}>
               <div className="modal-header">
-                <span className="modal-title">{TIPO_LABEL[s.tipo] || s.tipo}</span>
+                <span className="modal-title">{s.numero != null && `#${s.numero} · `}{TIPO_LABEL[s.tipo] || s.tipo}</span>
                 <button className="modal-close" onClick={() => setAberta(null)} aria-label="Fechar"><X size={18} /></button>
               </div>
               <div className="modal-body">

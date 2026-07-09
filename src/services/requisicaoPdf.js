@@ -40,7 +40,8 @@ export async function gerarRequisicaoPdf(sol, { nomeColaborador, nomeSolicitante
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
   doc.setTextColor(38, 64, 93);
-  doc.text(`Requisição — ${TIPO_LABEL[sol.tipo] || sol.tipo}`, pageW - margin, 52, { align: 'right' });
+  const numero = sol.numero != null ? `#${sol.numero} ` : '';
+  doc.text(`Requisição ${numero}— ${TIPO_LABEL[sol.tipo] || sol.tipo}`, pageW - margin, 52, { align: 'right' });
 
   doc.setDrawColor(224, 224, 224);
   doc.setLineWidth(0.8);

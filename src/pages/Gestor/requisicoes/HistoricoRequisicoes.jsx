@@ -29,7 +29,7 @@ export default function HistoricoRequisicoes({ req }) {
       const { data } = await supabase
         .from('solicitacoes_rh')
         .select(`
-          id, tipo, status, justificativa, created_at,
+          id, numero, tipo, status, justificativa, created_at,
           colaborador:colaborador_id ( nome ),
           etapas:solicitacoes_rh_etapas ( id, ordem, aprovador_id, papel, tipo_etapa, status, justificativa, decidido_em )
         `)
@@ -65,7 +65,7 @@ export default function HistoricoRequisicoes({ req }) {
                   <div>
                     <div className="sol-card-colab">{s.colaborador?.nome || '—'}</div>
                     <div className="sol-card-tipo">
-                      Aberta em {new Date(s.created_at).toLocaleDateString('pt-BR')}
+                      {s.numero != null && `#${s.numero} · `}Aberta em {new Date(s.created_at).toLocaleDateString('pt-BR')}
                     </div>
                   </div>
                   <span className={`badge ${tomB.badge}`}>{tomB.label}</span>
