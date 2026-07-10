@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { Play, Square, Plus } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import {
   fetchProjetos,
+  fetchAtividades,
+  fetchGerencias,
   fetchApontamentos,
   createApontamento,
   deleteApontamento,
@@ -11,14 +14,19 @@ import {
   stopTimer,
 } from '../../lib/data';
 import { fmtData, fmtDur, startOfDay, toDatetimeLocal } from '../../lib/format';
+import { podeApontar } from '../../lib/roles';
 import ApontamentosTable from '../components/ApontamentosTable';
 import ConfirmModal from '../components/ConfirmModal';
 
 export default function ApontarPage() {
-  const { user } = useAuth();
+  const { user, modules } = useAuth();
+  const role = modules?.horas || 'usuario';
   const colaboradorId = user?.id;
+  const gerenciaId = user?.horasGerenciaId || null;
 
   const [projetos, setProjetos] = useState([]);
+  const [atividades, setAtividades] = useState([]);
+  const [gerenciaNome, setGerenciaNome] = useState('');
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState('');
   const [running, setRunning] = useState(null); // timer em andamento (do banco)
@@ -28,7 +36,7 @@ export default function ApontarPage() {
   const [showManual, setShowManual] = useState(false);
   const [aExcluir, setAExcluir] = useState(null);
 
-  const [form, setForm] = useState({ projetoId: '', descricao: '' });
+  const [form, setForm] = useState({ projetoId: '', ativ: [], descricao: '' });
 
   const projetoMap = useMemo(() => new Map(projetos.map((p) => [p.id, p])), [projetos]);
   const projetoNome = (id) => projetoMap.get(id)?.nome || '—';
@@ -37,7 +45,7 @@ export default function ApontarPage() {
   const carregarHoje = useCallback(async () => {
     if (!colaboradorId) return;
     try {
-      setHoje(await fetchApontamentos({ role: 'membro', colaboradorId, sinceTs: startOfDay(Date.now()) }));
+      setHoje(await fetchApontamentos({ role: 'usuario', colaboradorId, sinceTs: startOfDay(Date.now()) }));
     } catch (e) {
       setErro(e?.message || 'Falha ao carregar apontamentos.');
     }
@@ -46,20 +54,36 @@ export default function ApontarPage() {
   useEffect(() => {
     let cancel = false;
     (async () => {
+      if (!colaboradorId || !gerenciaId) {
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       setErro('');
       try {
-        const [ps, timer] = await Promise.all([
-          fetchProjetos(),
-          colaboradorId ? fetchTimer(colaboradorId) : Promise.resolve(null),
+        const [ps, ats, gers, timer] = await Promise.all([
+          fetchProjetos({ gerenciaId }),
+          fetchAtividades(gerenciaId),
+          fetchGerencias(),
+          fetchTimer(colaboradorId),
         ]);
         if (cancel) return;
         setProjetos(ps);
+        setAtividades(ats);
+        setGerenciaNome(gers.find((g) => g.id === gerenciaId)?.nome || '');
         setRunning(timer);
-        setForm((f) => ({ ...f, projetoId: f.projetoId || ps[0]?.id || '' }));
+        // Defaults: primeiro projeto e o primeiro valor de cada atividade.
+        // `ativ` é indexado pela ORDEM da atividade (0..2), com '' onde ela
+        // ainda não tem opções — assim Ativ1/2/3 não trocam de significado
+        // quando o gerente configura uma delas mais tarde.
+        setForm((f) => ({
+          projetoId: f.projetoId || ps[0]?.id || '',
+          ativ: ats.map((a) => f.ativ[a.ordem] || a.valores[0] || ''),
+          descricao: f.descricao,
+        }));
         await carregarHoje();
       } catch (e) {
-        if (!cancel) setErro(e?.message || 'Falha ao carregar os projetos.');
+        if (!cancel) setErro(e?.message || 'Falha ao carregar a configuração da gerência.');
       } finally {
         if (!cancel) setLoading(false);
       }
@@ -67,7 +91,7 @@ export default function ApontarPage() {
     return () => {
       cancel = true;
     };
-  }, [colaboradorId, carregarHoje]);
+  }, [colaboradorId, gerenciaId, carregarHoje]);
 
   // Cronômetro: atualiza os ms decorridos a cada segundo (Date.now só no effect).
   useEffect(() => {
@@ -81,10 +105,19 @@ export default function ApontarPage() {
     return () => clearInterval(id);
   }, [running]);
 
-  // Ao iniciar/parar, reflete no form os valores em andamento (selects desabilitados).
+  // Ao iniciar/parar, reflete no form os valores em andamento (campos desabilitados).
   useEffect(() => {
-    if (running) setForm({ projetoId: running.projetoId || '', descricao: running.descricao || '' });
+    if (running) {
+      setForm({
+        projetoId: running.projetoId || '',
+        ativ: running.ativ || [],
+        descricao: running.descricao || '',
+      });
+    }
   }, [running]);
+
+  // A diretoria supervisiona; não aponta horas (como no protótipo).
+  if (!podeApontar(role)) return <Navigate to="/horas/dashboard" replace />;
 
   async function toggleTimer() {
     if (!colaboradorId || busy) return;
@@ -97,7 +130,9 @@ export default function ApontarPage() {
         if (run) {
           await createApontamento({
             colaboradorId,
+            gerenciaId,
             projetoId: run.projetoId,
+            ativ: run.ativ,
             descricao: run.descricao,
             inicioTs: run.inicio,
             fimTs: Date.now(),
@@ -105,7 +140,11 @@ export default function ApontarPage() {
           await carregarHoje();
         }
       } else {
-        const run = await startTimer(colaboradorId, { projetoId: form.projetoId, descricao: form.descricao });
+        const run = await startTimer(colaboradorId, {
+          projetoId: form.projetoId,
+          ativ: form.ativ,
+          descricao: form.descricao,
+        });
         setRunning(run);
       }
     } catch (e) {
@@ -117,7 +156,7 @@ export default function ApontarPage() {
 
   async function salvarManual(payload) {
     try {
-      await createApontamento({ colaboradorId, ...payload });
+      await createApontamento({ colaboradorId, gerenciaId, ...payload });
       setShowManual(false);
       await carregarHoje();
     } catch (e) {
@@ -137,6 +176,18 @@ export default function ApontarPage() {
     }
   }
 
+  if (!gerenciaId) {
+    return (
+      <>
+        <h1>Apontar Horas</h1>
+        <div className="horas-hint">
+          Seu usuário não está vinculado a uma gerência. Peça à gerência ou à diretoria para
+          vincular você em "Equipe".
+        </div>
+      </>
+    );
+  }
+
   if (loading) {
     return (
       <>
@@ -151,22 +202,30 @@ export default function ApontarPage() {
       <>
         <h1>Apontar Horas</h1>
         <div className="horas-hint">
-          Ainda não há projetos cadastrados. Um administrador precisa criar projetos em "Projetos"
-          para que seja possível apontar horas.
+          A gerência <b>{gerenciaNome}</b> ainda não tem projetos cadastrados. O gerente ou a
+          diretoria precisa criá-los em "Configuração" para que seja possível apontar horas.
         </div>
       </>
     );
   }
 
+  const setAtiv = (i, v) => setForm((f) => ({ ...f, ativ: f.ativ.map((x, j) => (j === i ? v : x)) }));
+
+  // Uma atividade controlada sem opções cadastradas não aparece: até o gerente
+  // configurá-la, a tela é só Projeto + Descrição.
+  const ativVisiveis = atividades.filter((a) => a.valores.length);
+
   return (
     <>
       <h1>Apontar Horas</h1>
-      <p className="horas-sub">Escolha o projeto, descreva a atividade e inicie o cronômetro.</p>
+      <p className="horas-sub">
+        Gerência: <b>{gerenciaNome}</b> — selecione projeto e atividades e inicie o cronômetro.
+      </p>
 
       {erro ? <div className="horas-hint">⚠️ {erro}</div> : null}
 
       <div className="horas-card">
-        <div className="horas-sec">Registro de tempo</div>
+        <div className="horas-sec">Apontamento</div>
         <div className="horas-timer-grid">
           <div className="horas-fld">
             <label>Projeto</label>
@@ -183,6 +242,22 @@ export default function ApontarPage() {
               ))}
             </select>
           </div>
+          {ativVisiveis.map((a) => (
+            <div className="horas-fld" key={a.id}>
+              <label>{a.label}</label>
+              <select
+                value={form.ativ[a.ordem] || ''}
+                disabled={!!running}
+                onChange={(e) => setAtiv(a.ordem, e.target.value)}
+              >
+                {a.valores.map((v) => (
+                  <option key={v} value={v}>
+                    {v}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ))}
           <div className="horas-fld" style={{ gridColumn: '1 / -1' }}>
             <label>Descrição (opcional)</label>
             <input
@@ -228,7 +303,12 @@ export default function ApontarPage() {
       </div>
 
       {showManual ? (
-        <ManualModal projetos={projetos} onClose={() => setShowManual(false)} onSave={salvarManual} />
+        <ManualModal
+          projetos={projetos}
+          atividades={ativVisiveis}
+          onClose={() => setShowManual(false)}
+          onSave={salvarManual}
+        />
       ) : null}
 
       <ConfirmModal
@@ -243,8 +323,17 @@ export default function ApontarPage() {
 }
 
 // --- Modal de lançamento manual -------------------------------------------
-function ManualModal({ projetos, onClose, onSave }) {
+// `atividades` aqui já vem filtrada: só as que têm opções cadastradas.
+function ManualModal({ projetos, atividades, onClose, onSave }) {
   const [projetoId, setProjetoId] = useState(projetos[0]?.id || '');
+  // Indexado pela ordem (0..2), como no cronômetro.
+  const [ativ, setAtiv] = useState(() => {
+    const base = ['', '', ''];
+    atividades.forEach((a) => {
+      base[a.ordem] = a.valores[0] || '';
+    });
+    return base;
+  });
   const [descricao, setDescricao] = useState('');
   const [ini, setIni] = useState(() => toDatetimeLocal(Date.now() - 3600000));
   const [fim, setFim] = useState(() => toDatetimeLocal(Date.now()));
@@ -257,7 +346,7 @@ function ManualModal({ projetos, onClose, onSave }) {
       setErro('O horário de fim deve ser maior que o de início.');
       return;
     }
-    onSave({ projetoId, descricao, inicioTs, fimTs });
+    onSave({ projetoId, ativ, descricao, inicioTs, fimTs });
   }
 
   return (
@@ -275,6 +364,21 @@ function ManualModal({ projetos, onClose, onSave }) {
             ))}
           </select>
         </div>
+        {atividades.map((a) => (
+          <div className="horas-fld" key={a.id}>
+            <label>{a.label}</label>
+            <select
+              value={ativ[a.ordem] || ''}
+              onChange={(e) => setAtiv((prev) => prev.map((x, j) => (j === a.ordem ? e.target.value : x)))}
+            >
+              {a.valores.map((v) => (
+                <option key={v} value={v}>
+                  {v}
+                </option>
+              ))}
+            </select>
+          </div>
+        ))}
         <div className="horas-fld">
           <label>Descrição</label>
           <input type="text" value={descricao} onChange={(e) => setDescricao(e.target.value)} />

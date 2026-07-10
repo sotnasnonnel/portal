@@ -22,10 +22,14 @@ const SOLIC_ROLES = [
   ["user", "Usuário"],
   ["admin", "Admin"],
 ];
-// Controle de Horas: todos têm acesso; o papel define quem administra o módulo.
+// Controle de Horas: todos têm acesso; o papel define o escopo.
+//   Usuário   -> aponta e vê o próprio tempo
+//   Gerente   -> aponta, e vê/administra a gerência dele (definida em /horas/equipe)
+//   Diretoria -> vê tudo e administra todas as gerências (não aponta)
 const HORAS_ROLES = [
   ["usuario", "Usuário"],
-  ["admin", "Admin"],
+  ["gerente", "Gerente"],
+  ["diretoria", "Diretoria"],
 ];
 
 export default function PortalAdmin() {
@@ -251,7 +255,7 @@ export default function PortalAdmin() {
                     />
                   </td>
                   <td>
-                    {/* Módulo aberto a todos: sempre editável (Usuário/Admin). */}
+                    {/* Módulo aberto a todos: sempre editável (Usuário/Gerente/Diretoria). */}
                     <RoleSelect row={row} app="horas" value={row.horasRole} options={HORAS_ROLES} hasAccess />
                   </td>
                 </tr>

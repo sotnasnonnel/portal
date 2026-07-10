@@ -6,6 +6,7 @@ import { FeedbackProvider } from '../modules/reembolso/context/FeedbackContext';
 import ReembolsoAppLayout from '../modules/reembolso/components/layout/AppLayout';
 import SolicShell from '../modules/solic/app/components/AppShell';
 import HorasShell from '../modules/horas/app/components/AppShell';
+import { rotaInicial } from '../modules/horas/app/components/nav';
 
 const Login = lazy(() => import('../pages/Login/Login'));
 const Home = lazy(() => import('../pages/Home/Home'));
@@ -40,10 +41,18 @@ const SolicAdminContractNew = lazy(() => import('../modules/solic/app/admin/cont
 const HorasApontar = lazy(() => import('../modules/horas/app/apontar/page'));
 const HorasRegistros = lazy(() => import('../modules/horas/app/registros/page'));
 const HorasDashboard = lazy(() => import('../modules/horas/app/dashboard/page'));
-const HorasProjetos = lazy(() => import('../modules/horas/app/projetos/page'));
+const HorasConfig = lazy(() => import('../modules/horas/app/config/page'));
+const HorasEquipe = lazy(() => import('../modules/horas/app/equipe/page'));
 
 function RouteFallback() {
   return <div style={{ padding: 'var(--space-3xl)', textAlign: 'center' }}>Carregando...</div>;
+}
+
+// Índice do Controle de Horas: usuário/gerente caem em "Apontar", a diretoria
+// (que não aponta) cai no Dashboard Geral.
+function HorasIndex() {
+  const { modules } = useAuth();
+  return <Navigate to={rotaInicial(modules?.horas || 'usuario')} replace />;
 }
 
 function LazyPage({ children }) {
@@ -373,11 +382,15 @@ export default function AppRoutes() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<Navigate to="/horas/apontar" replace />} />
+          {/* A diretoria não aponta horas: o índice depende do papel. */}
+          <Route index element={<HorasIndex />} />
           <Route path="apontar" element={<LazyPage><HorasApontar /></LazyPage>} />
           <Route path="dashboard" element={<LazyPage><HorasDashboard /></LazyPage>} />
           <Route path="registros" element={<LazyPage><HorasRegistros /></LazyPage>} />
-          <Route path="projetos" element={<LazyPage><HorasProjetos /></LazyPage>} />
+          <Route path="config" element={<LazyPage><HorasConfig /></LazyPage>} />
+          <Route path="equipe" element={<LazyPage><HorasEquipe /></LazyPage>} />
+          {/* Rota antiga de Projetos: virou a aba Configuração. */}
+          <Route path="projetos" element={<Navigate to="/horas/config" replace />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/home" replace />} />

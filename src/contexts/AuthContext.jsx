@@ -7,6 +7,9 @@ import { clearSupabaseCache as clearSolicCache } from '../modules/solic/lib/supa
 
 const AuthContext = createContext(null);
 
+// Papéis do Controle de Horas (colaboradores.horas_role). Ver modules.horas abaixo.
+const HORAS_ROLES = ['usuario', 'gerente', 'diretoria'];
+
 // Limpa o ?code= do retorno OAuth da URL (PKCE + HashRouter).
 function cleanOAuthParams() {
   if (window.location.search.includes('code=')) {
@@ -128,7 +131,8 @@ export function AuthProvider({ children }) {
         solicVistoEm: colab.solic_visto_em || null,
         funcao: colab.funcao || null,
         dataAdmissao: colab.data_admissao || null,
-        horasRole: colab.horas_role || 'usuario',   // papel próprio do Controle de Horas
+        horasRole: colab.horas_role || 'usuario',   // usuario | gerente | diretoria
+        horasGerenciaId: colab.horas_gerencia_id || null,  // escopo do gerente
         authId: authUser.id,
       });
       setReembolsoProfile(reemRes.data ?? null);
@@ -187,7 +191,7 @@ export function AuthProvider({ children }) {
     // (colaboradores.horas_role) e é a ÚNICA fonte da verdade na UI — sem override
     // de super-admin, senão o seletor de /portal-admin não teria efeito visível
     // para quem o edita. (A RLS ainda dá passe livre ao super-admin no banco.)
-    horas: user?.horasRole === 'admin' ? 'admin' : user ? 'membro' : null,
+    horas: user ? (HORAS_ROLES.includes(user.horasRole) ? user.horasRole : 'usuario') : null,
   }), [user, solicProfile]);
 
   const value = useMemo(() => ({
