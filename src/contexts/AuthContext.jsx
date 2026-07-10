@@ -4,9 +4,11 @@ import { clearSupabaseCache as clearReembolsoCache } from '../modules/reembolso/
 import { resetPreload } from '../modules/reembolso/services/dataPreload.js';
 import { clearSolicIdentity } from '../modules/solic/lib/identity.ts';
 import { clearSupabaseCache as clearSolicCache } from '../modules/solic/lib/supabaseCache.ts';
-import { isSuperAdmin } from '../config/superAdmin';
 
 const AuthContext = createContext(null);
+
+// Papéis do Controle de Horas (colaboradores.horas_role). Ver modules.horas abaixo.
+const HORAS_ROLES = ['usuario', 'gerente', 'diretoria'];
 
 // Limpa o ?code= do retorno OAuth da URL (PKCE + HashRouter).
 function cleanOAuthParams() {
@@ -129,7 +131,8 @@ export function AuthProvider({ children }) {
         solicVistoEm: colab.solic_visto_em || null,
         funcao: colab.funcao || null,
         dataAdmissao: colab.data_admissao || null,
-        horasRole: colab.horas_role || 'usuario',   // papel próprio do Controle de Horas
+        horasRole: colab.horas_role || 'usuario',   // usuario | gerente | diretoria
+        horasGerenciaId: colab.horas_gerencia_id || null,  // escopo do gerente
         authId: authUser.id,
       });
       setReembolsoProfile(reemRes.data ?? null);
@@ -185,8 +188,10 @@ export function AuthProvider({ children }) {
     reembolso: null,                           // (reembolsoProfile?.role) — desativado por enquanto
     solic: solicProfile?.role ?? null,         // user | admin
     // Controle de Horas: aberto a todos os logados. O papel é próprio do módulo
-    // (colaboradores.horas_role), editável em /portal-admin. Super-admin sempre admin.
-    horas: user ? (user.horasRole === 'admin' || isSuperAdmin(user) ? 'admin' : 'membro') : null,
+    // (colaboradores.horas_role) e é a ÚNICA fonte da verdade na UI — sem override
+    // de super-admin, senão o seletor de /portal-admin não teria efeito visível
+    // para quem o edita. (A RLS ainda dá passe livre ao super-admin no banco.)
+    horas: user ? (HORAS_ROLES.includes(user.horasRole) ? user.horasRole : 'usuario') : null,
   }), [user, solicProfile]);
 
   const value = useMemo(() => ({
