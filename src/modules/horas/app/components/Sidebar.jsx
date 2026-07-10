@@ -1,7 +1,9 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Clock, BarChart3, ListChecks, FolderKanban, LogOut } from 'lucide-react';
+import { Clock, LogOut } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import AppSwitcher from '../../../../components/AppSwitcher/AppSwitcher';
+import { ROLE_LABEL } from '../../lib/roles';
+import { navSections } from './nav';
 
 function iniciais(nome, email) {
   const base = (nome || email || '').trim();
@@ -11,23 +13,11 @@ function iniciais(nome, email) {
   return base.slice(0, 2).toUpperCase();
 }
 
-// Navegação por papel. Membro registra e vê o próprio tempo; admin gerencia
-// projetos e vê o tempo de todos.
-function navItems(isAdmin) {
-  const base = [
-    { label: 'Apontar', href: '/horas/apontar', Icon: Clock },
-    { label: isAdmin ? 'Dashboard' : 'Meu Dashboard', href: '/horas/dashboard', Icon: BarChart3 },
-    { label: isAdmin ? 'Relatórios' : 'Meus Registros', href: '/horas/registros', Icon: ListChecks },
-  ];
-  if (isAdmin) base.push({ label: 'Projetos', href: '/horas/projetos', Icon: FolderKanban });
-  return base;
-}
-
 export default function Sidebar() {
   const pathname = useLocation().pathname || '';
   const { logout, modules, user } = useAuth();
 
-  const isAdmin = modules?.horas === 'admin';
+  const role = modules?.horas || 'usuario';
   const nome = user?.nome || '';
   const email = user?.email || '';
 
@@ -46,17 +36,21 @@ export default function Sidebar() {
 
       <nav className="horasSb-nav">
         <AppSwitcher currentKey="horas" />
-        <div className="horasSb-seclabel">Menu</div>
-        {navItems(isAdmin).map(({ label, href, Icon }) => (
-          <Link
-            key={href}
-            to={href}
-            title={label}
-            className={`horasSb-link ${pathname.startsWith(href) ? 'is-active' : ''}`}
-          >
-            <Icon size={16} />
-            <span>{label}</span>
-          </Link>
+        {navSections(role).map((sec) => (
+          <div key={sec.label}>
+            <div className="horasSb-seclabel">{sec.label}</div>
+            {sec.items.map((item) => (
+              <Link
+                key={item.href}
+                to={item.href}
+                title={item.label}
+                className={`horasSb-link ${pathname.startsWith(item.href) ? 'is-active' : ''}`}
+              >
+                <item.Icon size={16} />
+                <span>{item.label}</span>
+              </Link>
+            ))}
+          </div>
         ))}
       </nav>
 
@@ -64,7 +58,7 @@ export default function Sidebar() {
         <div className="horasSb-avatar">{iniciais(nome, email)}</div>
         <div className="horasSb-userinfo">
           <strong title={nome || email}>{nome || 'Usuário'}</strong>
-          <span>{isAdmin ? 'Administrador' : 'Membro'}</span>
+          <span>{ROLE_LABEL[role]}</span>
         </div>
         <button className="horasSb-logout" onClick={onLogout} title="Sair" type="button">
           <LogOut size={18} />

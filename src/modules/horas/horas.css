@@ -533,6 +533,37 @@
   font-size: 0.875rem;
 }
 
+/* ---- badges de papel (usuario · gerente · diretoria) ---- */
+.horas-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 3px 10px;
+  border-radius: var(--h-radius-full);
+}
+.horas-badge.usuario {
+  background: #d1fae5;
+  color: #065f46;
+}
+.horas-badge.gerente {
+  background: rgba(38, 64, 93, 0.1);
+  color: var(--h-blue);
+}
+.horas-badge.diretoria {
+  background: var(--h-brand-50);
+  color: var(--h-brand-700);
+}
+
+/* Select dentro de célula de tabela (vínculo de gerência). */
+.horas-inline-select {
+  min-height: 34px;
+  padding: 5px 28px 5px 10px;
+  font-size: 0.82rem;
+  max-width: 220px;
+}
+
 /* ---- config chips ---- */
 .horas-chips {
   display: flex;
