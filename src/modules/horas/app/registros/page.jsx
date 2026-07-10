@@ -10,6 +10,7 @@ import {
 } from '../../lib/data';
 import { fmtHoras, periodoPadrao, intervaloTs } from '../../lib/format';
 import { isDiretoria, isGerente, isGestor } from '../../lib/roles';
+import { lookupProjetos, lookupColaboradores, lookupGerencias } from '../../lib/lookups';
 import ApontamentosTable from '../components/ApontamentosTable';
 import ConfirmModal from '../components/ConfirmModal';
 
@@ -59,24 +60,13 @@ export default function RegistrosPage() {
     };
   }, [role, colaboradorId, gerenciaId, range]);
 
-  const projetoMap = useMemo(() => new Map(projetos.map((p) => [p.id, p])), [projetos]);
-  const projetoNome = (id) => projetoMap.get(id)?.nome || '—';
-  const projetoCor = (id) => projetoMap.get(id)?.cor || '#C44A28';
-  const colabMap = useMemo(() => new Map(colabs.map((c) => [c.id, c.nome])), [colabs]);
-  const nomeColab = (id) => colabMap.get(id) || '—';
-  const gerMap = useMemo(() => new Map(gerencias.map((g) => [g.id, g.nome])), [gerencias]);
-  const nomeGerencia = (id) => gerMap.get(id) || '—';
+  const proj = useMemo(() => lookupProjetos(projetos), [projetos]);
+  const colab = useMemo(() => lookupColaboradores(colabs), [colabs]);
+  const ger = useMemo(() => lookupGerencias(gerencias), [gerencias]);
 
   // Só oferece o que existe nos registros do escopo (protótipo faz o mesmo).
-  const projetosEscopo = useMemo(() => {
-    const usados = new Set(list.map((a) => a.projetoId));
-    return projetos.filter((p) => usados.has(p.id));
-  }, [list, projetos]);
-
-  const colabsEscopo = useMemo(() => {
-    const usados = new Set(list.map((a) => a.colaboradorId));
-    return colabs.filter((c) => usados.has(c.id));
-  }, [list, colabs]);
+  const projetosEscopo = useMemo(() => proj.usadosEm(list), [proj, list]);
+  const colabsEscopo = useMemo(() => colab.usadosEm(list), [colab, list]);
 
   const filtrado = useMemo(() => {
     let f = list;
@@ -121,9 +111,9 @@ export default function RegistrosPage() {
       'Descricao',
     ];
     const rows = filtrado.map((a) => [
-      ...(mostraColaborador ? [nomeColab(a.colaboradorId)] : []),
-      nomeGerencia(a.gerenciaId),
-      projetoNome(a.projetoId),
+      ...(mostraColaborador ? [colab.nome(a.colaboradorId)] : []),
+      ger.nome(a.gerenciaId),
+      proj.nome(a.projetoId),
       a.ativ?.[0] || '',
       a.ativ?.[1] || '',
       a.ativ?.[2] || '',
@@ -215,9 +205,9 @@ export default function RegistrosPage() {
         ) : (
           <ApontamentosTable
             list={filtrado}
-            projetoNome={projetoNome}
-            projetoCor={projetoCor}
-            nameOf={mostraColaborador ? nomeColab : undefined}
+            projetoNome={proj.nome}
+            projetoCor={proj.cor}
+            nameOf={mostraColaborador ? colab.nome : undefined}
             onDelete={setAExcluir}
             podeExcluir={podeExcluir}
           />

@@ -13,8 +13,9 @@ import {
 } from '../../lib/data';
 import { isDiretoria, isGestor } from '../../lib/roles';
 import ConfirmModal from '../components/ConfirmModal';
-
-const CORES = ['#C44A28', '#26405d', '#00a49a', '#b85236', '#F59E0B', '#9a3412', '#64748b', '#10B981'];
+import BlocoAtividade from '../components/BlocoAtividade';
+import SeletorCor from '../components/SeletorCor';
+import { CORES } from '../../lib/cores';
 
 // Configuração da gerência: os projetos e as 3 atividades controladas que
 // aparecem no apontamento. A diretoria escolhe qual gerência editar; o gerente
@@ -291,79 +292,5 @@ export default function ConfigPage() {
         onCancel={() => setAExcluir(null)}
       />
     </>
-  );
-}
-
-function BlocoAtividade({ atividade, onLabel, onAdd, onDel }) {
-  const [valor, setValor] = useState('');
-
-  function adicionar() {
-    onAdd(valor);
-    setValor('');
-  }
-
-  return (
-    <div className="horas-cfg-block">
-      <div className="horas-lbl-edit">
-        <span>Atividade Controlada {atividade.ordem + 1} · rótulo:</span>
-        {/* Não controlado: o rótulo só é gravado ao sair do campo. A `key`
-            ressincroniza o input quando o valor muda no servidor. */}
-        <input
-          key={atividade.label}
-          type="text"
-          defaultValue={atividade.label}
-          onBlur={(e) => e.target.value !== atividade.label && onLabel(e.target.value)}
-        />
-      </div>
-      <div className="horas-chips">
-        {atividade.valores.length ? (
-          atividade.valores.map((v, i) => (
-            <span className="horas-chip" key={v}>
-              {v}
-              <button type="button" title="Remover" onClick={() => onDel(i)}>
-                ×
-              </button>
-            </span>
-          ))
-        ) : (
-          <span className="horas-muted">Nenhum item.</span>
-        )}
-      </div>
-      <div className="horas-add-inline">
-        <input
-          type="text"
-          placeholder="Nova opção…"
-          value={valor}
-          onChange={(e) => setValor(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && adicionar()}
-        />
-        <button className="horas-btn2" type="button" onClick={adicionar}>
-          Adicionar
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function SeletorCor({ value, onChange }) {
-  return (
-    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-      {CORES.map((c) => (
-        <button
-          key={c}
-          type="button"
-          title={c}
-          onClick={() => onChange(c)}
-          style={{
-            width: 22,
-            height: 22,
-            borderRadius: '50%',
-            background: c,
-            border: value === c ? '2px solid var(--h-ink)' : '2px solid transparent',
-            cursor: 'pointer',
-          }}
-        />
-      ))}
-    </div>
   );
 }

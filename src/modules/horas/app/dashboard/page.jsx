@@ -10,6 +10,7 @@ import {
 import { agruparHoras, serieDiaria, somaMs } from '../../lib/aggregate';
 import { fmtHoras, startOfDay, startOfWeek, startOfMonth, periodoPadrao, intervaloTs } from '../../lib/format';
 import { escopo, isDiretoria, isGestor } from '../../lib/roles';
+import { lookupProjetos, lookupColaboradores, lookupGerencias } from '../../lib/lookups';
 import { BrandBarChart, BrandLineChart, BrandPieChart } from '../components/Charts';
 import ApontamentosTable from '../components/ApontamentosTable';
 
@@ -82,21 +83,13 @@ export default function DashboardPage() {
     };
   }, [gerenciaRotulos]);
 
-  const projetoMap = useMemo(() => new Map(projetos.map((p) => [p.id, p])), [projetos]);
-  const projetoNome = (id) => projetoMap.get(id)?.nome || '—';
-  const projetoCor = (id) => projetoMap.get(id)?.cor || '#C44A28';
-  const colabMap = useMemo(() => new Map(colabs.map((c) => [c.id, c])), [colabs]);
-  const nomeColab = (id) => colabMap.get(id)?.nome || '—';
-  const funcaoColab = (id) => colabMap.get(id)?.funcao || '—';
-  const gerMap = useMemo(() => new Map(gerencias.map((g) => [g.id, g.nome])), [gerencias]);
-  const nomeGerencia = (id) => gerMap.get(id) || '—';
+  const proj = useMemo(() => lookupProjetos(projetos), [projetos]);
+  const colab = useMemo(() => lookupColaboradores(colabs), [colabs]);
+  const ger = useMemo(() => lookupGerencias(gerencias), [gerencias]);
 
   // O filtro só oferece projetos que aparecem nos apontamentos do escopo — um
   // gerente não deve ver a lista de projetos das outras gerências.
-  const projetosEscopo = useMemo(() => {
-    const usados = new Set(apont.map((a) => a.projetoId));
-    return projetos.filter((p) => usados.has(p.id));
-  }, [apont, projetos]);
+  const projetosEscopo = useMemo(() => proj.usadosEm(apont), [proj, apont]);
 
   // Só as atividades já configuradas (com opções) entram nos gráficos.
   const ativsUsadas = useMemo(() => atividades.filter((a) => a.valores.length), [atividades]);
@@ -131,10 +124,10 @@ export default function DashboardPage() {
   //   meu                          -> pela 2ª atividade controlada
   const breakSpec = useMemo(() => {
     if (tipo === 'geral' && !filtro.gerencia) {
-      return { titulo: 'Horas por gerência', key: (a) => nomeGerencia(a.gerenciaId), tipoGrafico: 'bar' };
+      return { titulo: 'Horas por gerência', key: (a) => ger.nome(a.gerenciaId), tipoGrafico: 'bar' };
     }
     if (tipo === 'geral' || tipo === 'gerencia') {
-      return { titulo: 'Horas por colaborador', key: (a) => nomeColab(a.colaboradorId), tipoGrafico: 'bar' };
+      return { titulo: 'Horas por colaborador', key: (a) => colab.nome(a.colaboradorId), tipoGrafico: 'bar' };
     }
     if (!ativB) return null; // nenhuma atividade configurada ainda
     return {
@@ -142,15 +135,14 @@ export default function DashboardPage() {
       key: (a) => a.ativ?.[ativB.ordem],
       tipoGrafico: 'pie',
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- nomeGerencia/nomeColab derivam de gerMap/colabMap
-  }, [tipo, filtro.gerencia, gerMap, colabMap, ativB]);
+  }, [tipo, filtro.gerencia, ger, colab, ativB]);
 
-  /* eslint-disable react-hooks/exhaustive-deps -- projetoNome deriva de projetoMap (já é dep) */
-  const porProjeto = useMemo(() => agruparHoras(list, (a) => projetoNome(a.projetoId)), [list, projetoMap]);
-  /* eslint-enable react-hooks/exhaustive-deps */
+  const porProjeto = useMemo(() => agruparHoras(list, (a) => proj.nome(a.projetoId)), [list, proj]);
   const porAtivA = useMemo(() => (ativA ? agruparHoras(list, (a) => a.ativ?.[ativA.ordem]) : []), [list, ativA]);
-  /* eslint-disable-next-line react-hooks/exhaustive-deps -- funcaoColab deriva de colabMap (já é dep) */
-  const porFuncao = useMemo(() => (isGestor(role) ? agruparHoras(list, (a) => funcaoColab(a.colaboradorId)) : []), [list, role, colabMap]);
+  const porFuncao = useMemo(
+    () => (isGestor(role) ? agruparHoras(list, (a) => colab.funcao(a.colaboradorId)) : []),
+    [list, role, colab]
+  );
   const porBreak = useMemo(() => (breakSpec ? agruparHoras(list, breakSpec.key) : []), [list, breakSpec]);
   const serie = useMemo(() => serieDiaria(list, 14, agora), [list, agora]);
 
@@ -164,10 +156,10 @@ export default function DashboardPage() {
     tipo === 'geral'
       ? 'Consolidado de todas as gerências.'
       : tipo === 'gerencia'
-        ? `Visão da equipe — ${nomeGerencia(gerenciaId)}`
+        ? `Visão da equipe — ${ger.nome(gerenciaId)}`
         : 'Suas horas apontadas.';
-  if (filtro.gerencia) subt += ` · ${nomeGerencia(filtro.gerencia)}`;
-  if (filtro.colab) subt += ` · ${nomeColab(filtro.colab)}`;
+  if (filtro.gerencia) subt += ` · ${ger.nome(filtro.gerencia)}`;
+  if (filtro.colab) subt += ` · ${colab.nome(filtro.colab)}`;
 
   if (loading) {
     return (
@@ -192,7 +184,7 @@ export default function DashboardPage() {
       chart: (
         <BrandPieChart
           data={porProjeto}
-          onSelect={(n) => openPopup(`Projeto · ${n}`, (a) => projetoNome(a.projetoId) === n)}
+          onSelect={(n) => openPopup(`Projeto · ${n}`, (a) => proj.nome(a.projetoId) === n)}
         />
       ),
     },
@@ -248,7 +240,7 @@ export default function DashboardPage() {
       chart: (
         <BrandBarChart
           data={porFuncao}
-          onSelect={(n) => openPopup(`Função · ${n}`, (a) => funcaoColab(a.colaboradorId) === n)}
+          onSelect={(n) => openPopup(`Função · ${n}`, (a) => colab.funcao(a.colaboradorId) === n)}
         />
       ),
     });
@@ -367,9 +359,9 @@ export default function DashboardPage() {
             <div className="horas-table-wrap" style={{ border: '1px solid var(--h-border)', borderRadius: 12 }}>
               <ApontamentosTable
                 list={popup.list}
-                projetoNome={projetoNome}
-                projetoCor={projetoCor}
-                nameOf={mostraColaborador ? nomeColab : undefined}
+                projetoNome={proj.nome}
+                projetoCor={proj.cor}
+                nameOf={mostraColaborador ? colab.nome : undefined}
               />
             </div>
           </div>
