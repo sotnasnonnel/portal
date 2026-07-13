@@ -181,6 +181,27 @@ export function AuthProvider({ children }) {
     window.dispatchEvent(new Event('solicitacoes_rh_atualizadas'));
   }, []);
 
+  // Recarrega o papel/gerência do Controle de Horas sem exigir logout: o papel
+  // vem de colaboradores.horas_role, editado em /portal-admin, e antes só era
+  // lido no login — quem fosse promovido a gerente/diretoria seguia na visão
+  // antiga. Chamado pelo shell do módulo ao abrir e ao focar a aba.
+  const refreshHorasIdentity = useCallback(async () => {
+    if (!session?.user) return;
+    const { data } = await supabase
+      .from('colaboradores')
+      .select('horas_role, horas_gerencia_id')
+      .eq('auth_id', session.user.id)
+      .maybeSingle();
+    if (!data) return;
+    setUser((u) => {
+      if (!u) return u;
+      if (u.horasRole === (data.horas_role || 'usuario') && u.horasGerenciaId === (data.horas_gerencia_id || null)) {
+        return u; // nada mudou — evita re-render desnecessário
+      }
+      return { ...u, horasRole: data.horas_role || 'usuario', horasGerenciaId: data.horas_gerencia_id || null };
+    });
+  }, [session]);
+
   const modules = useMemo(() => ({
     // DP liberado para gestor, coordenador e admin (RH); usuário comum fica bloqueado.
     dp: ['gestor', 'coordenador', 'admin', 'rh'].includes(user?.perfil) ? user.perfil : null,
@@ -197,9 +218,9 @@ export function AuthProvider({ children }) {
   const value = useMemo(() => ({
     user, session, modules, reembolsoProfile, solicProfile,
     blocked, loading, error,
-    signInWithMicrosoft, logout, refreshReembolsoProfile, markSolicVisto,
+    signInWithMicrosoft, logout, refreshReembolsoProfile, markSolicVisto, refreshHorasIdentity,
   }), [user, session, modules, reembolsoProfile, solicProfile, blocked, loading, error,
-       signInWithMicrosoft, logout, refreshReembolsoProfile, markSolicVisto]);
+       signInWithMicrosoft, logout, refreshReembolsoProfile, markSolicVisto, refreshHorasIdentity]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
