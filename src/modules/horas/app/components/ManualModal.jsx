@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { toDatetimeLocal } from '../../lib/format';
+import SearchableSelect from './SearchableSelect';
 
 // Lançamento manual de um apontamento (quem esqueceu de ligar o cronômetro).
 // `atividades` já vem filtrada: só as que têm opções cadastradas.
@@ -30,45 +31,44 @@ export default function ManualModal({ projetos, atividades, onClose, onSave }) {
 
   return (
     <div className="horas-modal-bg" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="horas-modal">
+      <div className="horas-modal horas-modal-manual">
         <h3>Lançamento manual</h3>
         <div className="horas-fld">
           <label>Projeto</label>
-          <select value={projetoId} onChange={(e) => setProjetoId(e.target.value)}>
-            {projetos.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.nome}
-                {p.cliente ? ` — ${p.cliente}` : ''}
-              </option>
-            ))}
-          </select>
+          <SearchableSelect
+            value={projetoId}
+            placeholder="Selecione o projeto…"
+            onChange={(v) => setProjetoId(v)}
+            options={projetos.map((p) => ({
+              value: p.id,
+              label: p.nome + (p.cliente ? ` — ${p.cliente}` : ''),
+            }))}
+          />
         </div>
         {atividades.map((a) => (
           <div className="horas-fld" key={a.id}>
             <label>{a.label}</label>
-            <select
+            <SearchableSelect
               value={ativ[a.ordem] || ''}
-              onChange={(e) => setAtiv((prev) => prev.map((x, j) => (j === a.ordem ? e.target.value : x)))}
-            >
-              {a.valores.map((v) => (
-                <option key={v} value={v}>
-                  {v}
-                </option>
-              ))}
-            </select>
+              placeholder={`Selecione ${a.label.toLowerCase()}…`}
+              onChange={(v) => setAtiv((prev) => prev.map((x, j) => (j === a.ordem ? v : x)))}
+              options={a.valores.map((v) => ({ value: v, label: v }))}
+            />
           </div>
         ))}
         <div className="horas-fld">
           <label>Descrição</label>
           <input type="text" value={descricao} onChange={(e) => setDescricao(e.target.value)} />
         </div>
-        <div className="horas-fld">
-          <label>Início</label>
-          <input type="datetime-local" value={ini} onChange={(e) => setIni(e.target.value)} />
-        </div>
-        <div className="horas-fld">
-          <label>Fim</label>
-          <input type="datetime-local" value={fim} onChange={(e) => setFim(e.target.value)} />
+        <div className="horas-modal-row2">
+          <div className="horas-fld">
+            <label>Início</label>
+            <input type="datetime-local" value={ini} onChange={(e) => setIni(e.target.value)} />
+          </div>
+          <div className="horas-fld">
+            <label>Fim</label>
+            <input type="datetime-local" value={fim} onChange={(e) => setFim(e.target.value)} />
+          </div>
         </div>
         {erro ? <div className="horas-hint" style={{ marginBottom: 8 }}>⚠️ {erro}</div> : null}
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>

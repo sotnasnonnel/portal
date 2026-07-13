@@ -4,32 +4,30 @@ import {
   fetchApontamentos,
   fetchProjetos,
   fetchColaboradores,
-  fetchGerencias,
   fetchAtividades,
 } from '../../lib/data';
 import { agruparHoras, serieDiaria, somaMs } from '../../lib/aggregate';
 import { fmtHoras, startOfDay, startOfWeek, startOfMonth, periodoPadrao, intervaloTs } from '../../lib/format';
-import { escopo, isDiretoria, isGestor } from '../../lib/roles';
-import { lookupProjetos, lookupColaboradores, lookupGerencias } from '../../lib/lookups';
+import { escopo, isGestao } from '../../lib/roles';
+import { lookupProjetos, lookupColaboradores } from '../../lib/lookups';
 import { BrandBarChart, BrandLineChart, BrandPieChart } from '../components/Charts';
 import ApontamentosTable from '../components/ApontamentosTable';
 
 export default function DashboardPage() {
   const { user, modules } = useAuth();
   const role = modules?.horas || 'usuario';
-  const tipo = escopo(role); // meu | gerencia | geral
+  const tipo = escopo(role); // meu | equipe
   const colaboradorId = user?.id;
   const gerenciaId = user?.horasGerenciaId || null;
 
   const [apont, setApont] = useState([]);
   const [projetos, setProjetos] = useState([]);
   const [colabs, setColabs] = useState([]);
-  const [gerencias, setGerencias] = useState([]);
   const [atividades, setAtividades] = useState([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState('');
   const [range, setRange] = useState(() => periodoPadrao(30));
-  const [filtro, setFiltro] = useState({ gerencia: '', projeto: '', colab: '' });
+  const [filtro, setFiltro] = useState({ projeto: '', colab: '' });
   const [popup, setPopup] = useState(null);
 
   useEffect(() => {
@@ -39,17 +37,15 @@ export default function DashboardPage() {
       setErro('');
       try {
         const { sinceTs, ateTs } = intervaloTs(range);
-        const [a, ps, cs, gs] = await Promise.all([
-          fetchApontamentos({ role, colaboradorId, gerenciaId, sinceTs, ateTs }),
+        const [a, ps, cs] = await Promise.all([
+          fetchApontamentos({ role, colaboradorId, sinceTs, ateTs }),
           fetchProjetos({ incluirArquivados: true }),
-          isGestor(role) ? fetchColaboradores() : Promise.resolve([]),
-          fetchGerencias(),
+          isGestao(role) ? fetchColaboradores() : Promise.resolve([]),
         ]);
         if (cancel) return;
         setApont(a);
         setProjetos(ps);
         setColabs(cs);
-        setGerencias(gs);
       } catch (e) {
         if (!cancel) setErro(e?.message || 'Falha ao carregar o dashboard.');
       } finally {
@@ -61,9 +57,8 @@ export default function DashboardPage() {
     };
   }, [role, colaboradorId, gerenciaId, range]);
 
-  // Rótulos das atividades: da gerência do usuário, ou da gerência filtrada
-  // (a diretoria não tem gerência própria, então só há rótulo quando ela filtra).
-  const gerenciaRotulos = isDiretoria(role) ? filtro.gerencia : gerenciaId;
+  // Rótulos das atividades controladas: da gerência do próprio usuário.
+  const gerenciaRotulos = gerenciaId;
   useEffect(() => {
     let cancel = false;
     (async () => {
@@ -85,10 +80,8 @@ export default function DashboardPage() {
 
   const proj = useMemo(() => lookupProjetos(projetos), [projetos]);
   const colab = useMemo(() => lookupColaboradores(colabs), [colabs]);
-  const ger = useMemo(() => lookupGerencias(gerencias), [gerencias]);
 
-  // O filtro só oferece projetos que aparecem nos apontamentos do escopo — um
-  // gerente não deve ver a lista de projetos das outras gerências.
+  // O filtro só oferece projetos que aparecem nos apontamentos do escopo.
   const projetosEscopo = useMemo(() => proj.usadosEm(apont), [proj, apont]);
 
   // Só as atividades já configuradas (com opções) entram nos gráficos.
@@ -100,9 +93,8 @@ export default function DashboardPage() {
 
   const list = useMemo(() => {
     let l = apont;
-    if (isDiretoria(role) && filtro.gerencia) l = l.filter((a) => a.gerenciaId === filtro.gerencia);
     if (filtro.projeto) l = l.filter((a) => a.projetoId === filtro.projeto);
-    if (isGestor(role) && filtro.colab) l = l.filter((a) => a.colaboradorId === filtro.colab);
+    if (isGestao(role) && filtro.colab) l = l.filter((a) => a.colaboradorId === filtro.colab);
     return l;
   }, [apont, filtro, role]);
 
@@ -118,15 +110,10 @@ export default function DashboardPage() {
     [list, agora]
   );
 
-  // Quarta quebra, como no protótipo:
-  //   geral sem filtro de gerência -> por gerência;  geral com filtro -> por colaborador
-  //   gerencia                     -> por colaborador
-  //   meu                          -> pela 2ª atividade controlada
+  // Quarta quebra:
+  //   equipe -> por colaborador;  meu -> pela 2ª atividade controlada.
   const breakSpec = useMemo(() => {
-    if (tipo === 'geral' && !filtro.gerencia) {
-      return { titulo: 'Horas por gerência', key: (a) => ger.nome(a.gerenciaId), tipoGrafico: 'bar' };
-    }
-    if (tipo === 'geral' || tipo === 'gerencia') {
+    if (tipo === 'equipe') {
       return { titulo: 'Horas por colaborador', key: (a) => colab.nome(a.colaboradorId), tipoGrafico: 'bar' };
     }
     if (!ativB) return null; // nenhuma atividade configurada ainda
@@ -135,12 +122,12 @@ export default function DashboardPage() {
       key: (a) => a.ativ?.[ativB.ordem],
       tipoGrafico: 'pie',
     };
-  }, [tipo, filtro.gerencia, ger, colab, ativB]);
+  }, [tipo, colab, ativB]);
 
   const porProjeto = useMemo(() => agruparHoras(list, (a) => proj.nome(a.projetoId)), [list, proj]);
   const porAtivA = useMemo(() => (ativA ? agruparHoras(list, (a) => a.ativ?.[ativA.ordem]) : []), [list, ativA]);
   const porFuncao = useMemo(
-    () => (isGestor(role) ? agruparHoras(list, (a) => colab.funcao(a.colaboradorId)) : []),
+    () => (isGestao(role) ? agruparHoras(list, (a) => colab.funcao(a.colaboradorId)) : []),
     [list, role, colab]
   );
   const porBreak = useMemo(() => (breakSpec ? agruparHoras(list, breakSpec.key) : []), [list, breakSpec]);
@@ -150,15 +137,8 @@ export default function DashboardPage() {
 
   const mostraColaborador = tipo !== 'meu';
 
-  const titulo =
-    tipo === 'geral' ? 'Dashboard Geral · Diretoria' : tipo === 'gerencia' ? 'Dashboard da Gerência' : 'Meu Dashboard';
-  let subt =
-    tipo === 'geral'
-      ? 'Consolidado de todas as gerências.'
-      : tipo === 'gerencia'
-        ? `Visão da equipe — ${ger.nome(gerenciaId)}`
-        : 'Suas horas apontadas.';
-  if (filtro.gerencia) subt += ` · ${ger.nome(filtro.gerencia)}`;
+  const titulo = tipo === 'equipe' ? 'Dashboard da Equipe' : 'Meu Dashboard';
+  let subt = tipo === 'equipe' ? 'Horas apontadas pela sua equipe.' : 'Suas horas apontadas.';
   if (filtro.colab) subt += ` · ${colab.nome(filtro.colab)}`;
 
   if (loading) {
@@ -170,10 +150,8 @@ export default function DashboardPage() {
     );
   }
 
-  // Colaboradores oferecidos no filtro: só os da gerência escolhida, quando houver.
-  const colabsFiltro = colabs.filter(
-    (c) => c.role !== 'diretoria' && c.gerenciaId && (!filtro.gerencia || c.gerenciaId === filtro.gerencia)
-  );
+  // Colaboradores oferecidos no filtro: a equipe (subárvore) que a RPC devolveu.
+  const colabsFiltro = colabs;
 
   // Os gráficos que este papel/gerência tem hoje. Os condicionais entram na
   // lista só quando existem, para o grid não ficar com buracos.
@@ -233,7 +211,7 @@ export default function DashboardPage() {
   }
 
   // Quebra por função do colaborador — específica do portal (não vem do protótipo).
-  if (isGestor(role)) {
+  if (isGestao(role)) {
     graficos.push({
       id: 'funcao',
       titulo: 'Horas por função',
@@ -264,22 +242,6 @@ export default function DashboardPage() {
             <label>Até</label>
             <input type="date" value={range.ate} onChange={(e) => setRange((r) => ({ ...r, ate: e.target.value }))} />
           </div>
-          {isDiretoria(role) ? (
-            <div className="horas-fld" style={{ maxWidth: 220 }}>
-              <label>Gerência</label>
-              <select
-                value={filtro.gerencia}
-                onChange={(e) => setFiltro((f) => ({ ...f, gerencia: e.target.value, colab: '' }))}
-              >
-                <option value="">Todas as gerências</option>
-                {gerencias.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.nome}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ) : null}
           <div className="horas-fld" style={{ maxWidth: 220 }}>
             <label>Projeto</label>
             <select value={filtro.projeto} onChange={(e) => setFiltro((f) => ({ ...f, projeto: e.target.value }))}>
@@ -291,11 +253,11 @@ export default function DashboardPage() {
               ))}
             </select>
           </div>
-          {isGestor(role) ? (
+          {isGestao(role) ? (
             <div className="horas-fld" style={{ maxWidth: 220 }}>
               <label>Colaborador</label>
               <select value={filtro.colab} onChange={(e) => setFiltro((f) => ({ ...f, colab: e.target.value }))}>
-                <option value="">{tipo === 'gerencia' ? 'Toda a equipe' : 'Todos'}</option>
+                <option value="">Toda a equipe</option>
                 {colabsFiltro.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.nome}
@@ -305,11 +267,11 @@ export default function DashboardPage() {
             </div>
           ) : null}
           <div className="horas-spacer" />
-          {filtro.gerencia || filtro.projeto || filtro.colab ? (
+          {filtro.projeto || filtro.colab ? (
             <button
               className="horas-btn2"
               type="button"
-              onClick={() => setFiltro({ gerencia: '', projeto: '', colab: '' })}
+              onClick={() => setFiltro({ projeto: '', colab: '' })}
             >
               Limpar filtros
             </button>
