@@ -19,6 +19,7 @@ import { lookupProjetos } from '../../lib/lookups';
 import ApontamentosTable from '../components/ApontamentosTable';
 import ConfirmModal from '../components/ConfirmModal';
 import ManualModal from '../components/ManualModal';
+import SearchableSelect from '../components/SearchableSelect';
 
 export default function ApontarPage() {
   const { user, modules } = useAuth();
@@ -197,65 +198,60 @@ export default function ApontarPage() {
     );
   }
 
-  if (!projetos.length) {
-    return (
-      <>
-        <h1>Apontar Horas</h1>
-        <div className="horas-hint">
-          A gerência <b>{gerenciaNome}</b> ainda não tem projetos cadastrados. O gerente ou a
-          diretoria precisa criá-los em "Configuração" para que seja possível apontar horas.
-        </div>
-      </>
-    );
-  }
-
   const setAtiv = (i, v) => setForm((f) => ({ ...f, ativ: f.ativ.map((x, j) => (j === i ? v : x)) }));
 
-  // Uma atividade controlada sem opções cadastradas não aparece: até o gerente
+  // Uma atividade controlada sem opções cadastradas não aparece: até o gestor
   // configurá-la, a tela é só Projeto + Descrição.
   const ativVisiveis = atividades.filter((a) => a.valores.length);
+
+  // Sem projetos na área ainda: a tela aparece normal, mas não dá para apontar
+  // até o gestor cadastrar os projetos/atividades em "Configuração".
+  const semProjetos = !projetos.length;
+  const podeIniciar = !!form.projetoId && !semProjetos;
 
   return (
     <>
       <h1>Apontar Horas</h1>
       <p className="horas-sub">
-        Gerência: <b>{gerenciaNome}</b> — selecione projeto e atividades e inicie o cronômetro.
+        Área: <b>{gerenciaNome}</b> — selecione projeto e atividades e inicie o cronômetro.
       </p>
 
       {erro ? <div className="horas-hint">⚠️ {erro}</div> : null}
+
+      {semProjetos ? (
+        <div className="horas-hint">
+          ⚠️ A sua área (<b>{gerenciaNome}</b>) ainda não tem projetos cadastrados, então não é
+          possível apontar por enquanto. O <b>gestor</b> da sua equipe precisa cadastrá-los em
+          "Configuração".
+        </div>
+      ) : null}
 
       <div className="horas-card">
         <div className="horas-sec">Apontamento</div>
         <div className="horas-timer-grid">
           <div className="horas-fld">
             <label>Projeto</label>
-            <select
+            <SearchableSelect
               value={form.projetoId}
               disabled={!!running}
-              onChange={(e) => setForm((f) => ({ ...f, projetoId: e.target.value }))}
-            >
-              {projetos.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.nome}
-                  {p.cliente ? ` — ${p.cliente}` : ''}
-                </option>
-              ))}
-            </select>
+              placeholder="Selecione o projeto…"
+              onChange={(v) => setForm((f) => ({ ...f, projetoId: v }))}
+              options={projetos.map((p) => ({
+                value: p.id,
+                label: p.nome + (p.cliente ? ` — ${p.cliente}` : ''),
+              }))}
+            />
           </div>
           {ativVisiveis.map((a) => (
             <div className="horas-fld" key={a.id}>
               <label>{a.label}</label>
-              <select
+              <SearchableSelect
                 value={form.ativ[a.ordem] || ''}
                 disabled={!!running}
-                onChange={(e) => setAtiv(a.ordem, e.target.value)}
-              >
-                {a.valores.map((v) => (
-                  <option key={v} value={v}>
-                    {v}
-                  </option>
-                ))}
-              </select>
+                placeholder={`Selecione ${a.label.toLowerCase()}…`}
+                onChange={(v) => setAtiv(a.ordem, v)}
+                options={a.valores.map((v) => ({ value: v, label: v }))}
+              />
             </div>
           ))}
           <div className="horas-fld" style={{ gridColumn: '1 / -1' }}>
@@ -277,12 +273,17 @@ export default function ApontarPage() {
             className={`horas-btn ${running ? 'red' : 'grn'}`}
             type="button"
             onClick={toggleTimer}
-            disabled={busy}
+            disabled={busy || (!running && !podeIniciar)}
           >
             {running ? <Square size={16} /> : <Play size={16} />}
             {running ? 'Encerrar' : 'Iniciar'}
           </button>
-          <button className="horas-btn2" type="button" onClick={() => setShowManual(true)} disabled={!!running}>
+          <button
+            className="horas-btn2"
+            type="button"
+            onClick={() => setShowManual(true)}
+            disabled={!!running || semProjetos}
+          >
             <Plus size={16} /> Lançamento manual
           </button>
         </div>

@@ -10,18 +10,19 @@ import {
   fetchProjetos,
   setGerenciaColaborador,
 } from '../../lib/data';
-import { ROLE_LABEL, isDiretoria, isGestor } from '../../lib/roles';
+import { ROLE_LABEL, isGestao } from '../../lib/roles';
+import { isSuperAdmin } from '../../../../config/superAdmin';
 import ConfirmModal from '../components/ConfirmModal';
 
-// Gerências & Equipe.
-//   diretoria -> cria/exclui gerências e vincula qualquer pessoa a qualquer uma
-//   gerente   -> vê a própria equipe, inclui quem não tem gerência e remove os seus
-// O PAPEL (Usuário/Gerente/Diretoria) não se muda aqui: ele é concedido em
-// /portal-admin ("Gerenciamento de acessos"), junto com os demais módulos.
+// Equipe & Gerências.
+// A equipe vem da HIERARQUIA da Gestão de Pessoas (a RPC devolve a subárvore do
+// logado). O PAPEL (Usuário/Coordenador/Gestor) também deriva do perfil lá —
+// não se muda aqui. As gerências são apenas containers de projetos/atividades:
+//   gestor -> cria/exclui gerências e vincula cada pessoa a uma (p/ ver os projetos)
+//   coordenador -> vê a equipe e vincula quem ainda não tem gerência
 export default function EquipePage() {
   const { user, modules } = useAuth();
   const role = modules?.horas || 'usuario';
-  const minhaGerencia = user?.horasGerenciaId || null;
 
   const [gerencias, setGerencias] = useState([]);
   const [colabs, setColabs] = useState([]);
@@ -31,7 +32,6 @@ export default function EquipePage() {
   const [novaGer, setNovaGer] = useState('');
   const [aExcluir, setAExcluir] = useState(null);
   const [aRemover, setARemover] = useState(null);
-  const [novoMembro, setNovoMembro] = useState('');
 
   const carregar = useCallback(async () => {
     setErro('');
@@ -58,12 +58,13 @@ export default function EquipePage() {
   const gerMap = useMemo(() => new Map(gerencias.map((g) => [g.id, g.nome])), [gerencias]);
 
   // Gate de UI (a RLS e a RPC é que protegem as escritas de verdade).
-  if (!isGestor(role)) return <Navigate to="/horas/apontar" replace />;
+  if (!isGestao(role)) return <Navigate to="/horas/apontar" replace />;
 
-  const daDiretoria = isDiretoria(role);
-  const minhaEquipe = colabs.filter((c) => c.gerenciaId && c.gerenciaId === minhaGerencia);
-  const semGerencia = colabs.filter((c) => !c.gerenciaId && c.role !== 'diretoria');
-  const visiveis = daDiretoria ? colabs : minhaEquipe;
+  // A RPC horas_colaboradores já devolve a equipe do logado (a subárvore).
+  // A criação/vínculo de áreas é automática (uma por gestor); só o admin/super
+  // mexe nisso manualmente.
+  const podeGerencias = user?.perfil === 'admin' || isSuperAdmin(user);
+  const visiveis = colabs;
 
   async function criarGerencia() {
     const nome = novaGer.trim();
@@ -115,16 +116,10 @@ export default function EquipePage() {
     await vincular(c.id, null);
   }
 
-  async function incluirMembro() {
-    if (!novoMembro) return;
-    await vincular(novoMembro, minhaGerencia);
-    setNovoMembro('');
-  }
-
   if (loading) {
     return (
       <>
-        <h1>{daDiretoria ? 'Gerências & Equipe' : 'Minha Equipe'}</h1>
+        <h1>{podeGerencias ? 'Gerências & Equipe' : 'Minha Equipe'}</h1>
         <div className="horas-hint">Carregando…</div>
       </>
     );
@@ -132,22 +127,22 @@ export default function EquipePage() {
 
   return (
     <>
-      <h1>{daDiretoria ? 'Gerências & Equipe' : 'Minha Equipe'}</h1>
+      <h1>{podeGerencias ? 'Gerências & Equipe' : 'Minha Equipe'}</h1>
       <p className="horas-sub">
-        {daDiretoria
-          ? 'Crie as gerências e distribua os colaboradores entre elas.'
-          : 'Colaboradores da sua gerência.'}
+        {podeGerencias
+          ? 'Crie as gerências e vincule cada colaborador a uma delas.'
+          : 'A sua equipe.'}
       </p>
 
       <div className="horas-hint">
-        O papel de cada pessoa no Controle de Horas (Usuário · Gerente · Diretoria) é definido em
-        <b> Gerenciamento de acessos</b>, no portal. Aqui você define apenas a <b>gerência</b> a que
-        ela pertence.
+        O papel de cada pessoa (Usuário · Coordenador · Gestor) e a <b>equipe</b> vêm da
+        hierarquia da <b>Gestão de Pessoas</b> (quem é superior de quem). Aqui você define apenas a
+        <b> gerência</b> — o container de projetos/atividades que a pessoa vê ao apontar.
       </div>
 
       {erro ? <div className="horas-hint">⚠️ {erro}</div> : null}
 
-      {daDiretoria ? (
+      {podeGerencias ? (
         <div className="horas-card">
           <div className="horas-sec">Gerências</div>
           <div className="horas-add-inline" style={{ marginBottom: 14 }}>
@@ -205,37 +200,10 @@ export default function EquipePage() {
         </div>
       ) : null}
 
-      {!daDiretoria && minhaGerencia ? (
-        <div className="horas-card">
-          <div className="horas-sec">Incluir na equipe</div>
-          <div className="horas-toolbar">
-            <div className="horas-fld" style={{ maxWidth: 320 }}>
-              <label>Colaborador sem gerência</label>
-              <select value={novoMembro} onChange={(e) => setNovoMembro(e.target.value)}>
-                <option value="">Selecione…</option>
-                {semGerencia.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nome}
-                    {c.funcao ? ` — ${c.funcao}` : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <button className="horas-btn" type="button" onClick={incluirMembro} disabled={!novoMembro}>
-              <Plus size={16} /> Adicionar
-            </button>
-          </div>
-          {semGerencia.length === 0 ? (
-            <div className="horas-muted" style={{ fontSize: '.82rem' }}>
-              Não há colaboradores sem gerência no momento.
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-
-      {!daDiretoria && !minhaGerencia ? (
+      {!podeGerencias ? (
         <div className="horas-hint">
-          Você ainda não está vinculado a uma gerência. Peça à diretoria para vincular você.
+          Sua equipe vem automaticamente da hierarquia da Gestão de Pessoas — não precisa vincular
+          ninguém aqui. Para mudar quem está sob você, ajuste o superior da pessoa lá.
         </div>
       ) : null}
 
@@ -249,7 +217,7 @@ export default function EquipePage() {
                 <th>Função</th>
                 <th>Papel</th>
                 <th>Gerência</th>
-                {!daDiretoria ? <th></th> : null}
+                {!podeGerencias ? <th></th> : null}
               </tr>
             </thead>
             <tbody>
@@ -261,7 +229,7 @@ export default function EquipePage() {
                     <span className={`horas-badge ${c.role}`}>{ROLE_LABEL[c.role]}</span>
                   </td>
                   <td>
-                    {daDiretoria ? (
+                    {podeGerencias ? (
                       <select
                         className="horas-inline-select"
                         value={c.gerenciaId || ''}
@@ -278,7 +246,7 @@ export default function EquipePage() {
                       <span className="horas-muted">{gerMap.get(c.gerenciaId) || '—'}</span>
                     )}
                   </td>
-                  {!daDiretoria ? (
+                  {!podeGerencias ? (
                     <td className="horas-right">
                       {c.id !== user?.id ? (
                         <button
@@ -296,7 +264,7 @@ export default function EquipePage() {
               ))}
               {visiveis.length === 0 ? (
                 <tr>
-                  <td colSpan={daDiretoria ? 4 : 5} className="horas-empty">
+                  <td colSpan={podeGerencias ? 4 : 5} className="horas-empty">
                     Nenhum colaborador.
                   </td>
                 </tr>

@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Artefatos e cópias locais
+.playwright-mcp/
+portal_phd/
+portal_phd.zip

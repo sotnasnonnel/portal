@@ -148,10 +148,17 @@ export function montarEtapasDeConfig(solicitacaoId, aprovadores, criadorId, nome
   return linhas;
 }
 
-/** Etapa atual = primeira etapa de aprovação/execução ainda pendente (menor ordem). */
+/**
+ * Etapa atual = primeira etapa de aprovação/execução ainda pendente (menor ordem).
+ * Se QUALQUER etapa foi reprovada, o fluxo está encerrado: não há etapa atual,
+ * mesmo que existam etapas seguintes ainda pendentes (elas nunca serão acionadas).
+ * Isso impede que uma reprovação "vaze" para o próximo aprovador da cadeia.
+ */
 export function etapaAtual(etapas) {
+  const lista = etapas || [];
+  if (lista.some((e) => e.status === 'reprovada')) return null;
   return (
-    (etapas || [])
+    lista
       .filter((e) => (e.tipo_etapa === 'aprovacao' || e.tipo_etapa === 'execucao') && e.status === 'pendente')
       .sort((a, b) => (a.ordem || 0) - (b.ordem || 0))[0] || null
   );
