@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Plus, Trash2, Archive, ArchiveRestore } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
+import { isSuperAdmin } from '../../../../config/superAdmin';
 import {
   fetchGerencias,
   fetchProjetos,
@@ -11,22 +12,23 @@ import {
   fetchAtividades,
   updateAtividade,
 } from '../../lib/data';
-import { isDiretoria, isGestor } from '../../lib/roles';
+import { isGestao } from '../../lib/roles';
 import ConfirmModal from '../components/ConfirmModal';
 import BlocoAtividade from '../components/BlocoAtividade';
 import SeletorCor from '../components/SeletorCor';
 import { CORES } from '../../lib/cores';
 
-// Configuração da gerência: os projetos e as 3 atividades controladas que
-// aparecem no apontamento. A diretoria escolhe qual gerência editar; o gerente
-// edita apenas a sua (a RLS garante isso no banco).
+// Configuração da ÁREA do gestor: os projetos e as 3 atividades controladas que
+// a equipe dele vê ao apontar. Cada gestor edita só a sua área; o admin/super vê
+// todas (a RLS garante isso no banco).
 export default function ConfigPage() {
   const { user, modules } = useAuth();
   const role = modules?.horas || 'usuario';
   const minhaGerencia = user?.horasGerenciaId || null;
+  const veTudo = user?.perfil === 'admin' || isSuperAdmin(user);
 
   const [gerencias, setGerencias] = useState([]);
-  const [sel, setSel] = useState(isDiretoria(role) ? '' : minhaGerencia);
+  const [sel, setSel] = useState(minhaGerencia || '');
   const [projetos, setProjetos] = useState([]);
   const [atividades, setAtividades] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -34,20 +36,31 @@ export default function ConfigPage() {
   const [novo, setNovo] = useState({ nome: '', cliente: '', cor: CORES[0] });
   const [aExcluir, setAExcluir] = useState(null);
 
+  // Áreas que este usuário pode editar: o admin/super vê todas; o gestor vê a(s)
+  // que ele é dono (gestor_id === ele).
+  const areasGeriveis = useMemo(
+    () => (veTudo ? gerencias : gerencias.filter((g) => g.gestor_id === user?.id)),
+    [gerencias, veTudo, user?.id]
+  );
+
   useEffect(() => {
     (async () => {
       try {
         const gs = await fetchGerencias();
         setGerencias(gs);
-        // Só a diretoria escolhe: o gerente fica preso à gerência dele.
-        if (isDiretoria(role)) setSel((s) => s || gs[0]?.id || '');
       } catch (e) {
-        setErro(e?.message || 'Falha ao carregar as gerências.');
+        setErro(e?.message || 'Falha ao carregar as áreas.');
       } finally {
         setLoading(false);
       }
     })();
   }, [role]);
+
+  // Garante que a área selecionada é uma que o usuário pode editar.
+  useEffect(() => {
+    if (!areasGeriveis.length) return;
+    setSel((s) => (areasGeriveis.some((g) => g.id === s) ? s : minhaGerencia || areasGeriveis[0].id));
+  }, [areasGeriveis, minhaGerencia]);
 
   const carregar = useCallback(async () => {
     if (!sel) return;
@@ -69,7 +82,7 @@ export default function ConfigPage() {
   }, [carregar]);
 
   // Gate de UI (a RLS é quem protege as escritas de verdade).
-  if (!isGestor(role)) return <Navigate to="/horas/apontar" replace />;
+  if (!isGestao(role)) return <Navigate to="/horas/apontar" replace />;
 
   async function adicionarProjeto() {
     const nome = novo.nome.trim();
@@ -130,18 +143,19 @@ export default function ConfigPage() {
   if (loading) {
     return (
       <>
-        <h1>Configuração da Gerência</h1>
+        <h1>Configuração da Área</h1>
         <div className="horas-hint">Carregando…</div>
       </>
     );
   }
 
-  if (!gerencias.length) {
+  if (!areasGeriveis.length) {
     return (
       <>
-        <h1>Configuração da Gerência</h1>
-        <div className="horas-empty">
-          Nenhuma gerência cadastrada. A diretoria cria em "Gerências &amp; Equipe".
+        <h1>Configuração da Área</h1>
+        <div className="horas-hint">
+          Você não administra nenhuma área. Os projetos e atividades são definidos pelo <b>gestor</b>{' '}
+          da sua equipe.
         </div>
       </>
     );
@@ -150,34 +164,34 @@ export default function ConfigPage() {
   if (!sel) {
     return (
       <>
-        <h1>Configuração da Gerência</h1>
-        <div className="horas-hint">
-          Seu usuário não está vinculado a uma gerência. Peça à diretoria para vincular você em
-          "Gerências &amp; Equipe".
-        </div>
+        <h1>Configuração da Área</h1>
+        <div className="horas-hint">Carregando a sua área…</div>
       </>
     );
   }
 
   return (
     <>
-      <h1>Configuração da Gerência</h1>
-      <p className="horas-sub">Defina os projetos e as 3 atividades controladas que aparecem no apontamento.</p>
+      <h1>Configuração da Área</h1>
+      <p className="horas-sub">
+        Defina os projetos e as 3 atividades controladas (Fase do Projeto · Disciplina · Tipo de
+        Esforço) que a sua equipe vê ao apontar.
+      </p>
 
       <div className="horas-hint">
-        Cada atividade controlada é uma lista de opções selecionável pelo colaborador ao iniciar o
-        cronômetro. Você pode renomear o rótulo (ex.: "Atividade Controlada 1" → "Fase do Projeto").
+        Cada atividade controlada é uma lista de opções que o colaborador escolhe ao iniciar o
+        cronômetro. Você pode renomear o rótulo e adicionar/remover as opções.
       </div>
 
       {erro ? <div className="horas-hint">⚠️ {erro}</div> : null}
 
-      {isDiretoria(role) ? (
+      {areasGeriveis.length > 1 ? (
         <div className="horas-card">
           <div className="horas-toolbar" style={{ marginBottom: 0 }}>
             <div className="horas-fld" style={{ maxWidth: 340 }}>
-              <label>Gerência</label>
+              <label>Área</label>
               <select value={sel} onChange={(e) => setSel(e.target.value)}>
-                {gerencias.map((g) => (
+                {areasGeriveis.map((g) => (
                   <option key={g.id} value={g.id}>
                     {g.nome}
                   </option>

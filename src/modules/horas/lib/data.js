@@ -76,13 +76,17 @@ export async function deleteProjeto(id) {
 }
 
 // ---- Apontamentos ---------------------------------------------------------
-// Escopo (espelha scopedApontamentos() do protótipo e a RLS):
-//   diretoria -> todos;  gerente -> a gerência;  usuario -> os próprios.
-// Filtro por intervalo mantém o payload limitado (escala).
-export async function fetchApontamentos({ role, colaboradorId, gerenciaId, sinceTs, ateTs } = {}) {
+// Escopo agora segue a HIERARQUIA da Gestão de Pessoas (via RLS):
+//   usuario                -> os próprios;
+//   coordenador | gestor   -> o próprio + toda a subárvore abaixo (a RLS filtra);
+//   admin/super            -> tudo (a RLS libera).
+// Só o 'usuario' precisa do filtro explícito por colaborador; para a gestão
+// deixamos a RLS devolver a subárvore. Filtro por intervalo limita o payload.
+export async function fetchApontamentos({ role, colaboradorId, sinceTs, ateTs } = {}) {
   let q = supabase.from('horas_apontamentos').select('*').order('inicio', { ascending: false });
-  if (role === 'gerente') q = q.eq('gerencia_id', gerenciaId ?? '00000000-0000-0000-0000-000000000000');
-  else if (role !== 'diretoria') q = q.eq('colaborador_id', colaboradorId);
+  if (role !== 'coordenador' && role !== 'gestor') {
+    q = q.eq('colaborador_id', colaboradorId ?? '00000000-0000-0000-0000-000000000000');
+  }
   if (sinceTs != null) q = q.gte('inicio', new Date(sinceTs).toISOString());
   if (ateTs != null) q = q.lt('inicio', new Date(ateTs).toISOString()); // ateTs = início do dia seguinte
   const { data, error } = await q;

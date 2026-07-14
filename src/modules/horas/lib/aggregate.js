@@ -1,4 +1,4 @@
-import { startOfDay } from './format';
+import { startOfDay } from './format.js';
 
 // Utilitários de agregação para os dashboards. Puros (sem I/O), fáceis de testar.
 

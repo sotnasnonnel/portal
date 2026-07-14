@@ -9,6 +9,7 @@ import "./PortalAdmin.css";
 const DP_ROLES = [
   ["", "Sem acesso"],
   ["usuario", "Usuário"],
+  ["coordenador", "Coordenador"],
   ["gestor", "Gestor"],
   ["admin", "Admin"],
   ["rh", "RH / DP"],
@@ -22,15 +23,9 @@ const SOLIC_ROLES = [
   ["user", "Usuário"],
   ["admin", "Admin"],
 ];
-// Controle de Horas: todos têm acesso; o papel define o escopo.
-//   Usuário   -> aponta e vê o próprio tempo
-//   Gerente   -> aponta, e vê/administra a gerência dele (definida em /horas/equipe)
-//   Diretoria -> vê tudo e administra todas as gerências (não aponta)
-const HORAS_ROLES = [
-  ["usuario", "Usuário"],
-  ["gerente", "Gerente"],
-  ["diretoria", "Diretoria"],
-];
+// Controle de Horas: o papel NÃO é editado aqui — ele deriva da hierarquia da
+// Gestão de Pessoas (perfil + superior_id). Gestor/coordenador enxergam a
+// própria equipe; o resto vê só o próprio tempo.
 
 export default function PortalAdmin() {
   const { user } = useAuth();
@@ -67,7 +62,6 @@ export default function PortalAdmin() {
         jaLogou: !!c.auth_id,
         dpRole: c.perfil,
         dpRh: c.rh_dp === true,
-        horasRole: c.horas_role || "usuario",
         reembId: r?.id ?? null,
         reembRole: r?.role ?? null,
         solicId: s?.id ?? null,
@@ -98,10 +92,6 @@ export default function PortalAdmin() {
         res = await supabase.from("colaboradores").update({ rh_dp: false, perfil: stored }).eq("id", row.colabId);
         patch = { dpRole: stored, dpRh: false };
       }
-    } else if (app === "horas") {
-      // Papel próprio do módulo, guardado em colaboradores.horas_role.
-      res = await supabase.from("colaboradores").update({ horas_role: value }).eq("id", row.colabId);
-      patch = { horasRole: value };
     } else if (app === "reembolso") {
       res = await supabase.from("reembolso_profiles").update({ role: value }).eq("id", row.reembId);
       patch = { reembRole: value };
@@ -210,7 +200,6 @@ export default function PortalAdmin() {
                 <th>Gestão de Pessoas</th>
                 <th>Reembolso</th>
                 <th>Solicitações</th>
-                <th>Controle de Horas</th>
               </tr>
             </thead>
             <tbody>
@@ -254,15 +243,11 @@ export default function PortalAdmin() {
                       hasAccess={!!row.solicId}
                     />
                   </td>
-                  <td>
-                    {/* Módulo aberto a todos: sempre editável (Usuário/Gerente/Diretoria). */}
-                    <RoleSelect row={row} app="horas" value={row.horasRole} options={HORAS_ROLES} hasAccess />
-                  </td>
                 </tr>
               ))}
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="pa-empty-cell">
+                  <td colSpan={5} className="pa-empty-cell">
                     Ninguém encontrado.
                   </td>
                 </tr>

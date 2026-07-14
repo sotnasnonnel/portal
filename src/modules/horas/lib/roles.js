@@ -1,22 +1,28 @@
-// Papéis do Controle de Horas (colaboradores.horas_role), como no protótipo.
-//   usuario   -> aponta e vê o próprio tempo
-//   gerente   -> aponta, e vê/administra a sua gerência
-//   diretoria -> vê tudo e administra todas as gerências (não aponta)
-export const ROLES = ['usuario', 'gerente', 'diretoria'];
+// Papéis do Controle de Horas — DERIVADOS do perfil da Gestão de Pessoas
+// (colaboradores.perfil). Não há mais horas_role/gerência próprios:
+//   usuario     -> aponta e vê o próprio tempo
+//   coordenador -> aponta e vê/administra a sua equipe (a subárvore abaixo dele)
+//   gestor      -> aponta e vê/administra a sua equipe; no topo da árvore, a
+//                  empresa toda. (perfil admin também entra aqui.)
+// A visibilidade real (o próprio + a subárvore via superior_id) é garantida
+// pela RLS do banco; aqui os papéis só decidem menus, telas e filtros.
+export const ROLES = ['usuario', 'coordenador', 'gestor'];
 
 export const ROLE_LABEL = {
   usuario: 'Usuário',
-  gerente: 'Gerente',
-  diretoria: 'Diretoria',
+  coordenador: 'Coordenador',
+  gestor: 'Gestor',
 };
 
-export const isDiretoria = (role) => role === 'diretoria';
-export const isGerente = (role) => role === 'gerente';
-// Quem administra alguma gerência (configuração, equipe, exclusão de apontamentos alheios).
-export const isGestor = (role) => role === 'gerente' || role === 'diretoria';
+export const isGestor = (role) => role === 'gestor';
+export const isCoordenador = (role) => role === 'coordenador';
+// Quem enxerga/administra a equipe (subárvore): gestor e coordenador.
+export const isGestao = (role) => role === 'gestor' || role === 'coordenador';
 
-// A diretoria supervisiona; quem aponta horas é usuário e gerente.
-export const podeApontar = (role) => role !== 'diretoria';
+// Todos apontam — o antigo papel supervisor "diretoria" (que não apontava)
+// deixou de existir.
+export const podeApontar = () => true;
 
-// Escopo do dashboard/registros, espelhando scopedApontamentos() do protótipo.
-export const escopo = (role) => (isDiretoria(role) ? 'geral' : isGerente(role) ? 'gerencia' : 'meu');
+// Escopo do dashboard/registros: usuário vê só o seu; a gestão vê a equipe
+// (a subárvore — a RLS já limita o que volta do banco).
+export const escopo = (role) => (isGestao(role) ? 'equipe' : 'meu');

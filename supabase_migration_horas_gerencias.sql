@@ -307,6 +307,31 @@ revoke all on function public.horas_set_gerencia(uuid, uuid) from public;
 revoke execute on function public.horas_set_gerencia(uuid, uuid) from anon;  -- concedido por padrão
 grant execute on function public.horas_set_gerencia(uuid, uuid) to authenticated;
 
+-- ---- Proteção contra excluir gerência em uso -------------------------------
+-- Excluir uma gerência com apontamentos órfão o histórico dela (gerencia_id vira
+-- null e some das visões de gerente). A UI barra quando há colaboradores, mas
+-- isso é contornável; o trigger recusa no banco quando há colaboradores OU
+-- apontamentos.
+create or replace function public.horas_impede_excluir_gerencia_em_uso()
+returns trigger language plpgsql security definer set search_path = '' as $$
+begin
+  if exists (select 1 from public.colaboradores where horas_gerencia_id = old.id) then
+    raise exception 'Realoque os colaboradores desta gerência antes de excluí-la.'
+      using errcode = 'foreign_key_violation';
+  end if;
+  if exists (select 1 from public.horas_apontamentos where gerencia_id = old.id) then
+    raise exception 'Esta gerência tem apontamentos no histórico e não pode ser excluída.'
+      using errcode = 'foreign_key_violation';
+  end if;
+  return old;
+end $$;
+revoke all on function public.horas_impede_excluir_gerencia_em_uso() from public;
+
+drop trigger if exists horas_gerencias_impede_exclusao on public.horas_gerencias;
+create trigger horas_gerencias_impede_exclusao
+before delete on public.horas_gerencias
+for each row execute function public.horas_impede_excluir_gerencia_em_uso();
+
 -- ============================================================================
 -- Depois de aplicar:
 --   1. get_advisors(security) — nenhuma rls_disabled_in_public em horas_*.

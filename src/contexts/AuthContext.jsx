@@ -7,8 +7,16 @@ import { clearSupabaseCache as clearSolicCache } from '../modules/solic/lib/supa
 
 const AuthContext = createContext(null);
 
-// Papéis do Controle de Horas (colaboradores.horas_role). Ver modules.horas abaixo.
-const HORAS_ROLES = ['usuario', 'gerente', 'diretoria'];
+// Papéis do Controle de Horas — DERIVADOS do perfil da Gestão de Pessoas
+// (colaboradores.perfil), a mesma hierarquia do módulo de Pessoas. Não há mais
+// papel próprio do Horas: quem é gestor/admin lá é "gestor" aqui, coordenador é
+// "coordenador", e o resto é "usuario". A visibilidade (subárvore) é da RLS.
+const horasRoleFromPerfil = (perfil) =>
+  perfil === 'admin' || perfil === 'gestor'
+    ? 'gestor'
+    : perfil === 'coordenador'
+      ? 'coordenador'
+      : 'usuario';
 
 // Limpa o ?code= do retorno OAuth da URL (PKCE + HashRouter).
 function cleanOAuthParams() {
@@ -131,8 +139,7 @@ export function AuthProvider({ children }) {
         solicVistoEm: colab.solic_visto_em || null,
         funcao: colab.funcao || null,
         dataAdmissao: colab.data_admissao || null,
-        horasRole: colab.horas_role || 'usuario',   // usuario | gerente | diretoria
-        horasGerenciaId: colab.horas_gerencia_id || null,  // escopo do gerente
+        horasGerenciaId: colab.horas_gerencia_id || null,  // gerência p/ ver projetos ao apontar
         authId: authUser.id,
       });
       setReembolsoProfile(reemRes.data ?? null);
@@ -181,25 +188,50 @@ export function AuthProvider({ children }) {
     window.dispatchEvent(new Event('solicitacoes_rh_atualizadas'));
   }, []);
 
+  // Recarrega o perfil/gerência do Controle de Horas sem exigir logout: o papel
+  // agora DERIVA de colaboradores.perfil (Gestão de Pessoas). Quem for promovido
+  // a gestor/coordenador lá passa a ver a equipe aqui sem relogar. Chamado pelo
+  // shell do módulo ao abrir e ao focar a aba.
+  const refreshHorasIdentity = useCallback(async () => {
+    if (!session?.user) return;
+    const { data } = await supabase
+      .from('colaboradores')
+      .select('perfil, rh_dp, horas_gerencia_id')
+      .eq('auth_id', session.user.id)
+      .maybeSingle();
+    if (!data) return;
+    const rhDp = data.rh_dp === true;
+    const perfilEfetivo = (rhDp && !['gestor', 'admin', 'coordenador'].includes(data.perfil))
+      ? 'rh'
+      : data.perfil;
+    setUser((u) => {
+      if (!u) return u;
+      if (u.perfil === perfilEfetivo && u.horasGerenciaId === (data.horas_gerencia_id || null)) {
+        return u; // nada mudou — evita re-render desnecessário
+      }
+      return { ...u, perfil: perfilEfetivo, horasGerenciaId: data.horas_gerencia_id || null };
+    });
+  }, [session]);
+
   const modules = useMemo(() => ({
     // DP liberado para gestor, coordenador e admin (RH); usuário comum fica bloqueado.
     dp: ['gestor', 'coordenador', 'admin', 'rh'].includes(user?.perfil) ? user.perfil : null,
     // Reembolso temporariamente bloqueado para todos os usuários.
     reembolso: null,                           // (reembolsoProfile?.role) — desativado por enquanto
     solic: solicProfile?.role ?? null,         // user | admin
-    // Controle de Horas: aberto a todos os logados. O papel é próprio do módulo
-    // (colaboradores.horas_role) e é a ÚNICA fonte da verdade na UI — sem override
-    // de super-admin, senão o seletor de /portal-admin não teria efeito visível
-    // para quem o edita. (A RLS ainda dá passe livre ao super-admin no banco.)
-    horas: user ? (HORAS_ROLES.includes(user.horasRole) ? user.horasRole : 'usuario') : null,
+    // Controle de Horas: aberto a todos os logados. O papel DERIVA do perfil da
+    // Gestão de Pessoas (mesma hierarquia); quem enxerga a equipe são os
+    // superiores da árvore (garantido pela RLS). O super-admin também tem passe
+    // livre no banco.
+    horas: user ? horasRoleFromPerfil(user.perfil) : null,
   }), [user, solicProfile]);
 
   const value = useMemo(() => ({
     user, session, modules, reembolsoProfile, solicProfile,
     blocked, loading, error,
-    signInWithMicrosoft, logout, refreshReembolsoProfile, markSolicVisto,
+    signInWithMicrosoft, logout, refreshReembolsoProfile, markSolicVisto, refreshHorasIdentity,
   }), [user, session, modules, reembolsoProfile, solicProfile, blocked, loading, error,
-       signInWithMicrosoft, logout, refreshReembolsoProfile, markSolicVisto]);
+       signInWithMicrosoft, logout, refreshReembolsoProfile, markSolicVisto, refreshHorasIdentity]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
