@@ -22,7 +22,7 @@ const TOM_BADGE = {
 };
 
 const SELECT_SOL = `
-  id, tipo, status, iniciativa, gestor_id, colaborador_id, justificativa, salario_proposto, funcao_proposta, cargo_proposto, created_at,
+  id, numero, tipo, status, iniciativa, gestor_id, colaborador_id, justificativa, salario_proposto, funcao_proposta, cargo_proposto, created_at,
   colaborador:colaborador_id ( nome, funcao, salario ),
   gestor:gestor_id ( nome ),
   etapas:solicitacoes_rh_etapas ( id, ordem, aprovador_id, papel, tipo_etapa, status, justificativa, decidido_em )
@@ -208,7 +208,7 @@ export default function AcompanharRequisicoes() {
                     <ChevronDown size={16} aria-hidden className={`sol-card-chevron ${expandido.has(s.id) ? 'is-open' : ''}`} />
                     <span className="sol-card-headtext">
                       <span className="sol-card-headline sol-card-colab">
-                        {TIPO_LABEL[s.tipo]} · {nomeColab || `Solicitado por ${nomeSolic}`}
+                        {s.numero != null && `#${s.numero} · `}{TIPO_LABEL[s.tipo]} · {nomeColab || `Solicitado por ${nomeSolic}`}
                       </span>
                       {!expandido.has(s.id) && resumo.tom === 'pendente' && (
                         <span className="sol-card-headsub">{resumo.texto}</span>
