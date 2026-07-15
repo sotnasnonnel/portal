@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Users, Receipt, BarChart3, Clock, ShieldCheck, LogOut, ArrowRight, Lock } from 'lucide-react';
+import { Users, Receipt, BarChart3, Clock, CreditCard, ShieldCheck, LogOut, ArrowRight, Lock } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { isSuperAdmin } from '../../config/superAdmin';
 import './Home.css';
@@ -52,6 +52,15 @@ export default function Home() {
       tone: 'teal',
       title: 'Controle de Horas',
       desc: 'Apontamento de horas por projeto e atividade',
+    },
+    {
+      to: '/financeiro',
+      icon: CreditCard,
+      tone: 'blue',
+      title: 'Financeiro',
+      desc: 'Cartões virtuais, limites e solicitações financeiras',
+      // Sem acesso: card aparece esmaecido/com cadeado. Liberação em "Gerenciar acessos".
+      locked: !modules.financeiro,
     },
     isSuperAdmin(user) && {
       to: '/portal-admin',

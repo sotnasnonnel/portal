@@ -140,6 +140,7 @@ export function AuthProvider({ children }) {
         funcao: colab.funcao || null,
         dataAdmissao: colab.data_admissao || null,
         horasGerenciaId: colab.horas_gerencia_id || null,  // gerência p/ ver projetos ao apontar
+        financeiroRole: colab.financeiro_role || null,     // acesso ao módulo Financeiro
         authId: authUser.id,
       });
       setReembolsoProfile(reemRes.data ?? null);
@@ -224,6 +225,14 @@ export function AuthProvider({ children }) {
     // superiores da árvore (garantido pela RLS). O super-admin também tem passe
     // livre no banco.
     horas: user ? horasRoleFromPerfil(user.perfil) : null,
+    // Financeiro: 'admin' = time do Financeiro (executa/configura), via
+    // financeiro_role (Gerenciar acessos). Coordenadores e gestores entram
+    // automaticamente como 'user' (solicitantes de cartão/limite). Demais só
+    // com grant explícito de financeiro_role. null = sem acesso (card c/ cadeado).
+    financeiro: user
+      ? (user.financeiroRole
+          || (['coordenador', 'gestor'].includes(user.perfil) ? 'user' : null))
+      : null,
   }), [user, solicProfile]);
 
   const value = useMemo(() => ({

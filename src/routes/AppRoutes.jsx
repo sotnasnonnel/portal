@@ -7,6 +7,7 @@ import ReembolsoAppLayout from '../modules/reembolso/components/layout/AppLayout
 import SolicShell from '../modules/solic/app/components/AppShell';
 import HorasShell from '../modules/horas/app/components/AppShell';
 import { rotaInicial } from '../modules/horas/app/components/nav';
+import FinanceiroShell from '../modules/financeiro/app/components/AppShell';
 
 const Login = lazy(() => import('../pages/Login/Login'));
 const Home = lazy(() => import('../pages/Home/Home'));
@@ -43,6 +44,11 @@ const HorasRegistros = lazy(() => import('../modules/horas/app/registros/page'))
 const HorasDashboard = lazy(() => import('../modules/horas/app/dashboard/page'));
 const HorasConfig = lazy(() => import('../modules/horas/app/config/page'));
 const HorasEquipe = lazy(() => import('../modules/horas/app/equipe/page'));
+const FinanceiroDashboard = lazy(() => import('../modules/financeiro/app/dashboard/page'));
+const FinanceiroHub = lazy(() => import('../modules/financeiro/app/solicitacoes/hub/page'));
+const NovaSolicitacaoFin = lazy(() => import('../modules/financeiro/app/solicitacoes/nova/page'));
+const AcompanharFin = lazy(() => import('../modules/financeiro/app/solicitacoes/acompanhar/page'));
+const FinanceiroFluxos = lazy(() => import('../modules/financeiro/app/fluxos/page'));
 
 function RouteFallback() {
   return <div style={{ padding: 'var(--space-3xl)', textAlign: 'center' }}>Carregando...</div>;
@@ -391,6 +397,25 @@ export default function AppRoutes() {
           <Route path="equipe" element={<LazyPage><HorasEquipe /></LazyPage>} />
           {/* Rota antiga de Projetos: virou a aba Configuração. */}
           <Route path="projetos" element={<Navigate to="/horas/config" replace />} />
+        </Route>
+
+        <Route
+          path="/financeiro"
+          element={
+            <ProtectedRoute>
+              <ModuleRoute module="financeiro">
+                <FinanceiroShell />
+              </ModuleRoute>
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="/financeiro/dashboard" replace />} />
+          <Route path="dashboard" element={<LazyPage><FinanceiroDashboard /></LazyPage>} />
+          <Route path="solicitacoes" element={<Navigate to="/financeiro/solicitacoes/nova" replace />} />
+          <Route path="solicitacoes/nova" element={<ProtectedRoute allowedRoles={['coordenador', 'gestor']}><LazyPage><FinanceiroHub /></LazyPage></ProtectedRoute>} />
+          <Route path="solicitacoes/nova/:tipo" element={<ProtectedRoute allowedRoles={['coordenador', 'gestor']}><LazyPage><NovaSolicitacaoFin /></LazyPage></ProtectedRoute>} />
+          <Route path="solicitacoes/acompanhar" element={<LazyPage><AcompanharFin /></LazyPage>} />
+          <Route path="fluxos" element={<LazyPage><FinanceiroFluxos /></LazyPage>} />
         </Route>
 
         <Route path="*" element={<Navigate to="/home" replace />} />

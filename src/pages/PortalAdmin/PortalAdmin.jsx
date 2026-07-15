@@ -23,6 +23,11 @@ const SOLIC_ROLES = [
   ["user", "Usuário"],
   ["admin", "Admin"],
 ];
+const FIN_ROLES = [
+  ["", "Sem acesso"],
+  ["user", "Usuário"],
+  ["admin", "Admin"],
+];
 // Controle de Horas: o papel NÃO é editado aqui — ele deriva da hierarquia da
 // Gestão de Pessoas (perfil + superior_id). Gestor/coordenador enxergam a
 // própria equipe; o resto vê só o próprio tempo.
@@ -39,7 +44,7 @@ export default function PortalAdmin() {
     setLoading(true);
     setErr("");
     const [colab, reemb, solic] = await Promise.all([
-      supabase.from("colaboradores").select("id, nome, email, perfil, rh_dp, horas_role, auth_id, ativo").order("nome"),
+      supabase.from("colaboradores").select("id, nome, email, perfil, rh_dp, horas_role, financeiro_role, auth_id, ativo").order("nome"),
       supabase.from("reembolso_profiles").select("id, email, role"),
       supabase.from("solic_profiles").select("id, email, role"),
     ]);
@@ -62,6 +67,7 @@ export default function PortalAdmin() {
         jaLogou: !!c.auth_id,
         dpRole: c.perfil,
         dpRh: c.rh_dp === true,
+        finRole: c.financeiro_role ?? null,
         reembId: r?.id ?? null,
         reembRole: r?.role ?? null,
         solicId: s?.id ?? null,
@@ -95,6 +101,11 @@ export default function PortalAdmin() {
     } else if (app === "reembolso") {
       res = await supabase.from("reembolso_profiles").update({ role: value }).eq("id", row.reembId);
       patch = { reembRole: value };
+    } else if (app === "financeiro") {
+      // Papel na própria colaboradores (como o DP). "" (Sem acesso) vira NULL.
+      const stored = value === "" ? null : value;
+      res = await supabase.from("colaboradores").update({ financeiro_role: stored }).eq("id", row.colabId);
+      patch = { finRole: stored };
     } else {
       res = await supabase.from("solic_profiles").update({ role: value }).eq("id", row.solicId);
       patch = { solicRole: value };
@@ -200,6 +211,7 @@ export default function PortalAdmin() {
                 <th>Gestão de Pessoas</th>
                 <th>Reembolso</th>
                 <th>Solicitações</th>
+                <th>Financeiro</th>
               </tr>
             </thead>
             <tbody>
@@ -243,11 +255,14 @@ export default function PortalAdmin() {
                       hasAccess={!!row.solicId}
                     />
                   </td>
+                  <td>
+                    <RoleSelect row={row} app="financeiro" value={row.finRole ?? ""} options={FIN_ROLES} hasAccess />
+                  </td>
                 </tr>
               ))}
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="pa-empty-cell">
+                  <td colSpan={6} className="pa-empty-cell">
                     Ninguém encontrado.
                   </td>
                 </tr>

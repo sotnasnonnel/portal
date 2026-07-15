@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Home, Users, Wallet, BarChart3, Clock, ChevronDown } from "lucide-react";
+import { Home, Users, Wallet, BarChart3, Clock, CreditCard, ChevronDown } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import "./AppSwitcher.css";
 
@@ -23,6 +23,7 @@ export default function AppSwitcher({ currentKey, onNavigate }) {
     { key: "reembolso", label: "Reembolsos", to: "/reembolsos", Icon: Wallet, show: !!modules?.reembolso },
     { key: "solic", label: "Solicitações", to: "/solic/dashboard", Icon: BarChart3, show: !!modules?.solic },
     { key: "horas", label: "Controle de Horas", to: "/horas/apontar", Icon: Clock, show: true },
+    { key: "financeiro", label: "Financeiro", to: "/financeiro", Icon: CreditCard, show: !!modules?.financeiro },
     { key: "home", label: "Portal (início)", to: "/home", Icon: Home, show: true },
   ].filter((a) => a.show);
 
