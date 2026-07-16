@@ -1,5 +1,6 @@
 import { supabase } from '../../../../services/supabase';
 import { buscarFluxoFin, montarEtapasFin } from '../../../../config/aprovacaoFinanceiro';
+import { notificarAprovadorFin } from '../../../../services/notificarAprovadorFin';
 
 /**
  * Cria a solicitação do Financeiro: envelope + etapas (atômico, com delete
@@ -35,6 +36,7 @@ export async function criarSolicitacaoFin({ tipoDb, solicitanteId, envelope }) {
     throw err;
   }
 
+  notificarAprovadorFin(sol.id);
   window.dispatchEvent(new Event('solicitacoes_financeiro_atualizadas'));
   return sol; // { id, numero }
 }

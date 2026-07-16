@@ -65,24 +65,70 @@
 .fin-construcao strong { color: var(--f-ink); font-size: 1.05rem; }
 .fin-construcao svg { color: var(--f-primary); }
 
-/* ---- atalhos do dashboard ---- */
-.fin-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 8px; }
-.fin-quick {
-  display: flex; align-items: center; gap: 12px;
-  background: #fff; border: 1px solid var(--f-border); border-radius: 12px;
-  padding: 16px; text-decoration: none; color: inherit;
-  transition: box-shadow 0.15s, border-color 0.15s, transform 0.15s;
+/* ---- dashboard: stat tiles ----
+   O número é o gráfico. Texto usa tokens de tinta; a cor vive só no marcador. */
+.fin-sec {
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--f-blue); margin: 26px 0 10px;
 }
-.fin-quick:hover { box-shadow: var(--f-shadow-sm); border-color: var(--f-primary); transform: translateY(-1px); }
-.fin-quick-icon {
-  width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--f-brand-50); color: var(--f-primary);
+.fin-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.fin-tile {
+  display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 3px 8px;
+  background: #fff; border: 1px solid var(--f-border); border-radius: 12px; padding: 14px 16px;
 }
-.fin-quick-body { display: flex; flex-direction: column; flex: 1; min-width: 0; }
-.fin-quick-body strong { font-size: 0.92rem; }
-.fin-quick-body small { color: var(--f-muted); font-size: 0.75rem; }
-.fin-quick-arrow { color: var(--f-muted); }
+.fin-tile.is-acao { border-color: var(--f-primary); box-shadow: 0 0 0 1px var(--f-primary); }
+.fin-tile-mark { grid-column: 1; grid-row: 1; width: 8px; height: 8px; border-radius: 50%; }
+.fin-tile-mark.tom-neutro { background: var(--f-muted); }
+.fin-tile-mark.tom-good { background: #047857; }
+.fin-tile-mark.tom-warning { background: #b45309; }
+.fin-tile-mark.tom-critical { background: #b91c1c; }
+.fin-tile-mark.tom-acao { background: var(--f-primary); }
+.fin-tile-ico { grid-column: 1; grid-row: 1; display: flex; color: var(--f-primary); }
+.fin-tile-label {
+  grid-column: 2; grid-row: 1; font-size: 0.7rem; text-transform: uppercase;
+  letter-spacing: 0.04em; color: var(--f-muted); font-weight: 700;
+}
+/* figuras proporcionais no valor do tile (tabular-nums só onde alinha coluna) */
+.fin-tile-value { grid-column: 1 / -1; grid-row: 2; font-size: 1.55rem; font-weight: 700; color: var(--f-ink); line-height: 1.15; }
+.fin-tile-foot { grid-column: 1 / -1; grid-row: 3; font-size: 0.75rem; color: var(--f-muted); }
+.fin-tile-link { text-decoration: none; transition: border-color 0.15s, box-shadow 0.15s; }
+.fin-tile-link:hover { border-color: var(--f-primary); box-shadow: var(--f-shadow-sm); }
+
+/* ---- dashboard: card, barras e tabela ---- */
+.fin-card { background: #fff; border: 1px solid var(--f-border); border-radius: 12px; padding: 14px 16px; }
+.fin-bars { display: flex; flex-direction: column; gap: 2px; }
+.fin-bar-row {
+  display: grid; grid-template-columns: minmax(90px, 150px) 1fr auto; align-items: center;
+  gap: 12px; padding: 7px 6px; border-radius: 6px;
+}
+.fin-bar-row:hover { background: var(--f-gray-50); }
+.fin-bar-label {
+  font-size: 0.8rem; color: var(--f-gray-600);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.fin-bar-track { height: 10px; background: var(--f-gray-100); border-radius: 4px; }
+/* ponta do dado arredondada (4px); base ancorada e reta */
+.fin-bar-fill { display: block; height: 100%; background: var(--f-primary); border-radius: 0 4px 4px 0; }
+.fin-bar-value { font-size: 0.8rem; font-weight: 600; color: var(--f-ink); font-variant-numeric: tabular-nums; }
+
+.fin-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.fin-table th {
+  text-align: left; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--f-muted); font-weight: 700; padding: 8px 10px;
+  border-bottom: 1px solid var(--f-gray-100);
+}
+.fin-table td { padding: 9px 10px; border-bottom: 1px solid var(--f-gray-100); color: var(--f-gray-700, #334155); }
+.fin-table tbody tr:last-child td { border-bottom: none; }
+.fin-table .num { font-variant-numeric: tabular-nums; }
+.fin-badge { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; white-space: nowrap; }
+.fin-badge.tom-pendente { background: #fef9ec; color: #b45309; }
+.fin-badge.tom-concluida { background: #ecfdf5; color: #047857; }
+.fin-badge.tom-reprovada { background: #fef2f2; color: #b91c1c; }
+.fin-card-foot {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 12px;
+  font-size: 0.8rem; font-weight: 600; color: var(--f-primary); text-decoration: none;
+}
+.fin-card-foot:hover { text-decoration: underline; }
 
 /* ---- hub em grade ---- */
 .fin-hub-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 8px; }

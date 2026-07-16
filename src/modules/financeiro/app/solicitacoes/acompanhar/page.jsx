@@ -7,6 +7,7 @@ import FluxoTimeline from '../../../../../components/Solicitacoes/FluxoTimeline'
 import {
   etapaAtualFin, acaoDisponivelFin, resumoAndamentoFin, TIPO_LABEL_FIN,
 } from '../../../../../config/aprovacaoFinanceiro';
+import { notificarAprovadorFin } from '../../../../../services/notificarAprovadorFin';
 import '../../../../../components/UI/Components.css';
 
 const TOM_BADGE = {
@@ -96,6 +97,9 @@ export default function AcompanharFin() {
         alert('Esta etapa já foi tratada. A lista será atualizada.');
       } else if (!aprovando) {
         await supabase.from('solicitacoes_financeiro').update({ status: 'reprovada', updated_at: agora }).eq('id', sol.id);
+      } else {
+        // Aprovou: avisa quem passa a ser o responsável da vez.
+        notificarAprovadorFin(sol.id);
       }
       setDecisao(null); setComentario('');
       await fetchLista();
