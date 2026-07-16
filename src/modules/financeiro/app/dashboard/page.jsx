@@ -8,7 +8,7 @@ import { SOLICITACOES_FIN } from '../../../../config/financeiro';
 import { acaoDisponivelFin, TIPO_LABEL_FIN } from '../../../../config/aprovacaoFinanceiro';
 
 const SELECT = `
-  id, numero, tipo, status, valor, cnae, nome_despesa, created_at, solicitante_id,
+  id, numero, tipo, status, valor, aplicacao, nome_despesa, created_at, solicitante_id,
   etapas:solicitacoes_financeiro_etapas ( id, ordem, aprovador_id, tipo_etapa, status )
 `;
 
@@ -20,7 +20,8 @@ const BADGE = {
 
 const fmtData = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : '—');
 const soma = (arr) => arr.reduce((t, s) => t + (Number(s.valor) || 0), 0);
-const TOP_CNAE = 8;
+const TOP_APLIC = 8;
+const listaAplic = (s) => (Array.isArray(s.aplicacao) && s.aplicacao.length ? s.aplicacao : ['Não informado']);
 
 export default function FinanceiroDashboard() {
   const { user } = useAuth();
@@ -58,27 +59,30 @@ export default function FinanceiroDashboard() {
   const reprovadas = porStatus('reprovada');
   const aguardandoVoce = lista.filter((s) => acaoDisponivelFin(user?.id, s.etapas, isFinAdmin) !== null);
 
-  // Top CNAE por valor: série única (uma cor), cauda agrupada em "Outros".
-  const porCnaeTodos = Object.values(
+  // Solicitações por Aplicação: CONTAGEM, não valor — a aplicação é múltipla, e
+  // somar o valor cheio em cada uma infla o total. Série única, cauda em "Outros".
+  const porAplicTodas = Object.values(
     lista.reduce((acc, s) => {
-      const k = s.cnae || 'Não informado';
-      acc[k] = acc[k] || { cnae: k, valor: 0, qtd: 0 };
-      acc[k].valor += Number(s.valor) || 0;
-      acc[k].qtd += 1;
+      for (const k of listaAplic(s)) {
+        acc[k] = acc[k] || { aplicacao: k, qtd: 0 };
+        acc[k].qtd += 1;
+      }
       return acc;
     }, {}),
-  ).sort((a, b) => b.valor - a.valor);
+  ).sort((a, b) => b.qtd - a.qtd);
 
-  const porCnae = porCnaeTodos.length > TOP_CNAE
+  const porAplic = porAplicTodas.length > TOP_APLIC
     ? [
-        ...porCnaeTodos.slice(0, TOP_CNAE),
-        porCnaeTodos.slice(TOP_CNAE).reduce(
-          (t, c) => ({ cnae: 'Outros', valor: t.valor + c.valor, qtd: t.qtd + c.qtd }),
-          { cnae: 'Outros', valor: 0, qtd: 0 },
+        ...porAplicTodas.slice(0, TOP_APLIC),
+        porAplicTodas.slice(TOP_APLIC).reduce(
+          (t, c) => ({ aplicacao: 'Outros', qtd: t.qtd + c.qtd }),
+          { aplicacao: 'Outros', qtd: 0 },
         ),
       ]
-    : porCnaeTodos;
-  const maxCnae = Math.max(1, ...porCnae.map((c) => c.valor));
+    : porAplicTodas;
+  const maxAplic = Math.max(1, ...porAplic.map((c) => c.qtd));
+  // Uma solicitação pode citar várias aplicações: a soma das barras passa o total.
+  const somaBarras = porAplicTodas.reduce((t, c) => t + c.qtd, 0);
 
   const recentes = lista.slice(0, 8);
 
@@ -155,23 +159,31 @@ export default function FinanceiroDashboard() {
             })}
           </div>
 
-          {/* Top CNAE por valor — série única, valores rotulados direto */}
-          <h2 className="fin-sec">Valor por CNAE</h2>
+          {/* Solicitações por Aplicação — série única, contagem rotulada direto */}
+          <h2 className="fin-sec">Solicitações por Aplicação</h2>
           <div className="fin-card">
-            {porCnae.length === 0 ? (
-              <div className="fin-empty" style={{ border: 'none', padding: 20 }}>Sem dados de CNAE.</div>
+            {porAplic.length === 0 ? (
+              <div className="fin-empty" style={{ border: 'none', padding: 20 }}>Sem dados de aplicação.</div>
             ) : (
-              <div className="fin-bars">
-                {porCnae.map((c) => (
-                  <div key={c.cnae} className="fin-bar-row" title={`${c.cnae}: ${formatarMoeda(c.valor)} · ${c.qtd} solicitação(ões)`}>
-                    <span className="fin-bar-label">{c.cnae}</span>
-                    <span className="fin-bar-track">
-                      <span className="fin-bar-fill" style={{ width: `${Math.max(2, (c.valor / maxCnae) * 100)}%` }} />
-                    </span>
-                    <span className="fin-bar-value">{formatarMoeda(c.valor)}</span>
-                  </div>
-                ))}
-              </div>
+              <>
+                <div className="fin-bars">
+                  {porAplic.map((c) => (
+                    <div key={c.aplicacao} className="fin-bar-row" title={`${c.aplicacao}: ${c.qtd} solicitação(ões)`}>
+                      <span className="fin-bar-label">{c.aplicacao}</span>
+                      <span className="fin-bar-track">
+                        <span className="fin-bar-fill" style={{ width: `${Math.max(2, (c.qtd / maxAplic) * 100)}%` }} />
+                      </span>
+                      <span className="fin-bar-value">{c.qtd}</span>
+                    </div>
+                  ))}
+                </div>
+                {somaBarras > lista.length && (
+                  <p className="fin-bars-nota">
+                    Uma solicitação pode ter mais de uma aplicação — por isso a soma das barras ({somaBarras})
+                    passa o total de solicitações ({lista.length}).
+                  </p>
+                )}
+              </>
             )}
           </div>
 
@@ -181,7 +193,7 @@ export default function FinanceiroDashboard() {
             <table className="fin-table">
               <thead>
                 <tr>
-                  <th>#</th><th>Tipo</th><th>Despesa</th><th>CNAE</th>
+                  <th>#</th><th>Tipo</th><th>Descrição</th><th>Aplicação</th>
                   <th className="num">Valor</th><th>Aberta</th><th>Status</th>
                 </tr>
               </thead>
@@ -193,7 +205,7 @@ export default function FinanceiroDashboard() {
                       <td className="num">{s.numero ?? '—'}</td>
                       <td>{TIPO_LABEL_FIN[s.tipo] || s.tipo}</td>
                       <td>{s.nome_despesa || '—'}</td>
-                      <td>{s.cnae || '—'}</td>
+                      <td>{Array.isArray(s.aplicacao) && s.aplicacao.length ? s.aplicacao.join(', ') : '—'}</td>
                       <td className="num">{s.valor != null ? formatarMoeda(s.valor) : '—'}</td>
                       <td className="num">{fmtData(s.created_at)}</td>
                       <td><span className={`fin-badge tom-${b.cls}`}>{b.label}</span></td>

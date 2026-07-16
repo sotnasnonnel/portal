@@ -17,10 +17,11 @@ export const getSolicitacaoFin = (slug) => SOLICITACOES_FIN.find((s) => s.slug =
 export const getSolicitacaoFinPorTipo = (tipoDb) => SOLICITACOES_FIN.find((s) => s.tipoDb === tipoDb);
 
 /**
- * Categorias CNAE do dropdown (dedup: "causa social" unificado em "Causas sociais").
- * Ordem alfabética, com "Outros" ao final.
+ * Categorias de "Aplicação" do cartão (a antiga lista de CNAE; dedup: "causa
+ * social" unificado em "Causas sociais"). Ordem alfabética, com "Outros" ao final.
+ * No Cartão Virtual a escolha é MÚLTIPLA (coluna aplicacao text[]).
  */
-export const CNAE_OPCOES = [
+export const APLICACOES = [
   'Alimentação',
   'Aluguel de veículo',
   'Assinatura',

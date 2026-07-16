@@ -240,6 +240,47 @@
 .fin-ss-opt.is-sel { background: var(--f-brand-50); color: var(--f-brand-700); font-weight: 600; }
 .fin-ss-empty { padding: 14px; text-align: center; font-size: 0.82rem; color: var(--f-muted); }
 
+/* ---- multi-seleção (chips no botão) ---- */
+.fin-ms-btn { min-height: 40px; height: auto; padding: 6px 12px; }
+.fin-ms-chips { display: flex; flex-wrap: wrap; gap: 5px; flex: 1; min-width: 0; }
+.fin-ms-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--f-brand-50); color: var(--f-brand-700);
+  border: 1px solid #99f6e4; border-radius: 999px;
+  padding: 2px 5px 2px 9px; font-size: 0.74rem; font-weight: 600;
+}
+.fin-ms-chip-x { display: inline-flex; cursor: pointer; border-radius: 50%; padding: 1px; }
+.fin-ms-chip-x:hover { background: #99f6e4; }
+
+/* ---- checkbox e range de datas ---- */
+.fin-check {
+  display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+  font-size: 0.85rem; color: var(--f-gray-700, #334155);
+  border: 1px solid var(--f-border); border-radius: 8px; padding: 9px 12px; background: #fff;
+}
+.fin-check:hover { border-color: var(--f-primary); }
+.fin-check input { cursor: pointer; }
+.fin-check svg { color: var(--f-primary); }
+.fin-range { display: flex; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+.fin-range > div { flex: 1; min-width: 140px; }
+.fin-range-lab {
+  display: block; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--f-muted); font-weight: 700; margin-bottom: 4px;
+}
+.fin-bars-nota { font-size: 0.74rem; color: var(--f-muted); margin: 10px 4px 0; line-height: 1.4; }
+
+/* ---- dados do cartão selecionado (read-only, vêm do cartão) ---- */
+.fin-cartao-box {
+  background: var(--f-brand-50); border: 1px solid #99f6e4; border-radius: 12px;
+  padding: 12px 14px; margin-bottom: var(--space-lg);
+}
+.fin-cartao-head {
+  display: flex; align-items: center; gap: 7px; margin-bottom: 8px;
+  font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.04em; color: var(--f-brand-700);
+}
+.fin-hint { display: block; margin-top: 4px; font-size: 0.74rem; color: var(--f-muted); }
+
 /* ---- chips ---- */
 .fin-chip {
   border: 1px solid var(--f-border); background: #fff; color: var(--f-gray-600);

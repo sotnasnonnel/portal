@@ -33,6 +33,17 @@ const dataBr = (d: unknown) => {
   return s.length === 3 ? `${s[2]}/${s[1]}/${s[0]}` : String(d);
 };
 
+// Vigência: vitalício, range (cartão) ou data única (aumento de limite).
+const vigencia = (sol: Record<string, unknown>) => {
+  if (sol.vitalicio) return "Vitalício";
+  if (sol.periodo_inicio || sol.periodo_fim) {
+    return `${dataBr(sol.periodo_inicio) ?? "—"} até ${dataBr(sol.periodo_fim) ?? "—"}`;
+  }
+  return dataBr(sol.periodo);
+};
+
+const listaAplic = (v: unknown) => (Array.isArray(v) && v.length ? v.join(", ") : null);
+
 async function graphToken(tenant: string, clientId: string, secret: string): Promise<string> {
   const res = await fetch(`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`, {
     method: "POST",
@@ -51,6 +62,7 @@ function montarHtml(opts: {
   solicitante: string; sol: Record<string, unknown>; appUrl: string; logo: string;
 }) {
   const { dest, ehExecucao, tipoLabel, numero, solicitante, sol, appUrl, logo } = opts;
+  const ehAumento = sol.tipo === "aumento_limite";
   const linha = (rot: string, val: unknown) =>
     val ? `<tr><td style="color:#6b7280;padding:2px 14px 2px 0">${rot}</td><td style="color:#1b2735">${val}</td></tr>` : "";
   return `
@@ -70,11 +82,11 @@ function montarHtml(opts: {
         <p style="margin:0 0 16px">Chegou a sua vez de ${ehExecucao ? "executar" : "aprovar"} uma solicitação de <strong>${tipoLabel}</strong>${numero != null ? ` (#${numero})` : ""}.</p>
         <table role="presentation" cellpadding="0" cellspacing="0" style="font-size:14px;margin-bottom:18px">
           ${linha("Solicitante", solicitante)}
-          ${linha("Despesa/compra", sol.nome_despesa)}
+          ${linha(ehAumento ? "Cartão" : "Descrição do cartão", sol.nome_despesa)}
           ${linha("Centro de custo", sol.centro_custo)}
-          ${linha("Valor", brl(sol.valor))}
-          ${linha("Período", dataBr(sol.periodo))}
-          ${linha("CNAE", sol.cnae)}
+          ${linha(ehAumento ? "Novo limite total" : "Valor", brl(sol.valor))}
+          ${linha("Vigência", vigencia(sol))}
+          ${linha("Aplicação", listaAplic(sol.aplicacao))}
           <tr><td style="color:#6b7280;padding:2px 14px 2px 0">Etapa</td><td style="color:#1b2735"><strong>${ehExecucao ? "Execução" : "Aprovação"}</strong></td></tr>
         </table>
       </td></tr>
@@ -97,7 +109,7 @@ Deno.serve(async (req) => {
 
     const { data: sol, error: eSol } = await supabase
       .from("solicitacoes_financeiro")
-      .select("id, numero, tipo, status, solicitante_id, nome_despesa, centro_custo, valor, periodo, cnae")
+      .select("id, numero, tipo, status, solicitante_id, nome_despesa, centro_custo, valor, periodo, vitalicio, periodo_inicio, periodo_fim, aplicacao")
       .eq("id", solicitacao_id)
       .maybeSingle();
     if (eSol) return json({ error: eSol.message }, 500);

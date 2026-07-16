@@ -17,11 +17,19 @@ const TOM_BADGE = {
 };
 
 const SELECT = `
-  id, numero, tipo, status, solicitante_id, nome_despesa, centro_custo, valor, periodo, cnae, observacao, created_at,
+  id, numero, tipo, status, solicitante_id, nome_despesa, centro_custo, valor,
+  periodo, vitalicio, periodo_inicio, periodo_fim, aplicacao, observacao, created_at,
   etapas:solicitacoes_financeiro_etapas ( id, ordem, aprovador_id, papel, tipo_etapa, status, justificativa, decidido_em )
 `;
 
-const fmtData = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : '—');
+const fmtData = (d) => (d ? new Date(`${String(d).slice(0, 10)}T12:00:00`).toLocaleDateString('pt-BR') : '—');
+
+// Vigência: vitalício, range (cartão) ou data única (aumento de limite).
+const vigencia = (s) => {
+  if (s.vitalicio) return 'Vitalício';
+  if (s.periodo_inicio || s.periodo_fim) return `${fmtData(s.periodo_inicio)} até ${fmtData(s.periodo_fim)}`;
+  return fmtData(s.periodo);
+};
 
 export default function AcompanharFin() {
   const { user } = useAuth();
@@ -171,11 +179,11 @@ export default function AcompanharFin() {
                   <div className="fin-sol-body">
                     <div className="fin-sol-grid">
                       <div><span>Solicitante</span><strong>{solic}</strong></div>
-                      <div><span>Nome da despesa/compra</span><strong>{s.nome_despesa || '—'}</strong></div>
+                      <div><span>{s.tipo === 'aumento_limite' ? 'Cartão' : 'Descrição do cartão'}</span><strong>{s.nome_despesa || '—'}</strong></div>
                       <div><span>Centro de custo</span><strong>{s.centro_custo || '—'}</strong></div>
-                      <div><span>Valor</span><strong>{s.valor != null ? formatarMoeda(s.valor) : '—'}</strong></div>
-                      <div><span>Período</span><strong>{fmtData(s.periodo)}</strong></div>
-                      <div><span>CNAE</span><strong>{s.cnae || '—'}</strong></div>
+                      <div><span>{s.tipo === 'aumento_limite' ? 'Novo limite' : 'Valor'}</span><strong>{s.valor != null ? formatarMoeda(s.valor) : '—'}</strong></div>
+                      <div><span>Vigência</span><strong>{vigencia(s)}</strong></div>
+                      <div><span>Aplicação</span><strong>{Array.isArray(s.aplicacao) && s.aplicacao.length ? s.aplicacao.join(', ') : '—'}</strong></div>
                       <div><span>Aberta em</span><strong>{fmtData(s.created_at)}</strong></div>
                     </div>
                     {s.observacao && <div className="fin-sol-obs">{s.observacao}</div>}
