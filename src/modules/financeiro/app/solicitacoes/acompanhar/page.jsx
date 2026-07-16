@@ -196,10 +196,17 @@ export default function AcompanharFin() {
                           </button>
                         </>
                       )}
+                      {/* O Financeiro decide aqui: gera o cartão (executa) ou recusa. */}
                       {acao === 'execucao' && (
-                        <button className="btn btn-primary btn-sm" disabled={acaoId === s.id} onClick={() => executar(s)}>
-                          {acaoId === s.id ? <Loader2 size={14} className="animate-spin" /> : <CheckCheck size={14} />} Executar / Concluir
-                        </button>
+                        <>
+                          <button className="btn btn-primary btn-sm" disabled={acaoId === s.id} onClick={() => executar(s)}>
+                            {acaoId === s.id ? <Loader2 size={14} className="animate-spin" /> : <CheckCheck size={14} />} Executar / Concluir
+                          </button>
+                          <button className="btn btn-danger btn-sm" disabled={acaoId === s.id}
+                            onClick={() => { setDecisao({ sol: s, modo: 'reprovar' }); setComentario(''); }}>
+                            <X size={14} /> Reprovar
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>
