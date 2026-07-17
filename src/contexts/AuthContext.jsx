@@ -4,6 +4,7 @@ import { clearSupabaseCache as clearReembolsoCache } from '../modules/reembolso/
 import { resetPreload } from '../modules/reembolso/services/dataPreload.js';
 import { clearSolicIdentity } from '../modules/solic/lib/identity.ts';
 import { clearSupabaseCache as clearSolicCache } from '../modules/solic/lib/supabaseCache.ts';
+import { temCargoFinanceiro } from '../config/financeiroAcesso';
 
 const AuthContext = createContext(null);
 
@@ -225,13 +226,12 @@ export function AuthProvider({ children }) {
     // superiores da árvore (garantido pela RLS). O super-admin também tem passe
     // livre no banco.
     horas: user ? horasRoleFromPerfil(user.perfil) : null,
-    // Financeiro: 'admin' = time do Financeiro (executa/configura), via
-    // financeiro_role (Gerenciar acessos). Coordenadores e gestores entram
-    // automaticamente como 'user' (solicitantes de cartão/limite). Demais só
-    // com grant explícito de financeiro_role. null = sem acesso (card c/ cadeado).
+    // Financeiro: visível só a quem tem CARGO de diretor, gerente ou coordenador
+    // (pela função). 'admin' = time do Financeiro (executa/configura fluxos), via
+    // financeiro_role (Gerenciar acessos), que também dá acesso independentemente
+    // do cargo. Demais: null = sem acesso (module invisível).
     financeiro: user
-      ? (user.financeiroRole
-          || (['coordenador', 'gestor'].includes(user.perfil) ? 'user' : null))
+      ? (user.financeiroRole || (temCargoFinanceiro(user.funcao) ? 'user' : null))
       : null,
   }), [user, solicProfile]);
 

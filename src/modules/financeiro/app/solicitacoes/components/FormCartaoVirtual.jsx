@@ -1,15 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Loader2, Check, AlertTriangle, Infinity as InfinityIcon } from 'lucide-react';
 import CurrencyInput from '../../../../../components/CurrencyInput';
 import { parseCurrency } from '../../../../../utils/currencyMask';
 import { APLICACOES } from '../../../../../config/financeiro';
 import MultiSelect from '../../components/MultiSelect';
+import SearchSelect from '../../components/SearchSelect';
+import { listarTodosContratos } from '../contratos';
 import TermosAceite from './TermosAceite';
 import { useSolicitacaoFin } from './useSolicitacaoFin';
 import '../../../../../components/UI/Components.css';
 
 const estadoInicial = {
   descricao: '',
+  nome_completo: '',
+  email: '',
+  telefone: '',
   centro_custo: '',
   valor: '',
   vitalicio: false,
@@ -19,13 +24,33 @@ const estadoInicial = {
   observacao: '',
 };
 
+const emailValido = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((v || '').trim());
+
 export default function FormCartaoVirtual({ sol }) {
   const t = useSolicitacaoFin(sol);
   const [form, setForm] = useState(estadoInicial);
   const [faltando, setFaltando] = useState([]);
   const [erroData, setErroData] = useState('');
 
+  // CC = contratos do solicitante no organograma (banco backoffice, por nome).
+  const [contratos, setContratos] = useState([]);
+  const [loadingCC, setLoadingCC] = useState(true);
+  const [erroCC, setErroCC] = useState(false);
+
   const set = (id, valor) => setForm((p) => ({ ...p, [id]: valor }));
+
+  useEffect(() => {
+    let vivo = true;
+    (async () => {
+      try {
+        const lista = await listarTodosContratos();
+        if (vivo) { setContratos(lista); setLoadingCC(false); }
+      } catch {
+        if (vivo) { setErroCC(true); setLoadingCC(false); }
+      }
+    })();
+    return () => { vivo = false; };
+  }, []);
 
   // Vitalício: a vigência é irrelevante — o range some e as datas são limpas.
   const setVitalicio = (marcado) => {
@@ -40,6 +65,9 @@ export default function FormCartaoVirtual({ sol }) {
 
     const falta = [];
     if (!form.descricao.trim()) falta.push('descricao');
+    if (!form.nome_completo.trim()) falta.push('nome_completo');
+    if (!emailValido(form.email)) falta.push('email');
+    if (!form.telefone.trim()) falta.push('telefone');
     if (!form.centro_custo.trim()) falta.push('centro_custo');
     if (parseCurrency(form.valor) == null) falta.push('valor');
     if (form.aplicacao.length === 0) falta.push('aplicacao');
@@ -59,6 +87,9 @@ export default function FormCartaoVirtual({ sol }) {
 
     await t.enviar({
       nome_despesa: form.descricao.trim(),   // coluna do envelope; rótulo = "Descrição do cartão"
+      nome_completo: form.nome_completo.trim(),
+      email: form.email.trim(),
+      telefone: form.telefone.trim(),
       centro_custo: form.centro_custo.trim(),
       valor: parseCurrency(form.valor),
       vitalicio: form.vitalicio,
@@ -74,7 +105,8 @@ export default function FormCartaoVirtual({ sol }) {
 
   // Botão só habilita com tudo pronto: obrigatórios preenchidos + termos aceitos.
   // (A ordem das datas continua validada no submit, com mensagem própria.)
-  const camposOk = form.descricao.trim() && form.centro_custo.trim()
+  const camposOk = form.descricao.trim() && form.nome_completo.trim()
+    && emailValido(form.email) && form.telefone.trim() && form.centro_custo.trim()
     && parseCurrency(form.valor) != null && form.aplicacao.length > 0
     && (form.vitalicio || (form.periodo_inicio && form.periodo_fim));
   const podeEnviar = !!t.aceite && !!camposOk && !t.semFluxo;
@@ -105,10 +137,45 @@ export default function FormCartaoVirtual({ sol }) {
         </div>
 
         <div className="form-group" style={{ marginBottom: 'var(--space-lg)' }}>
+          <label className="form-label">Nome completo <span className="required">*</span></label>
+          <input className="form-input" type="text" placeholder="Nome completo do portador do cartão"
+            value={form.nome_completo} onChange={(e) => set('nome_completo', e.target.value)} />
+          {erro('nome_completo') && <span className="fin-erro-campo">Obrigatório</span>}
+        </div>
+
+        <div className="form-group" style={{ marginBottom: 'var(--space-lg)' }}>
+          <label className="form-label">E-mail <span className="required">*</span></label>
+          <input className="form-input" type="email" inputMode="email" placeholder="nome@phdengenharia.eng.br"
+            value={form.email} onChange={(e) => set('email', e.target.value)} />
+          {erro('email') && <span className="fin-erro-campo">{form.email.trim() ? 'E-mail inválido' : 'Obrigatório'}</span>}
+        </div>
+
+        <div className="form-group" style={{ marginBottom: 'var(--space-lg)' }}>
+          <label className="form-label">Telefone <span className="required">*</span></label>
+          <input className="form-input" type="tel" inputMode="tel" placeholder="(00) 00000-0000"
+            value={form.telefone} onChange={(e) => set('telefone', e.target.value)} />
+          {erro('telefone') && <span className="fin-erro-campo">Obrigatório</span>}
+        </div>
+
+        <div className="form-group" style={{ marginBottom: 'var(--space-lg)' }}>
           <label className="form-label">Centro de custo (CC) <span className="required">*</span></label>
-          <input className="form-input" type="text" placeholder="Ex.: CC-1024"
-            value={form.centro_custo} onChange={(e) => set('centro_custo', e.target.value)} />
-          {erro('centro_custo') && <span className="fin-erro-campo">Obrigatório</span>}
+          {loadingCC ? (
+            <div className="fin-hint" style={{ marginTop: 0 }}><Loader2 size={13} className="animate-spin" /> Carregando seus contratos...</div>
+          ) : erroCC ? (
+            <div className="fin-aviso">Não foi possível carregar os contratos do organograma. Tente novamente mais tarde.</div>
+          ) : contratos.length === 0 ? (
+            <div className="fin-aviso">Nenhum contrato encontrado no organograma deste mês.</div>
+          ) : (
+            <>
+              <SearchSelect
+                value={form.centro_custo}
+                onChange={(v) => set('centro_custo', v)}
+                options={contratos.map((c) => ({ value: c, label: c }))}
+                placeholder="Selecione o contrato (CC)..."
+              />
+              {erro('centro_custo') && <span className="fin-erro-campo">Selecione o contrato</span>}
+            </>
+          )}
         </div>
 
         <div className="form-group" style={{ marginBottom: 'var(--space-lg)' }}>

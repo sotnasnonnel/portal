@@ -17,8 +17,8 @@ const TOM_BADGE = {
 };
 
 const SELECT = `
-  id, numero, tipo, status, solicitante_id, nome_despesa, centro_custo, valor,
-  periodo, vitalicio, periodo_inicio, periodo_fim, aplicacao, observacao, created_at,
+  id, numero, tipo, status, solicitante_id, nome_despesa, nome_completo, email, telefone,
+  centro_custo, valor, periodo, vitalicio, periodo_inicio, periodo_fim, aplicacao, observacao, created_at,
   etapas:solicitacoes_financeiro_etapas ( id, ordem, aprovador_id, papel, tipo_etapa, status, justificativa, decidido_em )
 `;
 
@@ -180,6 +180,9 @@ export default function AcompanharFin() {
                     <div className="fin-sol-grid">
                       <div><span>Solicitante</span><strong>{solic}</strong></div>
                       <div><span>{s.tipo === 'aumento_limite' ? 'Cartão' : 'Descrição do cartão'}</span><strong>{s.nome_despesa || '—'}</strong></div>
+                      {s.nome_completo && <div><span>Nome completo</span><strong>{s.nome_completo}</strong></div>}
+                      {s.email && <div><span>E-mail</span><strong>{s.email}</strong></div>}
+                      {s.telefone && <div><span>Telefone</span><strong>{s.telefone}</strong></div>}
                       <div><span>Centro de custo</span><strong>{s.centro_custo || '—'}</strong></div>
                       <div><span>{s.tipo === 'aumento_limite' ? 'Novo limite' : 'Valor'}</span><strong>{s.valor != null ? formatarMoeda(s.valor) : '—'}</strong></div>
                       <div><span>Vigência</span><strong>{vigencia(s)}</strong></div>

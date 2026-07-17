@@ -412,8 +412,10 @@ export default function AppRoutes() {
           <Route index element={<Navigate to="/financeiro/dashboard" replace />} />
           <Route path="dashboard" element={<LazyPage><FinanceiroDashboard /></LazyPage>} />
           <Route path="solicitacoes" element={<Navigate to="/financeiro/solicitacoes/nova" replace />} />
-          <Route path="solicitacoes/nova" element={<ProtectedRoute allowedRoles={['coordenador', 'gestor']}><LazyPage><FinanceiroHub /></LazyPage></ProtectedRoute>} />
-          <Route path="solicitacoes/nova/:tipo" element={<ProtectedRoute allowedRoles={['coordenador', 'gestor']}><LazyPage><NovaSolicitacaoFin /></LazyPage></ProtectedRoute>} />
+          {/* Acesso ao módulo já é gateado por cargo (ModuleRoute financeiro); quem
+              está aqui pode abrir. Sem restrição extra por perfil (que não reflete cargo). */}
+          <Route path="solicitacoes/nova" element={<LazyPage><FinanceiroHub /></LazyPage>} />
+          <Route path="solicitacoes/nova/:tipo" element={<LazyPage><NovaSolicitacaoFin /></LazyPage>} />
           <Route path="solicitacoes/acompanhar" element={<LazyPage><AcompanharFin /></LazyPage>} />
           <Route path="fluxos" element={<LazyPage><FinanceiroFluxos /></LazyPage>} />
         </Route>
