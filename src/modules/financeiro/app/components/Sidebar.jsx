@@ -3,7 +3,6 @@ import { Link, useLocation } from 'react-router-dom';
 import { Wallet, LogOut, ChevronDown } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import AppSwitcher from '../../../../components/AppSwitcher/AppSwitcher';
-import { temCargoFinanceiro } from '../../../../config/financeiroAcesso';
 import { navSections } from './nav';
 
 function iniciais(nome, email) {
@@ -20,7 +19,9 @@ export default function Sidebar() {
   const nome = user?.nome || '';
   const email = user?.email || '';
 
-  const canAbrir = temCargoFinanceiro(user?.funcao);
+  // Quem já tem acesso ao módulo pode abrir solicitações (o acesso em si já é
+  // restrito por cargo/financeiro_role no ModuleRoute).
+  const canAbrir = !!modules?.financeiro;
   const isAdmin = modules?.financeiro === 'admin';
   const secoes = navSections({ canAbrir, isAdmin });
   const [openGroups, setOpenGroups] = useState({});

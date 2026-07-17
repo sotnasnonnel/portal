@@ -83,10 +83,6 @@ export default function FormAumentoLimite({ sol }) {
 
   return (
     <div className="table-container">
-      <div className="table-header">
-        <div className="table-header-title"><Icon size={18} /> {sol.curto}</div>
-      </div>
-
       <form onSubmit={onSubmit} style={{ padding: 'var(--space-xl)' }}>
         {t.sucesso && (
           <div className="fin-success" style={{ marginBottom: 'var(--space-lg)' }}>
