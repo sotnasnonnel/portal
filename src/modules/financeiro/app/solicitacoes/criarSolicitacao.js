@@ -1,5 +1,6 @@
 import { supabase } from '../../../../services/supabase';
 import { buscarFluxoFin, montarEtapasFin } from '../../../../config/aprovacaoFinanceiro';
+import { getTermos } from '../../../../config/financeiroTermos';
 import { notificarAprovadorFin } from '../../../../services/notificarAprovadorFin';
 
 /**
@@ -35,6 +36,18 @@ export async function criarSolicitacaoFin({ tipoDb, solicitanteId, envelope }) {
     await supabase.from('solicitacoes_financeiro').delete().eq('id', sol.id);
     throw err;
   }
+
+  // Log de auditoria do aceite dos termos (quem + quando + qual termo).
+  // Best-effort: o aceite também fica no envelope (aceite_termos_em +
+  // solicitante_id); este log é o registro durável para controle.
+  const { error: eLog } = await supabase.from('financeiro_termos_aceites').insert([{
+    solicitacao_id: sol.id,
+    colaborador_id: solicitanteId,
+    tipo: tipoDb,
+    titulo: getTermos(tipoDb)?.titulo ?? null,
+    aceito_em: envelope.aceite_termos_em,
+  }]);
+  if (eLog) console.warn('[termos-aceite] log falhou:', eLog.message);
 
   notificarAprovadorFin(sol.id);
   window.dispatchEvent(new Event('solicitacoes_financeiro_atualizadas'));

@@ -77,6 +77,10 @@ export default function FormAumentoLimite({ sol }) {
   const erro = (id) => faltando.includes(id);
   const Icon = sol.icon;
 
+  // Botão só habilita com cartão escolhido, novo valor informado e termos aceitos.
+  // (A regra "novo valor > limite atual" continua validada no submit, com mensagem.)
+  const podeEnviar = !!t.aceite && !!cartaoId && parseCurrency(valor) != null && !t.semFluxo;
+
   return (
     <div className="table-container">
       <div className="table-header">
@@ -161,7 +165,7 @@ export default function FormAumentoLimite({ sol }) {
                 <AlertTriangle size={15} /> O Financeiro ainda não configurou o fluxo de aprovação para você neste tipo de solicitação.
               </div>
             )}
-            <button className="btn btn-primary" type="submit" disabled={t.submitting || t.semFluxo} style={{ width: '100%', marginTop: 'var(--space-lg)' }}>
+            <button className="btn btn-primary" type="submit" disabled={t.submitting || !podeEnviar} style={{ width: '100%', marginTop: 'var(--space-lg)' }}>
               {t.submitting ? <Loader2 size={16} className="animate-spin" /> : <Icon size={16} />}
               {t.submitting ? ' Enviando...' : ' Enviar solicitação'}
             </button>

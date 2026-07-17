@@ -72,6 +72,13 @@ export default function FormCartaoVirtual({ sol }) {
   const erro = (id) => faltando.includes(id);
   const Icon = sol.icon;
 
+  // Botão só habilita com tudo pronto: obrigatórios preenchidos + termos aceitos.
+  // (A ordem das datas continua validada no submit, com mensagem própria.)
+  const camposOk = form.descricao.trim() && form.centro_custo.trim()
+    && parseCurrency(form.valor) != null && form.aplicacao.length > 0
+    && (form.vitalicio || (form.periodo_inicio && form.periodo_fim));
+  const podeEnviar = !!t.aceite && !!camposOk && !t.semFluxo;
+
   return (
     <div className="table-container">
       <div className="table-header">
@@ -163,7 +170,7 @@ export default function FormCartaoVirtual({ sol }) {
             <AlertTriangle size={15} /> O Financeiro ainda não configurou o fluxo de aprovação para você neste tipo de solicitação.
           </div>
         )}
-        <button className="btn btn-primary" type="submit" disabled={t.submitting || t.semFluxo} style={{ width: '100%', marginTop: 'var(--space-lg)' }}>
+        <button className="btn btn-primary" type="submit" disabled={t.submitting || !podeEnviar} style={{ width: '100%', marginTop: 'var(--space-lg)' }}>
           {t.submitting ? <Loader2 size={16} className="animate-spin" /> : <Icon size={16} />}
           {t.submitting ? ' Enviando...' : ' Enviar solicitação'}
         </button>
