@@ -23,6 +23,13 @@ import {
   FileDown,
   FilePlus2,
   Building2,
+  BarChart3,
+  ListChecks,
+  Settings,
+  CreditCard,
+  TrendingUp,
+  Workflow,
+  ShieldCheck,
 } from "lucide-react";
 
 export const GUIA_OPEN_EVENT = "abrir_guia";
@@ -252,6 +259,177 @@ export const SOLIC_GUIA = {
         titulo: "Usuários",
         texto: 'Em "Usuários" você controla quem acessa o app de Solicitações e o nível de cada um.',
       },
+      TROCAR_APP,
+    ],
+  },
+};
+
+// ============================= Controle de Horas =============================
+// Passos comuns a quem administra a equipe (gestor e coordenador). O que muda
+// entre eles é só o alcance: o gestor no topo vê a empresa toda; o coordenador,
+// a sua subárvore — a RLS do banco cuida disso, então o texto fala em "equipe".
+const HORAS_GESTAO_STEPS = [
+  {
+    icon: Clock,
+    titulo: "Você também aponta",
+    texto:
+      'Como a equipe, em "Apontar" você registra o seu próprio tempo: escolha projeto e atividades e use o cronômetro (Iniciar/Encerrar) ou o "Lançamento manual".',
+  },
+  {
+    icon: Settings,
+    titulo: "Configure projetos e atividades",
+    texto:
+      'Em "Configuração" você cadastra os projetos e as atividades controladas da sua área. Sem isso, a equipe não consegue apontar horas.',
+  },
+  {
+    icon: Users,
+    titulo: "Organize a sua equipe",
+    texto:
+      'Em "Equipe" você vê quem está vinculado à sua área. É o vínculo com a área que libera cada colaborador para apontar.',
+  },
+  {
+    icon: BarChart3,
+    titulo: "Dashboard da equipe",
+    texto:
+      'No "Dashboard da Equipe" você acompanha as horas de todos, com totais e distribuição por colaborador, projeto e atividade.',
+  },
+  {
+    icon: ListChecks,
+    titulo: "Registros da equipe",
+    texto:
+      'Em "Registros" você consulta todos os apontamentos da equipe, filtra por colaborador ou projeto e exporta quando precisar.',
+  },
+  TROCAR_APP,
+];
+
+export const HORAS_GUIA = {
+  appName: "Controle de Horas",
+  fallbackRole: "usuario",
+  roleLabels: { gestor: "Gestor(a)", coordenador: "Coordenador(a)", usuario: "Colaborador(a)" },
+  contentByRole: {
+    usuario: [
+      {
+        icon: Clock,
+        titulo: "Aponte suas horas",
+        texto:
+          'Em "Apontar", escolha o projeto e as atividades e clique em Iniciar para o cronômetro rodar. Ao terminar, clique em Encerrar — o tempo é salvo automaticamente.',
+      },
+      {
+        icon: FilePlus2,
+        titulo: "Esqueceu de marcar? Lance manual",
+        texto:
+          'Use o "Lançamento manual" para registrar um período já trabalhado informando início e fim — útil quando você esqueceu de ligar o cronômetro.',
+      },
+      {
+        icon: BarChart3,
+        titulo: "Acompanhe o seu tempo",
+        texto:
+          'Em "Meu Dashboard" você vê o total de horas e a distribuição por projeto e atividade, em gráficos.',
+      },
+      {
+        icon: ListChecks,
+        titulo: "Revise os seus registros",
+        texto:
+          'Em "Meus Registros" ficam todos os seus apontamentos. Dá para conferir, filtrar e excluir um lançamento errado.',
+      },
+      TROCAR_APP,
+    ],
+    coordenador: HORAS_GESTAO_STEPS,
+    gestor: HORAS_GESTAO_STEPS,
+  },
+};
+
+// ================================ Financeiro ================================
+// Papéis: 'user' = solicitante (coordenador/gestor que abre) · 'admin' = time do
+// Financeiro (aprova/executa/configura fluxos). Deriva de modules.financeiro.
+// Como o admin também é gestor (abre solicitações), o guia dele inclui os
+// passos de "como solicitar" — por isso eles ficam num bloco compartilhado.
+const FIN_SOLICITAR_STEPS = [
+  {
+    icon: CreditCard,
+    titulo: "Abrir um Cartão Virtual",
+    texto:
+      'Vá em Solicitações → "Cartão Virtual". Em "Descrição do cartão", dê um nome que identifique o uso (ex.: "Materiais da Obra X") — é por ele que o cartão será reconhecido depois, inclusive na hora de pedir aumento. Preencha o "Centro de custo (CC)" e o "Valor (R$)", que é o limite que o cartão terá.',
+  },
+  {
+    icon: CalendarClock,
+    titulo: "Definir a vigência (ou vitalício)",
+    texto:
+      'Se o cartão tem prazo, deixe "cartão vitalício" desmarcado e preencha "De" e "Até" — a data final não pode ser anterior à inicial. Se o cartão é permanente, marque "cartão vitalício": os campos de data desaparecem, porque deixam de ser necessários.',
+  },
+  {
+    icon: ListChecks,
+    titulo: "Escolher a Aplicação",
+    texto:
+      'Em "Aplicação", diga em que o cartão será usado (alimentação, combustíveis, materiais…). Você pode marcar mais de uma: clique no campo, selecione as que quiser e feche — use a busca se a lista for grande. A "Observação" é opcional, para algum detalhe extra.',
+  },
+  {
+    icon: ShieldCheck,
+    titulo: "Aceitar os Termos e enviar",
+    texto:
+      'O botão "Enviar" fica bloqueado até tudo estar preenchido e os Termos aceitos. Clique em "Ler os termos", leia, marque "Li e estou de acordo" e confirme — o aceite fica registrado com seu nome e a data/hora. Depois, é só enviar.',
+  },
+  {
+    icon: TrendingUp,
+    titulo: "Pedir aumento de limite",
+    texto:
+      'Em "Aumento de Limite", o primeiro campo é o cartão: aparecem só os seus cartões ativos e dentro da validade. Ao escolher, o app mostra o limite atual, o centro de custo e a vigência — esses dados vêm do cartão, você não digita. Em "Novo valor", informe o limite TOTAL que o cartão passará a ter (precisa ser maior que o atual). Aceite os termos e envie.',
+  },
+];
+
+export const FINANCEIRO_GUIA = {
+  appName: "Financeiro",
+  fallbackRole: "user",
+  roleLabels: { admin: "Financeiro", user: "Solicitante" },
+  contentByRole: {
+    user: [
+      {
+        icon: Wallet,
+        titulo: "Bem-vindo ao Financeiro",
+        texto:
+          "Aqui você solicita cartões virtuais para despesas da empresa e pede aumento de limite dos cartões que já usa. Todo pedido passa por aprovação e, no fim, o time do Financeiro gera o cartão. No menu lateral: o Dashboard resume seus pedidos e, em Solicitações, você abre um novo ou acompanha os que já enviou.",
+      },
+      ...FIN_SOLICITAR_STEPS,
+      {
+        icon: ClipboardCheck,
+        titulo: "Acompanhar e aprovar",
+        texto:
+          'Em "Acompanhar" você vê cada pedido e sua linha do tempo: por quais aprovadores já passou e onde está agora. Se você faz parte da cadeia de aprovação de outra pessoa, os botões "Aprovar" e "Reprovar" aparecem no pedido quando chega a sua vez.',
+      },
+      TROCAR_APP,
+    ],
+    admin: [
+      {
+        icon: Wallet,
+        titulo: "Seu papel no Financeiro",
+        texto:
+          "Você é do time do Financeiro: recebe as solicitações depois que passam pelos aprovadores, decide e gera os cartões — e ainda monta as cadeias de aprovação de cada pessoa. Como você também é gestor, este guia cobre as duas coisas: primeiro a parte de administração, depois como abrir suas próprias solicitações.",
+      },
+      {
+        icon: Workflow,
+        titulo: "Montar os fluxos de aprovação",
+        texto:
+          'Em Administração → "Fluxos de Aprovação", escolha o solicitante e o tipo e defina a cadeia: por quais aprovadores o pedido passa antes de chegar a você. Sem cadeia configurada, a pessoa fica bloqueada e não consegue enviar — configure antes de liberar alguém. Cadeia vazia significa que o pedido vai direto para o Financeiro.',
+      },
+      {
+        icon: ClipboardCheck,
+        titulo: "Analisar, executar ou reprovar",
+        texto:
+          'Em "Acompanhar", quando o pedido chega ao Financeiro você tem duas ações: "Executar / Concluir" (depois de gerar o cartão, o pedido vira Concluído) ou "Reprovar" (com um comentário; o pedido é encerrado). Lembre: no aumento, o "Novo valor" é o limite TOTAL do cartão, não um acréscimo.',
+      },
+      {
+        icon: LayoutDashboard,
+        titulo: "Visão geral e auditoria",
+        texto:
+          'No "Dashboard" você acompanha tudo: quantidade por status, valores e as solicitações por aplicação. Toda solicitação exige o aceite dos Termos, guardado com autor e data/hora — um registro de auditoria que não pode ser alterado nem apagado.',
+      },
+      {
+        icon: FilePlus2,
+        titulo: "Você também abre solicitações",
+        texto:
+          "Como coordenador/gestor, você também pode abrir cartões e pedir aumentos, igual a qualquer solicitante. Os próximos passos mostram como fazer isso.",
+      },
+      ...FIN_SOLICITAR_STEPS,
       TROCAR_APP,
     ],
   },
