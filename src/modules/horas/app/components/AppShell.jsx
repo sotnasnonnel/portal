@@ -2,11 +2,13 @@ import { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useAuth } from '../../../../contexts/AuthContext';
 import PortalHeader from '../../../../components/PortalHeader/PortalHeader';
+import GuiaModal from '../../../../components/Guia/GuiaModal';
+import { HORAS_GUIA } from '../../../../components/Guia/guides';
 import Sidebar from './Sidebar';
 import '../../horas.css';
 
 export default function AppShell() {
-  const { user, refreshHorasIdentity } = useAuth();
+  const { user, modules, refreshHorasIdentity } = useAuth();
   const userName = user?.nome || (user?.email ? user.email.split('@')[0] : '');
 
   // O papel do módulo é editado em /portal-admin. Revalida ao abrir o módulo e
@@ -28,6 +30,7 @@ export default function AppShell() {
           <Outlet />
         </main>
       </div>
+      <GuiaModal {...HORAS_GUIA} role={modules?.horas} userName={userName} />
     </div>
   );
 }

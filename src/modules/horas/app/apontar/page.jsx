@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { Play, Square, Plus } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import {
-  fetchProjetos,
+  fetchProjetosVisiveis,
   fetchAtividades,
   fetchGerencias,
   fetchApontamentos,
@@ -43,6 +43,11 @@ export default function ApontarPage() {
 
   const proj = useMemo(() => lookupProjetos(projetos), [projetos]);
 
+  // O apontamento é atribuído à área DONA do projeto (que pode ser a de um gestor
+  // acima, por herança). Fallback: a própria área, se o projeto não for encontrado.
+  const gerenciaDoProjeto = (projetoId) =>
+    projetos.find((p) => p.id === projetoId)?.gerencia_id || gerenciaId;
+
   const carregarHoje = useCallback(async () => {
     if (!colaboradorId) return;
     try {
@@ -63,7 +68,7 @@ export default function ApontarPage() {
       setErro('');
       try {
         const [ps, ats, gers, timer] = await Promise.all([
-          fetchProjetos({ gerenciaId }),
+          fetchProjetosVisiveis(),
           fetchAtividades(gerenciaId),
           fetchGerencias(),
           fetchTimer(colaboradorId),
@@ -131,7 +136,7 @@ export default function ApontarPage() {
         if (run) {
           await createApontamento({
             colaboradorId,
-            gerenciaId,
+            gerenciaId: gerenciaDoProjeto(run.projetoId),
             projetoId: run.projetoId,
             ativ: run.ativ,
             descricao: run.descricao,
@@ -157,7 +162,7 @@ export default function ApontarPage() {
 
   async function salvarManual(payload) {
     try {
-      await createApontamento({ colaboradorId, gerenciaId, ...payload });
+      await createApontamento({ colaboradorId, gerenciaId: gerenciaDoProjeto(payload.projetoId), ...payload });
       setShowManual(false);
       await carregarHoje();
     } catch (e) {

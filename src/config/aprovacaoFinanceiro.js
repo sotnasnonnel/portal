@@ -17,6 +17,31 @@ export const TIPO_LABEL_FIN = {
   aumento_limite: 'Aumento de Limite',
 };
 
+// Aprovadores fixos exigidos por FAIXA DE VALOR (ids verificados no cadastro).
+export const APROVADORES_VALOR = {
+  pedroMorais: '62275900-e9be-4800-a490-1dc63eb03f9e',    // Diretor de Operações
+  danielaSebrian: '1f6fda3d-2175-4956-9e1d-205b87796251', // Gerente Financeiro
+  pedroNery: 'db9635af-ad70-4679-9cfa-7be97978204b',      // CEO
+};
+
+/**
+ * Aprovadores ADICIONAIS exigidos pela faixa do valor (além da cadeia
+ * configurada; faixa exclusiva, não acumula):
+ *  - até R$ 5.000 (faixas "Gerente" e "Gerente Executivo"): superior direto
+ *    do solicitante (colaboradores.superior_id);
+ *  - R$ 5.000–20.000: Pedro Morais + Daniela Sebrian (dupla aprovação);
+ *  - acima de R$ 20.000: Pedro Nery.
+ * Limites: <=5000 faixa 1-2; >5000 e <=20000 faixa 3; >20000 faixa 4.
+ * `superiorId` pode ser null (solicitante sem superior) — aí a faixa 1-2 não
+ * adiciona ninguém e vale só a cadeia configurada.
+ */
+export function aprovadoresPorValor(valor, superiorId) {
+  const v = Number(valor) || 0;
+  if (v <= 5000) return [superiorId].filter(Boolean);
+  if (v <= 20000) return [APROVADORES_VALOR.pedroMorais, APROVADORES_VALOR.danielaSebrian];
+  return [APROVADORES_VALOR.pedroNery];
+}
+
 const PAPEL_EXECUCAO = 'Financeiro (execução)';
 
 /**

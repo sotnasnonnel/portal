@@ -55,6 +55,22 @@ export async function fetchProjetos({ gerenciaId, incluirArquivados = false } = 
   return data || [];
 }
 
+// Projetos visíveis ao usuário AO APONTAR: os da sua área + os das áreas de
+// todos os gestores acima dele na árvore (herança pela cadeia de gestores). A
+// RPC (SECURITY DEFINER) resolve a cadeia; a leitura dos projetos é livre (RLS
+// `using(true)`), então filtramos aqui pelas gerências devolvidas.
+export async function fetchProjetosVisiveis({ incluirArquivados = false } = {}) {
+  const { data: ger, error: gerErr } = await supabase.rpc('horas_gerencias_visiveis');
+  if (gerErr) throw gerErr;
+  const ids = (ger || []).map((r) => (typeof r === 'string' ? r : r?.horas_gerencias_visiveis)).filter(Boolean);
+  if (!ids.length) return [];
+  let q = supabase.from('horas_projetos').select('*').in('gerencia_id', ids).order('nome');
+  if (!incluirArquivados) q = q.eq('arquivado', false);
+  const { data, error } = await q;
+  if (error) throw error;
+  return data || [];
+}
+
 export async function createProjeto({ gerenciaId, nome, cliente, cor }) {
   const { data, error } = await supabase
     .from('horas_projetos')

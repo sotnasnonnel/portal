@@ -1,5 +1,5 @@
 import { supabase } from '../../../../services/supabase';
-import { buscarFluxoFin, montarEtapasFin } from '../../../../config/aprovacaoFinanceiro';
+import { buscarFluxoFin, montarEtapasFin, aprovadoresPorValor } from '../../../../config/aprovacaoFinanceiro';
 import { getTermos } from '../../../../config/financeiroTermos';
 import { notificarAprovadorFin } from '../../../../services/notificarAprovadorFin';
 
@@ -13,8 +13,30 @@ export async function criarSolicitacaoFin({ tipoDb, solicitanteId, envelope }) {
   if (erro) throw new Error('Erro ao consultar o fluxo de aprovação. Tente novamente.');
   if (!fluxo) throw new Error('SEM_FLUXO');
 
-  const ids = (Array.isArray(fluxo.aprovadores) ? fluxo.aprovadores : [])
+  const chainIds = (Array.isArray(fluxo.aprovadores) ? fluxo.aprovadores : [])
     .map((x) => (x || '').toString().trim()).filter(Boolean);
+
+  // Aprovadores adicionais pela FAIXA do valor (superior do solicitante para
+  // valores baixos; pessoas fixas para as faixas altas). Só busca o superior
+  // quando a faixa realmente precisa dele (valor <= 5000).
+  const valor = Number(envelope.valor) || 0;
+  let superiorId = null;
+  if (valor <= 5000) {
+    const { data: me } = await supabase
+      .from('colaboradores').select('superior_id').eq('id', solicitanteId).maybeSingle();
+    superiorId = me?.superior_id || null;
+  }
+  const tierIds = aprovadoresPorValor(valor, superiorId);
+
+  // Cadeia final = configurada + faixa, sem duplicar, preservando a ordem.
+  const vistos = new Set();
+  const ids = [];
+  for (const raw of [...chainIds, ...tierIds]) {
+    const id = (raw || '').toString().trim();
+    const k = id.toLowerCase();
+    if (k && !vistos.has(k)) { vistos.add(k); ids.push(id); }
+  }
+
   let nomePorId = {};
   if (ids.length) {
     const { data: cols, error: e } = await supabase.rpc('nomes_colaboradores', { p_ids: ids });
