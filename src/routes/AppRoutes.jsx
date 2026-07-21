@@ -23,6 +23,7 @@ const RequisicoesHub = lazy(() => import('../pages/Gestor/requisicoes/Requisicoe
 const NovaRequisicao = lazy(() => import('../pages/Gestor/requisicoes/NovaRequisicao'));
 const AcompanharRequisicoes = lazy(() => import('../pages/Gestor/requisicoes/AcompanharRequisicoes'));
 const ConsultaOrganograma = lazy(() => import('../pages/Gestor/organograma/ConsultaOrganograma'));
+const AjustesValores = lazy(() => import('../pages/Gestor/valores/AjustesValores'));
 const UsuarioDashboard = lazy(() => import('../pages/Usuario/UsuarioDashboard'));
 const AdminSolicitacoes = lazy(() => import('../pages/Admin/AdminSolicitacoes'));
 const AdminFluxos = lazy(() => import('../pages/Admin/AdminFluxos'));
@@ -315,6 +316,19 @@ export default function AppRoutes() {
                 <ProtectedRoute allowedRoles={['gestor', 'coordenador', 'admin', 'rh']}>
                   <LazyPage>
                     <ConsultaOrganograma />
+                  </LazyPage>
+                </ProtectedRoute>
+              </ModuleRoute>
+            }
+          />
+
+          <Route
+            path="/valores"
+            element={
+              <ModuleRoute module="dp">
+                <ProtectedRoute allowedRoles={['gestor', 'admin']}>
+                  <LazyPage>
+                    <AjustesValores />
                   </LazyPage>
                 </ProtectedRoute>
               </ModuleRoute>

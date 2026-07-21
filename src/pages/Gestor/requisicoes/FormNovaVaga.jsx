@@ -7,6 +7,8 @@ import {
   CAMPOS_NOVA_VAGA, SECOES_NOVA_VAGA, estadoInicialNovaVaga, validarNovaVaga, montarPayloadNovaVaga,
 } from '../../../config/novaVaga';
 import { UFS } from '../../../config/mapeamento';
+import { chavePreco, formatarPreco } from '../../../config/precosItens';
+import { carregarPrecosMap } from '../../../services/precosItens';
 import CurrencyInput from '../../../components/CurrencyInput';
 import '../../../components/UI/Components.css';
 import '../Gestor.css';
@@ -32,6 +34,7 @@ export default function FormNovaVaga() {
   const [erroAnexo, setErroAnexo] = useState('');
   const [funcoes, setFuncoes] = useState([]);
   const [loadingFuncoes, setLoadingFuncoes] = useState(true);
+  const [precos, setPrecos] = useState({});
   const fileRef = useRef(null);
 
   const semFluxo = fluxoOk === false;
@@ -45,6 +48,21 @@ export default function FormNovaVaga() {
     })();
     return () => { vivo = false; };
   }, []);
+
+  // Preços dos equipamentos (configurados em Ajustes de Valores) — best-effort.
+  useEffect(() => {
+    let vivo = true;
+    carregarPrecosMap()
+      .then((mapa) => { if (vivo) setPrecos(mapa); })
+      .catch(() => {});
+    return () => { vivo = false; };
+  }, []);
+
+  // Rótulo da opção com o preço ao lado, quando houver (ex.: "Notebook — R$ 3.500,00").
+  const rotuloEquipamento = (opt) => {
+    const preco = precos[chavePreco('equipamento', opt)];
+    return preco != null ? `${opt} — ${formatarPreco(preco)}` : opt;
+  };
 
   const onArquivo = (e) => {
     const f = e.target.files?.[0] || null;
@@ -173,7 +191,9 @@ export default function FormNovaVaga() {
           }}
           disabled={c.id === 'filial' && !form.empresa}>
           <option value="">{c.id === 'filial' && !form.empresa ? 'Selecione a empresa primeiro' : c.placeholder || 'Selecione...'}</option>
-          {opcoes.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+          {opcoes.map((opt) => (
+            <option key={opt} value={opt}>{c.id === 'equipamento' ? rotuloEquipamento(opt) : opt}</option>
+          ))}
         </select>
       );
     }

@@ -1,0 +1,107 @@
+.av-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  background: var(--color-bg-white);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3xl);
+  justify-content: center;
+  color: var(--color-text-secondary);
+}
+
+.av-catalogos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--space-lg);
+  align-items: start;
+}
+
+.av-card {
+  background: var(--color-bg-white);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.av-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: var(--space-lg) var(--space-lg) var(--space-md);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.av-card-head h2 {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--color-text-primary);
+}
+
+.av-origem {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  background: var(--color-bg-subtle, rgba(0, 0, 0, 0.04));
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.av-itens {
+  display: flex;
+  flex-direction: column;
+}
+
+.av-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-lg);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.av-item:last-child {
+  border-bottom: none;
+}
+
+.av-item-nome {
+  font-size: 14px;
+  color: var(--color-text-primary);
+  flex: 1;
+  min-width: 0;
+}
+
+.av-item-valor {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.av-prefix {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.av-input {
+  width: 120px;
+  text-align: right;
+}
+
+.av-status {
+  width: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+}
+
+.av-ok {
+  color: var(--color-success, #16a34a);
+}

@@ -1,19 +1,38 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Loader2, AlertTriangle } from 'lucide-react';
+import { FileText, Loader2, AlertTriangle, DollarSign } from 'lucide-react';
 import { useRequisicaoForm } from './useRequisicaoForm';
 import { camposVisiveis, estadoInicial, validar, montarPayload } from '../../../config/formularioContratacao';
+import { chavePreco, formatarPreco } from '../../../config/precosItens';
+import { carregarPrecosMap } from '../../../services/precosItens';
 import '../../../components/UI/Components.css';
 import '../Gestor.css';
 import './Requisicoes.css';
+
+// Campos de checkbox que têm catálogo de preços (Ajustes de Valores).
+const CATALOGO_POR_CAMPO = {
+  softwares_extras: 'software',
+  epis: 'epi',
+  beneficios: 'beneficio',
+};
 
 export default function FormContratacao() {
   const navigate = useNavigate();
   const { fluxoOk, submitting, setSubmitting, criarFormularioContratacao } = useRequisicaoForm();
   const [form, setForm] = useState(estadoInicial);
   const [faltando, setFaltando] = useState([]);
+  const [precos, setPrecos] = useState({});
 
   const semFluxo = fluxoOk === false;
+
+  // Preços configurados em Ajustes de Valores — best-effort (não bloqueia o form).
+  useEffect(() => {
+    let vivo = true;
+    carregarPrecosMap()
+      .then((mapa) => { if (vivo) setPrecos(mapa); })
+      .catch(() => {});
+    return () => { vivo = false; };
+  }, []);
   const set = (id, valor) => setForm((p) => ({ ...p, [id]: valor }));
   const toggleCheck = (id, opt) => setForm((p) => {
     const arr = Array.isArray(p[id]) ? p[id] : [];
@@ -77,14 +96,21 @@ export default function FormContratacao() {
         </div>
       );
     }
+    const catalogo = CATALOGO_POR_CAMPO[c.id];
     return (
       <div className="contratacao-opcoes contratacao-opcoes-col">
         {c.opcoes.map((opt) => {
           const checked = Array.isArray(val) && val.includes(opt);
+          const preco = catalogo ? precos[chavePreco(catalogo, opt)] : null;
           return (
             <label key={opt} className={`contratacao-opcao ${checked ? 'active' : ''}`}>
               <input type="checkbox" checked={checked} onChange={() => toggleCheck(c.id, opt)} />
               <span>{opt}</span>
+              {preco != null && (
+                <span className="contratacao-preco" title="Valor configurado em Ajustes de Valores">
+                  <DollarSign size={12} /> {formatarPreco(preco)}
+                </span>
+              )}
             </label>
           );
         })}

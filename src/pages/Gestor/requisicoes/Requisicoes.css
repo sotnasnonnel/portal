@@ -137,6 +137,17 @@
   font-weight: 600;
 }
 
+.contratacao-preco {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-success, #16a34a);
+  white-space: nowrap;
+}
+
 .contratacao-erro {
   display: block;
   margin-top: 4px;

@@ -44,3 +44,12 @@ export function parseCurrency(mascarado) {
   const n = Number(s.replace(/\./g, '').replace(',', '.'));
   return Number.isFinite(n) ? n : null;
 }
+
+/**
+ * Converte um número do banco na string mascarada pt-BR (para preencher o
+ * CurrencyInput). null/'' / não-número => ''. Ex.: 3500 => '3.500,00'.
+ */
+export function numeroParaMascara(n) {
+  if (n == null || n === '' || !Number.isFinite(Number(n))) return '';
+  return maskCurrencyInput(Number(n).toFixed(2).replace('.', ','));
+}

@@ -11,6 +11,7 @@ import {
   CalendarDays,
   FileText,
   Network,
+  Coins,
   PlusCircle,
   Workflow,
   ChevronDown,
@@ -30,6 +31,7 @@ const menuConfig = {
     { label: 'Requisições DP', icon: FileText, path: '/admin/solicitacoes', solicitacaoBadge: true },
     { label: 'Fluxos de Aprovação', icon: Workflow, path: '/admin/fluxos' },
     { label: 'Organograma', icon: Network, path: '/organograma' },
+    { label: 'Ajustes de Valores', icon: Coins, path: '/valores' },
   ],
   gestor: [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/gestor' },
@@ -57,6 +59,7 @@ const menuConfig = {
       ],
     },
     { label: 'Organograma', icon: Network, path: '/organograma' },
+    { label: 'Ajustes de Valores', icon: Coins, path: '/valores' },
   ],
   coordenador: [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/gestor' },
