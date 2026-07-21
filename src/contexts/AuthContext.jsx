@@ -68,6 +68,15 @@ async function resolveSolicProfile(authUser) {
       data = { ...byEmail, auth_id: authUser.id };
     }
   }
+  if (!data) {
+    // Módulo aberto a todo cadastrado: sem perfil, provisiona um (role 'user')
+    // via RPC SECURITY DEFINER e relê. Idempotente; se a RPC não existir ainda,
+    // segue sem perfil (card aparece bloqueado).
+    await supabase.rpc('provisionar_meu_solic_profile');
+    const { data: novo } = await supabase
+      .from('solic_profiles').select('*').eq('auth_id', authUser.id).maybeSingle();
+    data = novo ?? null;
+  }
   return data ?? null;
 }
 

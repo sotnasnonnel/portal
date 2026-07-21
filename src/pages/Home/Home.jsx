@@ -38,12 +38,15 @@ export default function Home() {
       // Sem acesso ao reembolso: card aparece esmaecido/com cadeado, não some.
       locked: !modules.reembolso,
     },
-    modules.solic && {
+    {
       to: '/solic/dashboard',
       icon: BarChart3,
       tone: 'teal',
       title: 'Solicitações',
       desc: 'Demandas de BI, contratos e prazos',
+      // Aberto a todo cadastrado: o perfil é auto-provisionado no login.
+      // Sem perfil (caso raro), o card aparece com cadeado em vez de sumir.
+      locked: !modules.solic,
     },
     {
       // Módulo aberto a todos: card sempre visível, sem gate de permissão.
