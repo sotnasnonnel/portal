@@ -18,18 +18,26 @@ export const DETALHE = {
   nova_vaga: { tabela: 'vagas', campos: CAMPOS_NOVA_VAGA, titulo: 'Nova Vaga', bucket: 'vaga-anexos' },
 };
 
-/** Busca o detalhe da solicitação e resolve a URL pública do anexo, se houver. */
+/** Busca o detalhe da solicitação e resolve as URLs públicas dos anexos.
+ *  Suporta o formato novo (coluna jsonb `anexos` = [{ path, nome }]) e cai no
+ *  legado (anexo_path/anexo_nome único) para registros antigos. Devolve sempre
+ *  `anexos` (array {nome,url}) e `anexoUrl` (o 1º, p/ compat). */
 export async function buscarRespostas(sol) {
   const cfg = DETALHE[sol.tipo];
   if (!cfg) return null;
   const { data } = await supabase
     .from(cfg.tabela).select('*').eq('solicitacao_id', sol.id).maybeSingle();
   const dados = data || {};
-  let anexoUrl = null;
-  if (dados.anexo_path && cfg.bucket) {
-    anexoUrl = supabase.storage.from(cfg.bucket).getPublicUrl(dados.anexo_path).data?.publicUrl || null;
+  const urlDe = (path) => (cfg.bucket && path
+    ? supabase.storage.from(cfg.bucket).getPublicUrl(path).data?.publicUrl || null
+    : null);
+  let anexos = [];
+  if (Array.isArray(dados.anexos) && dados.anexos.length) {
+    anexos = dados.anexos.map((a) => ({ nome: a.nome || 'Anexo', url: urlDe(a.path) }));
+  } else if (dados.anexo_path) {
+    anexos = [{ nome: dados.anexo_nome || 'Baixar anexo', url: urlDe(dados.anexo_path) }];
   }
-  return { ...cfg, dados, anexoUrl };
+  return { ...cfg, dados, anexos, anexoUrl: anexos[0]?.url || null };
 }
 
 export const fmtResposta = (c, v) => {
@@ -56,12 +64,16 @@ export default function ModalRespostas({ respostas, onClose, sol, nomeColaborado
               <div style={{ fontSize: 14, color: 'var(--color-text-primary, var(--color-text-secondary))' }}>{fmtResposta(c, respostas.dados[c.id])}</div>
             </div>
           ))}
-          {respostas.anexoUrl && (
+          {respostas.anexos?.length > 0 && (
             <div style={{ marginBottom: 'var(--space-md)' }}>
-              <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Anexo</div>
-              <a href={respostas.anexoUrl} target="_blank" rel="noreferrer" style={{ fontSize: 14 }}>
-                {respostas.dados.anexo_nome || 'Baixar anexo'}
-              </a>
+              <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
+                {respostas.anexos.length > 1 ? `Anexos (${respostas.anexos.length})` : 'Anexo'}
+              </div>
+              {respostas.anexos.map((a, i) => (
+                <div key={i}>
+                  <a href={a.url} target="_blank" rel="noreferrer" style={{ fontSize: 14 }}>{a.nome}</a>
+                </div>
+              ))}
             </div>
           )}
         </div>

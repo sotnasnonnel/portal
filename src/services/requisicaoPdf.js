@@ -75,13 +75,11 @@ export async function gerarRequisicaoPdf(sol, { nomeColaborador, nomeSolicitante
 
   // Campos
   const r = await buscarRespostas(sol); // null para os tipos diretos
-  let anexoUrl = null;
-  let anexoNome = null;
+  let anexosPdf = [];
   let linhas;
   if (r) {
     linhas = r.campos.map((c) => [c.label, fmtResposta(c, r.dados[c.id])]);
-    anexoUrl = r.anexoUrl;
-    anexoNome = r.dados.anexo_nome || null;
+    anexosPdf = r.anexos || [];
   } else {
     linhas = linhasDiretas(sol);
   }
@@ -98,16 +96,17 @@ export async function gerarRequisicaoPdf(sol, { nomeColaborador, nomeSolicitante
   });
   y = doc.lastAutoTable.finalY + 16;
 
-  // Anexo
-  if (anexoUrl) {
+  // Anexos: imagens em página nova (uma por página); não-imagens viram linhas.
+  for (const anexo of anexosPdf) {
+    if (!anexo.url) continue;
     try {
-      const { dataUrl, type } = await urlParaDataUrl(anexoUrl);
+      const { dataUrl, type } = await urlParaDataUrl(anexo.url);
       if (type.startsWith('image/')) {
         doc.addPage();
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
         doc.setTextColor(38, 64, 93);
-        doc.text(`Anexo: ${anexoNome || ''}`, margin, 40);
+        doc.text(`Anexo: ${anexo.nome || ''}`, margin, 40);
         const props = doc.getImageProperties(dataUrl);
         const maxW = pageW - margin * 2;
         const maxH = pageH - 70 - margin;
@@ -116,10 +115,12 @@ export async function gerarRequisicaoPdf(sol, { nomeColaborador, nomeSolicitante
         const h = props.height * ratio;
         doc.addImage(dataUrl, props.fileType || 'JPEG', margin + (maxW - w) / 2, 55, w, h);
       } else {
+        if (y > pageH - margin) { doc.addPage(); y = margin; }
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(10);
         doc.setTextColor(80, 80, 80);
-        doc.text(`Anexo: ${anexoNome || 'arquivo'}`, margin, y);
+        doc.text(`Anexo: ${anexo.nome || 'arquivo'}`, margin, y);
+        y += 16;
       }
     } catch { /* ignora anexo que não carregou */ }
   }

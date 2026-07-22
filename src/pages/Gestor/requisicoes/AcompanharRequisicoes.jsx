@@ -1,9 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { supabase } from '../../../services/supabase';
 import { formatarMoeda, parseDesligamento } from '../../../utils/formatters';
-import { Check, X, Loader2, ClipboardCheck, FileText, ChevronDown, Filter } from 'lucide-react';
+import { Check, X, Loader2, ClipboardCheck, FileText, ChevronDown, Filter, User } from 'lucide-react';
 import FluxoTimeline from '../../../components/Solicitacoes/FluxoTimeline';
+import SearchSelect from '../../../components/UI/SearchSelect';
+import { opcoesSolicitantes } from './solicitantes';
 import {
   etapaAtual, acaoDisponivel, resumoAndamento,
   INICIATIVA_LABEL, TIPO_LABEL, TIPO_LABEL_CURTO,
@@ -39,6 +41,7 @@ export default function AcompanharRequisicoes() {
   const [verRespostas, setVerRespostas] = useState(null);
   const [solRespostas, setSolRespostas] = useState(null);
   const [filtroTipo, setFiltroTipo] = useState('todos');
+  const [filtroSolic, setFiltroSolic] = useState(''); // '' = todos os solicitantes
 
   const abrirRespostas = async (sol) => { setSolRespostas(sol); setVerRespostas(await buscarRespostas(sol)); };
 
@@ -51,7 +54,12 @@ export default function AcompanharRequisicoes() {
     return next;
   });
 
-  const filtradas = filtroTipo === 'todos' ? participa : participa.filter((s) => s.tipo === filtroTipo);
+  // Solicitantes distintos (quem abriu a requisição = gestor_id), ordenados por nome.
+  const solicitantes = useMemo(() => opcoesSolicitantes(participa, nomes), [participa, nomes]);
+
+  const filtradas = participa.filter(
+    (s) => (filtroTipo === 'todos' || s.tipo === filtroTipo) && (!filtroSolic || s.gestor_id === filtroSolic)
+  );
   const todasExpandidas = filtradas.length > 0 && filtradas.every((s) => expandido.has(s.id));
   const alternarTodas = () => setExpandido(todasExpandidas ? new Set() : new Set(filtradas.map((s) => s.id)));
 
@@ -172,6 +180,20 @@ export default function AcompanharRequisicoes() {
                     {t === 'todos' ? 'Todos os tipos' : TIPO_LABEL_CURTO[t]}
                   </button>
                 ))}
+                {solicitantes.length > 1 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)', minWidth: 220 }}>
+                    <User size={15} color="var(--color-text-muted)" />
+                    <div style={{ flex: 1 }}>
+                      <SearchSelect
+                        value={filtroSolic}
+                        onChange={setFiltroSolic}
+                        ariaLabel="Filtrar por solicitante"
+                        placeholder="Todos os solicitantes"
+                        options={[{ value: '', label: 'Todos os solicitantes' }, ...solicitantes]}
+                      />
+                    </div>
+                  </div>
+                )}
               </>
             )}
             {participa.length > 1 && (
@@ -186,7 +208,7 @@ export default function AcompanharRequisicoes() {
         ) : participa.length === 0 ? (
           <div className="table-empty" style={{ padding: 'var(--space-3xl)' }}>Nenhuma requisição para acompanhar.</div>
         ) : filtradas.length === 0 ? (
-          <div className="table-empty" style={{ padding: 'var(--space-3xl)' }}>Nenhuma requisição desse tipo.</div>
+          <div className="table-empty" style={{ padding: 'var(--space-3xl)' }}>Nenhuma requisição para os filtros selecionados.</div>
         ) : (
           <div style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
             {filtradas.map((s) => {

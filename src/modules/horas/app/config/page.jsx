@@ -36,11 +36,16 @@ export default function ConfigPage() {
   const [novo, setNovo] = useState({ nome: '', cliente: '', cor: CORES[0] });
   const [aExcluir, setAExcluir] = useState(null);
 
-  // Áreas que este usuário pode editar: o admin/super vê todas; o gestor vê a(s)
-  // que ele é dono (gestor_id === ele).
+  // Áreas que este usuário pode editar: o admin/super vê todas; o líder vê a(s)
+  // que ele é dono (gestor_id === ele); e qualquer gestor/coordenador vê a área
+  // da EQUIPE a que pertence (horas_gerencia_id) — assim um sub-gestor (ex.:
+  // Vinicius) mantém a área do líder (André). Espelha o pode_gerir_gerencia.
   const areasGeriveis = useMemo(
-    () => (veTudo ? gerencias : gerencias.filter((g) => g.gestor_id === user?.id)),
-    [gerencias, veTudo, user?.id]
+    () =>
+      veTudo
+        ? gerencias
+        : gerencias.filter((g) => g.gestor_id === user?.id || g.id === minhaGerencia),
+    [gerencias, veTudo, user?.id, minhaGerencia]
   );
 
   useEffect(() => {

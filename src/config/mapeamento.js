@@ -1,9 +1,14 @@
 /**
  * Schema único da requisição de Mapeamento (Avaliação de Candidatos / Projetos).
  * Dirige render, validação e payload, no mesmo formato do formulário de contratação.
- * tipos: 'text' | 'number' | 'date' | 'textarea' | 'funcao' (lista oficial + Outro) | 'uf'
- * O anexo é tratado fora do schema (upload p/ bucket mapeamento-anexos).
+ * tipos: 'text' | 'number' | 'date' | 'textarea' | 'funcao' (lista oficial + Outro)
+ *        | 'uf' | 'select' (opcoes)
+ * Os anexos são tratados fora do schema (upload p/ bucket mapeamento-anexos).
+ * `n` é sequencial (1..N) e vira o número do item no form/visualizações; o anexo
+ * é o item N+1.
  */
+import { MODALIDADES_CONTRATACAO } from './novaVaga';
+
 export const UFS = [
   'AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MG', 'MS', 'MT',
   'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO',
@@ -13,8 +18,9 @@ export const CAMPOS_MAPEAMENTO = [
   { id: 'funcao', n: 1, label: 'Função', tipo: 'funcao', obrigatorio: true },
   { id: 'unidade', n: 2, label: 'Gerência', tipo: 'text', obrigatorio: true },
   { id: 'codigo_proposta_cliente', n: 3, label: 'Código da proposta/cliente', tipo: 'text', obrigatorio: true },
-  { id: 'estado', n: 5, label: 'Estado', tipo: 'uf', obrigatorio: true },
-  { id: 'cidade', n: 6, label: 'Cidade', tipo: 'text', obrigatorio: true },
+  { id: 'estado', n: 4, label: 'Estado', tipo: 'uf', obrigatorio: true },
+  { id: 'cidade', n: 5, label: 'Cidade', tipo: 'text', obrigatorio: true },
+  { id: 'modalidade_contratacao', n: 6, label: 'Modalidade de Contratação', tipo: 'select', obrigatorio: true, opcoes: MODALIDADES_CONTRATACAO, placeholder: 'Selecione a modalidade' },
   { id: 'salario_base', n: 7, label: 'Salário Base', tipo: 'number', obrigatorio: true },
   { id: 'ajuda_custo_alimentacao', n: 8, label: 'Ajuda de Custo - Alimentação', tipo: 'number', obrigatorio: true },
   { id: 'ajuda_custo_moradia', n: 9, label: 'Ajuda de Custo - Moradia', tipo: 'number', obrigatorio: true },

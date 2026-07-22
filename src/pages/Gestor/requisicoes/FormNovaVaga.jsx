@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserPlus, Loader2, AlertTriangle, Paperclip, X } from 'lucide-react';
 import { supabase } from '../../../services/supabase';
 import { useRequisicaoForm } from './useRequisicaoForm';
+import { useAnexos } from './useAnexos';
 import {
   CAMPOS_NOVA_VAGA, SECOES_NOVA_VAGA, estadoInicialNovaVaga, validarNovaVaga, montarPayloadNovaVaga,
 } from '../../../config/novaVaga';
@@ -19,23 +20,17 @@ const BUCKET = 'vaga-anexos';
 const ANEXO_MAX_MB = 10;
 const ANEXO_ACCEPT = '.pdf,.png,.jpg,.jpeg';
 
-const sanitizarNome = (nome) => nome
-  .normalize('NFD').replace(/[̀-ͯ]/g, '')
-  .replace(/[^a-zA-Z0-9._-]/g, '_'); // após NFD, acentos viram combinantes e caem aqui
-
 export default function FormNovaVaga() {
   const navigate = useNavigate();
   const { fluxoOk, submitting, setSubmitting, criarComDetalhe } = useRequisicaoForm();
   const [form, setForm] = useState(estadoInicialNovaVaga);
   const [funcaoOutro, setFuncaoOutro] = useState('');
   const [departamentoOutro, setDepartamentoOutro] = useState('');
-  const [anexo, setAnexo] = useState(null);
   const [faltando, setFaltando] = useState([]);
-  const [erroAnexo, setErroAnexo] = useState('');
   const [funcoes, setFuncoes] = useState([]);
   const [loadingFuncoes, setLoadingFuncoes] = useState(true);
   const [precos, setPrecos] = useState({});
-  const fileRef = useRef(null);
+  const anexos = useAnexos({ bucket: BUCKET, maxMb: ANEXO_MAX_MB });
 
   const semFluxo = fluxoOk === false;
   const set = (id, valor) => setForm((p) => ({ ...p, [id]: valor }));
@@ -64,24 +59,6 @@ export default function FormNovaVaga() {
     return preco != null ? `${opt} — ${formatarPreco(preco)}` : opt;
   };
 
-  const onArquivo = (e) => {
-    const f = e.target.files?.[0] || null;
-    setErroAnexo('');
-    if (f && f.size > ANEXO_MAX_MB * 1024 * 1024) {
-      setErroAnexo(`Arquivo acima de ${ANEXO_MAX_MB} MB. Escolha um arquivo menor.`);
-      e.target.value = '';
-      setAnexo(null);
-      return;
-    }
-    setAnexo(f);
-  };
-
-  const limparAnexo = () => {
-    setAnexo(null);
-    setErroAnexo('');
-    if (fileRef.current) fileRef.current.value = '';
-  };
-
   // Com "Outro", cadastra a função na lista oficial (duplicata é ignorada pelo índice único).
   const resolverFuncao = async () => {
     if (form.funcao !== OUTRO) return form.funcao;
@@ -99,16 +76,12 @@ export default function FormNovaVaga() {
     setFaltando(falta);
     if (falta.length) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
     setSubmitting(true);
-    let anexoPath = null;
+    let enviados = [];
     try {
       const funcaoFinal = await resolverFuncao();
       const departamentoFinal = form.departamento === OUTRO ? departamentoOutro.trim() : form.departamento;
 
-      if (anexo) {
-        anexoPath = `${crypto.randomUUID()}/${sanitizarNome(anexo.name)}`;
-        const { error: eUp } = await supabase.storage.from(BUCKET).upload(anexoPath, anexo);
-        if (eUp) throw new Error(`Falha ao enviar o anexo: ${eUp.message}`);
-      }
+      enviados = await anexos.enviar();
 
       const payload = { ...montarPayloadNovaVaga(form), funcao: funcaoFinal, departamento: departamentoFinal };
       try {
@@ -116,11 +89,11 @@ export default function FormNovaVaga() {
           tipo: 'nova_vaga',
           justificativa: `Nova Vaga: ${funcaoFinal} — ${departamentoFinal}`,
           tabela: 'vagas',
-          detalhe: { ...payload, anexo_path: anexoPath, anexo_nome: anexo ? anexo.name : null },
+          detalhe: { ...payload, anexos: enviados },
         });
       } catch (err) {
-        // Não deixa arquivo órfão no bucket se a criação falhar.
-        if (anexoPath) await supabase.storage.from(BUCKET).remove([anexoPath]);
+        // Não deixa arquivos órfãos no bucket se a criação falhar.
+        if (enviados.length) await supabase.storage.from(BUCKET).remove(enviados.map((a) => a.path));
         throw err;
       }
 
@@ -249,16 +222,21 @@ export default function FormNovaVaga() {
   const renderAnexo = () => (
     <div className="form-group" style={{ marginBottom: 'var(--space-lg)' }}>
       <label className="form-label">Anexar currículos</label>
-      <input ref={fileRef} className="form-input" type="file" accept={ANEXO_ACCEPT} onChange={onArquivo} />
-      {anexo && (
-        <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)', display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: 'var(--space-sm)' }}>
-          <Paperclip size={14} /> {anexo.name}
-          <button type="button" className="btn btn-ghost btn-sm" onClick={limparAnexo} title="Remover anexo"><X size={14} /></button>
-        </span>
+      <input ref={anexos.inputRef} className="form-input" type="file" multiple accept={ANEXO_ACCEPT}
+        onChange={(e) => anexos.adicionar(e.target.files)} />
+      {anexos.arquivos.length > 0 && (
+        <ul style={{ listStyle: 'none', padding: 0, margin: 'var(--space-sm) 0 0' }}>
+          {anexos.arquivos.map((f, i) => (
+            <li key={`${f.name}-${i}`} style={{ fontSize: '13px', color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+              <Paperclip size={14} /> <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.name}</span>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => anexos.remover(i)} title="Remover anexo"><X size={14} /></button>
+            </li>
+          ))}
+        </ul>
       )}
-      {erroAnexo && <span className="contratacao-erro">{erroAnexo}</span>}
+      {anexos.erro && <span className="contratacao-erro">{anexos.erro}</span>}
       <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', display: 'block', marginTop: '4px' }}>
-        Certifique-se de que os documentos estejam legíveis. Upload de arquivo de imagem .PNG, .JPEG e .JPG ou arquivo .PDF de até {ANEXO_MAX_MB} MB.
+        Você pode anexar vários arquivos. Documentos legíveis, imagem .PNG/.JPEG/.JPG ou .PDF de até {ANEXO_MAX_MB} MB cada.
       </span>
     </div>
   );

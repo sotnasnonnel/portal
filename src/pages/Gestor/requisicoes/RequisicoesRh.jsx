@@ -1,10 +1,12 @@
-import { useState } from 'react';
-import { Clock, CheckCheck, X, ClipboardCheck, FileText } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Clock, CheckCheck, X, ClipboardCheck, FileText, User } from 'lucide-react';
 import FluxoTimeline from '../../../components/Solicitacoes/FluxoTimeline';
 import { resumoAndamento, TIPO_LABEL, INICIATIVA_LABEL } from '../../../config/aprovacao';
 import { formatarMoeda, parseDesligamento } from '../../../utils/formatters';
 import ModalRespostas, { DETALHE, buscarRespostas } from './ModalRespostas';
 import BotaoPdfRequisicao from '../../../components/BotaoPdfRequisicao';
+import SearchSelect from '../../../components/UI/SearchSelect';
+import { opcoesSolicitantes } from './solicitantes';
 
 // Visão do RH/DP: vê TODAS as requisições (somente leitura). Cards de status no
 // topo filtram a lista compacta; clicar numa requisição abre o detalhe (fluxo).
@@ -23,6 +25,7 @@ const CARDS = [
 
 export default function RequisicoesRh({ participa, nomes, loading }) {
   const [filtro, setFiltro] = useState('pendente'); // começa em "Em andamento"
+  const [filtroSolic, setFiltroSolic] = useState(''); // '' = todos os solicitantes
   const [aberta, setAberta] = useState(null);        // requisição aberta no modal
   const [verRespostas, setVerRespostas] = useState(null);
   const [solRespostas, setSolRespostas] = useState(null);
@@ -33,8 +36,13 @@ export default function RequisicoesRh({ participa, nomes, loading }) {
   const nomeColab = (s) => nomes[s.colaborador_id] || s.colaborador?.nome || '';
   const tomDe = (s) => resumoAndamento(s, s.etapas).tom;
 
+  // Solicitantes distintos (quem abriu a requisição = gestor_id), ordenados por nome.
+  const solicitantes = useMemo(() => opcoesSolicitantes(participa, nomes), [participa, nomes]);
+
   const contar = (key) => participa.filter((s) => tomDe(s) === key).length;
-  const filtradas = filtro === 'todos' ? participa : participa.filter((s) => tomDe(s) === filtro);
+  const filtradas = participa.filter(
+    (s) => (filtro === 'todos' || tomDe(s) === filtro) && (!filtroSolic || s.gestor_id === filtroSolic)
+  );
 
   return (
     <div className="gestor-page animate-fade-in-up">
@@ -62,8 +70,20 @@ export default function RequisicoesRh({ participa, nomes, loading }) {
       </div>
 
       <div className="table-container">
-        <div className="table-header">
+        <div className="table-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-sm)', flexWrap: 'wrap' }}>
           <div className="table-header-title"><ClipboardCheck size={16} /> Requisições</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)', minWidth: 240 }}>
+            <User size={15} color="var(--color-text-muted)" />
+            <div style={{ flex: 1 }}>
+              <SearchSelect
+                value={filtroSolic}
+                onChange={setFiltroSolic}
+                ariaLabel="Filtrar por solicitante"
+                placeholder="Todos os solicitantes"
+                options={[{ value: '', label: 'Todos os solicitantes' }, ...solicitantes]}
+              />
+            </div>
+          </div>
         </div>
         {loading ? (
           <div style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>Carregando...</div>

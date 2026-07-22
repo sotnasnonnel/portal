@@ -12,6 +12,7 @@ import { escopo, isGestao } from '../../lib/roles';
 import { lookupProjetos, lookupColaboradores } from '../../lib/lookups';
 import { BrandBarChart, BrandLineChart, BrandPieChart } from '../components/Charts';
 import ApontamentosTable from '../components/ApontamentosTable';
+import SearchableSelect from '../components/SearchableSelect';
 
 export default function DashboardPage() {
   const { user, modules } = useAuth();
@@ -244,14 +245,12 @@ export default function DashboardPage() {
           </div>
           <div className="horas-fld" style={{ maxWidth: 220 }}>
             <label>Projeto</label>
-            <select value={filtro.projeto} onChange={(e) => setFiltro((f) => ({ ...f, projeto: e.target.value }))}>
-              <option value="">Todos</option>
-              {projetosEscopo.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.nome}
-                </option>
-              ))}
-            </select>
+            <SearchableSelect
+              value={filtro.projeto}
+              placeholder="Todos"
+              onChange={(v) => setFiltro((f) => ({ ...f, projeto: v }))}
+              options={[{ value: '', label: 'Todos' }, ...projetosEscopo.map((p) => ({ value: p.id, label: p.nome }))]}
+            />
           </div>
           {isGestao(role) ? (
             <div className="horas-fld" style={{ maxWidth: 220 }}>

@@ -13,6 +13,7 @@ import { isGestao } from '../../lib/roles';
 import { lookupProjetos, lookupColaboradores, lookupGerencias } from '../../lib/lookups';
 import ApontamentosTable from '../components/ApontamentosTable';
 import ConfirmModal from '../components/ConfirmModal';
+import SearchableSelect from '../components/SearchableSelect';
 
 export default function RegistrosPage() {
   const { user, modules } = useAuth();
@@ -150,14 +151,12 @@ export default function RegistrosPage() {
           </div>
           <div className="horas-fld" style={{ maxWidth: 200 }}>
             <label>Projeto</label>
-            <select value={filtro.projeto} onChange={(e) => setFiltro((f) => ({ ...f, projeto: e.target.value }))}>
-              <option value="">Todos</option>
-              {projetosEscopo.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.nome}
-                </option>
-              ))}
-            </select>
+            <SearchableSelect
+              value={filtro.projeto}
+              placeholder="Todos"
+              onChange={(v) => setFiltro((f) => ({ ...f, projeto: v }))}
+              options={[{ value: '', label: 'Todos' }, ...projetosEscopo.map((p) => ({ value: p.id, label: p.nome }))]}
+            />
           </div>
           {mostraColaborador ? (
             <div className="horas-fld" style={{ maxWidth: 200 }}>
