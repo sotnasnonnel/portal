@@ -9,15 +9,25 @@ import { temCargoFinanceiro } from '../config/financeiroAcesso';
 const AuthContext = createContext(null);
 
 // Papéis do Controle de Horas — DERIVADOS do perfil da Gestão de Pessoas
-// (colaboradores.perfil), a mesma hierarquia do módulo de Pessoas. Não há mais
-// papel próprio do Horas: quem é gestor/admin lá é "gestor" aqui, coordenador é
-// "coordenador", e o resto é "usuario". A visibilidade (subárvore) é da RLS.
-const horasRoleFromPerfil = (perfil) =>
-  perfil === 'admin' || perfil === 'gestor'
+// (colaboradores.perfil), a mesma hierarquia do módulo de Pessoas: quem é
+// gestor/admin lá é "gestor" aqui, coordenador é "coordenador", o resto é
+// "usuario". A visibilidade (subárvore) é da RLS.
+//
+// A coluna colaboradores.horas_role funciona como ELEVAÇÃO só-do-Horas: permite
+// tornar alguém gestor/coordenador APENAS neste módulo (ex.: administrar os
+// projetos da equipe) sem promover o perfil e, com isso, sem abrir a Gestão de
+// Pessoas. O papel efetivo é o MAIOR entre o derivado do perfil e o override.
+// Espelha app_private.my_horas_role() no banco.
+const HORAS_RANK = { usuario: 1, coordenador: 2, gestor: 3 };
+const horasRoleFromPerfil = (perfil, horasRole) => {
+  const doPerfil = perfil === 'admin' || perfil === 'gestor'
     ? 'gestor'
     : perfil === 'coordenador'
       ? 'coordenador'
       : 'usuario';
+  const override = horasRole === 'gestor' || horasRole === 'coordenador' ? horasRole : 'usuario';
+  return HORAS_RANK[override] > HORAS_RANK[doPerfil] ? override : doPerfil;
+};
 
 // Limpa o ?code= do retorno OAuth da URL (PKCE + HashRouter).
 function cleanOAuthParams() {
@@ -141,6 +151,7 @@ export function AuthProvider({ children }) {
         funcao: colab.funcao || null,
         dataAdmissao: colab.data_admissao || null,
         horasGerenciaId: colab.horas_gerencia_id || null,  // gerência p/ ver projetos ao apontar
+        horasRole: colab.horas_role || null,               // elevação só-do-Horas (ver horasRoleFromPerfil)
         financeiroRole: colab.financeiro_role || null,     // acesso ao módulo Financeiro
         authId: authUser.id,
       });
@@ -198,7 +209,7 @@ export function AuthProvider({ children }) {
     if (!session?.user) return;
     const { data } = await supabase
       .from('colaboradores')
-      .select('perfil, rh_dp, horas_gerencia_id')
+      .select('perfil, rh_dp, horas_gerencia_id, horas_role')
       .eq('auth_id', session.user.id)
       .maybeSingle();
     if (!data) return;
@@ -206,12 +217,14 @@ export function AuthProvider({ children }) {
     const perfilEfetivo = (rhDp && !['gestor', 'admin', 'coordenador'].includes(data.perfil))
       ? 'rh'
       : data.perfil;
+    const novoHorasRole = data.horas_role || null;
     setUser((u) => {
       if (!u) return u;
-      if (u.perfil === perfilEfetivo && u.horasGerenciaId === (data.horas_gerencia_id || null)) {
+      if (u.perfil === perfilEfetivo && u.horasGerenciaId === (data.horas_gerencia_id || null)
+          && u.horasRole === novoHorasRole) {
         return u; // nada mudou — evita re-render desnecessário
       }
-      return { ...u, perfil: perfilEfetivo, horasGerenciaId: data.horas_gerencia_id || null };
+      return { ...u, perfil: perfilEfetivo, horasGerenciaId: data.horas_gerencia_id || null, horasRole: novoHorasRole };
     });
   }, [session]);
 
@@ -225,7 +238,7 @@ export function AuthProvider({ children }) {
     // Gestão de Pessoas (mesma hierarquia); quem enxerga a equipe são os
     // superiores da árvore (garantido pela RLS). O super-admin também tem passe
     // livre no banco.
-    horas: user ? horasRoleFromPerfil(user.perfil) : null,
+    horas: user ? horasRoleFromPerfil(user.perfil, user.horasRole) : null,
     // Financeiro: visível só a quem tem CARGO de diretor, gerente ou coordenador
     // (pela função). 'admin' = time do Financeiro (executa/configura fluxos), via
     // financeiro_role (Gerenciar acessos), que também dá acesso independentemente

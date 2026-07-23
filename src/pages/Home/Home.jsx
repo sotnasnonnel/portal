@@ -1,7 +1,9 @@
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, Receipt, BarChart3, Clock, CreditCard, ShieldCheck, LogOut, ArrowRight, Lock } from 'lucide-react';
+import { Users, Receipt, BarChart3, Clock, CreditCard, ShieldCheck, LogOut, ArrowRight, Lock, Blocks, ChevronDown, ExternalLink } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { isSuperAdmin } from '../../config/superAdmin';
+import { SOLUCOES_INTEGRADAS } from '../../config/solucoesIntegradas';
 import './Home.css';
 
 const DP_HOME = { admin: '/admin/listagem', gestor: '/gestor', usuario: '/usuario', rh: '/gestor/solicitacoes/acompanhar' };
@@ -17,6 +19,14 @@ function iniciais(nome) {
 export default function Home() {
   const { user, modules, logout } = useAuth();
   const primeiroNome = user?.nome?.split(' ')[0];
+  const [solucoesAbertas, setSolucoesAbertas] = useState(false);
+  const painelSolucoesRef = useRef(null);
+
+  // Ao expandir, traz o painel para a área visível (o card pode estar no fim da tela).
+  useEffect(() => {
+    if (!solucoesAbertas) return;
+    painelSolucoesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [solucoesAbertas]);
 
   const cards = [
     {
@@ -124,6 +134,66 @@ export default function Home() {
               </Link>
             );
           })}
+
+          {/* Card expansível: atalhos para as ferramentas externas da empresa.
+              A lista vem de src/config/solucoesIntegradas.js. */}
+          <div className={`home-card home-card-solucoes${solucoesAbertas ? ' is-open' : ''}`}>
+            <button
+              type="button"
+              className="home-solucoes-toggle"
+              onClick={() => setSolucoesAbertas((v) => !v)}
+              aria-expanded={solucoesAbertas}
+              aria-controls="painel-solucoes"
+            >
+              <span className="home-card-icon tone-terracotta">
+                <Blocks size={26} />
+              </span>
+              <h2>Soluções Integradas</h2>
+              <p>Acesso rápido às ferramentas usadas na empresa</p>
+              <span className="home-card-cta">
+                {solucoesAbertas ? 'Recolher' : 'Ver soluções'}
+                <ChevronDown size={15} className="home-solucoes-chevron" />
+              </span>
+            </button>
+          </div>
+
+          {/* A lista abre como painel de largura total abaixo da grade: se ficasse
+              dentro do card, os cards vizinhos esticariam junto (align-items: stretch). */}
+          {solucoesAbertas && (
+            <div className="home-solucoes-painel" id="painel-solucoes" ref={painelSolucoesRef}>
+              <ul className="home-solucoes-lista">
+                {SOLUCOES_INTEGRADAS.map((s) => {
+                  const SIcon = s.icon;
+                  if (!s.url) {
+                    return (
+                      <li key={s.nome}>
+                        <span className="home-solucao home-solucao-breve" aria-disabled="true">
+                          <SIcon size={18} />
+                          <span className="home-solucao-txt">
+                            <strong>{s.nome}</strong>
+                            <small>{s.desc}</small>
+                          </span>
+                          <em>Em breve</em>
+                        </span>
+                      </li>
+                    );
+                  }
+                  return (
+                    <li key={s.nome}>
+                      <a className="home-solucao" href={s.url} target="_blank" rel="noopener noreferrer">
+                        <SIcon size={18} />
+                        <span className="home-solucao-txt">
+                          <strong>{s.nome}</strong>
+                          <small>{s.desc}</small>
+                        </span>
+                        <ExternalLink size={15} />
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
         </div>
       </main>
 

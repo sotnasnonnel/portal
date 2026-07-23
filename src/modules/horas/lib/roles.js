@@ -1,5 +1,7 @@
 // Papéis do Controle de Horas — DERIVADOS do perfil da Gestão de Pessoas
-// (colaboradores.perfil). Não há mais horas_role/gerência próprios:
+// (colaboradores.perfil), com a coluna horas_role como ELEVAÇÃO só-do-Horas
+// (torna alguém gestor/coordenador apenas aqui, sem abrir a Gestão de Pessoas —
+// ver horasRoleFromPerfil no AuthContext e app_private.my_horas_role no banco):
 //   usuario     -> aponta e vê o próprio tempo
 //   coordenador -> aponta e vê/administra a sua equipe (a subárvore abaixo dele)
 //   gestor      -> aponta e vê/administra a sua equipe; no topo da árvore, a

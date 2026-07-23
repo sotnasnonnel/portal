@@ -228,6 +228,126 @@
   color: rgba(38, 64, 93, 0.55);
 }
 
+/* ---------- card expansível "Soluções Integradas" ---------- */
+
+/* O card em si não é link: todo o conteúdo é um botão que abre o painel abaixo. */
+.home-card-solucoes {
+  padding: 0;
+}
+
+.home-card-solucoes.is-open {
+  border-color: rgba(195, 94, 30, 0.35);
+  box-shadow: 0 16px 40px rgba(38, 64, 93, 0.14);
+}
+
+.home-solucoes-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  width: 100%;
+  padding: 26px 24px 22px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.home-solucoes-toggle h2 {
+  margin: 0 0 6px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.home-solucoes-toggle p {
+  margin: 0 0 18px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: rgba(38, 64, 93, 0.68);
+}
+
+.home-solucoes-chevron {
+  transition: transform 180ms ease;
+}
+
+.home-card-solucoes.is-open .home-solucoes-chevron {
+  transform: rotate(180deg);
+}
+
+/* Painel ocupa uma linha inteira da grade, logo abaixo dos cards. */
+.home-solucoes-painel {
+  flex: 1 1 100%;
+  padding: 14px;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid rgba(195, 94, 30, 0.28);
+  box-shadow: 0 12px 32px rgba(38, 64, 93, 0.10);
+  scroll-margin: 24px; /* folga ao rolar até o painel */
+  animation: home-solucoes-in 180ms ease-out;
+}
+
+@keyframes home-solucoes-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.home-solucoes-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 4px;
+  text-align: left;
+}
+
+.home-solucao {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 10px;
+  border-radius: 11px;
+  text-decoration: none;
+  color: #26405d;
+  transition: background 140ms ease;
+}
+
+a.home-solucao:hover {
+  background: rgba(195, 94, 30, 0.09);
+}
+
+.home-solucao-txt {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.home-solucao-txt strong {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.home-solucao-txt small {
+  font-size: 12px;
+  color: rgba(38, 64, 93, 0.62);
+}
+
+.home-solucao-breve {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.home-solucao-breve em {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: rgba(38, 64, 93, 0.55);
+}
+
 /* ---------- rodapé ---------- */
 
 .home-footer {
@@ -260,5 +380,9 @@
 
   .home-card {
     flex-basis: 100%;
+  }
+
+  .home-solucoes-lista {
+    grid-template-columns: 1fr;
   }
 }
