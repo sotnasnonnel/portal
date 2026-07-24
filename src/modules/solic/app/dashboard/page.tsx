@@ -169,15 +169,15 @@ export default function DashboardPage() {
                 const a = (s as any).assets;
                 return (
                   <tr key={s.id} style={mine ? { background: "rgba(0,164,154,0.07)" } : undefined}>
-                    <td><Link to={`/solic/survey?id=${s.id}`}>{s.id}</Link></td>
-                    <td>{a?.code ?? "—"}</td>
-                    <td>{a?.title ?? "—"}</td>
-                    <td>{s.requester ?? "—"}</td>
-                    <td>{formatDateBR(s.needed_date)}</td>
-                    <td>{formatDateBR(s.admin_deadline)}</td>
-                    <td><StatusBadge status={s.status} urgent={s.urgent} /></td>
+                    <td data-label="ID"><Link to={`/solic/survey?id=${s.id}`}>{s.id}</Link></td>
+                    <td data-label="Código">{a?.code ?? "—"}</td>
+                    <td data-label="Empresa">{a?.title ?? "—"}</td>
+                    <td data-label="Solicitante">{s.requester ?? "—"}</td>
+                    <td data-label="Necessidade">{formatDateBR(s.needed_date)}</td>
+                    <td data-label="Entrega">{formatDateBR(s.admin_deadline)}</td>
+                    <td data-label="Status"><StatusBadge status={s.status} urgent={s.urgent} /></td>
                     {isAdmin ? (
-                      <td style={{ textAlign: "center" }}>
+                      <td className="actionCell" style={{ textAlign: "center" }}>
                         <button
                           type="button"
                           onClick={() => handleDelete(s.id)}

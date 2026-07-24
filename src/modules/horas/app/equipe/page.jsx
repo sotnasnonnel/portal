@@ -158,7 +158,7 @@ export default function EquipePage() {
             </button>
           </div>
           <div className="horas-table-wrap">
-            <table>
+            <table className="horas-tbl-resp">
               <thead>
                 <tr>
                   <th>Gerência</th>
@@ -170,12 +170,12 @@ export default function EquipePage() {
               <tbody>
                 {gerencias.map((g) => (
                   <tr key={g.id}>
-                    <td>
+                    <td data-label="Gerência">
                       <b>{g.nome}</b>
                     </td>
-                    <td className="horas-muted">{projetos.filter((p) => p.gerencia_id === g.id).length}</td>
-                    <td className="horas-muted">{colabs.filter((c) => c.gerenciaId === g.id).length}</td>
-                    <td className="horas-right">
+                    <td className="horas-muted" data-label="Projetos">{projetos.filter((p) => p.gerencia_id === g.id).length}</td>
+                    <td className="horas-muted" data-label="Colaboradores">{colabs.filter((c) => c.gerenciaId === g.id).length}</td>
+                    <td className="horas-right horas-td-acao">
                       <button
                         className="horas-btn-icon"
                         type="button"
@@ -210,7 +210,7 @@ export default function EquipePage() {
       <div className="horas-card">
         <div className="horas-sec">Colaboradores</div>
         <div className="horas-table-wrap">
-          <table>
+          <table className="horas-tbl-resp">
             <thead>
               <tr>
                 <th>Nome</th>
@@ -223,12 +223,12 @@ export default function EquipePage() {
             <tbody>
               {visiveis.map((c) => (
                 <tr key={c.id}>
-                  <td>{c.nome}</td>
-                  <td className="horas-muted">{c.funcao || '—'}</td>
-                  <td>
+                  <td data-label="Nome">{c.nome}</td>
+                  <td className="horas-muted" data-label="Função">{c.funcao || '—'}</td>
+                  <td data-label="Papel">
                     <span className={`horas-badge ${c.role}`}>{ROLE_LABEL[c.role]}</span>
                   </td>
-                  <td>
+                  <td data-label="Gerência">
                     {podeGerencias ? (
                       <select
                         className="horas-inline-select"
@@ -247,7 +247,7 @@ export default function EquipePage() {
                     )}
                   </td>
                   {!podeGerencias ? (
-                    <td className="horas-right">
+                    <td className="horas-right horas-td-acao">
                       {c.id !== user?.id ? (
                         <button
                           className="horas-btn-icon"

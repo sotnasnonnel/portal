@@ -4,17 +4,19 @@ import PortalHeader from '../../../../components/PortalHeader/PortalHeader';
 import GuiaModal from '../../../../components/Guia/GuiaModal';
 import { FINANCEIRO_GUIA } from '../../../../components/Guia/guides';
 import Sidebar from './Sidebar';
+import { useDrawerMobile } from '../../../../hooks/useDrawerMobile';
 import '../../financeiro.css';
 
 export default function AppShell() {
   const { user, modules } = useAuth();
   const userName = user?.nome || (user?.email ? user.email.split('@')[0] : '');
+  const { aberto, alternar, fechar } = useDrawerMobile();
 
   return (
     <div className="finRoot">
-      <Sidebar />
+      <Sidebar aberto={aberto} onFechar={fechar} />
       <div className="finCol">
-        <PortalHeader userName={userName} />
+        <PortalHeader userName={userName} onMenuToggle={alternar} />
         <main className="finMain">
           <Outlet />
         </main>

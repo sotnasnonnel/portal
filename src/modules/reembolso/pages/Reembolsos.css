@@ -114,7 +114,10 @@
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  /* overflow-x auto (e não hidden) para a tabela poder rolar de lado em telas
+     estreitas — com hidden as últimas colunas eram cortadas sem barra alguma. */
+  overflow-x: auto;
+  overflow-y: hidden;
   box-shadow: var(--shadow-sm);
 }
 
@@ -311,8 +314,10 @@
 }
 
 /* ── Tabela vira lista de cards no mobile ─────────────────────────
-   Cada linha é um cartão; os rótulos da coluna voltam via data-label. */
-@media (max-width: 640px) {
+   Cada linha é um cartão; os rótulos da coluna voltam via data-label.
+   768px (e não 640) para cobrir o celular deitado (667/736/844px), onde as
+   6 colunas não cabiam e Status/Prestação de contas ficavam inacessíveis. */
+@media (max-width: 768px) {
   .table-responsive thead {
     position: absolute;
     width: 1px;

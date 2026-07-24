@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
 import { Sidebar } from "@/app/components/Sidebar";
+import { useDrawerMobile } from "../../../../hooks/useDrawerMobile";
 import { fetchMyProfile, fetchSurveysDashboard } from "@/lib/data";
 import { useAuth } from "../../../../contexts/AuthContext";
 import PortalHeader from "../../../../components/PortalHeader/PortalHeader";
@@ -11,6 +12,7 @@ import "../../solic.css";
 export default function AppShell() {
   const [collapsed, setCollapsed] = useState(false);
   const { solicProfile, user } = useAuth();
+  const { aberto, alternar, fechar } = useDrawerMobile();
   const userName =
     (solicProfile?.name || "").trim() || user?.nome || (user?.email ? user.email.split("@")[0] : "");
 
@@ -65,9 +67,9 @@ export default function AppShell() {
 
   return (
     <div className={`solicRoot solicShell ${collapsed ? "isCollapsed" : ""}`.trim()}>
-      <Sidebar collapsed={collapsed} onToggle={toggleCollapsed} />
+      <Sidebar collapsed={collapsed} onToggle={toggleCollapsed} aberto={aberto} onFechar={fechar} />
       <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
-        <PortalHeader userName={userName} upper />
+        <PortalHeader userName={userName} upper onMenuToggle={alternar} />
         <main className="solicMain">
           <div style={{ width: "100%", minWidth: 0 }}>
             <Outlet />

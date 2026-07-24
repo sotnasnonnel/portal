@@ -718,12 +718,30 @@
 }
 .horas-add-inline {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 8px;
 }
+/* min-width: 0 — o input tem largura mínima intrínseca (~177px) que o flex não
+   reduz sozinho; sem isto a linha estourava a tela de Config no celular. */
 .horas-add-inline input {
   flex: 1;
+  min-width: 0;
 }
+/* ---- seletor de cor do projeto ---- */
+.horas-cores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.horas-cor-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+}
+
 .horas-cfg-block {
   border: 1px solid var(--h-border);
   border-radius: var(--h-radius-lg);
@@ -811,11 +829,146 @@
   }
 }
 
-@media (max-width: 900px) {
+/* Overlay do drawer: só existe no mobile (ver bloco abaixo). */
+.horasSb-overlay {
+  display: none;
+}
+
+/* 768px (antes 900) para casar com o breakpoint em que o PortalHeader mostra o
+   botão de menu — é ele que abre o drawer. Antes a sidebar simplesmente sumia
+   (display:none) abaixo de 900px, deixando o módulo sem navegação no celular. */
+@media (max-width: 768px) {
   .horasSb {
-    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: min(86vw, 320px);
+    z-index: 100;
+    transform: translateX(-100%);
+    transition: transform 0.2s;
+    box-shadow: var(--h-shadow-lg);
   }
+
+  .horasSb.is-open {
+    transform: translateX(0);
+  }
+
+  /* entre a sidebar (100) e o .portal-header (50) */
+  .horasSb-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 99;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  .horasSb-overlay.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
   .horasMain {
     padding: 18px 14px 48px;
+  }
+
+  /* Cabeçalho podia quebrar linha: o nowrap fixava o piso de cada coluna no
+     texto do título ("COLABORADOR" ≈ 110px) e era o que mais forçava rolagem
+     lateral nas tabelas de Equipe e Config. */
+  .horasRoot th {
+    white-space: normal;
+  }
+
+  .horasRoot th,
+  .horasRoot td {
+    padding: 10px;
+  }
+
+  /* O select de gerência tinha teto de 220px numa coluna fora da tela. */
+  .horas-inline-select {
+    max-width: 100%;
+  }
+}
+
+/* ---- tabela de apontamentos vira lista de cartões ----
+   7 colunas não cabem em ~292px úteis. Havia rolagem lateral, mas sem barra
+   visível no toque o usuário não descobria as colunas da direita. */
+@media (max-width: 600px) {
+  .horasRoot .horas-tbl-resp thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+
+  .horasRoot .horas-tbl-resp tr {
+    display: block;
+    border: 1px solid var(--h-border);
+    border-radius: var(--h-radius-md);
+    padding: 4px 12px;
+    margin-bottom: 8px;
+  }
+
+  .horasRoot .horas-tbl-resp td {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    padding: 6px 0;
+    border-bottom: none;
+    text-align: left;
+  }
+
+  .horasRoot .horas-tbl-resp td[data-label]::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--h-gray-500);
+  }
+
+  /* Células sem rótulo (ações, estado vazio) ocupam a linha inteira. */
+  .horasRoot .horas-tbl-resp .horas-td-acao {
+    justify-content: flex-end;
+  }
+
+  /* Controles largos vão para a linha de baixo, em largura total, em vez de
+     ficarem espremidos ao lado do rótulo. */
+  .horasRoot .horas-tbl-resp td .horas-inline-select,
+  .horasRoot .horas-tbl-resp td .horas-cores {
+    flex: 1 1 100%;
+  }
+
+  .horasRoot .horas-tbl-resp tbody tr:hover td {
+    background: none;
+  }
+
+  /* 22px é pequeno demais para o dedo; com wrap eles ocupam 2 linhas. */
+  .horas-cor-btn {
+    width: 34px;
+    height: 34px;
+  }
+
+  .horas-cores {
+    gap: 8px;
+  }
+
+  /* A lista abre NO FLUXO em vez de flutuar. Flutuando, ela era recortada pelo
+     `overflow: auto` do modal de lançamento manual (o corte vinha da borda do
+     modal, sem barra que a trouxesse de volta) e, perto do rodapé da tela, saía
+     da área visível sem virar para cima. No fluxo, o container rola até ela. */
+  .horas-ss-pop {
+    position: static;
+    margin-top: 4px;
+    box-shadow: none;
   }
 }

@@ -472,6 +472,9 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  /* sem o wrap, dois botões de rótulo longo estouram a largura e o da direita
+     (normalmente o de confirmar) sai da área visível no celular. */
+  flex-wrap: wrap;
   gap: var(--space-md);
   padding: var(--space-md) var(--space-xl) var(--space-lg);
   border-top: 1px solid var(--color-border-light);
@@ -506,9 +509,25 @@
     padding: var(--space-md);
   }
 
+  /* sem margin: o .modal-overlay já tem padding e, com width:100%, a margem
+     fazia o modal exceder o contêiner e ser cortado nas laterais. */
   .modal {
     max-width: 100%;
-    margin: var(--space-md);
+  }
+
+}
+
+/* Só nas telas bem estreitas os botões empilham em largura total, como o
+   feedback.css já faz com o .modal-actions. Entre 541 e 768px dois botões ainda
+   cabem lado a lado, e o flex-wrap do .modal-footer cobre os casos limite. */
+@media (max-width: 540px) {
+  .modal-footer {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .modal-footer > * {
+    width: 100%;
   }
 }
 

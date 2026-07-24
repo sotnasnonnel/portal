@@ -123,18 +123,27 @@
   text-decoration: none;
 }
 
-/* Sidebar recolhida (desktop): esconde texto/chevron, centraliza o botão.
-   Cada módulo marca o recolhido com sua própria classe de raiz. */
-.isCollapsed .app-switcher-text,
-.isCollapsed .app-switcher-chevron,
-.sidebar.collapsed .app-switcher-text,
-.sidebar.collapsed .app-switcher-chevron {
-  display: none;
-}
+/* Sidebar recolhida: esconde texto/chevron, centraliza o botão.
+   Cada módulo marca o recolhido com sua própria classe de raiz.
 
-.isCollapsed .app-switcher-btn,
-.sidebar.collapsed .app-switcher-btn {
-  justify-content: center;
-  gap: 0;
-  padding: 10px;
+   SÓ no desktop: recolher é um recurso de desktop, mas a classe de recolhido
+   fica na RAIZ do shell e continua lá no mobile (o estado é persistido em
+   localStorage). Sem esta media query, abrir o drawer no celular mostrava o
+   seletor no formato recolhido — só o ícone, sem "App" nem o nome do módulo —
+   enquanto o resto do menu aparecia normal. O breakpoint acompanha o que cada
+   módulo usa para o próprio estado recolhido. */
+@media (min-width: 769px) {
+  .isCollapsed .app-switcher-text,
+  .isCollapsed .app-switcher-chevron,
+  .sidebar.collapsed .app-switcher-text,
+  .sidebar.collapsed .app-switcher-chevron {
+    display: none;
+  }
+
+  .isCollapsed .app-switcher-btn,
+  .sidebar.collapsed .app-switcher-btn {
+    justify-content: center;
+    gap: 0;
+    padding: 10px;
+  }
 }

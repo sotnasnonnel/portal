@@ -202,30 +202,34 @@ export default function FinanceiroDashboard() {
           {/* Últimas solicitações — também serve de table view */}
           <h2 className="fin-sec">Últimas solicitações</h2>
           <div className="fin-card">
-            <table className="fin-table">
-              <thead>
-                <tr>
-                  <th>#</th><th>Tipo</th><th>Descrição</th><th>Aplicação</th>
-                  <th className="num">Valor</th><th>Aberta</th><th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentes.map((s) => {
-                  const b = BADGE[s.status] || BADGE.pendente;
-                  return (
-                    <tr key={s.id}>
-                      <td className="num">{s.numero ?? '—'}</td>
-                      <td>{TIPO_LABEL_FIN[s.tipo] || s.tipo}</td>
-                      <td>{s.nome_despesa || '—'}</td>
-                      <td>{Array.isArray(s.aplicacao) && s.aplicacao.length ? s.aplicacao.join(', ') : '—'}</td>
-                      <td className="num">{s.valor != null ? formatarMoeda(s.valor) : '—'}</td>
-                      <td className="num">{fmtData(s.created_at)}</td>
-                      <td><span className={`fin-badge tom-${b.cls}`}>{b.label}</span></td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            {/* Sao 7 colunas: sem este wrapper a tabela estoura o card e faz a
+                pagina inteira rolar de lado no celular. */}
+            <div className="fin-table-scroll">
+              <table className="fin-table">
+                <thead>
+                  <tr>
+                    <th>#</th><th>Tipo</th><th>Descrição</th><th>Aplicação</th>
+                    <th className="num">Valor</th><th>Aberta</th><th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentes.map((s) => {
+                    const b = BADGE[s.status] || BADGE.pendente;
+                    return (
+                      <tr key={s.id}>
+                        <td className="num">{s.numero ?? '—'}</td>
+                        <td>{TIPO_LABEL_FIN[s.tipo] || s.tipo}</td>
+                        <td>{s.nome_despesa || '—'}</td>
+                        <td>{Array.isArray(s.aplicacao) && s.aplicacao.length ? s.aplicacao.join(', ') : '—'}</td>
+                        <td className="num">{s.valor != null ? formatarMoeda(s.valor) : '—'}</td>
+                        <td className="num">{fmtData(s.created_at)}</td>
+                        <td><span className={`fin-badge tom-${b.cls}`}>{b.label}</span></td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
             <Link to="/financeiro/solicitacoes/acompanhar" className="fin-card-foot">
               Ver todas <ArrowRight size={14} />
             </Link>

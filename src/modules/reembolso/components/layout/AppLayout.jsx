@@ -6,6 +6,7 @@ import { preloadReembolsoData } from "../../services/dataPreload.js";
 // e o shell vêm de lá — daí o .finRoot, que carrega os tokens --f-* que ela usa.
 // As telas continuam sob .reembolso-root, mantendo os estilos próprios.
 import Sidebar from "../../../financeiro/app/components/Sidebar";
+import { useDrawerMobile } from "../../../../hooks/useDrawerMobile";
 import PortalHeader from "../../../../components/PortalHeader/PortalHeader";
 import GuiaModal from "../../../../components/Guia/GuiaModal";
 import { REEMBOLSO_GUIA } from "../../../../components/Guia/guides";
@@ -17,6 +18,7 @@ import "../../styles/global.css";
 
 export default function AppLayout() {
   const { profile } = useAuth();
+  const { aberto, alternar, fechar } = useDrawerMobile();
 
   // Aquece o cache do Supabase assim que o usuário autenticado entra no app.
   useEffect(() => {
@@ -27,9 +29,9 @@ export default function AppLayout() {
 
   return (
     <div className="finRoot">
-      <Sidebar />
+      <Sidebar aberto={aberto} onFechar={fechar} />
       <div className="finCol">
-        <PortalHeader userName={userName} />
+        <PortalHeader userName={userName} onMenuToggle={alternar} />
         <main className="app-content reembolso-root">
           <Outlet />
         </main>

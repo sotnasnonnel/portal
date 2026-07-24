@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Clock, LogOut } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
@@ -13,7 +14,9 @@ function iniciais(nome, email) {
   return base.slice(0, 2).toUpperCase();
 }
 
-export default function Sidebar() {
+// aberto/onFechar controlam o drawer no mobile; no desktop a sidebar e fixa e
+// as duas props sao inofensivas. Ver src/hooks/useDrawerMobile.js.
+export default function Sidebar({ aberto = false, onFechar }) {
   const pathname = useLocation().pathname || '';
   const { logout, modules, user } = useAuth();
 
@@ -21,49 +24,75 @@ export default function Sidebar() {
   const nome = user?.nome || '';
   const email = user?.email || '';
 
+  // Esc fecha o drawer; fechar ao navegar sai do onClick de cada link.
+  useEffect(() => {
+    if (!aberto) return undefined;
+    const onKey = (e) => {
+      if (e.key === 'Escape') onFechar?.();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [aberto, onFechar]);
+
   const onLogout = async () => {
     await logout();
   };
 
   return (
-    <aside className="horasSb">
-      <Link to="/home" className="horasSb-brand" title="Voltar ao início" aria-label="Voltar ao início">
-        <span className="horasSb-logo" aria-hidden="true">
-          <Clock size={20} />
-        </span>
-        <strong className="horasSb-brandtext">Controle de Horas</strong>
-      </Link>
+    <>
+      {/* Escurece o conteudo atras do drawer; so existe no mobile (CSS). */}
+      <div
+        className={`horasSb-overlay ${aberto ? 'is-visible' : ''}`}
+        onClick={onFechar}
+        aria-hidden="true"
+      />
 
-      <nav className="horasSb-nav">
-        <AppSwitcher currentKey="horas" />
-        {navSections(role).map((sec) => (
-          <div key={sec.label}>
-            <div className="horasSb-seclabel">{sec.label}</div>
-            {sec.items.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                title={item.label}
-                className={`horasSb-link ${pathname.startsWith(item.href) ? 'is-active' : ''}`}
-              >
-                <item.Icon size={16} />
-                <span>{item.label}</span>
-              </Link>
-            ))}
+      <aside className={`horasSb ${aberto ? 'is-open' : ''}`}>
+        <Link
+          to="/home"
+          className="horasSb-brand"
+          title="Voltar ao início"
+          aria-label="Voltar ao início"
+          onClick={onFechar}
+        >
+          <span className="horasSb-logo" aria-hidden="true">
+            <Clock size={20} />
+          </span>
+          <strong className="horasSb-brandtext">Controle de Horas</strong>
+        </Link>
+
+        <nav className="horasSb-nav">
+          <AppSwitcher currentKey="horas" onNavigate={onFechar} />
+          {navSections(role).map((sec) => (
+            <div key={sec.label}>
+              <div className="horasSb-seclabel">{sec.label}</div>
+              {sec.items.map((item) => (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  title={item.label}
+                  className={`horasSb-link ${pathname.startsWith(item.href) ? 'is-active' : ''}`}
+                  onClick={onFechar}
+                >
+                  <item.Icon size={16} />
+                  <span>{item.label}</span>
+                </Link>
+              ))}
+            </div>
+          ))}
+        </nav>
+
+        <div className="horasSb-footer">
+          <div className="horasSb-avatar">{iniciais(nome, email)}</div>
+          <div className="horasSb-userinfo">
+            <strong title={nome || email}>{nome || 'Usuário'}</strong>
+            <span>{ROLE_LABEL[role]}</span>
           </div>
-        ))}
-      </nav>
-
-      <div className="horasSb-footer">
-        <div className="horasSb-avatar">{iniciais(nome, email)}</div>
-        <div className="horasSb-userinfo">
-          <strong title={nome || email}>{nome || 'Usuário'}</strong>
-          <span>{ROLE_LABEL[role]}</span>
+          <button className="horasSb-logout" onClick={onLogout} title="Sair" type="button">
+            <LogOut size={18} />
+          </button>
         </div>
-        <button className="horasSb-logout" onClick={onLogout} title="Sair" type="button">
-          <LogOut size={18} />
-        </button>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 }

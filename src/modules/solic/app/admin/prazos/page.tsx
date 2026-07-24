@@ -140,19 +140,19 @@ function Inner() {
           <tbody>
             {filtered.map((r) => (
               <tr key={r.id}>
-                <td>#{r.id}</td>
-                <td>{r.assets?.code ?? "—"}</td>
-                <td>{r.assets?.title ?? "—"}</td>
-                <td>{r.requester ?? "—"}</td>
-                <td>{formatDateBR(r.needed_date)}</td>
-                <td>
+                <td data-label="ID">#{r.id}</td>
+                <td data-label="Código">{r.assets?.code ?? "—"}</td>
+                <td data-label="Empresa">{r.assets?.title ?? "—"}</td>
+                <td data-label="Solicitante">{r.requester ?? "—"}</td>
+                <td data-label="Necessidade">{formatDateBR(r.needed_date)}</td>
+                <td data-label="Entrega (Admin)">
                   <input
                     type="date"
                     defaultValue={r.admin_deadline ?? ""}
                     onBlur={(e) => updateDeadline(r.id, e.target.value)}
                   />
                 </td>
-                <td><StatusBadge status={r.status} /></td>
+                <td data-label="Status"><StatusBadge status={r.status} /></td>
               </tr>
             ))}
             {filtered.length === 0 ? (

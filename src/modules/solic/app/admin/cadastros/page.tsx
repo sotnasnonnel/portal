@@ -206,18 +206,18 @@ function EmpresaTab() {
               {assets.map((a) =>
                 editId === a.id ? (
                   <tr key={a.id}>
-                    <td><input value={editCode} onChange={(e) => setEditCode(e.target.value)} style={{ height: 38 }} /></td>
-                    <td><input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} style={{ height: 38 }} /></td>
-                    <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                    <td data-label="Código"><input value={editCode} onChange={(e) => setEditCode(e.target.value)} style={{ height: 38 }} /></td>
+                    <td data-label="Nome"><input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} style={{ height: 38 }} /></td>
+                    <td className="actionCell" style={{ textAlign: "right", whiteSpace: "nowrap" }}>
                       <button className="primary" style={smallBtn} onClick={() => saveEdit(a.id)}>Salvar</button>{" "}
                       <button className="ghost" style={smallBtn} onClick={() => setEditId(null)}>Cancelar</button>
                     </td>
                   </tr>
                 ) : (
                   <tr key={a.id}>
-                    <td style={{ fontWeight: 800, color: "var(--text)", whiteSpace: "nowrap" }}>{a.code}</td>
-                    <td style={{ whiteSpace: "nowrap" }}>{a.title}</td>
-                    <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                    <td data-label="Código" style={{ fontWeight: 800, color: "var(--text)" }}>{a.code}</td>
+                    <td data-label="Nome">{a.title}</td>
+                    <td className="actionCell" style={{ textAlign: "right", whiteSpace: "nowrap" }}>
                       <button className="ghost" style={ICON_BTN} title="Editar" aria-label="Editar" onClick={() => startEdit(a)}>
                         <IconPencil />
                       </button>{" "}

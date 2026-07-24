@@ -574,7 +574,12 @@
   border-radius: var(--radius-xl);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-lg);
-  overflow: hidden;
+  /* O teto + rolagem vertical são necessários: só com overflow:hidden, conteúdo
+     mais alto que a tela ficava cortado sem barra e sem como alcançá-lo.
+     O desconto de 36px é o padding do .modalOverlay nos dois lados. */
+  max-height: calc(100dvh - 36px);
+  overflow-x: hidden;
+  overflow-y: auto;
   animation: phdslideup 0.18s ease;
 }
 
@@ -748,9 +753,10 @@
   flex: 1;
 }
 
-/* Mobile: a sidebar vira drawer (position fixed) e a barra de topo entra no fluxo —
-   o grid precisa virar coluna única, senão o conteúdo fica espremido na faixa de 240px. */
-@media (max-width: 980px) {
+/* Mobile: a sidebar vira drawer (position fixed), então o grid precisa virar
+   coluna única — senão sobraria uma faixa vazia de 240px. O breakpoint tem de
+   ser o MESMO do drawer em Sidebar.module.css (768px, onde o ☰ aparece). */
+@media (max-width: 768px) {
   .solicRoot.solicShell,
   .solicRoot.solicShell.isCollapsed {
     grid-template-columns: 1fr;
@@ -758,5 +764,97 @@
 
   .solicRoot .solicMain {
     padding: 14px 14px 40px;
+  }
+}
+
+/* ===== Conteúdo em telas estreitas ===== */
+@media (max-width: 640px) {
+  /* O nowrap fixava o piso de cada coluna no texto do cabeçalho ("Código da
+     Empresa" sozinho passa de 120px), alargando todas as tabelas à toa. */
+  .solicRoot .table thead th {
+    white-space: normal;
+  }
+
+  /* ---- tabela vira lista de cartões ----
+     As tabelas têm de 6 a 8 colunas; em ~330px úteis a rolagem lateral mostrava
+     ~2 colunas por vez. Cada <td> traz data-label, usado no lugar do cabeçalho. */
+  .solicRoot .table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+
+  .solicRoot .table,
+  .solicRoot .table tbody,
+  .solicRoot .table tr {
+    display: block;
+    width: 100%;
+  }
+
+  .solicRoot .table tr {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 4px 12px;
+    margin-bottom: 10px;
+    background: var(--surface);
+  }
+
+  .solicRoot .table td {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    padding: 7px 0;
+    border: none;
+    text-align: left;
+    min-width: 0;
+  }
+
+  .solicRoot .table td + td {
+    border-top: 1px solid var(--border-light, rgba(0, 0, 0, 0.05));
+  }
+
+  .solicRoot .table td[data-label]::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+  }
+
+  /* Campos dentro da célula ficam em largura total, abaixo do rótulo. Botões
+     ficam de fora: os de ação são ícones e devem manter o tamanho. */
+  .solicRoot .table td input,
+  .solicRoot .table td select {
+    flex: 1 1 100%;
+  }
+
+  /* Célula de ação (sem rótulo) alinha o conteúdo à direita. */
+  .solicRoot .table td.actionCell {
+    justify-content: flex-end;
+  }
+
+  /* 22px/24px de padding comiam ~48px dos ~332px úteis. */
+  .solicRoot .card {
+    padding: 16px 14px;
+  }
+
+  .solicRoot .pageTitle {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 460px) {
+  /* Em 2 colunas sobrava ~120px de conteúdo por card e o rótulo em caixa alta
+     quebrava em duas linhas. */
+  .solicRoot .statGrid {
+    grid-template-columns: 1fr;
   }
 }

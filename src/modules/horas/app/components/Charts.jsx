@@ -15,6 +15,10 @@ import {
 } from 'recharts';
 import { PALETTE } from '../../lib/aggregate';
 import { fmtHoras } from '../../lib/format';
+import { useMediaQuery } from '../../../../hooks/useMediaQuery';
+
+// Legenda e eixos do Recharts são props, não CSS — daí precisar saber em JS.
+const ESTREITO = '(max-width: 600px)';
 
 const GRID = '#e2e8f0';
 const TICK = '#64748b';
@@ -36,6 +40,7 @@ function Empty() {
 const semDados = (data) => !data.length || data.every((d) => !(d.ms ?? d.horas));
 
 export function BrandBarChart({ data, onSelect }) {
+  const estreito = useMediaQuery(ESTREITO);
   if (semDados(data)) return <Empty />;
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -45,8 +50,16 @@ export function BrandBarChart({ data, onSelect }) {
         onClick={(s) => s?.activeLabel && onSelect?.(s.activeLabel)}
       >
         <CartesianGrid stroke={GRID} vertical={false} />
-        <XAxis dataKey="name" tick={tickStyle} interval={0} tickLine={false} axisLine={{ stroke: GRID }} />
-        <YAxis tick={tickStyle} tickLine={false} axisLine={false} width={54} tickFormatter={fmtEixoY} />
+        {/* interval 0 força todos os rótulos; em tela estreita eles se sobrepõem
+            e viram sopa de letras, então deixa o Recharts ralear. */}
+        <XAxis
+          dataKey="name"
+          tick={tickStyle}
+          interval={estreito ? 'preserveStartEnd' : 0}
+          tickLine={false}
+          axisLine={{ stroke: GRID }}
+        />
+        <YAxis tick={tickStyle} tickLine={false} axisLine={false} width={estreito ? 38 : 54} tickFormatter={fmtEixoY} />
         <Tooltip formatter={fmtTip} cursor={{ fill: 'rgba(196,74,40,.06)' }} />
         <Bar dataKey="horas" fill={PRIMARY} radius={[6, 6, 0, 0]} cursor="pointer" minPointSize={2} />
       </BarChart>
@@ -81,15 +94,18 @@ export function BrandLineChart({ data, onSelect }) {
 }
 
 export function BrandPieChart({ data, onSelect }) {
+  const estreito = useMediaQuery(ESTREITO);
   if (semDados(data)) return <Empty />;
   return (
     <ResponsiveContainer width="100%" height="100%">
       <PieChart>
         <Tooltip formatter={fmtTip} />
+        {/* No celular a legenda vertical à direita comia ~40% da largura e a
+            rosca virava um anel minúsculo — embaixo ela usa a largura toda. */}
         <Legend
-          layout="vertical"
-          align="right"
-          verticalAlign="middle"
+          layout={estreito ? 'horizontal' : 'vertical'}
+          align={estreito ? 'center' : 'right'}
+          verticalAlign={estreito ? 'bottom' : 'middle'}
           wrapperStyle={{ fontSize: 12, color: TICK, lineHeight: '20px' }}
         />
         <Pie

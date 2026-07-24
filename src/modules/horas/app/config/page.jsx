@@ -240,7 +240,7 @@ export default function ConfigPage() {
       </div>
 
       <div className="horas-card horas-table-wrap">
-        <table>
+        <table className="horas-tbl-resp">
           <thead>
             <tr>
               <th>Projeto</th>
@@ -253,16 +253,16 @@ export default function ConfigPage() {
           <tbody>
             {projetos.map((p) => (
               <tr key={p.id} style={p.arquivado ? { opacity: 0.55 } : undefined}>
-                <td>
+                <td data-label="Projeto">
                   <span className="horas-pill" style={{ background: p.cor }} />
                   <b>{p.nome}</b>
                 </td>
-                <td className="horas-muted">{p.cliente || '—'}</td>
-                <td>
+                <td className="horas-muted" data-label="Cliente">{p.cliente || '—'}</td>
+                <td data-label="Cor">
                   <SeletorCor value={p.cor} onChange={(cor) => salvarProjeto(p, { cor })} />
                 </td>
-                <td className="horas-muted">{p.arquivado ? 'Arquivado' : 'Ativo'}</td>
-                <td className="horas-right" style={{ whiteSpace: 'nowrap' }}>
+                <td className="horas-muted" data-label="Status">{p.arquivado ? 'Arquivado' : 'Ativo'}</td>
+                <td className="horas-right horas-td-acao" style={{ whiteSpace: 'nowrap' }}>
                   <button
                     className="horas-btn-icon"
                     type="button"

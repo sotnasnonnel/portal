@@ -107,87 +107,91 @@ export default function AdminRequestsPage() {
 
       <div className="card">
         <div className="cardTitle" style={{ marginBottom: 14 }}>Sem prazo (definir agora)</div>
-        <table className="table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Código</th>
-              <th>Empresa</th>
-              <th>Solicitante</th>
-              <th>Necessidade</th>
-              <th>Prazo (Admin)</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {pending.map((r) => (
-              <tr key={r.id}>
-                <td>{r.id}</td>
-                <td>{r.assets?.code ?? "-"}</td>
-                <td>{r.assets?.title ?? "-"}</td>
-                <td>{r.requester ?? "-"}</td>
-                <td>{formatDateBR(r.needed_date)}</td>
-                <td>
-                  <input
-                    type="date"
-                    value={deadlineById[r.id] ?? ""}
-                    onChange={(e) => setDeadlineById((m) => ({ ...m, [r.id]: e.target.value }))}
-                  />
-                </td>
-                <td style={{ width: 150 }}>
-                  <button
-                    className="primary"
-                    disabled={savingId === r.id}
-                    onClick={() => saveDeadline(r.id)}
-                    style={{ height: 36, padding: "0 14px", width: "100%", fontSize: 13 }}
-                  >
-                    {savingId === r.id ? "Salvando..." : "Salvar prazo"}
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {pending.length === 0 && (
+        <div style={{ overflowX: "auto" }}>
+          <table className="table">
+            <thead>
               <tr>
-                <td colSpan={7} className="small">Nenhuma pendente.</td>
+                <th>ID</th>
+                <th>Código</th>
+                <th>Empresa</th>
+                <th>Solicitante</th>
+                <th>Necessidade</th>
+                <th>Prazo (Admin)</th>
+                <th></th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {pending.map((r) => (
+                <tr key={r.id}>
+                  <td data-label="ID">{r.id}</td>
+                  <td data-label="Código">{r.assets?.code ?? "-"}</td>
+                  <td data-label="Empresa">{r.assets?.title ?? "-"}</td>
+                  <td data-label="Solicitante">{r.requester ?? "-"}</td>
+                  <td data-label="Necessidade">{formatDateBR(r.needed_date)}</td>
+                  <td data-label="Prazo (Admin)">
+                    <input
+                      type="date"
+                      value={deadlineById[r.id] ?? ""}
+                      onChange={(e) => setDeadlineById((m) => ({ ...m, [r.id]: e.target.value }))}
+                    />
+                  </td>
+                  <td style={{ width: 150 }}>
+                    <button
+                      className="primary"
+                      disabled={savingId === r.id}
+                      onClick={() => saveDeadline(r.id)}
+                      style={{ height: 36, padding: "0 14px", width: "100%", fontSize: 13 }}
+                    >
+                      {savingId === r.id ? "Salvando..." : "Salvar prazo"}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {pending.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="small">Nenhuma pendente.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div className="card">
         <div className="cardTitle" style={{ marginBottom: 14 }}>Com prazo</div>
-        <table className="table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Código</th>
-              <th>Empresa</th>
-              <th>Solicitante</th>
-              <th>Necessidade</th>
-              <th>Prazo (Admin)</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {withDeadline.map((r) => (
-              <tr key={r.id}>
-                <td>{r.id}</td>
-                <td>{r.assets?.code ?? "-"}</td>
-                <td>{r.assets?.title ?? "-"}</td>
-                <td>{r.requester ?? "-"}</td>
-                <td>{formatDateBR(r.needed_date)}</td>
-                <td><b>{formatDateBR(r.admin_deadline)}</b></td>
-                <td><StatusBadge status={r.status} urgent={r.urgent} /></td>
-              </tr>
-            ))}
-            {withDeadline.length === 0 && (
+        <div style={{ overflowX: "auto" }}>
+          <table className="table">
+            <thead>
               <tr>
-                <td colSpan={7} className="small">Nenhuma com prazo ainda.</td>
+                <th>ID</th>
+                <th>Código</th>
+                <th>Empresa</th>
+                <th>Solicitante</th>
+                <th>Necessidade</th>
+                <th>Prazo (Admin)</th>
+                <th>Status</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {withDeadline.map((r) => (
+                <tr key={r.id}>
+                  <td data-label="ID">{r.id}</td>
+                  <td data-label="Código">{r.assets?.code ?? "-"}</td>
+                  <td data-label="Empresa">{r.assets?.title ?? "-"}</td>
+                  <td data-label="Solicitante">{r.requester ?? "-"}</td>
+                  <td data-label="Necessidade">{formatDateBR(r.needed_date)}</td>
+                  <td data-label="Prazo (Admin)"><b>{formatDateBR(r.admin_deadline)}</b></td>
+                  <td data-label="Status"><StatusBadge status={r.status} urgent={r.urgent} /></td>
+                </tr>
+              ))}
+              {withDeadline.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="small">Nenhuma com prazo ainda.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

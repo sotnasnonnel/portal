@@ -5,11 +5,13 @@ import PortalHeader from '../../../../components/PortalHeader/PortalHeader';
 import GuiaModal from '../../../../components/Guia/GuiaModal';
 import { HORAS_GUIA } from '../../../../components/Guia/guides';
 import Sidebar from './Sidebar';
+import { useDrawerMobile } from '../../../../hooks/useDrawerMobile';
 import '../../horas.css';
 
 export default function AppShell() {
   const { user, modules, refreshHorasIdentity } = useAuth();
   const userName = user?.nome || (user?.email ? user.email.split('@')[0] : '');
+  const { aberto, alternar, fechar } = useDrawerMobile();
 
   // O papel do módulo é editado em /portal-admin. Revalida ao abrir o módulo e
   // sempre que a aba volta ao foco, para uma promoção a gerente/diretoria valer
@@ -23,9 +25,9 @@ export default function AppShell() {
 
   return (
     <div className="horasRoot">
-      <Sidebar />
+      <Sidebar aberto={aberto} onFechar={fechar} />
       <div className="horasCol">
-        <PortalHeader userName={userName} />
+        <PortalHeader userName={userName} onMenuToggle={alternar} />
         <main className="horasMain">
           <Outlet />
         </main>

@@ -142,12 +142,12 @@ function Inner() {
                 const mine = userId && s.created_by === userId;
                 return (
                   <tr key={s.id} style={mine ? { background: "rgba(0,164,154,0.07)" } : undefined}>
-                    <td><Link to={`/solic/survey?id=${s.id}`}>{s.id}</Link></td>
-                    <td>{(s as any).assets?.code ?? "—"}</td>
-                    <td>{s.requester ?? "—"}</td>
-                    <td>{formatDateBR(s.needed_date)}</td>
-                    <td>{formatDateBR(s.admin_deadline)}</td>
-                    <td><StatusBadge status={s.status} /></td>
+                    <td data-label="ID"><Link to={`/solic/survey?id=${s.id}`}>{s.id}</Link></td>
+                    <td data-label="Código">{(s as any).assets?.code ?? "—"}</td>
+                    <td data-label="Solicitante">{s.requester ?? "—"}</td>
+                    <td data-label="Necessidade">{formatDateBR(s.needed_date)}</td>
+                    <td data-label="Entrega">{formatDateBR(s.admin_deadline)}</td>
+                    <td data-label="Status"><StatusBadge status={s.status} /></td>
                   </tr>
                 );
               })}

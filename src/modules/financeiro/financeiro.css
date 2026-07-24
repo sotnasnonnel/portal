@@ -111,6 +111,9 @@
 .fin-bar-fill { display: block; height: 100%; background: var(--f-primary); border-radius: 0 4px 4px 0; }
 .fin-bar-value { font-size: 0.8rem; font-weight: 600; color: var(--f-ink); font-variant-numeric: tabular-nums; }
 
+/* Contem a rolagem lateral da tabela: sem isso, em telas estreitas ela estoura
+   o card e faz a pagina inteira rolar de lado. */
+.fin-table-scroll { overflow-x: auto; }
 .fin-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
 .fin-table th {
   text-align: left; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.04em;
@@ -383,9 +386,76 @@
 .finSb-logout { background: none; border: none; color: var(--f-muted); cursor: pointer; padding: 6px; border-radius: 8px; display: flex; }
 .finSb-logout:hover { background: var(--f-gray-100); color: var(--f-red); }
 
+/* Overlay do drawer: só existe no mobile (ver bloco abaixo). */
+.finSb-overlay { display: none; }
+
 @media (max-width: 768px) {
-  .finSb { position: fixed; z-index: 50; transform: translateX(-100%); transition: transform 0.2s; }
+  /* Drawer: sai da tela e volta com .is-open (aberto pelo botão de menu do
+     PortalHeader, que já aparece neste mesmo breakpoint). top/left/height são
+     explícitos porque ao trocar sticky→fixed eles voltariam a auto. */
+  .finSb {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: min(86vw, 320px);
+    z-index: 100;
+    transform: translateX(-100%);
+    transition: transform 0.2s;
+    box-shadow: var(--f-shadow-sm);
+  }
+
+  .finSb.is-open { transform: translateX(0); }
+
+  /* z-index entre a sidebar (100) e o .portal-header (50) — antes a sidebar
+     também usava 50 e empatava com o header. */
+  .finSb-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 99;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  .finSb-overlay.is-visible { opacity: 1; pointer-events: auto; }
+
   .finMain { padding: 20px 16px 48px; }
+}
+
+/* ---- conteúdo em telas estreitas ---- */
+@media (max-width: 560px) {
+  .fin-title { font-size: 1.25rem; }
+  .fin-card { padding: 12px; }
+
+  /* Rótulo em cima; barra e número embaixo. A coluna do rótulo ia até 150px e
+     espremia a barra a ponto de ela não comunicar mais nada. */
+  .fin-bar-row {
+    grid-template-columns: 1fr auto;
+    gap: 4px 10px;
+  }
+
+  .fin-bar-label {
+    grid-column: 1 / -1;
+    white-space: normal;
+  }
+
+  /* Editor de fluxo na vertical: os nós tinham min-width de 190px e estouravam
+     a tela. A seta vem antes do nó no DOM, então girá-la já aponta o caminho. */
+  .fin-fluxo-canvas,
+  .fin-fluxo-seg {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .fin-fluxo-node { min-width: 0; }
+
+  .fin-fluxo-arrow {
+    transform: rotate(90deg);
+    align-self: center;
+  }
 }
 
 /* ==========================================================================

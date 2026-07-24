@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../../../contexts/AuthContext";
 import { clearSupabaseCache } from "@/lib/supabaseCache";
@@ -92,9 +91,21 @@ function IconChevron() {
   );
 }
 
-export function Sidebar({ collapsed = false, onToggle }: { collapsed?: boolean; onToggle?: () => void }) {
+// aberto/onFechar controlam o drawer no mobile. O botão que abre é o ☰ do
+// PortalHeader (ver src/hooks/useDrawerMobile.js) — este módulo tinha uma barra
+// de topo própria que ficava SOB a saudação do PortalHeader, escondendo o botão.
+export function Sidebar({
+  collapsed = false,
+  onToggle,
+  aberto = false,
+  onFechar,
+}: {
+  collapsed?: boolean;
+  onToggle?: () => void;
+  aberto?: boolean;
+  onFechar?: () => void;
+}) {
   const pathname = useLocation().pathname || "";
-  const [openMobile, setOpenMobile] = useState(false);
   // Perfil vem do shell (já resolvido antes da rota abrir): síncrono, sem flicker
   // de menu usuário→admin nem consulta repetida ao banco.
   const { logout, solicProfile, user } = useAuth();
@@ -123,19 +134,15 @@ export function Sidebar({ collapsed = false, onToggle }: { collapsed?: boolean; 
 
   return (
     <>
-      {/* topo mobile */}
-      <div className={styles.mobileTop}>
-        <button className={styles.iconBtn} onClick={() => setOpenMobile(true)} aria-label="Abrir menu">
-          ☰
-        </button>
-        <div className={styles.mobileTitle}>Menu</div>
-      </div>
+      <div
+        className={`${styles.overlay} ${aberto ? styles.overlayOpen : ""}`}
+        onClick={onFechar}
+        aria-hidden="true"
+      />
 
-      {openMobile ? <div className={styles.overlay} onClick={() => setOpenMobile(false)} /> : null}
-
-      <aside className={`${styles.sb} ${openMobile ? styles.open : ""} ${collapsed ? styles.collapsed : ""}`}>
+      <aside className={`${styles.sb} ${aberto ? styles.open : ""} ${collapsed ? styles.collapsed : ""}`}>
         <div className={styles.header}>
-          <Link to="/home" className={styles.brand} aria-label="Voltar ao início" onClick={() => setOpenMobile(false)}>
+          <Link to="/home" className={styles.brand} aria-label="Voltar ao início" onClick={onFechar}>
             <LogoSolicitacoes size="sm" />
           </Link>
 
@@ -149,13 +156,13 @@ export function Sidebar({ collapsed = false, onToggle }: { collapsed?: boolean; 
             <IconChevron />
           </button>
 
-          <button className={styles.closeMobile} onClick={() => setOpenMobile(false)} aria-label="Fechar menu">
+          <button className={styles.closeMobile} onClick={onFechar} aria-label="Fechar menu">
             ✕
           </button>
         </div>
 
         <nav className={styles.nav}>
-          <AppSwitcher currentKey="solic" onNavigate={() => setOpenMobile(false)} />
+          <AppSwitcher currentKey="solic" onNavigate={onFechar} />
           {nav.map((item) => {
             const active = isActive(pathname, item.href);
             return (
@@ -164,7 +171,7 @@ export function Sidebar({ collapsed = false, onToggle }: { collapsed?: boolean; 
                 to={item.href}
                 title={item.label}
                 className={`${styles.link} ${active ? styles.active : ""}`}
-                onClick={() => setOpenMobile(false)}
+                onClick={onFechar}
               >
                 <span className={styles.iconWrap} aria-hidden="true">
                   {item.icon}

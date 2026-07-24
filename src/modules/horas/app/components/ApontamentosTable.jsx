@@ -12,8 +12,10 @@ export default function ApontamentosTable({ list, projetoNome, projetoCor, onDel
   if (!list.length) {
     return <div className="horas-empty">Nenhum apontamento.</div>;
   }
+  // horas-tbl-resp + data-label: no mobile o CSS transforma cada linha num
+  // cartao e usa o data-label no lugar do cabecalho (7 colunas nao cabem).
   return (
-    <table>
+    <table className="horas-tbl-resp">
       <thead>
         <tr>
           {nameOf ? <th>Colaborador</th> : null}
@@ -28,15 +30,15 @@ export default function ApontamentosTable({ list, projetoNome, projetoCor, onDel
       <tbody>
         {list.map((a) => (
           <tr key={a.id}>
-            {nameOf ? <td>{nameOf(a.colaboradorId) || '—'}</td> : null}
-            <td>
+            {nameOf ? <td data-label="Colaborador">{nameOf(a.colaboradorId) || '—'}</td> : null}
+            <td data-label="Projeto">
               <span
                 className="horas-pill"
                 style={projetoCor ? { background: projetoCor(a.projetoId) } : undefined}
               />
               {projetoNome ? projetoNome(a.projetoId) : '—'}
             </td>
-            <td>
+            <td data-label="Atividades">
               {(a.ativ || []).filter(Boolean).map((v, i) => (
                 <span className="horas-tag" key={i}>
                   {v}
@@ -51,13 +53,13 @@ export default function ApontamentosTable({ list, projetoNome, projetoCor, onDel
                 <span className="horas-muted">—</span>
               ) : null}
             </td>
-            <td className="horas-muted">{fmtData(a.inicio)}</td>
-            <td className="horas-muted">{fmtData(a.fim)}</td>
-            <td className="horas-right" style={{ fontVariantNumeric: 'tabular-nums' }}>
+            <td className="horas-muted" data-label="Início">{fmtData(a.inicio)}</td>
+            <td className="horas-muted" data-label="Fim">{fmtData(a.fim)}</td>
+            <td className="horas-right" data-label="Duração" style={{ fontVariantNumeric: 'tabular-nums' }}>
               {fmtDur(a.duracao)}
             </td>
             {onDelete ? (
-              <td className="horas-right">
+              <td className="horas-right horas-td-acao">
                 {!podeExcluir || podeExcluir(a) ? (
                   <button
                     className="horas-btn-icon"
