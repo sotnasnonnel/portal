@@ -6,3 +6,10 @@
   flex: 1;
   min-width: 0;
 }
+
+/* .reembolso-root traz o cinza próprio do módulo (--bg-soft, #f2f2f2), que
+   destoava do fundo das telas do Financeiro (--f-bg). Como Reembolsos agora vive
+   aqui dentro, o fundo acompanha o do módulo hospedeiro. */
+.finRoot .app-content.reembolso-root {
+  background: var(--f-bg);
+}

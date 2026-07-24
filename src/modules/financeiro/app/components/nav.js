@@ -1,4 +1,4 @@
-import { LayoutDashboard, FileText, ClipboardCheck, Workflow, Receipt, Wallet } from 'lucide-react';
+import { LayoutDashboard, FileText, ClipboardCheck, Workflow, Receipt } from 'lucide-react';
 import { SOLICITACOES_FIN } from '../../../../config/financeiro';
 
 // Navegação da sidebar do Financeiro. Fica fora do Sidebar.jsx para não quebrar
@@ -17,28 +17,17 @@ export function navSections({ canAbrir = false, isAdmin = false, temFinanceiro =
     { label: 'Acompanhar', href: '/financeiro/solicitacoes/acompanhar', Icon: ClipboardCheck },
   ];
 
-  const secoes = temFinanceiro
-    ? [
-        { label: 'Menu', items: [{ label: 'Dashboard', href: '/financeiro/dashboard', Icon: LayoutDashboard }] },
-        { label: 'Solicitações', group: true, key: 'solicitacoes', Icon: FileText, items: solicitacoes },
-      ]
-    : [];
+  // Destinos diretos. Reembolsos entra aqui como item simples (sem submenu) e
+  // pode aparecer sozinho, já que tem gate próprio.
+  const menu = [
+    ...(temFinanceiro ? [{ label: 'Dashboard', href: '/financeiro/dashboard', Icon: LayoutDashboard }] : []),
+    ...(temReembolso ? [{ label: 'Reembolsos', href: '/reembolsos', Icon: Receipt }] : []),
+  ];
 
-  // Reembolsos e adiantamentos são solicitações do Financeiro, mas mantêm rotas
-  // e permissão próprias — por isso entram como grupo à parte.
-  if (temReembolso) {
-    secoes.push({
-      label: 'Reembolsos',
-      group: true,
-      key: 'reembolsos',
-      Icon: Receipt,
-      items: [
-        // "Solicitações" e não "Reembolsos": dentro do grupo homônimo o rótulo
-        // repetido ficava redundante.
-        { label: 'Solicitações', href: '/reembolsos', Icon: Receipt },
-        { label: 'Adiantamentos', href: '/adiantamentos', Icon: Wallet },
-      ],
-    });
+  const secoes = [];
+  if (menu.length) secoes.push({ label: 'Menu', items: menu });
+  if (temFinanceiro) {
+    secoes.push({ label: 'Solicitações', group: true, key: 'solicitacoes', Icon: FileText, items: solicitacoes });
   }
 
   if (isAdmin) {

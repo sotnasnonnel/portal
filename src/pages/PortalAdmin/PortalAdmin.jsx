@@ -210,7 +210,7 @@ export default function PortalAdmin() {
                 <th className="pa-center">Já entrou?</th>
                 <th>Gestão de Pessoas</th>
                 <th>Reembolso</th>
-                <th>Solicitações</th>
+                <th>PMO</th>
                 <th>Financeiro</th>
               </tr>
             </thead>

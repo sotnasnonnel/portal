@@ -39,7 +39,7 @@ const TROCAR_APP = {
   icon: Repeat,
   titulo: "Troque de app quando quiser",
   texto:
-    'No topo do menu lateral, o seletor "App" leva você aos outros sistemas do Portal PHD a que você tem acesso (Gestão de Pessoas, Reembolso, Solicitações) sem precisar voltar à tela inicial.',
+    'No topo do menu lateral, o seletor "App" leva você aos outros sistemas do Portal PHD a que você tem acesso (Gestão de Pessoas, PMO, Controle de Horas, Financeiro) sem precisar voltar à tela inicial.',
 };
 
 // ============================ Gestão de Pessoas (DP) ============================
@@ -213,9 +213,9 @@ export const REEMBOLSO_GUIA = {
   },
 };
 
-// ============================== Solicitações ==============================
+// ============================== PMO ==============================
 export const SOLIC_GUIA = {
-  appName: "Solicitações",
+  appName: "PMO",
   fallbackRole: "user",
   roleLabels: { admin: "Administrador(a)", user: "Usuário(a)" },
   contentByRole: {
@@ -257,7 +257,7 @@ export const SOLIC_GUIA = {
       {
         icon: Users,
         titulo: "Usuários",
-        texto: 'Em "Usuários" você controla quem acessa o app de Solicitações e o nível de cada um.',
+        texto: 'Em "Usuários" você controla quem acessa o app de PMO e o nível de cada um.',
       },
       TROCAR_APP,
     ],

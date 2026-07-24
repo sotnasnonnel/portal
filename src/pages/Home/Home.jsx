@@ -43,8 +43,8 @@ export default function Home() {
       to: '/solic/dashboard',
       icon: BarChart3,
       tone: 'teal',
-      title: 'Solicitações',
-      desc: 'Demandas de BI, contratos e prazos',
+      title: 'PMO',
+      desc: 'Demandas de BI e acompanhamento',
     },
     {
       // Módulo aberto a todos: card sempre visível, sem gate de permissão.
@@ -62,7 +62,7 @@ export default function Home() {
       icon: CreditCard,
       tone: 'blue',
       title: 'Financeiro',
-      desc: 'Cartões virtuais, limites, reembolsos e adiantamentos',
+      desc: 'Cartões virtuais, limites e reembolsos',
       // Sem acesso: card aparece esmaecido/com cadeado. Liberação em "Gerenciar acessos".
       locked: !modules.financeiro && !modules.reembolso,
     },

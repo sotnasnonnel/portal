@@ -15,7 +15,7 @@ export default function Login() {
           <div className="login-left-inner">
             <h1 className="login-left-title">Portal PHD</h1>
             <p className="login-left-desc">
-              Gestão de Pessoas, Reembolsos e Solicitações em um só acesso.
+              Gestão de Pessoas, PMO, Controle de Horas e Financeiro em um só acesso.
             </p>
             <div className="login-features">
               <div className="login-feature">

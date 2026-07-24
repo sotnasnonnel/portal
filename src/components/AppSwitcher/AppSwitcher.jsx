@@ -20,7 +20,7 @@ export default function AppSwitcher({ currentKey, onNavigate }) {
 
   const apps = [
     { key: "dp", label: "Gestão de Pessoas", to: dpEntry, Icon: Users, show: !!modules?.dp },
-    { key: "solic", label: "Solicitações", to: "/solic/dashboard", Icon: BarChart3, show: !!modules?.solic },
+    { key: "solic", label: "PMO", to: "/solic/dashboard", Icon: BarChart3, show: !!modules?.solic },
     { key: "horas", label: "Controle de Horas", to: "/horas/apontar", Icon: Clock, show: true },
     // Reembolsos deixou de ser app próprio: virou um grupo na sidebar do Financeiro.
     // Por isso quem tem só o Reembolso também precisa desta entrada — é a porta de acesso.
