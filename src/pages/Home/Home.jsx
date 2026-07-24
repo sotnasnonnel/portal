@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, Receipt, BarChart3, Clock, CreditCard, ShieldCheck, LogOut, ArrowRight, Lock, Blocks, ChevronDown, ExternalLink } from 'lucide-react';
+import { Users, BarChart3, Clock, CreditCard, ShieldCheck, LogOut, ArrowRight, Lock, Blocks, ChevronDown, ExternalLink } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { isSuperAdmin } from '../../config/superAdmin';
 import { SOLUCOES_INTEGRADAS } from '../../config/solucoesIntegradas';
@@ -39,15 +39,6 @@ export default function Home() {
       // A liberação é feita em "Gerenciar acessos" (/portal-admin).
       locked: !modules.dp,
     },
-    {
-      to: '/reembolsos',
-      icon: Receipt,
-      tone: 'terracotta',
-      title: 'Reembolsos',
-      desc: 'Reembolsos, adiantamentos e prestação de contas',
-      // Sem acesso ao reembolso: card aparece esmaecido/com cadeado, não some.
-      locked: !modules.reembolso,
-    },
     modules.solic && {
       to: '/solic/dashboard',
       icon: BarChart3,
@@ -64,13 +55,16 @@ export default function Home() {
       desc: 'Apontamento de horas por projeto e atividade',
     },
     {
-      to: '/financeiro',
+      // Reembolsos deixou de ser card próprio: virou um grupo na sidebar do
+      // Financeiro. Quem tem só o Reembolso entra por aqui — sem isto, ficaria
+      // sem nenhuma porta de acesso.
+      to: modules.financeiro ? '/financeiro' : '/reembolsos',
       icon: CreditCard,
       tone: 'blue',
       title: 'Financeiro',
-      desc: 'Cartões virtuais, limites e solicitações financeiras',
+      desc: 'Cartões virtuais, limites, reembolsos e adiantamentos',
       // Sem acesso: card aparece esmaecido/com cadeado. Liberação em "Gerenciar acessos".
-      locked: !modules.financeiro,
+      locked: !modules.financeiro && !modules.reembolso,
     },
     isSuperAdmin(user) && {
       to: '/portal-admin',

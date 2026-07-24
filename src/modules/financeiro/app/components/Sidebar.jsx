@@ -23,7 +23,12 @@ export default function Sidebar() {
   // restrito por cargo/financeiro_role no ModuleRoute).
   const canAbrir = !!modules?.financeiro;
   const isAdmin = modules?.financeiro === 'admin';
-  const secoes = navSections({ canAbrir, isAdmin });
+  const secoes = navSections({
+    canAbrir,
+    isAdmin,
+    temFinanceiro: !!modules?.financeiro,
+    temReembolso: !!modules?.reembolso,
+  });
   const [openGroups, setOpenGroups] = useState({});
 
   const childAtivo = (items) => items.some((i) => pathname.startsWith(i.href));

@@ -1,23 +1,8 @@
-.app-layout {
-  display: flex;
-  min-height: 100vh;
-  background: var(--bg-soft);
-}
-
-.app-col {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-
+/* O shell (coluna + sidebar) vem do Financeiro: .finRoot/.finCol em
+   modules/financeiro/financeiro.css. Aqui fica só a área de conteúdo, que
+   permanece em largura total — as telas do Reembolso trazem o próprio padding
+   em .page, então não se usa o .finMain (que centraliza e adiciona padding). */
 .app-content {
   flex: 1;
   min-width: 0;
-}
-
-@media (max-width: 768px) {
-  .app-layout {
-    flex-direction: column;
-  }
 }

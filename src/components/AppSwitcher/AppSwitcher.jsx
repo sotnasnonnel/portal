@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Home, Users, Wallet, BarChart3, Clock, CreditCard, ChevronDown } from "lucide-react";
+import { Home, Users, BarChart3, Clock, CreditCard, ChevronDown } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import "./AppSwitcher.css";
 
-// Seletor de app compartilhado pelas 3 sidebars (DP, Reembolso, Solicitações).
+// Seletor de app compartilhado pelas sidebars do portal.
 // Ocupa o lugar do antigo botão "Início" e troca entre os módulos do portal
 // que o usuário tem acesso, lido de `modules` no AuthContext unificado.
 //
 // Props:
-//  - currentKey: 'dp' | 'reembolso' | 'solic'  (qual app está aberto)
+//  - currentKey: 'dp' | 'solic' | 'horas' | 'financeiro'  (qual app está aberto)
 //  - onNavigate: callback opcional ao escolher um app (ex.: fechar drawer mobile)
 export default function AppSwitcher({ currentKey, onNavigate }) {
   const { modules, user } = useAuth();
@@ -20,10 +20,17 @@ export default function AppSwitcher({ currentKey, onNavigate }) {
 
   const apps = [
     { key: "dp", label: "Gestão de Pessoas", to: dpEntry, Icon: Users, show: !!modules?.dp },
-    { key: "reembolso", label: "Reembolsos", to: "/reembolsos", Icon: Wallet, show: !!modules?.reembolso },
     { key: "solic", label: "Solicitações", to: "/solic/dashboard", Icon: BarChart3, show: !!modules?.solic },
     { key: "horas", label: "Controle de Horas", to: "/horas/apontar", Icon: Clock, show: true },
-    { key: "financeiro", label: "Financeiro", to: "/financeiro", Icon: CreditCard, show: !!modules?.financeiro },
+    // Reembolsos deixou de ser app próprio: virou um grupo na sidebar do Financeiro.
+    // Por isso quem tem só o Reembolso também precisa desta entrada — é a porta de acesso.
+    {
+      key: "financeiro",
+      label: "Financeiro",
+      to: modules?.financeiro ? "/financeiro" : "/reembolsos",
+      Icon: CreditCard,
+      show: !!modules?.financeiro || !!modules?.reembolso,
+    },
     { key: "home", label: "Portal (início)", to: "/home", Icon: Home, show: true },
   ].filter((a) => a.show);
 

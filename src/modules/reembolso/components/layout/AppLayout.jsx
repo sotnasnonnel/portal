@@ -1,11 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { preloadReembolsoData } from "../../services/dataPreload.js";
-import Sidebar from "./Sidebar.jsx";
+// Reembolsos são solicitações do Financeiro: a sidebar (com o grupo "Reembolsos")
+// e o shell vêm de lá — daí o .finRoot, que carrega os tokens --f-* que ela usa.
+// As telas continuam sob .reembolso-root, mantendo os estilos próprios.
+import Sidebar from "../../../financeiro/app/components/Sidebar";
 import PortalHeader from "../../../../components/PortalHeader/PortalHeader";
 import GuiaModal from "../../../../components/Guia/GuiaModal";
 import { REEMBOLSO_GUIA } from "../../../../components/Guia/guides";
+import "../../../financeiro/financeiro.css";
 import "./AppLayout.css";
 // Tokens e estilos globais do módulo reembolso (mesmos valores do PHD design-system).
 import "../../styles/tokens.css";
@@ -13,27 +17,20 @@ import "../../styles/global.css";
 
 export default function AppLayout() {
   const { profile } = useAuth();
-  const [collapsed, setCollapsed] = useState(() => {
-    try { return localStorage.getItem("reem-sidebar-collapsed") === "1"; } catch { return false; }
-  });
 
   // Aquece o cache do Supabase assim que o usuário autenticado entra no app.
   useEffect(() => {
     if (profile) preloadReembolsoData();
   }, [profile]);
 
-  useEffect(() => {
-    try { localStorage.setItem("reem-sidebar-collapsed", collapsed ? "1" : "0"); } catch { /* ignore */ }
-  }, [collapsed]);
-
   const userName = profile?.display_name || profile?.full_name || profile?.email || "";
 
   return (
-    <div className={`app-layout reembolso-root ${collapsed ? "is-collapsed" : ""}`}>
-      <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} />
-      <div className="app-col">
+    <div className="finRoot">
+      <Sidebar />
+      <div className="finCol">
         <PortalHeader userName={userName} />
-        <main className="app-content">
+        <main className="app-content reembolso-root">
           <Outlet />
         </main>
       </div>
