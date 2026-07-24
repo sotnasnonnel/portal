@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { ClipboardCheck, Check, X, Loader2, ChevronDown, CheckCheck } from 'lucide-react';
+import { ClipboardCheck, Check, X, Loader2, ChevronDown, CheckCheck, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../../../../contexts/AuthContext';
 import { supabase } from '../../../../../services/supabase';
 import { formatarMoeda } from '../../../../../utils/formatters';
@@ -7,6 +7,8 @@ import FluxoTimeline from '../../../../../components/Solicitacoes/FluxoTimeline'
 import {
   etapaAtualFin, acaoDisponivelFin, resumoAndamentoFin, TIPO_LABEL_FIN,
 } from '../../../../../config/aprovacaoFinanceiro';
+import { categoriaLabel } from '../../../../../config/alcadas';
+import { meusPapeisAlcada, registrarAuditoria } from '../../../../../services/alcadas';
 import { notificarAprovadorFin } from '../../../../../services/notificarAprovadorFin';
 import '../../../../../components/UI/Components.css';
 
@@ -19,7 +21,8 @@ const TOM_BADGE = {
 const SELECT = `
   id, numero, tipo, status, solicitante_id, nome_despesa, nome_completo, email, telefone,
   centro_custo, valor, periodo, vitalicio, periodo_inicio, periodo_fim, aplicacao, observacao, created_at,
-  etapas:solicitacoes_financeiro_etapas ( id, ordem, aprovador_id, papel, tipo_etapa, status, justificativa, decidido_em )
+  categoria, dentro_orcamento, alcada_nivel_base, alcada_nivel_final, alcada_excecoes,
+  etapas:solicitacoes_financeiro_etapas ( id, ordem, aprovador_id, papel, papel_codigo, tipo_etapa, status, justificativa, decidido_em )
 `;
 
 const fmtData = (d) => (d ? new Date(`${String(d).slice(0, 10)}T12:00:00`).toLocaleDateString('pt-BR') : '—');
@@ -41,7 +44,18 @@ export default function AcompanharFin() {
   const [decisao, setDecisao] = useState(null);   // { sol, modo }
   const [comentario, setComentario] = useState('');
   const [expandido, setExpandido] = useState(() => new Set());
+  const [meusPapeis, setMeusPapeis] = useState([]);
   const seededRef = useRef(false);
+
+  // Papéis do usuário: definem se ele pode agir em etapas de GRUPO
+  // (aprovador_id null + papel_codigo), como Jurídico ou Conselho.
+  useEffect(() => {
+    if (!user?.id) return undefined;
+    let vivo = true;
+    meusPapeisAlcada(user.id, { financeiroRole: user.financeiroRole, rhDp: user.rhDp })
+      .then((p) => { if (vivo) setMeusPapeis(p); });
+    return () => { vivo = false; };
+  }, [user]);
 
   const toggleCard = (id) => setExpandido((prev) => {
     const next = new Set(prev);
@@ -81,9 +95,28 @@ export default function AcompanharFin() {
     if (seededRef.current || lista.length === 0) return;
     seededRef.current = true;
     setExpandido(new Set(
-      lista.filter((s) => acaoDisponivelFin(user?.id, s.etapas, isFinAdmin) !== null).map((s) => s.id)
+      lista.filter((s) => acaoDisponivelFin(user?.id, s.etapas, isFinAdmin, meusPapeis) !== null).map((s) => s.id)
     ));
-  }, [lista, user?.id, isFinAdmin]);
+  }, [lista, user?.id, isFinAdmin, meusPapeis]);
+
+  // Trilha de auditoria (§6, pilar 4): quem agiu, quando, sobre que valor e
+  // se havia exceção de alçada aplicada.
+  const auditar = (sol, etapa, evento, observacao) => registrarAuditoria({
+    modulo: 'financeiro',
+    solicitacao_id: sol.id,
+    numero: sol.numero,
+    tipo: sol.tipo,
+    evento,
+    ator_id: user?.id || null,
+    ator_nome: user?.nome || null,
+    papel_codigo: etapa?.papel_codigo || null,
+    valor: sol.valor ?? null,
+    alcada_tabela: 'compras',
+    nivel_base: sol.alcada_nivel_base ?? null,
+    nivel_final: sol.alcada_nivel_final ?? null,
+    excecoes: sol.alcada_excecoes || [],
+    observacao: observacao || null,
+  });
 
   const confirmarDecisao = async () => {
     if (!decisao) return;
@@ -91,6 +124,7 @@ export default function AcompanharFin() {
     const atual = etapaAtualFin(sol.etapas);
     if (!atual) return;
     const aprovando = modo === 'aprovar';
+    const ehParecer = atual.tipo_etapa === 'parecer';
     const agora = new Date().toISOString();
     setAcaoId(sol.id);
     try {
@@ -105,7 +139,10 @@ export default function AcompanharFin() {
         alert('Esta etapa já foi tratada. A lista será atualizada.');
       } else if (!aprovando) {
         await supabase.from('solicitacoes_financeiro').update({ status: 'reprovada', updated_at: agora }).eq('id', sol.id);
+        auditar(sol, atual, 'reprovacao', comentario.trim() || `Reprovada na etapa "${atual.papel}"`);
       } else {
+        auditar(sol, atual, ehParecer ? 'parecer' : 'aprovacao',
+          comentario.trim() || `${ehParecer ? 'Parecer favorável' : 'Aprovada'} na etapa "${atual.papel}"`);
         // Aprovou: avisa quem passa a ser o responsável da vez.
         notificarAprovadorFin(sol.id);
       }
@@ -113,7 +150,7 @@ export default function AcompanharFin() {
       await fetchLista();
     } catch (err) {
       console.error(err);
-      alert(`Erro ao ${aprovando ? 'aprovar' : 'reprovar'}. Tente novamente.`);
+      alert(`Erro ao ${aprovando ? 'registrar a decisão' : 'reprovar'}. Tente novamente.`);
     } finally {
       setAcaoId(null);
     }
@@ -137,6 +174,7 @@ export default function AcompanharFin() {
       } else {
         await supabase.from('solicitacoes_financeiro')
           .update({ status: 'concluida', concluida_em: agora, updated_at: agora }).eq('id', sol.id);
+        auditar(sol, atual, 'execucao', 'Executada/concluída pelo Financeiro');
       }
       await fetchLista();
     } catch (err) {
@@ -161,7 +199,7 @@ export default function AcompanharFin() {
           {lista.map((s) => {
             const resumo = resumoAndamentoFin(s, s.etapas);
             const tomB = TOM_BADGE[resumo.tom] || TOM_BADGE.pendente;
-            const acao = acaoDisponivelFin(user?.id, s.etapas, isFinAdmin);
+            const acao = acaoDisponivelFin(user?.id, s.etapas, isFinAdmin, meusPapeis);
             const aberto = expandido.has(s.id);
             const solic = nomes[s.solicitante_id] || '—';
             return (
@@ -187,8 +225,30 @@ export default function AcompanharFin() {
                       <div><span>{s.tipo === 'aumento_limite' ? 'Novo limite' : 'Valor'}</span><strong>{s.valor != null ? formatarMoeda(s.valor) : '—'}</strong></div>
                       <div><span>Vigência</span><strong>{vigencia(s)}</strong></div>
                       <div><span>Aplicação</span><strong>{Array.isArray(s.aplicacao) && s.aplicacao.length ? s.aplicacao.join(', ') : '—'}</strong></div>
+                      <div><span>Categoria</span><strong>{categoriaLabel(s.categoria)}</strong></div>
+                      <div>
+                        <span>Orçamento</span>
+                        <strong>{s.dentro_orcamento == null ? '—' : s.dentro_orcamento ? 'Dentro do orçamento' : 'FORA do orçamento'}</strong>
+                      </div>
+                      <div>
+                        <span>Nível de alçada</span>
+                        <strong>
+                          {s.alcada_nivel_final == null ? '—' : `Nível ${s.alcada_nivel_final}`}
+                          {s.alcada_nivel_base != null && s.alcada_nivel_final > s.alcada_nivel_base
+                            && ` (elevado do ${s.alcada_nivel_base})`}
+                        </strong>
+                      </div>
                       <div><span>Aberta em</span><strong>{fmtData(s.created_at)}</strong></div>
                     </div>
+
+                    {/* §6, pilar 5 — exceção fica visível a quem decide, não só no log. */}
+                    {Array.isArray(s.alcada_excecoes) && s.alcada_excecoes.length > 0 && (
+                      <div className="alc-modificador" style={{ marginTop: 10 }}>
+                        <AlertTriangle size={13} />
+                        <span>Exceção de alçada: {s.alcada_excecoes.join(' · ')}</span>
+                      </div>
+                    )}
+
                     {s.observacao && <div className="fin-sol-obs">{s.observacao}</div>}
 
                     <div className={`fin-sol-resumo tom-${resumo.tom}`}>{resumo.texto}</div>
@@ -204,6 +264,19 @@ export default function AcompanharFin() {
                           <button className="btn btn-danger btn-sm" disabled={acaoId === s.id}
                             onClick={() => { setDecisao({ sol: s, modo: 'reprovar' }); setComentario(''); }}>
                             <X size={14} /> Reprovar
+                          </button>
+                        </>
+                      )}
+                      {/* §3.3 — parecer bloqueante: o fluxo não anda sem ele. */}
+                      {acao === 'parecer' && (
+                        <>
+                          <button className="btn btn-success btn-sm" disabled={acaoId === s.id}
+                            onClick={() => { setDecisao({ sol: s, modo: 'aprovar' }); setComentario(''); }}>
+                            {acaoId === s.id ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />} Parecer favorável
+                          </button>
+                          <button className="btn btn-danger btn-sm" disabled={acaoId === s.id}
+                            onClick={() => { setDecisao({ sol: s, modo: 'reprovar' }); setComentario(''); }}>
+                            <X size={14} /> Parecer contrário
                           </button>
                         </>
                       )}

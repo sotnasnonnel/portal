@@ -7,6 +7,7 @@ import MultiSelect from '../../components/MultiSelect';
 import SearchSelect from '../../components/SearchSelect';
 import { listarTodosContratos } from '../contratos';
 import TermosAceite from './TermosAceite';
+import ClassificacaoAlcada from './ClassificacaoAlcada';
 import { useSolicitacaoFin } from './useSolicitacaoFin';
 import '../../../../../components/UI/Components.css';
 
@@ -22,6 +23,9 @@ const estadoInicial = {
   periodo_fim: '',
   aplicacao: [],
   observacao: '',
+  // §6, pilar 1 — classificação obrigatória
+  categoria: '',
+  dentro_orcamento: null,
 };
 
 const emailValido = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((v || '').trim());
@@ -71,6 +75,8 @@ export default function FormCartaoVirtual({ sol }) {
     if (!form.centro_custo.trim()) falta.push('centro_custo');
     if (parseCurrency(form.valor) == null) falta.push('valor');
     if (form.aplicacao.length === 0) falta.push('aplicacao');
+    if (!form.categoria) falta.push('categoria');
+    if (form.dentro_orcamento == null) falta.push('dentro_orcamento');
     if (!form.vitalicio) {
       if (!form.periodo_inicio) falta.push('periodo_inicio');
       if (!form.periodo_fim) falta.push('periodo_fim');
@@ -97,6 +103,8 @@ export default function FormCartaoVirtual({ sol }) {
       periodo_fim: form.vitalicio ? null : form.periodo_fim,
       aplicacao: form.aplicacao,
       observacao: form.observacao.trim() || null,
+      categoria: form.categoria,
+      dentro_orcamento: form.dentro_orcamento,
     }, () => setForm(estadoInicial));
   };
 
@@ -108,7 +116,8 @@ export default function FormCartaoVirtual({ sol }) {
   const camposOk = form.descricao.trim() && form.nome_completo.trim()
     && emailValido(form.email) && form.telefone.trim() && form.centro_custo.trim()
     && parseCurrency(form.valor) != null && form.aplicacao.length > 0
-    && (form.vitalicio || (form.periodo_inicio && form.periodo_fim));
+    && (form.vitalicio || (form.periodo_inicio && form.periodo_fim))
+    && !!form.categoria && form.dentro_orcamento != null;
   const podeEnviar = !!t.aceite && !!camposOk && !t.semFluxo;
 
   return (
@@ -225,6 +234,15 @@ export default function FormCartaoVirtual({ sol }) {
             placeholder="Informações adicionais (opcional)"
             value={form.observacao} onChange={(e) => set('observacao', e.target.value)} />
         </div>
+
+        <ClassificacaoAlcada
+          valor={parseCurrency(form.valor)}
+          categoria={form.categoria}
+          dentroOrcamento={form.dentro_orcamento}
+          solicitanteId={t.user?.id}
+          erros={faltando}
+          onChange={(patch) => setForm((p) => ({ ...p, ...patch }))}
+        />
 
         <TermosAceite sol={sol} {...t} />
 

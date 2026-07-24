@@ -387,3 +387,77 @@
   .finSb { position: fixed; z-index: 50; transform: translateX(-100%); transition: transform 0.2s; }
   .finMain { padding: 20px 16px 48px; }
 }
+
+/* ==========================================================================
+   Motor de Alçadas — classificação obrigatória (§6 pilar 1) e prévia do
+   workflow por faixa (§6 pilar 2). Escopado em .finRoot como o resto.
+   ========================================================================== */
+.alc-bloco {
+  border: 1px solid var(--f-border); border-radius: 12px;
+  padding: 16px; margin-bottom: var(--space-lg); background: var(--f-gray-50);
+}
+.alc-bloco-head {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.04em; color: var(--f-brand-700);
+}
+.alc-bloco-head small {
+  text-transform: none; letter-spacing: 0; font-weight: 500;
+  color: var(--f-muted); font-size: 0.72rem;
+}
+
+.alc-radios { display: flex; gap: 10px; flex-wrap: wrap; }
+.alc-radio {
+  display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+  border: 1px solid var(--f-border); border-radius: 8px; padding: 9px 13px;
+  background: #fff; font-size: 0.85rem; color: var(--f-gray-600);
+}
+.alc-radio:hover { border-color: var(--f-primary); }
+.alc-radio.is-on {
+  border-color: var(--f-primary); background: var(--f-brand-50);
+  color: var(--f-brand-700); font-weight: 600;
+}
+.alc-radio input { cursor: pointer; }
+
+.alc-modificador {
+  display: flex; align-items: center; gap: 7px; margin-top: 10px;
+  background: #fffbeb; border: 1px solid #fde68a; color: #92400e;
+  border-radius: 8px; padding: 8px 12px; font-size: 0.79rem;
+}
+.alc-modificador svg { flex-shrink: 0; }
+
+/* ---- prévia da alçada ---- */
+.alc-previa {
+  border: 1px solid #99f6e4; background: var(--f-brand-50);
+  border-radius: 12px; padding: 13px 15px;
+}
+.alc-previa.is-bloqueado { border-color: #fecaca; background: #fef2f2; }
+.alc-previa-head {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px;
+}
+.alc-nivel {
+  background: var(--f-brand-700); color: #fff; border-radius: 999px;
+  padding: 3px 11px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.02em;
+}
+.alc-previa.is-bloqueado .alc-nivel { background: #b91c1c; }
+.alc-rotulo { font-size: 0.84rem; font-weight: 600; color: var(--f-ink); }
+.alc-valor {
+  margin-left: auto; font-size: 0.84rem; font-weight: 700;
+  color: var(--f-gray-600); font-variant-numeric: tabular-nums;
+}
+.alc-previa-mods {
+  font-size: 0.76rem; color: #92400e; background: #fffbeb;
+  border: 1px solid #fde68a; border-radius: 8px; padding: 7px 11px; margin-bottom: 9px;
+}
+.alc-previa-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.alc-previa-lista li {
+  display: flex; align-items: center; gap: 9px; font-size: 0.84rem; color: var(--f-ink);
+}
+.alc-previa-lista em { font-style: normal; color: var(--f-muted); font-size: 0.78rem; }
+.alc-previa-num {
+  flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%;
+  background: #fff; border: 1px solid #99f6e4; color: var(--f-brand-700);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; font-weight: 700;
+}
+.alc-previa-nota { margin: 10px 0 0; font-size: 0.74rem; color: var(--f-muted); line-height: 1.4; }

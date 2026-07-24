@@ -90,6 +90,10 @@ export default function FormNovaVaga() {
           justificativa: `Nova Vaga: ${funcaoFinal} — ${departamentoFinal}`,
           tabela: 'vagas',
           detalhe: { ...payload, anexos: enviados },
+          // Nova Vaga é aumento de quadro por definição — §5.1 "vaga nova fora
+          // do quadro (G&A)": aprovam o Diretor da área + Financeiro.
+          funcaoAlvo: funcaoFinal,
+          foraDoQuadro: true,
         });
       } catch (err) {
         // Não deixa arquivos órfãos no bucket se a criação falhar.

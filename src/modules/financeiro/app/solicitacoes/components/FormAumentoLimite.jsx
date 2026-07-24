@@ -6,6 +6,7 @@ import { parseCurrency } from '../../../../../utils/currencyMask';
 import { formatarMoeda } from '../../../../../utils/formatters';
 import SearchSelect from '../../components/SearchSelect';
 import TermosAceite from './TermosAceite';
+import ClassificacaoAlcada from './ClassificacaoAlcada';
 import { useSolicitacaoFin } from './useSolicitacaoFin';
 import { listarCartoesDoSolicitante } from '../cartoes';
 import '../../../../../components/UI/Components.css';
@@ -27,6 +28,8 @@ export default function FormAumentoLimite({ sol }) {
   const [observacao, setObservacao] = useState('');
   const [faltando, setFaltando] = useState([]);
   const [erroValor, setErroValor] = useState('');
+  // §6, pilar 1 — classificação obrigatória
+  const [classificacao, setClassificacao] = useState({ categoria: '', dentro_orcamento: null });
 
   useEffect(() => {
     if (!t.user?.id) return undefined;
@@ -49,6 +52,8 @@ export default function FormAumentoLimite({ sol }) {
     if (!cartaoId) falta.push('cartao');
     const novo = parseCurrency(valor);
     if (novo == null) falta.push('valor');
+    if (!classificacao.categoria) falta.push('categoria');
+    if (classificacao.dentro_orcamento == null) falta.push('dentro_orcamento');
     setFaltando(falta);
     if (falta.length) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
 
@@ -71,7 +76,12 @@ export default function FormAumentoLimite({ sol }) {
       periodo_fim: cartao.periodo_fim,
       valor: novo,
       observacao: observacao.trim() || null,
-    }, () => { setCartaoId(''); setValor(''); setObservacao(''); });
+      categoria: classificacao.categoria,
+      dentro_orcamento: classificacao.dentro_orcamento,
+    }, () => {
+      setCartaoId(''); setValor(''); setObservacao('');
+      setClassificacao({ categoria: '', dentro_orcamento: null });
+    });
   };
 
   const erro = (id) => faltando.includes(id);
@@ -79,7 +89,8 @@ export default function FormAumentoLimite({ sol }) {
 
   // Botão só habilita com cartão escolhido, novo valor informado e termos aceitos.
   // (A regra "novo valor > limite atual" continua validada no submit, com mensagem.)
-  const podeEnviar = !!t.aceite && !!cartaoId && parseCurrency(valor) != null && !t.semFluxo;
+  const podeEnviar = !!t.aceite && !!cartaoId && parseCurrency(valor) != null && !t.semFluxo
+    && !!classificacao.categoria && classificacao.dentro_orcamento != null;
 
   return (
     <div className="table-container">
@@ -153,6 +164,17 @@ export default function FormAumentoLimite({ sol }) {
                 placeholder="Justifique o aumento (opcional)"
                 value={observacao} onChange={(e) => setObservacao(e.target.value)} />
             </div>
+
+            {/* A alçada enquadra pelo NOVO LIMITE TOTAL (não pelo incremento) —
+                mesma convenção do campo `valor` usada no resto do módulo. */}
+            <ClassificacaoAlcada
+              valor={parseCurrency(valor)}
+              categoria={classificacao.categoria}
+              dentroOrcamento={classificacao.dentro_orcamento}
+              solicitanteId={t.user?.id}
+              erros={faltando}
+              onChange={(patch) => setClassificacao((p) => ({ ...p, ...patch }))}
+            />
 
             <TermosAceite sol={sol} {...t} />
 

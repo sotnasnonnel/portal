@@ -6,10 +6,11 @@ import { supabase } from '../../../../services/supabase';
 import { formatarMoeda } from '../../../../utils/formatters';
 import { SOLICITACOES_FIN } from '../../../../config/financeiro';
 import { acaoDisponivelFin, TIPO_LABEL_FIN } from '../../../../config/aprovacaoFinanceiro';
+import { meusPapeisAlcada } from '../../../../services/alcadas';
 
 const SELECT = `
   id, numero, tipo, status, valor, aplicacao, nome_despesa, created_at, solicitante_id,
-  etapas:solicitacoes_financeiro_etapas ( id, ordem, aprovador_id, tipo_etapa, status )
+  etapas:solicitacoes_financeiro_etapas ( id, ordem, aprovador_id, papel_codigo, tipo_etapa, status )
 `;
 
 const BADGE = {
@@ -28,6 +29,17 @@ export default function FinanceiroDashboard() {
   const isFinAdmin = user?.financeiroRole === 'admin';
   const [lista, setLista] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [meusPapeis, setMeusPapeis] = useState([]);
+
+  // Papéis do usuário: sem eles, "Aguardando você" não contaria as etapas de
+  // grupo (Jurídico, Conselho, RH), que têm aprovador_id nulo.
+  useEffect(() => {
+    if (!user?.id) return undefined;
+    let vivo = true;
+    meusPapeisAlcada(user.id, { financeiroRole: user.financeiroRole, rhDp: user.rhDp })
+      .then((p) => { if (vivo) setMeusPapeis(p); });
+    return () => { vivo = false; };
+  }, [user]);
 
   // Carrega e mantém sincronizado. Sem setLoading(true) no refetch: a render
   // anterior se mantém (evita piscar esqueleto a cada atualização).
@@ -57,7 +69,7 @@ export default function FinanceiroDashboard() {
   const emAndamento = porStatus('pendente');
   const concluidas = porStatus('concluida');
   const reprovadas = porStatus('reprovada');
-  const aguardandoVoce = lista.filter((s) => acaoDisponivelFin(user?.id, s.etapas, isFinAdmin) !== null);
+  const aguardandoVoce = lista.filter((s) => acaoDisponivelFin(user?.id, s.etapas, isFinAdmin, meusPapeis) !== null);
 
   // Solicitações por Aplicação: CONTAGEM, não valor — a aplicação é múltipla, e
   // somar o valor cheio em cada uma infla o total. Série única, cauda em "Outros".

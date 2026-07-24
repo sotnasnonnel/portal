@@ -6,6 +6,7 @@ import { supabase } from '../../../services/supabase';
 import { useRequisicaoForm } from './useRequisicaoForm';
 import CurrencyInput from '../../../components/CurrencyInput';
 import { parseCurrency } from '../../../utils/currencyMask';
+import { funcaoMaisSenior } from '../../../config/alcadas';
 import '../../../components/UI/Components.css';
 import '../Gestor.css';
 
@@ -64,6 +65,10 @@ export default function FormAlteracao() {
     setSubmitting(true);
     try {
       const funcaoFinal = await resolverFuncao();
+      // §5.1 — a alçada olha o cargo MAIS SÊNIOR entre o atual e o proposto:
+      // promover alguém para liderança exige a mesma aprovação que alterar
+      // quem já é liderança.
+      const funcaoAtual = equipe.find((c) => c.id === form.colaborador_id)?.funcao || null;
       await criarComFluxo('aumento_salario', '', {
         tipo: 'aumento_salario',
         gestor_id: user.id,
@@ -72,7 +77,7 @@ export default function FormAlteracao() {
         funcao_proposta: funcaoFinal,
         justificativa: form.justificativa,
         status: 'pendente',
-      });
+      }, { funcaoAlvo: funcaoMaisSenior(funcaoAtual, funcaoFinal) });
       navigate('/gestor/solicitacoes/nova', { state: { sucesso: 'Requisição enviada com sucesso!' } });
     } catch (err) {
       console.error(err);
