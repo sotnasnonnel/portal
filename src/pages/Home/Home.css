@@ -58,11 +58,6 @@
   border: 1px solid rgba(38, 64, 93, 0.18);
 }
 
-.home-user-name {
-  color: #26405d;
-  font-size: 14px;
-  font-weight: 600;
-}
 
 .home-logout {
   display: inline-flex;
@@ -149,24 +144,15 @@
   margin-bottom: 16px;
 }
 
-.home-card-icon.tone-blue {
-  background: rgba(38, 64, 93, 0.10);
-  color: #26405d;
-}
-
-.home-card-icon.tone-terracotta {
-  background: rgba(195, 94, 30, 0.12);
-  color: #c35e1e;
-}
-
-.home-card-icon.tone-teal {
-  background: rgba(0, 164, 154, 0.12);
-  color: #00a49a;
-}
-
+/* Ícones sóbrios: um único tom neutro (cinza-ardósia) para todos os módulos.
+   As classes tone-* seguem no JSX, mas hoje resolvem para a mesma cor neutra —
+   basta reeditar aqui se um dia quiser trazer a cor por módulo de volta. */
+.home-card-icon.tone-blue,
+.home-card-icon.tone-terracotta,
+.home-card-icon.tone-teal,
 .home-card-icon.tone-slate {
-  background: rgba(27, 39, 53, 0.10);
-  color: #1b2735;
+  background: rgba(27, 39, 53, 0.07);
+  color: #334155;
 }
 
 .home-card h2 {
@@ -368,10 +354,6 @@ a.home-solucao:hover {
   .home-logo-brand {
     width: 160px;
     height: 23px;
-  }
-
-  .home-user-name {
-    display: none;
   }
 
   .home-cards {

@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import { LayoutDashboard, Building2, CalendarDays, FilePlus2, LogOut, ChevronLeft } from "lucide-react";
 import { useAuth } from "../../../../contexts/AuthContext";
 import { clearSupabaseCache } from "@/lib/supabaseCache";
 import { clearSolicIdentity } from "@/lib/identity";
@@ -23,73 +24,8 @@ function initialsFrom(name: string, email: string) {
   return base.slice(0, 2).toUpperCase();
 }
 
-// ÍCONES (SVG inline) — não depende de biblioteca
-function IconChart() {
-  return (
-    <svg viewBox="0 0 24 24" className={styles.icon} aria-hidden="true">
-      <path
-        d="M4 19V5a1 1 0 0 1 2 0v14h14a1 1 0 1 1 0 2H5a1 1 0 0 1-1-1Z"
-        fill="currentColor"
-      />
-      <path
-        d="M9 17V11a1 1 0 1 1 2 0v6H9Zm4 0V8a1 1 0 1 1 2 0v9h-2Zm4 0v-4a1 1 0 1 1 2 0v4h-2Z"
-        fill="currentColor"
-      />
-    </svg>
-  );
-}
-function IconBuilding() {
-  return (
-    <svg viewBox="0 0 24 24" className={styles.icon} aria-hidden="true">
-      <path
-        d="M4 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16h3a1 1 0 1 1 0 2H3a1 1 0 1 1 0-2h1Zm4-14h2V5H8v2Zm0 4h2V9H8v2Zm0 4h2v-2H8v2Zm4-8h2V5h-2v2Zm0 4h2V9h-2v2Zm0 4h2v-2h-2v2Z"
-        fill="currentColor"
-      />
-    </svg>
-  );
-}
-function IconCalendar() {
-  return (
-    <svg viewBox="0 0 24 24" className={styles.icon} aria-hidden="true">
-      <path
-        d="M7 2a1 1 0 0 1 1 1v1h8V3a1 1 0 1 1 2 0v1h1a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h1V3a1 1 0 0 1 1-1Zm14 8H3v9a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-9Z"
-        fill="currentColor"
-      />
-    </svg>
-  );
-}
-function IconPlusDoc() {
-  return (
-    <svg viewBox="0 0 24 24" className={styles.icon} aria-hidden="true">
-      <path
-        d="M6 2h8l4 4v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm8 1.5V7h3.5L14 3.5Z"
-        fill="currentColor"
-      />
-      <path
-        d="M12 10a1 1 0 0 1 1 1v2h2a1 1 0 1 1 0 2h-2v2a1 1 0 1 1-2 0v-2H9a1 1 0 1 1 0-2h2v-2a1 1 0 0 1 1-1Z"
-        fill="currentColor"
-      />
-    </svg>
-  );
-}
-
-function IconLogout() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-      <polyline points="16 17 21 12 16 7" />
-      <line x1="21" y1="12" x2="9" y2="12" />
-    </svg>
-  );
-}
-
-function IconChevron() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="15 18 9 12 15 6" />
-    </svg>
-  );
-}
+// Ícones no padrão do portal (lucide-react, traço fino) — mesmo conjunto usado
+// nos módulos Financeiro/Horas.
 
 // aberto/onFechar controlam o drawer no mobile. O botão que abre é o ☰ do
 // PortalHeader (ver src/hooks/useDrawerMobile.js) — este módulo tinha uma barra
@@ -117,13 +53,13 @@ export function Sidebar({
 
   const nav: NavItem[] = isAdmin
     ? [
-        { label: "Dashboard", href: "/solic/dashboard", icon: <IconChart /> },
-        { label: "Empresas", href: "/solic/admin/cadastros", icon: <IconBuilding /> },
-        { label: "Prazos", href: "/solic/admin/prazos", icon: <IconCalendar /> },
+        { label: "Dashboard", href: "/solic/dashboard", icon: <LayoutDashboard className={styles.icon} /> },
+        { label: "Empresas", href: "/solic/admin/cadastros", icon: <Building2 className={styles.icon} /> },
+        { label: "Prazos", href: "/solic/admin/prazos", icon: <CalendarDays className={styles.icon} /> },
       ]
     : [
-        { label: "Dashboard", href: "/solic/dashboard", icon: <IconChart /> },
-        { label: "Nova Solicitação", href: "/solic/surveys/new", icon: <IconPlusDoc /> },
+        { label: "Dashboard", href: "/solic/dashboard", icon: <LayoutDashboard className={styles.icon} /> },
+        { label: "Nova Solicitação", href: "/solic/surveys/new", icon: <FilePlus2 className={styles.icon} /> },
       ];
 
   const onLogout = async () => {
@@ -153,7 +89,7 @@ export function Sidebar({
             title={collapsed ? "Expandir menu" : "Recolher menu"}
             aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
           >
-            <IconChevron />
+            <ChevronLeft />
           </button>
 
           <button className={styles.closeMobile} onClick={onFechar} aria-label="Fechar menu">
@@ -193,7 +129,7 @@ export function Sidebar({
             <small>{isAdmin ? "Administrador" : "Usuário"}</small>
           </div>
           <button className={styles.logout} onClick={onLogout} title="Sair" aria-label="Sair" type="button">
-            <IconLogout />
+            <LogOut />
           </button>
         </div>
       </aside>

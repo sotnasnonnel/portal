@@ -89,7 +89,7 @@
   letter-spacing: 0.04em; color: var(--f-muted); font-weight: 700;
 }
 /* figuras proporcionais no valor do tile (tabular-nums só onde alinha coluna) */
-.fin-tile-value { grid-column: 1 / -1; grid-row: 2; font-size: 1.55rem; font-weight: 700; color: var(--f-ink); line-height: 1.15; }
+.fin-tile-value { grid-column: 1 / -1; grid-row: 2; font-size: 1.55rem; font-weight: 600; color: var(--f-ink); line-height: 1.15; }
 .fin-tile-foot { grid-column: 1 / -1; grid-row: 3; font-size: 0.75rem; color: var(--f-muted); }
 .fin-tile-link { text-decoration: none; transition: border-color 0.15s, box-shadow 0.15s; }
 .fin-tile-link:hover { border-color: var(--f-primary); box-shadow: var(--f-shadow-sm); }

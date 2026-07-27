@@ -265,9 +265,14 @@
 
 /* ===== Estado recolhido (desktop) ===== */
 @media (min-width: 769px) {
-  /* O seletor de app NÃO entra nesta lista: o AppSwitcher.css já trata o
-     recolhido (esconde o texto e centraliza o ícone, via .isCollapsed). Escondê-lo
-     por inteiro fazia o PMO ser o único módulo sem o item no menu recolhido. */
+  /* Seletor de app: escondido por inteiro quando a sidebar está recolhida
+     (decisão do produto — antes mostrava só o ícone via AppSwitcher.css). Fica
+     nesta media query porque a classe de recolhido é persistida na raiz e
+     continua no mobile, onde o drawer abre expandido e o seletor deve aparecer. */
+  .collapsed :global(.app-switcher) {
+    display: none;
+  }
+
   .collapsed .brandTitle,
   .collapsed .sectionTitle,
   .collapsed .label,
