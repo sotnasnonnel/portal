@@ -1,4 +1,4 @@
-import { Check, X, Clock, Eye, CheckCheck, CircleDashed } from 'lucide-react';
+import { Check, X, Clock, Eye, CheckCheck, CircleDashed, RotateCcw } from 'lucide-react';
 import { etapaAtual } from '../../config/aprovacao';
 import './FluxoTimeline.css';
 
@@ -16,6 +16,7 @@ const VISUAL = {
   auto_aprovada: { Icon: Check,        cor: '#00a49a', label: 'Aprovou (criador)' },
   executada:     { Icon: CheckCheck,   cor: '#26405d', label: 'Executou' },
   reprovada:     { Icon: X,            cor: '#e74c3c', label: 'Reprovou' },
+  devolvida:     { Icon: RotateCcw,    cor: '#f39c12', label: 'Devolveu p/ ajustes' },
   ciencia:       { Icon: Eye,          cor: '#9b59b6', label: 'Ciente' },
 };
 

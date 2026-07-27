@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { supabase } from '../../../services/supabase';
 import { formatarMoeda, parseDesligamento } from '../../../utils/formatters';
-import { Check, X, Loader2, ClipboardCheck, FileText, ChevronDown, Filter, User } from 'lucide-react';
+import { Check, X, Loader2, ClipboardCheck, FileText, ChevronDown, Filter, User, RotateCcw } from 'lucide-react';
 import FluxoTimeline from '../../../components/Solicitacoes/FluxoTimeline';
 import SearchSelect from '../../../components/UI/SearchSelect';
 import { opcoesSolicitantes } from './solicitantes';
@@ -13,6 +13,7 @@ import {
 import ModalRespostas, { DETALHE, buscarRespostas } from './ModalRespostas';
 import RequisicoesRh from './RequisicoesRh';
 import { notificarAprovadorSolic } from '../../../services/notificarAprovadorSolic';
+import { notificarSolicitanteDevolucao } from '../../../services/notificarSolicitanteDevolucao';
 import BotaoPdfRequisicao from '../../../components/BotaoPdfRequisicao';
 import '../../../components/UI/Components.css';
 import '../Gestor.css';
@@ -21,6 +22,7 @@ const TOM_BADGE = {
   pendente: { label: 'Em andamento', badge: 'pendente' },
   concluida: { label: 'Concluída', badge: 'aprovada' },
   reprovada: { label: 'Reprovada', badge: 'inativo' },
+  devolvida: { label: 'Devolvida p/ ajustes', badge: 'pendente' },
 };
 
 const SELECT_SOL = `
@@ -106,23 +108,23 @@ export default function AcompanharRequisicoes() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Desfechos: 'aprovar' (segue o fluxo), 'reprovar' (encerra) e 'devolver'
+  // (volta ao solicitante para ajustes e reenvio). Reprovar e devolver exigem
+  // justificativa — validado aqui e no botão do modal.
   const confirmarDecisao = async () => {
     if (!decisao) return;
     const { sol, modo } = decisao;
     const atual = etapaAtual(sol.etapas);
     if (!atual) return;
-    const aprovando = modo === 'aprovar';
-    const coment = comentario.trim() || null;
+    const coment = comentario.trim();
+    if (modo !== 'aprovar' && !coment) return; // justificativa obrigatória
     const agora = new Date().toISOString();
+    const statusEtapa = { aprovar: 'aprovada', reprovar: 'reprovada', devolver: 'devolvida' }[modo];
     setAcaoId(sol.id);
     try {
       const { data, error } = await supabase
         .from('solicitacoes_rh_etapas')
-        .update({
-          status: aprovando ? 'aprovada' : 'reprovada',
-          justificativa: coment,
-          decidido_em: agora,
-        })
+        .update({ status: statusEtapa, justificativa: coment || null, decidido_em: agora })
         .eq('id', atual.id)
         .eq('aprovador_id', user.id)
         .eq('status', 'pendente')
@@ -135,12 +137,22 @@ export default function AcompanharRequisicoes() {
         await fetchParticipa();
         return;
       }
-      if (!aprovando) {
+      if (modo === 'reprovar') {
         const { error: e2 } = await supabase
           .from('solicitacoes_rh')
           .update({ status: 'reprovada', updated_at: agora })
           .eq('id', sol.id);
         if (e2) throw e2;
+      } else if (modo === 'devolver') {
+        const { error: e2 } = await supabase
+          .from('solicitacoes_rh')
+          .update({
+            status: 'devolvida', updated_at: agora,
+            devolucao_motivo: coment, devolucao_por: user.id, devolucao_em: agora,
+          })
+          .eq('id', sol.id);
+        if (e2) throw e2;
+        notificarSolicitanteDevolucao(sol.id);   // avisa o solicitante (best-effort)
       } else {
         notificarAprovadorSolic(sol.id);
       }
@@ -150,7 +162,8 @@ export default function AcompanharRequisicoes() {
       window.dispatchEvent(new Event('solicitacoes_rh_atualizadas'));
     } catch (err) {
       console.error(err);
-      alert(`Erro ao ${aprovando ? 'aprovar' : 'reprovar'}. Tente novamente.`);
+      const verbo = { aprovar: 'aprovar', reprovar: 'reprovar', devolver: 'devolver' }[modo];
+      alert(`Erro ao ${verbo}. Tente novamente.`);
     } finally {
       setAcaoId(null);
     }
@@ -286,6 +299,9 @@ export default function AcompanharRequisicoes() {
                           <button className="btn btn-success btn-sm" disabled={acaoId === s.id} onClick={() => { setDecisao({ sol: s, modo: 'aprovar' }); setComentario(''); }}>
                             {acaoId === s.id ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />} Aprovar
                           </button>
+                          <button className="btn btn-warning btn-sm" disabled={acaoId === s.id} onClick={() => { setDecisao({ sol: s, modo: 'devolver' }); setComentario(''); }}>
+                            <RotateCcw size={14} /> Devolver p/ ajustes
+                          </button>
                           <button className="btn btn-danger btn-sm" disabled={acaoId === s.id} onClick={() => { setDecisao({ sol: s, modo: 'reprovar' }); setComentario(''); }}>
                             <X size={14} /> Reprovar
                           </button>
@@ -303,34 +319,52 @@ export default function AcompanharRequisicoes() {
       </div>
 
       {decisao && (() => {
-        const aprovando = decisao.modo === 'aprovar';
+        const { modo } = decisao;
+        const cfg = {
+          aprovar: {
+            titulo: 'Aprovar requisição', btn: 'btn-success', obrig: false,
+            desc: 'A requisição seguirá para a próxima etapa do fluxo. Você pode deixar um comentário, se quiser.',
+            label: 'Comentário (opcional)', placeholder: 'Adicione um comentário, se quiser...',
+            confirmar: <><Check size={16} /> Confirmar aprovação</>, processando: 'Aprovando...',
+          },
+          devolver: {
+            titulo: 'Devolver para ajustes', btn: 'btn-warning', obrig: true,
+            desc: <>A requisição volta ao solicitante para <strong>correção e reenvio</strong>, sem precisar abrir outra. Explique o que precisa ser ajustado.</>,
+            label: 'Motivo da devolução', placeholder: 'Descreva o que o solicitante precisa ajustar...',
+            confirmar: <><RotateCcw size={16} /> Confirmar devolução</>, processando: 'Devolvendo...',
+          },
+          reprovar: {
+            titulo: 'Reprovar requisição', btn: 'btn-danger', obrig: true,
+            desc: <>A requisição será <strong>encerrada como Reprovada</strong> e todos da cadeia verão o motivo.</>,
+            label: 'Motivo da reprovação', placeholder: 'Explique o motivo da reprovação...',
+            confirmar: <><X size={16} /> Confirmar reprovação</>, processando: 'Reprovando...',
+          },
+        }[modo];
+        const faltaJustificativa = cfg.obrig && !comentario.trim();
         return (
         <div className="modal-overlay" onClick={() => setDecisao(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <span className="modal-title">{aprovando ? 'Aprovar requisição' : 'Reprovar requisição'}</span>
+              <span className="modal-title">{cfg.titulo}</span>
               <button className="modal-close" onClick={() => setDecisao(null)}><X size={18} /></button>
             </div>
             <div className="modal-body">
-              <p style={{ marginBottom: 'var(--space-md)', color: 'var(--color-text-secondary)', fontSize: '13px' }}>
-                {aprovando
-                  ? 'A requisição seguirá para a próxima etapa do fluxo. Você pode deixar um comentário, se quiser.'
-                  : <>A requisição será <strong>encerrada como Reprovada</strong> e todos da cadeia verão o comentário.</>}
-              </p>
+              <p style={{ marginBottom: 'var(--space-md)', color: 'var(--color-text-secondary)', fontSize: '13px' }}>{cfg.desc}</p>
               <div className="form-group">
-                <label className="form-label">Comentário (opcional)</label>
+                <label className="form-label">{cfg.label}{cfg.obrig && <span className="required"> *</span>}</label>
                 <textarea className="form-input" rows={3} style={{ resize: 'vertical', fontFamily: 'inherit' }}
-                  placeholder={aprovando ? 'Adicione um comentário, se quiser...' : 'Explique o motivo da reprovação (opcional)...'}
+                  placeholder={cfg.placeholder}
                   value={comentario}
                   onChange={(e) => setComentario(e.target.value)} />
+                {faltaJustificativa && (
+                  <span className="contratacao-erro">A justificativa é obrigatória.</span>
+                )}
               </div>
             </div>
             <div className="modal-footer">
               <button className="btn btn-outline" onClick={() => setDecisao(null)}>Cancelar</button>
-              <button className={`btn ${aprovando ? 'btn-success' : 'btn-danger'}`} disabled={acaoId === decisao.sol.id} onClick={confirmarDecisao}>
-                {acaoId === decisao.sol.id
-                  ? (aprovando ? 'Aprovando...' : 'Reprovando...')
-                  : (aprovando ? <><Check size={16} /> Confirmar aprovação</> : <><X size={16} /> Confirmar reprovação</>)}
+              <button className={`btn ${cfg.btn}`} disabled={acaoId === decisao.sol.id || faltaJustificativa} onClick={confirmarDecisao}>
+                {acaoId === decisao.sol.id ? cfg.processando : cfg.confirmar}
               </button>
             </div>
           </div>

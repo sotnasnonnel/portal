@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { UserPlus, Loader2, AlertTriangle, Paperclip, X } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { UserPlus, Loader2, AlertTriangle, Paperclip, X, ClipboardList } from 'lucide-react';
 import { supabase } from '../../../services/supabase';
 import { useRequisicaoForm } from './useRequisicaoForm';
 import { useAnexos } from './useAnexos';
@@ -22,8 +22,12 @@ const ANEXO_ACCEPT = '.pdf,.png,.jpg,.jpeg';
 
 export default function FormNovaVaga() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { fluxoOk, submitting, setSubmitting, criarComDetalhe } = useRequisicaoForm();
-  const [form, setForm] = useState(estadoInicialNovaVaga);
+  // Origem: quando a vaga é gerada a partir de um Mapeamento aprovado, os campos
+  // com correspondência já vêm preenchidos e guardamos o vínculo de origem.
+  const origem = location.state?.origemMapeamento || null;
+  const [form, setForm] = useState(() => ({ ...estadoInicialNovaVaga(), ...(origem?.prefill || {}) }));
   const [funcaoOutro, setFuncaoOutro] = useState('');
   const [departamentoOutro, setDepartamentoOutro] = useState('');
   const [faltando, setFaltando] = useState([]);
@@ -94,6 +98,7 @@ export default function FormNovaVaga() {
           // do quadro (G&A)": aprovam o Diretor da área + Financeiro.
           funcaoAlvo: funcaoFinal,
           foraDoQuadro: true,
+          origemSolicitacaoId: origem?.solicitacaoId || null,
         });
       } catch (err) {
         // Não deixa arquivos órfãos no bucket se a criação falhar.
@@ -258,6 +263,12 @@ export default function FormNovaVaga() {
         </div>
 
         <form onSubmit={onSubmit} style={{ padding: 'var(--space-xl)' }}>
+          {origem && (
+            <div className="sol-card-resumo tom-concluida" style={{ marginBottom: 'var(--space-lg)', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <ClipboardList size={16} />
+              Gerada a partir do Mapeamento{origem.numero != null ? ` #${origem.numero}` : ''}. Alguns campos já vieram preenchidos — confira e complete os demais.
+            </div>
+          )}
           {faltando.length > 0 && (
             <div className="sol-card-resumo tom-reprovada" style={{ marginBottom: 'var(--space-lg)' }}>
               Preencha os campos obrigatórios destacados ({faltando.length}).

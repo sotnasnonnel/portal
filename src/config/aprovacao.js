@@ -156,7 +156,10 @@ export function montarEtapasDeConfig(solicitacaoId, aprovadores, criadorId, nome
  */
 export function etapaAtual(etapas) {
   const lista = etapas || [];
-  if (lista.some((e) => e.status === 'reprovada')) return null;
+  // Reprovada encerra de vez; devolvida devolve ao solicitante — em ambos os
+  // casos NÃO há aprovador da vez (a devolvida volta a ter quando for reenviada,
+  // pois o reenvio recria as etapas todas como 'pendente').
+  if (lista.some((e) => e.status === 'reprovada' || e.status === 'devolvida')) return null;
   return (
     lista
       .filter((e) => (e.tipo_etapa === 'aprovacao' || e.tipo_etapa === 'execucao') && e.status === 'pendente')
@@ -172,6 +175,11 @@ export function resumoAndamento(solicitacao, etapas) {
   if (solicitacao.status === 'reprovada') {
     const rep = lista.find((e) => e.status === 'reprovada');
     return { texto: `Reprovada por ${nomeDe(rep)}`, tom: 'reprovada' };
+  }
+  if (solicitacao.status === 'devolvida') {
+    const dev = lista.find((e) => e.status === 'devolvida');
+    const quem = dev ? nomeDe(dev) : 'um aprovador';
+    return { texto: `Devolvida para ajustes por ${quem}`, tom: 'devolvida' };
   }
   if (solicitacao.status === 'concluida') {
     return { texto: 'Concluída / Executada', tom: 'concluida' };

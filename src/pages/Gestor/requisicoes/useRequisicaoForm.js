@@ -154,7 +154,7 @@ export function useRequisicaoForm() {
   // a requisição tem aprovador fixo (ex.: Mapeamento → Lucas Ferraz).
   const criarComDetalhe = useCallback(async ({
     tipo, justificativa, tabela, detalhe, colaboradorId = null, cadeia = null,
-    funcaoAlvo = null, foraDoQuadro = false,
+    funcaoAlvo = null, foraDoQuadro = false, origemSolicitacaoId = null,
   }) => {
     const base = cadeia || await resolverCadeia(tipo);
     const { ids, nomePorId, alcada } = await aplicarAlcadaGC(base, {
@@ -171,6 +171,7 @@ export function useRequisicaoForm() {
         colaborador_id: colaboradorId,
         justificativa,
         status: 'pendente',
+        origem_solicitacao_id: origemSolicitacaoId,   // vínculo Mapeamento -> Nova Vaga
       }]).select('id').single();
     if (eSol) throw eSol;
 
@@ -198,6 +199,48 @@ export function useRequisicaoForm() {
     return sol.id;
   }, [resolverCadeia, aplicarAlcadaGC, funcaoDaEquipe, auditarAlcada, user]);
 
+  /**
+   * Reenvia uma requisição DEVOLVIDA, com os ajustes do solicitante.
+   * Atualiza o detalhe (ou campos do envelope), reconstrói a cadeia do zero
+   * (a decisão 2: recomeça do 1º aprovador, pois o conteúdo mudou) e troca as
+   * etapas de forma atômica via RPC, voltando a requisição para 'pendente'.
+   *
+   * A cadeia é reconstruída pela MESMA via da criação (resolverCadeia +
+   * aplicarAlcadaGC), então se o ajuste mudou o que define a alçada (ex.: a
+   * função proposta numa Movimentação), os aprovadores certos entram/saem.
+   */
+  const reenviarRequisicao = useCallback(async ({
+    solicitacaoId, tipo, colaboradorId = null, funcaoAlvo = null, foraDoQuadro = false,
+    detalheTabela = null, detalhe = null, envelopePatch = null,
+  }) => {
+    // 1) grava os ajustes ANTES de recalcular a cadeia (a alçada pode depender deles).
+    if (detalheTabela && detalhe) {
+      const { error } = await supabase.from(detalheTabela).update(detalhe).eq('solicitacao_id', solicitacaoId);
+      if (error) throw error;
+    }
+    if (envelopePatch) {
+      const { error } = await supabase.from('solicitacoes_rh').update(envelopePatch).eq('id', solicitacaoId);
+      if (error) throw error;
+    }
+
+    // 2) reconstrói a cadeia (config + alçada §5) para o conteúdo novo.
+    const base = await resolverCadeia(tipo);
+    const { ids, nomePorId, alcada } = await aplicarAlcadaGC(base, {
+      tipo, alvoId: colaboradorId, funcaoAlvo: funcaoAlvo ?? funcaoDaEquipe(colaboradorId), foraDoQuadro,
+    });
+    const linhas = montarEtapasDeConfig(solicitacaoId, ids, user.id, nomePorId);
+
+    // 3) troca atômica das etapas + volta para 'pendente' (RPC).
+    const { error: eRpc } = await supabase.rpc('reenviar_requisicao_rh', {
+      p_sol: solicitacaoId, p_etapas: linhas,
+    });
+    if (eRpc) throw eRpc;
+
+    auditarAlcada(solicitacaoId, tipo, alcada);
+    notificarAprovadorSolic(solicitacaoId);
+    window.dispatchEvent(new Event('solicitacoes_rh_atualizadas'));
+  }, [resolverCadeia, aplicarAlcadaGC, funcaoDaEquipe, auditarAlcada, user]);
+
   // Cria a requisição do Formulário de Contratação (envelope + detalhe).
   // O cargo proposto (cargo_nivel) é o que define a alçada: contratar uma
   // liderança exige CEO/COO, e alta liderança aciona a Trava Headcount (§5.3).
@@ -213,5 +256,5 @@ export function useRequisicaoForm() {
     });
   }, [criarComDetalhe]);
 
-  return { user, equipe, loadingEquipe, fluxoOk, submitting, setSubmitting, criarComFluxo, criarComDetalhe, criarFormularioContratacao, refetchFluxo };
+  return { user, equipe, loadingEquipe, fluxoOk, submitting, setSubmitting, criarComFluxo, criarComDetalhe, criarFormularioContratacao, reenviarRequisicao, refetchFluxo };
 }

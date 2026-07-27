@@ -48,6 +48,31 @@ export function validarMapeamento(form) {
   );
 }
 
+/**
+ * Pré-preenche o formulário de Nova Vaga a partir dos dados de um Mapeamento
+ * (feature "gerar Nova Vaga"). Só os campos com correspondência clara — os
+ * demais (empresa, departamento, equipamento, valores, etc.) o gestor completa.
+ * Valores monetários ficam de fora de propósito: margem/orçado têm semântica
+ * diferente do salário-base do mapeamento e devem ser informados com intenção.
+ */
+export function prefillNovaVagaDeMapeamento(dados = {}) {
+  const cp = (v) => (v == null ? '' : String(v));
+  return {
+    funcao: cp(dados.funcao),
+    unidade: cp(dados.unidade),
+    estado_atuacao: cp(dados.estado),
+    cidade_atuacao: cp(dados.cidade),
+    modalidade_contratacao: cp(dados.modalidade_contratacao),
+    horario_trabalho: cp(dados.horario_trabalho),
+    formacao: cp(dados.formacao),
+    tempo_experiencia: cp(dados.tempo_experiencia),
+    atividades_cargo: cp(dados.atividades_cargo),
+    requisitos_obrigatorios: cp(dados.conhecimentos_obrigatorios),
+    desconsiderar_perfis: cp(dados.desconsiderar_perfis),
+    codigo_cliente: cp(dados.codigo_proposta_cliente),
+  };
+}
+
 /** Monta o payload p/ a tabela mapeamentos. */
 export function montarPayloadMapeamento(form) {
   const out = {};
