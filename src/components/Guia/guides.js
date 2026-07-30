@@ -22,6 +22,7 @@ import {
   CircleDollarSign,
   FileDown,
   FilePlus2,
+  FileClock,
   Building2,
   BarChart3,
   ListChecks,
@@ -268,6 +269,22 @@ export const SOLIC_GUIA = {
 // Passos comuns a quem administra a equipe (gestor e coordenador). O que muda
 // entre eles é só o alcance: o gestor no topo vê a empresa toda; o coordenador,
 // a sua subárvore — a RLS do banco cuida disso, então o texto fala em "equipe".
+// Horas extras: fluxo de solicitação/aprovação, paralelo ao apontamento. Todo
+// mundo pede; por isso o passo de solicitar aparece nos dois papéis.
+const HORAS_EXTRA_SOLICITAR = {
+  icon: FilePlus2,
+  titulo: "Peça hora extra antes de fazer",
+  texto:
+    'Em "Horas Extras → Nova Solicitação", informe data, horário, projeto e a justificativa. O pedido só é aceito até 12:00 do próprio dia e não vale para datas passadas — fora disso, é o DP que libera por exceção. Seu gestor recebe um e-mail e decide.',
+};
+
+const HORAS_EXTRA_APROVAR = {
+  icon: ClipboardCheck,
+  titulo: "Aprove definindo o destino da hora",
+  texto:
+    'Em "Aprovações Pendentes" você aprova ou reprova (com motivo) as horas extras da sua equipe. Ao aprovar, escolha Medição/Pagamento ou Banco de Horas — neste caso informe data, período e quantidade previstos para compensação. O percentual não é seu: o DP/RM aplica conforme a CCT.',
+};
+
 const HORAS_GESTAO_STEPS = [
   {
     icon: Clock,
@@ -299,6 +316,8 @@ const HORAS_GESTAO_STEPS = [
     texto:
       'Em "Registros" você consulta todos os apontamentos da equipe, filtra por colaborador ou projeto e exporta quando precisar.',
   },
+  HORAS_EXTRA_SOLICITAR,
+  HORAS_EXTRA_APROVAR,
   TROCAR_APP,
 ];
 
@@ -331,6 +350,13 @@ export const HORAS_GUIA = {
         titulo: "Revise os seus registros",
         texto:
           'Em "Meus Registros" ficam todos os seus apontamentos. Dá para conferir, filtrar e excluir um lançamento errado.',
+      },
+      HORAS_EXTRA_SOLICITAR,
+      {
+        icon: FileClock,
+        titulo: "Acompanhe suas horas extras",
+        texto:
+          'Em "Minhas Solicitações" você vê o andamento de cada pedido: pendente, aprovada (com o destino — Medição/Pagamento ou Banco de Horas), reprovada (com o motivo) ou já compensada.',
       },
       TROCAR_APP,
     ],

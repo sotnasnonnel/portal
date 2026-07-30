@@ -7,6 +7,7 @@ import ReembolsoAppLayout from '../modules/reembolso/components/layout/AppLayout
 import SolicShell from '../modules/solic/app/components/AppShell';
 import HorasShell from '../modules/horas/app/components/AppShell';
 import { rotaInicial } from '../modules/horas/app/components/nav';
+import { isHorasExtrasDp } from '../modules/horas/lib/roles';
 import FinanceiroShell from '../modules/financeiro/app/components/AppShell';
 
 const Login = lazy(() => import('../pages/Login/Login'));
@@ -45,6 +46,12 @@ const HorasRegistros = lazy(() => import('../modules/horas/app/registros/page'))
 const HorasDashboard = lazy(() => import('../modules/horas/app/dashboard/page'));
 const HorasConfig = lazy(() => import('../modules/horas/app/config/page'));
 const HorasEquipe = lazy(() => import('../modules/horas/app/equipe/page'));
+const HorasExtrasNova = lazy(() => import('../modules/horas/app/extras/nova/page'));
+const HorasExtrasMinhas = lazy(() => import('../modules/horas/app/extras/minhas/page'));
+const HorasExtrasAprovacoes = lazy(() => import('../modules/horas/app/extras/aprovacoes/page'));
+const HorasExtrasDp = lazy(() => import('../modules/horas/app/extras/dp/page'));
+const HorasExtrasExcecoes = lazy(() => import('../modules/horas/app/extras/excecoes/page'));
+const HorasExtrasAuditoria = lazy(() => import('../modules/horas/app/extras/auditoria/page'));
 const FinanceiroDashboard = lazy(() => import('../modules/financeiro/app/dashboard/page'));
 const FinanceiroHub = lazy(() => import('../modules/financeiro/app/solicitacoes/hub/page'));
 const NovaSolicitacaoFin = lazy(() => import('../modules/financeiro/app/solicitacoes/nova/page'));
@@ -87,6 +94,14 @@ function PublicRoute({ children }) {
 export function ModuleRoute({ module, children }) {
   const { modules } = useAuth();
   if (!modules[module]) return <Navigate to="/home" replace />;
+  return children;
+}
+
+// Telas de DP das horas extras (painel, exceções, auditoria). Gate só de UI — a
+// RLS (app_private.is_horas_extras_dp) é quem protege os dados.
+function HorasDpRoute({ children }) {
+  const { user } = useAuth();
+  if (!isHorasExtrasDp(user)) return <Navigate to="/horas/extras/minhas" replace />;
   return children;
 }
 
@@ -411,6 +426,16 @@ export default function AppRoutes() {
           <Route path="equipe" element={<LazyPage><HorasEquipe /></LazyPage>} />
           {/* Rota antiga de Projetos: virou a aba Configuração. */}
           <Route path="projetos" element={<Navigate to="/horas/config" replace />} />
+
+          {/* Horas Extras: solicitação/aprovação. Aberto a todos os logados; as
+              telas de DP têm gate próprio (HorasDpRoute + RLS no banco). */}
+          <Route path="extras" element={<Navigate to="/horas/extras/minhas" replace />} />
+          <Route path="extras/nova" element={<LazyPage><HorasExtrasNova /></LazyPage>} />
+          <Route path="extras/minhas" element={<LazyPage><HorasExtrasMinhas /></LazyPage>} />
+          <Route path="extras/aprovacoes" element={<LazyPage><HorasExtrasAprovacoes /></LazyPage>} />
+          <Route path="extras/dp" element={<HorasDpRoute><LazyPage><HorasExtrasDp /></LazyPage></HorasDpRoute>} />
+          <Route path="extras/excecoes" element={<HorasDpRoute><LazyPage><HorasExtrasExcecoes /></LazyPage></HorasDpRoute>} />
+          <Route path="extras/auditoria" element={<HorasDpRoute><LazyPage><HorasExtrasAuditoria /></LazyPage></HorasDpRoute>} />
         </Route>
 
         <Route

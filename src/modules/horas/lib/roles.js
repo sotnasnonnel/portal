@@ -1,3 +1,5 @@
+import { isSuperAdmin } from '../../../config/superAdmin.js';
+
 // Papéis do Controle de Horas — DERIVADOS do perfil da Gestão de Pessoas
 // (colaboradores.perfil), com a coluna horas_role como ELEVAÇÃO só-do-Horas
 // (torna alguém gestor/coordenador apenas aqui, sem abrir a Gestão de Pessoas —
@@ -24,6 +26,17 @@ export const isGestao = (role) => role === 'gestor' || role === 'coordenador';
 // Todos apontam — o antigo papel supervisor "diretoria" (que não apontava)
 // deixou de existir.
 export const podeApontar = () => true;
+
+// DP/Admin das HORAS EXTRAS: trata o destino da hora, cancela, marca compensado,
+// libera exceções de prazo e lê a auditoria. Espelha
+// app_private.is_horas_extras_dp() no banco — quem protege de verdade é a RLS.
+// `rh` é o perfil efetivo de quem tem rh_dp sem ser gestor (ver AuthContext).
+export function isHorasExtrasDp(user) {
+  if (!user) return false;
+  return (
+    user.rhDp === true || user.perfil === 'rh' || user.perfil === 'admin' || isSuperAdmin(user)
+  );
+}
 
 // Escopo do dashboard/registros: usuário vê só o seu; a gestão vê a equipe
 // (a subárvore — a RLS já limita o que volta do banco).

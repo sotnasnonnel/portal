@@ -44,8 +44,6 @@
   flex: 1;
   min-width: 0;
   padding: 26px 32px 60px;
-  max-width: 1200px;
-  margin: 0 auto;
   width: 100%;
 }
 .horasCol {
@@ -298,6 +296,7 @@
 }
 .horasRoot input[type='text'],
 .horasRoot input[type='date'],
+.horasRoot input[type='time'],
 .horasRoot input[type='datetime-local'],
 .horasRoot select,
 .horasRoot textarea {
@@ -318,6 +317,14 @@
 .horasRoot textarea:focus {
   border-color: var(--h-primary);
   box-shadow: 0 0 0 3px rgba(196, 74, 40, 0.08);
+}
+/* Campos só-de-leitura (vêm do cadastro: nome, cargo, equipe, total calculado). */
+.horasRoot input:disabled,
+.horasRoot select:disabled,
+.horasRoot textarea:disabled {
+  background: var(--h-gray-100);
+  color: var(--h-gray-600);
+  cursor: not-allowed;
 }
 
 /* ---- botões ---- */
@@ -678,6 +685,74 @@
 .horas-badge.diretoria {
   background: var(--h-brand-50);
   color: var(--h-brand-700);
+}
+
+/* ---- horas extras: status da solicitação ----
+   O destino faz parte da identidade do status: uma aprovada para medição e uma
+   para banco de horas são coisas diferentes na folha, então têm cores distintas
+   (ver statusClasse em lib/horasExtras.js). */
+.horas-he-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: var(--h-radius-full);
+  white-space: nowrap;
+  background: var(--h-gray-100);
+  color: var(--h-gray-600);
+}
+.horas-he-badge.pendente {
+  background: #fef3c7;
+  color: #92400e;
+}
+.horas-he-badge.medicao {
+  background: #dbeafe;
+  color: #1e40af;
+}
+.horas-he-badge.banco {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+.horas-he-badge.aprovada,
+.horas-he-badge.compensada {
+  background: #d1fae5;
+  color: #065f46;
+}
+.horas-he-badge.reprovada {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.horas-he-badge.cancelada {
+  background: var(--h-gray-200);
+  color: var(--h-gray-600);
+}
+
+/* Alguns "botões" são <Link> (ir para Nova solicitação, Exceções). */
+.horasRoot a.horas-btn,
+.horasRoot a.horas-btn2 {
+  text-decoration: none;
+}
+
+/* Botão compacto, para as ações dentro da linha da tabela. */
+.horas-btn.horas-btn-sm,
+.horas-btn2.horas-btn-sm {
+  padding: 5px 10px;
+  font-size: 0.75rem;
+  min-height: 30px;
+  gap: 5px;
+}
+
+/* Variações do aviso: erro (bloqueio) e sucesso (confirmação). */
+.horas-hint.is-erro {
+  background: #fef2f2;
+  border-left-color: var(--h-red);
+  color: #991b1b;
+}
+.horas-hint.is-ok {
+  background: #ecfdf5;
+  border-left-color: #059669;
+  color: #065f46;
 }
 
 /* Select dentro de célula de tabela (vínculo de gerência). */
