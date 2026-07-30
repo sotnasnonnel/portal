@@ -1,5 +1,7 @@
-// Avisa por e-mail o responsável pela etapa pendente atual de uma requisição DP
-// (aprovação ou execução). Mesmo padrão da notify-approver do Reembolso:
+// Avisa por e-mail o responsável pela etapa pendente atual de uma requisição DP.
+// Aprovação: vai para o aprovador da etapa. Execução: vai para TODOS os admins
+// ativos da Gestão de Pessoas (colaboradores.perfil = 'admin'), pois a execução
+// é do DP como área, não de uma pessoa. Mesmo padrão da notify-approver do Reembolso:
 // Microsoft Graph sendMail com os secrets GRAPH_* já configurados no projeto.
 // Body: { solicitacao_id, dry_run? } — dry_run responde quem receberia, sem enviar.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -74,16 +76,41 @@ Deno.serve(async (req) => {
       .in("id", ids);
     if (eCols) return json({ error: eCols.message }, 500);
     const porId = Object.fromEntries((cols ?? []).map((c) => [c.id, c]));
-    const dest = porId[etapa.aprovador_id];
-    if (!dest?.email) return json({ skipped: "approver_without_email" });
 
     const ehExecucao = etapa.tipo_etapa === "execucao";
+    const sender = Deno.env.get("GRAPH_SENDER") ?? "sistema@phdengenharia.eng.br";
+
+    // Aprovação: avisa o aprovador da etapa. Execução: a etapa não é de uma pessoa
+    // específica — quem executa é o DP, então avisa TODOS os admins ativos da
+    // Gestão de Pessoas (colaboradores.perfil = 'admin'), menos a caixa remetente.
+    let destinatarios: { nome: string; email: string }[] = [];
+    if (ehExecucao) {
+      const { data: admins, error: eAdm } = await supabase
+        .from("colaboradores")
+        .select("nome, email")
+        .eq("perfil", "admin")
+        .eq("ativo", true)
+        .not("email", "is", null);
+      if (eAdm) return json({ error: eAdm.message }, 500);
+      destinatarios = (admins ?? [])
+        .filter((a) => a.email && a.email.toLowerCase() !== sender.toLowerCase())
+        .map((a) => ({ nome: a.nome, email: a.email as string }));
+      if (!destinatarios.length) return json({ skipped: "no_admin_with_email" });
+    } else {
+      const dest = porId[etapa.aprovador_id];
+      if (!dest?.email) return json({ skipped: "approver_without_email" });
+      destinatarios = [{ nome: dest.nome, email: dest.email }];
+    }
+
     const tipoLabel = TIPO_LABEL[sol.tipo] ?? sol.tipo;
     const solicitante = porId[sol.gestor_id]?.nome ?? "—";
     const colaborador = sol.colaborador_id ? (porId[sol.colaborador_id]?.nome ?? null) : null;
     const acao = ehExecucao ? "Execução" : "Aprovação";
+    const saudacao = destinatarios.length === 1 ? destinatarios[0].nome : "equipe de Gestão de Pessoas";
     const subject = `Requisição ${tipoLabel} - Aguardando sua ${acao}`;
-    if (dry_run) return json({ would_send: true, to: dest.email, nome: dest.nome, tipo_etapa: etapa.tipo_etapa, subject });
+    if (dry_run) {
+      return json({ would_send: true, to: destinatarios.map((d) => d.email), tipo_etapa: etapa.tipo_etapa, subject });
+    }
 
     const appUrl = (Deno.env.get("PORTAL_URL") ?? "https://portal.phdengenharia.tech").replace(/\/+$/, "");
     const phdLogo = Deno.env.get("LOGO_URL") ?? "https://bogsuuhrgvopzgcceoqz.supabase.co/storage/v1/object/public/public-assets/logo_phd.png";
@@ -100,7 +127,7 @@ Deno.serve(async (req) => {
         </tr></table>
       </td></tr>
       <tr><td style="padding:26px 26px 8px;color:#1b2735;font-size:15px;line-height:1.55">
-        <p style="margin:0 0 10px">Olá, <strong>${dest.nome}</strong>.</p>
+        <p style="margin:0 0 10px">Olá, <strong>${saudacao}</strong>.</p>
         <p style="margin:0 0 16px">Chegou a sua vez de ${ehExecucao ? "executar" : "aprovar"} uma requisição de <strong>${tipoLabel}</strong>.</p>
         <table role="presentation" cellpadding="0" cellspacing="0" style="font-size:14px;margin-bottom:18px">
           <tr><td style="color:#6b7280;padding:2px 14px 2px 0">Solicitante</td><td style="color:#1b2735">${solicitante}</td></tr>
@@ -116,7 +143,6 @@ Deno.serve(async (req) => {
     const tenant = Deno.env.get("GRAPH_TENANT_ID");
     const clientId = Deno.env.get("GRAPH_CLIENT_ID");
     const secret = Deno.env.get("GRAPH_CLIENT_SECRET");
-    const sender = Deno.env.get("GRAPH_SENDER") ?? "sistema@phdengenharia.eng.br";
     if (!tenant || !clientId || !secret) return json({ error: "graph_not_configured" }, 500);
 
     try {
@@ -124,7 +150,7 @@ Deno.serve(async (req) => {
       const sendRes = await fetch(`https://graph.microsoft.com/v1.0/users/${encodeURIComponent(sender)}/sendMail`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ message: { subject, body: { contentType: "HTML", content: html }, toRecipients: [{ emailAddress: { address: dest.email } }] }, saveToSentItems: true }),
+        body: JSON.stringify({ message: { subject, body: { contentType: "HTML", content: html }, toRecipients: destinatarios.map((d) => ({ emailAddress: { address: d.email } })) }, saveToSentItems: true }),
       });
       if (sendRes.status !== 202) {
         const t = await sendRes.text();
@@ -135,7 +161,7 @@ Deno.serve(async (req) => {
       console.error("[notify-solic-aprovador] graph:", e);
       return json({ error: `graph_error: ${(e as Error)?.message ?? String(e)}` }, 502);
     }
-    return json({ sent: true, to: dest.email, tipo_etapa: etapa.tipo_etapa });
+    return json({ sent: true, to: destinatarios.map((d) => d.email), tipo_etapa: etapa.tipo_etapa });
   } catch (e) {
     console.error("[notify-solic-aprovador] erro inesperado:", e);
     return json({ error: `unhandled: ${(e as Error)?.message ?? String(e)}` }, 500);
