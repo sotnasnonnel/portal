@@ -3,7 +3,10 @@
 // A cadeia de APROVAÇÃO agora é configurável pelo admin (tabela
 // solicitacoes_rh_fluxos) — ver buscarFluxoGeral / montarEtapasDeConfig abaixo.
 export const APROVADORES = {
-  admin: 'c2318237-b3f7-49ec-bb48-9d2a0c0c555d', // Admin (DP) — executor final
+  // Marcador da etapa de execução: a conta de sistema do DP. Não é uma pessoa —
+  // quem executa é qualquer admin pela tela Admin > Requisições, e a notificação
+  // de execução vai para todos os admins (edge function notify-solic-aprovador).
+  admin: '99f54a6a-34f7-45f4-9cb8-6e10980ed637', // Sistema PHD (DP) — executor final
 };
 
 // Mapeamento não segue o fluxo configurado do gestor: vai direto para aprovação
