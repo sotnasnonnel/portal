@@ -162,6 +162,7 @@ export function AuthProvider({ children }) {
         horasGerenciaId: colab.horas_gerencia_id || null,  // gerência p/ ver projetos ao apontar
         horasRole: colab.horas_role || null,               // elevação só-do-Horas (ver horasRoleFromPerfil)
         financeiroRole: colab.financeiro_role || null,     // acesso ao módulo Financeiro
+        administrativoRole: colab.administrativo_role || null, // time do Adm (atendente/admin)
         authId: authUser.id,
       });
       setReembolsoProfile(reemRes.data ?? null);
@@ -255,6 +256,10 @@ export function AuthProvider({ children }) {
     financeiro: user
       ? (user.financeiroRole || (temCargoFinanceiro(user.funcao) ? 'user' : null))
       : null,
+    // Administrativo: aberto a todos os logados (como o Controle de Horas) —
+    // qualquer um abre chamado. 'atendente'/'admin' são o time do Adm, que
+    // enxerga a fila; vêm de administrativo_role (Gerenciar acessos).
+    administrativo: user ? (user.administrativoRole || 'user') : null,
   }), [user, reembolsoProfile, solicProfile]);
 
   const value = useMemo(() => ({
