@@ -1,11 +1,20 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, Navigate, Link } from 'react-router-dom';
 import {
   ArrowLeft, Lock, Paperclip, X, Send, AlertCircle, FileText, CheckCircle2, Loader2,
 } from 'lucide-react';
-import { NATUREZAS, getClasse, getServico } from '../../../../config/administrativo';
+import { getClasse, getServico, assuntoDoServico } from '../../../../config/administrativo';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { criarChamado } from '../../lib/chamados';
+import { criarChamado, buscarConfigServico, listarPessoas } from '../../lib/chamados';
+import { validarCamposExtras, limparValores } from '../../lib/camposExtras';
+import CampoExtra from './CampoExtra';
+import { formDoServico } from './formularios';
+import { usaDescricao, usaAnexo } from './formularios/schemas';
+
+// O seletor "Tipo" do Milldesk (incidente/materiais/informação/serviço) saiu da
+// tela: ninguém escolhia outra coisa, já que todo item do catálogo é serviço.
+// A coluna continua no banco, preenchida com este valor.
+const NATUREZA_PADRAO = 'solicitacao_servico';
 
 const formatarTamanho = (bytes) => {
   if (bytes < 1024) return `${bytes} B`;
@@ -19,12 +28,18 @@ export default function NovoChamadoAdm() {
   const { user } = useAuth();
   const inputArquivo = useRef(null);
 
-  const [natureza, setNatureza] = useState('');
   const [descricao, setDescricao] = useState('');
   const [anexos, setAnexos] = useState([]);
   const [erro, setErro] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [sucesso, setSucesso] = useState(null);   // { numero, atendenteNome, aguardandoAprovacao }
+  const [config, setConfig] = useState(null);     // null = ainda carregando
+  const [pessoas, setPessoas] = useState([]);
+
+  // Serviço com formulário próprio (mobilização) traz o estado inicial dele;
+  // os demais começam com os campos extras cadastrados, que são chave/valor.
+  const form = formDoServico(classe, servico);
+  const [extras, setExtras] = useState(() => (form ? form.estadoInicial() : {}));
 
   // Trocar de serviço limpa o formulário (reset durante o render, padrão
   // recomendado pelo React em vez de setState dentro de useEffect).
@@ -32,15 +47,39 @@ export default function NovoChamadoAdm() {
   const [chaveAnterior, setChaveAnterior] = useState(chaveAtual);
   if (chaveAtual !== chaveAnterior) {
     setChaveAnterior(chaveAtual);
-    setNatureza('');
     setDescricao('');
     setAnexos([]);
     setErro('');
     setSucesso(null);
+    setExtras(form ? form.estadoInicial() : {});
+    setConfig(null);
   }
+
+  // Lista de pessoas para os seletores com busca. Só os formulários que pedem
+  // (mobilização/desmobilização) pagam essa consulta.
+  useEffect(() => {
+    if (!form?.precisaPessoas) return undefined;
+    let cancelado = false;
+    listarPessoas()
+      .then((lista) => { if (!cancelado) setPessoas(lista); })
+      .catch((e) => { if (!cancelado) setErro(e.message); });
+    return () => { cancelado = true; };
+  }, [form?.precisaPessoas]);
+
+  // Definição dos campos extras: vem do cadastro, por serviço.
+  useEffect(() => {
+    let cancelado = false;
+    buscarConfigServico(classe, servico)
+      .then((cfg) => { if (!cancelado) setConfig(cfg); })
+      .catch((e) => { if (!cancelado) { setConfig({ campos_extras: [] }); setErro(e.message); } });
+    return () => { cancelado = true; };
+  }, [classe, servico]);
 
   const cls = getClasse(classe);
   const srv = getServico(classe, servico);
+  // Descrição e anexo só onde a planilha pede.
+  const temDescricao = usaDescricao(classe, servico);
+  const temAnexo = usaAnexo(classe, servico);
 
   // Par (classe, serviço) inexistente: volta ao catálogo.
   if (!srv) return <Navigate to="/administrativo/novo" replace />;
@@ -57,19 +96,25 @@ export default function NovoChamadoAdm() {
 
   const enviar = async (e) => {
     e.preventDefault();
-    if (!natureza) return setErro('Selecione o tipo do chamado.');
-    if (!descricao.trim()) return setErro('A descrição é obrigatória.');
+    if (temDescricao && !descricao.trim()) return setErro('A descrição é obrigatória.');
+    const definicao = config?.campos_extras || [];
+    const erroExtra = form ? form.validar(extras) : validarCamposExtras(definicao, extras);
+    if (erroExtra) return setErro(erroExtra);
     setErro('');
     setEnviando(true);
     try {
       const { chamado, atendenteNome } = await criarChamado({
         classe,
         servico,
-        assunto: srv.label,
-        natureza,
+        // Mobilização define o assunto pelo seletor (nova x movimentação);
+        // nos demais o assunto é o próprio rótulo do serviço.
+        assunto: assuntoDoServico(classe, servico, extras),
+        natureza: NATUREZA_PADRAO,
         descricao,
-        arquivos: anexos,
+        campos: form ? extras : limparValores(definicao, extras),
+        arquivos: temAnexo ? anexos : [],
         solicitanteId: user.id,
+        config,
       });
       setSucesso({
         numero: chamado.numero,
@@ -126,34 +171,39 @@ export default function NovoChamadoAdm() {
           <div className="adm-aviso tom-erro"><AlertCircle size={16} /> {erro}</div>
         )}
 
+        {/* UM cartão só. Antes os campos do serviço vinham num segundo cartão e
+            a tela parecia dois formulários empilhados. */}
         <div className="adm-card">
-          <h2 className="adm-card-tit">Dados do chamado</h2>
-
-          <div className="adm-campo">
-            <label htmlFor="adm-natureza">Tipo<span className="req">*</span></label>
-            <select
-              id="adm-natureza"
-              className="adm-select"
-              value={natureza}
-              onChange={(e) => setNatureza(e.target.value)}
-            >
-              <option value="">Selecione...</option>
-              {NATUREZAS.map((n) => (
-                <option key={n.valor} value={n.valor}>{n.label}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Assunto não é digitado: é o título do serviço escolhido. */}
-          <div className="adm-campo">
-            <label htmlFor="adm-assunto">Assunto</label>
-            <div className="adm-travado">
-              <input id="adm-assunto" className="adm-input" value={srv.label} readOnly tabIndex={-1} />
-              <Lock size={15} aria-hidden="true" />
+          {/* Assunto não é digitado: é o título do serviço. Quando o serviço
+              tira o assunto de um campo (mobilização), o seletor já é o assunto
+              — repetir num campo travado logo abaixo só confundiria. */}
+          {!srv.assuntoPorCampo && (
+            <div className="adm-campo">
+              <label htmlFor="adm-assunto">Assunto</label>
+              <div className="adm-travado">
+                <input id="adm-assunto" className="adm-input" value={srv.label} readOnly tabIndex={-1} />
+                <Lock size={15} aria-hidden="true" />
+              </div>
+              <span className="adm-campo-dica">Definido pelo serviço escolhido.</span>
             </div>
-            <span className="adm-campo-dica">Definido pelo serviço escolhido.</span>
-          </div>
+          )}
 
+          {/* Campos do serviço: no mesmo cartão, na sequência natural. */}
+          {form && (
+            <form.Componente valores={extras} onChange={setExtras} pessoas={pessoas}
+              classe={classe} servico={servico} />
+          )}
+
+          {!form && (config?.campos_extras || []).map((campo) => (
+            <CampoExtra
+              key={campo.chave}
+              campo={campo}
+              valor={extras[campo.chave]}
+              onChange={(chave, valor) => setExtras((a) => ({ ...a, [chave]: valor }))}
+            />
+          ))}
+
+          {temDescricao && (
           <div className="adm-campo">
             <label htmlFor="adm-descricao">Descrição<span className="req">*</span></label>
             <textarea
@@ -164,7 +214,9 @@ export default function NovoChamadoAdm() {
               placeholder="Descreva a solicitação com o máximo de detalhes."
             />
           </div>
+          )}
 
+          {temAnexo && (
           <div className="adm-campo">
             <label htmlFor="adm-anexos">Anexos</label>
             <input
@@ -193,15 +245,7 @@ export default function NovoChamadoAdm() {
               </ul>
             )}
           </div>
-        </div>
-
-        {/* Os "Campos extras" do Milldesk viram esta seção — sem aba escondida.
-            O conteúdo por serviço ainda será levantado. */}
-        <div className="adm-card">
-          <h2 className="adm-card-tit">Campos do serviço</h2>
-          <p className="adm-campo-dica">
-            Os campos específicos de “{srv.label}” entram aqui assim que forem definidos.
-          </p>
+          )}
         </div>
 
         <div className="adm-acoes">

@@ -49,6 +49,59 @@ revoke all on function app_private.is_adm_admin() from public;
 grant execute on function app_private.is_adm_admin() to authenticated;
 
 -- ----------------------------------------------------------------------------
+-- Helpers de participação no chamado.
+--
+-- São SECURITY DEFINER de propósito: sem isso a policy de chamados_adm consulta
+-- chamados_adm_etapas, cuja policy consulta chamados_adm de volta, e o Postgres
+-- aborta com "infinite recursion detected in policy". Na prática, ler o chamado
+-- logo após criá-lo (o .select() do insert) já estourava. Sendo DEFINER, a
+-- consulta interna não passa pela RLS da outra tabela e o ciclo se rompe.
+-- ----------------------------------------------------------------------------
+create or replace function app_private.adm_e_aprovador(p_chamado uuid)
+returns boolean language sql stable security definer set search_path = '' as $$
+  select exists (
+    select 1 from public.chamados_adm_etapas e
+    where e.chamado_id = p_chamado and e.aprovador_id = app_private.my_colaborador_id()
+  )
+$$;
+
+create or replace function app_private.adm_e_solicitante(p_chamado uuid)
+returns boolean language sql stable security definer set search_path = '' as $$
+  select exists (
+    select 1 from public.chamados_adm c
+    where c.id = p_chamado and c.solicitante_id = app_private.my_colaborador_id()
+  )
+$$;
+
+create or replace function app_private.adm_e_atendente(p_chamado uuid)
+returns boolean language sql stable security definer set search_path = '' as $$
+  select exists (
+    select 1 from public.chamados_adm c
+    where c.id = p_chamado and c.atendente_id = app_private.my_colaborador_id()
+  )
+$$;
+
+revoke all on function app_private.adm_e_aprovador(uuid), app_private.adm_e_solicitante(uuid),
+                      app_private.adm_e_atendente(uuid) from public;
+grant execute on function app_private.adm_e_aprovador(uuid), app_private.adm_e_solicitante(uuid),
+                         app_private.adm_e_atendente(uuid) to authenticated;
+
+-- A tela de configuração precisa escolher atendente e aprovadores, mas a policy
+-- colaboradores_select só libera a própria linha, a equipe e o admin do DP — o
+-- admin do Adm não enxergaria quase ninguém. Expõe SÓ (id, nome), e só para ele.
+create or replace function public.chamados_adm_pessoas()
+returns table(id uuid, nome text)
+language sql stable security definer set search_path = '' as $$
+  select c.id, c.nome
+  from public.colaboradores c
+  where c.ativo is not false
+    and app_private.is_adm_admin()
+  order by c.nome
+$$;
+revoke all on function public.chamados_adm_pessoas() from public;
+grant execute on function public.chamados_adm_pessoas() to authenticated;
+
+-- ----------------------------------------------------------------------------
 -- 1) Configuração por serviço: roteamento, SLA e alçada
 --    Os valores (quem atende, quantas horas, quem aprova) não estão no POP —
 --    são cadastrados pelo admin do Adm em vez de ficarem no código.
@@ -63,6 +116,12 @@ create table if not exists public.chamados_adm_config (
   sla_horas int,                                            -- prazo após a aprovação (Passo 6/10)
   exige_aprovacao boolean not null default false,           -- "chamados que tiverem alçada" (Passo 10)
   aprovadores uuid[] not null default '{}',                 -- cadeia ordenada, quando exige
+  -- "Campos extras" (2ª aba do Milldesk): CADASTRADOS pelo time do Adm, não
+  -- escritos no código — mudam por serviço e sem deploy. Ficam como documento
+  -- na própria linha porque a tela sempre edita a lista inteira do serviço.
+  --   { chave, rotulo, tipo, obrigatorio, opcoes[] }
+  --   tipo: 'texto' | 'texto_longo' | 'numero' | 'data' | 'selecao' | 'sim_nao'
+  campos_extras jsonb not null default '[]'::jsonb,
   updated_at timestamptz not null default now(),
   unique (classe, servico)
 );
@@ -222,8 +281,7 @@ using (
   solicitante_id = app_private.my_colaborador_id()
   or atendente_id = app_private.my_colaborador_id()
   or app_private.is_adm_time()
-  or exists (select 1 from public.chamados_adm_etapas e
-             where e.chamado_id = id and e.aprovador_id = app_private.my_colaborador_id())
+  or app_private.adm_e_aprovador(id)
 );
 
 -- Abrir chamado é para todo mundo logado — desde que não haja avaliação pendente.
@@ -242,15 +300,13 @@ using (
   solicitante_id = app_private.my_colaborador_id()
   or atendente_id = app_private.my_colaborador_id()
   or app_private.is_adm_time()
-  or exists (select 1 from public.chamados_adm_etapas e
-             where e.chamado_id = id and e.aprovador_id = app_private.my_colaborador_id())
+  or app_private.adm_e_aprovador(id)
 )
 with check (
   solicitante_id = app_private.my_colaborador_id()
   or atendente_id = app_private.my_colaborador_id()
   or app_private.is_adm_time()
-  or exists (select 1 from public.chamados_adm_etapas e
-             where e.chamado_id = id and e.aprovador_id = app_private.my_colaborador_id())
+  or app_private.adm_e_aprovador(id)
 );
 
 -- ---- Etapas ----
@@ -260,14 +316,21 @@ for select to authenticated
 using (
   aprovador_id = app_private.my_colaborador_id()
   or app_private.is_adm_time()
-  or exists (select 1 from public.chamados_adm c
-             where c.id = chamado_id and c.solicitante_id = app_private.my_colaborador_id())
+  or app_private.adm_e_solicitante(chamado_id)
 );
 
--- Quem decide é o aprovador da etapa; o time do Adm mantém a cadeia.
-drop policy if exists chamados_adm_etapas_write on public.chamados_adm_etapas;
-create policy chamados_adm_etapas_write on public.chamados_adm_etapas
-for all to authenticated
+-- INSERT e UPDATE separados de propósito. Um FOR ALL único não resolve: montar
+-- a cadeia é parte da abertura (quem insere é o SOLICITANTE), mas decidir é só
+-- de quem é o aprovador daquela etapa — junto num FOR ALL, quem pudesse inserir
+-- poderia aprovar o próprio chamado.
+drop policy if exists chamados_adm_etapas_insert on public.chamados_adm_etapas;
+create policy chamados_adm_etapas_insert on public.chamados_adm_etapas
+for insert to authenticated
+with check ( app_private.is_adm_time() or app_private.adm_e_solicitante(chamado_id) );
+
+drop policy if exists chamados_adm_etapas_update on public.chamados_adm_etapas;
+create policy chamados_adm_etapas_update on public.chamados_adm_etapas
+for update to authenticated
 using ( aprovador_id = app_private.my_colaborador_id() or app_private.is_adm_time() )
 with check ( aprovador_id = app_private.my_colaborador_id() or app_private.is_adm_time() );
 
@@ -279,15 +342,8 @@ create policy chamados_adm_interacoes_select on public.chamados_adm_interacoes
 for select to authenticated
 using (
   app_private.is_adm_time()
-  or exists (select 1 from public.chamados_adm c
-             where c.id = chamado_id
-               and c.atendente_id = app_private.my_colaborador_id())
-  or (
-    interna = false
-    and exists (select 1 from public.chamados_adm c
-                where c.id = chamado_id
-                  and c.solicitante_id = app_private.my_colaborador_id())
-  )
+  or app_private.adm_e_atendente(chamado_id)
+  or (interna = false and app_private.adm_e_solicitante(chamado_id))
 );
 
 drop policy if exists chamados_adm_interacoes_insert on public.chamados_adm_interacoes;
@@ -295,13 +351,9 @@ create policy chamados_adm_interacoes_insert on public.chamados_adm_interacoes
 for insert to authenticated
 with check (
   autor_id = app_private.my_colaborador_id()
-  and (
-    app_private.is_adm_time()
-    or exists (select 1 from public.chamados_adm c
-               where c.id = chamado_id
-                 and (c.solicitante_id = app_private.my_colaborador_id()
-                      or c.atendente_id = app_private.my_colaborador_id()))
-  )
+  and (app_private.is_adm_time()
+       or app_private.adm_e_atendente(chamado_id)
+       or app_private.adm_e_solicitante(chamado_id))
   -- Nota interna é privilégio do time do Adm.
   and (interna = false or app_private.is_adm_time())
 );
@@ -312,17 +364,13 @@ create policy chamados_adm_interacoes_update on public.chamados_adm_interacoes
 for update to authenticated
 using (
   app_private.is_adm_time()
-  or exists (select 1 from public.chamados_adm c
-             where c.id = chamado_id
-               and (c.solicitante_id = app_private.my_colaborador_id()
-                    or c.atendente_id = app_private.my_colaborador_id()))
+  or app_private.adm_e_atendente(chamado_id)
+  or app_private.adm_e_solicitante(chamado_id)
 )
 with check (
   app_private.is_adm_time()
-  or exists (select 1 from public.chamados_adm c
-             where c.id = chamado_id
-               and (c.solicitante_id = app_private.my_colaborador_id()
-                    or c.atendente_id = app_private.my_colaborador_id()))
+  or app_private.adm_e_atendente(chamado_id)
+  or app_private.adm_e_solicitante(chamado_id)
 );
 
 -- ---- Avaliações ----
@@ -331,10 +379,8 @@ create policy chamados_adm_avaliacoes_select on public.chamados_adm_avaliacoes
 for select to authenticated
 using (
   app_private.is_adm_time()
-  or exists (select 1 from public.chamados_adm c
-             where c.id = chamado_id
-               and (c.solicitante_id = app_private.my_colaborador_id()
-                    or c.atendente_id = app_private.my_colaborador_id()))
+  or app_private.adm_e_solicitante(chamado_id)
+  or app_private.adm_e_atendente(chamado_id)
 );
 
 -- Só o solicitante avalia, e só chamado fechado.

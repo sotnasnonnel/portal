@@ -31,6 +31,9 @@ import {
   TrendingUp,
   Workflow,
   ShieldCheck,
+  Headset,
+  Search,
+  Paperclip,
 } from "lucide-react";
 
 export const GUIA_OPEN_EVENT = "abrir_guia";
@@ -456,6 +459,98 @@ export const FINANCEIRO_GUIA = {
           "Como coordenador/gestor, você também pode abrir cartões e pedir aumentos, igual a qualquer solicitante. Os próximos passos mostram como fazer isso.",
       },
       ...FIN_SOLICITAR_STEPS,
+      TROCAR_APP,
+    ],
+  },
+};
+
+// ============================ Administrativo ============================
+// Abrir e acompanhar chamado é igual para todo mundo — esses passos são a base
+// dos três papéis. O que muda é o que vem antes deles.
+const ADM_USAR_STEPS = [
+  {
+    icon: Search,
+    titulo: "Ache o serviço certo",
+    texto:
+      'Em "Abrir chamado" estão as classes de serviço. Clique numa e os serviços dela aparecem logo abaixo; classe que tem um serviço só abre o formulário direto. Se você já sabe o que quer, use a busca do topo — digitar "uber", "EPI" ou "veículo" encontra o serviço sem precisar adivinhar em qual classe ele está.',
+  },
+  {
+    icon: FilePlus2,
+    titulo: "Preencha e envie",
+    texto:
+      "Cada serviço pede só o que faz sentido para ele: placa e KM na manutenção de veículo, origem e destino no Uber, datas na hospedagem. O assunto do chamado é preenchido sozinho, você não digita. Onde couber anexo, o botão está no fim do formulário.",
+  },
+  {
+    icon: Users,
+    titulo: "Mobilização: tudo num pedido só",
+    texto:
+      'Nova mobilização, movimentação e desmobilização vivem no mesmo formulário — o seletor do topo diz qual é. Ao escolher o profissional, o gestor vem do organograma sozinho. Em "Adicionais" ficam equipamento, software, EPI e uniforme: clique para expandir e marque só o que essa pessoa precisa. Tudo ali é opcional.',
+  },
+  {
+    icon: List,
+    titulo: "Acompanhe seus chamados",
+    texto:
+      'Em "Meus chamados" há duas abas: em andamento e fechados. Você vê o número do chamado, o técnico responsável, quando foi criado e o vencimento do prazo. Quando o serviço exige aprovação, o prazo só começa a contar depois que o gestor aprova — por isso a coluna "Análise" fica vazia até lá.',
+  },
+  {
+    icon: ClipboardCheck,
+    titulo: 'Aprovações: quando aparecem para você',
+    texto:
+      'Alguns serviços exigem liberação antes de virar tarefa do Administrativo, e quem libera é o superior direto de quem abriu. Se alguém da sua equipe abrir um desses, o chamado aparece em "Aprovações" com o pedido inteiro à vista. Aprovar solta o chamado e inicia o prazo; reprovar exige que você escreva o motivo.',
+  },
+];
+
+export const ADMINISTRATIVO_GUIA = {
+  appName: "Administrativo",
+  fallbackRole: "user",
+  roleLabels: { admin: "Administrador do Adm", atendente: "Atendente", user: "Solicitante" },
+  contentByRole: {
+    user: [
+      {
+        icon: Headset,
+        titulo: "Bem-vindo ao Administrativo",
+        texto:
+          "Aqui você abre chamados para o setor Administrativo: mobilização de profissional, compras, frota, viagem e hospedagem, TI, manutenção e saúde e segurança. Toda demanda para o Adm passa por chamado — é o que garante prazo, responsável e histórico do pedido.",
+      },
+      ...ADM_USAR_STEPS,
+      TROCAR_APP,
+    ],
+    atendente: [
+      {
+        icon: Headset,
+        titulo: "Seu papel: atendente do Administrativo",
+        texto:
+          "Você faz parte do time do Adm, então os chamados dos serviços em que você é o responsável caem no seu nome — o solicitante vê o seu nome assim que salva o pedido. A tela de fila de atendimento, com as respostas ao solicitante e o fechamento do chamado, ainda está em construção; por enquanto você já aparece como técnico dos chamados abertos.",
+      },
+      ...ADM_USAR_STEPS,
+      TROCAR_APP,
+    ],
+    admin: [
+      {
+        icon: ShieldCheck,
+        titulo: "Seu papel: administrador do Administrativo",
+        texto:
+          "Além de abrir chamados como todo mundo, você configura como o módulo se comporta. É o único papel que enxerga a seção Administração no menu lateral.",
+      },
+      {
+        icon: Settings,
+        titulo: "Configure cada serviço antes de liberar",
+        texto:
+          'Em Administração → "Configuração" você define, para cada serviço: quem atende (o nome que aparece para o solicitante), o prazo de atendimento em horas e se exige aprovação. Serviço sem configuração ainda funciona, mas o chamado nasce sem responsável e sem prazo — vale preencher antes de o time começar a usar.',
+      },
+      {
+        icon: ClipboardCheck,
+        titulo: "Como a aprovação funciona",
+        texto:
+          "Ao marcar um serviço como sujeito a aprovação, o chamado vai para o superior direto de quem abriu, lido do organograma da Gestão de Pessoas — não há cadeia para cadastrar. Quem não tem superior cadastrado entra direto na fila, para o chamado não ficar parado sem ninguém para liberar.",
+      },
+      {
+        icon: Paperclip,
+        titulo: "Onde os campos de cada serviço são definidos",
+        texto:
+          "Os campos que aparecem em cada formulário seguem o levantamento feito com o setor. Se algum serviço precisar de um campo novo, fale com o time do portal — a mudança é feita num arquivo de configuração, sem refazer a tela.",
+      },
+      ...ADM_USAR_STEPS,
       TROCAR_APP,
     ],
   },

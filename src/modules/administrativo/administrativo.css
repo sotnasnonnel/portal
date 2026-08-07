@@ -283,6 +283,125 @@
 .adm-badge.tom-reprovado { background: #fef2f2; color: #b91c1c; }
 .adm-badge.tom-cancelado { background: var(--a-gray-100); color: var(--a-gray-600); }
 
+/* ======================= marcadores (adicionais) ======================= */
+/* Cada adicional da mobilização — equipamento, software, EPI — é uma linha que
+   expande. Fechada, ela precisa dizer o que já foi marcado: quem aprova não
+   deve ter de abrir cinco blocos para saber o que foi pedido. */
+.adm-marcadores { display: flex; flex-direction: column; gap: 8px; }
+.adm-marc { border: 1px solid var(--a-border); border-radius: 11px; background: #fff; overflow: hidden; }
+.adm-marc.is-open { border-color: var(--a-primary); box-shadow: 0 0 0 1px var(--a-primary); }
+.adm-marc-cab {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  min-height: var(--touch-min, 44px); padding: 10px 14px;
+  background: none; border: none; cursor: pointer; font-family: inherit; text-align: left;
+}
+.adm-marc-cab:hover { background: var(--a-gray-50); }
+.adm-marc-tit {
+  display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0;
+  font-size: 0.875rem; font-weight: 600; color: var(--a-ink);
+}
+.adm-marc-cont {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px;
+  background: var(--a-primary); color: #fff; font-size: 0.7rem; font-weight: 700;
+}
+.adm-marc-resumo {
+  flex: 1; min-width: 0; font-size: 0.78rem; color: var(--a-muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.adm-marc-chev { margin-left: auto; color: var(--a-muted); transition: transform 0.2s; flex-shrink: 0; }
+.adm-marc.is-open .adm-marc-chev { transform: rotate(180deg); color: var(--a-primary); }
+.adm-marc-corpo { padding: 4px 14px 14px; border-top: 1px solid var(--a-gray-100); }
+.adm-marc-itens { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+
+/* Chip: alvo de toque generoso e estado ligado óbvio sem depender só da cor. */
+.adm-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 36px; padding: 6px 14px; border-radius: 999px;
+  border: 1px solid var(--a-border); background: #fff;
+  font-family: inherit; font-size: 0.82rem; color: var(--a-gray-600);
+  cursor: pointer; transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.adm-chip:hover { border-color: var(--a-primary-line); color: var(--a-ink); }
+.adm-chip.is-on {
+  background: var(--a-primary-soft); border-color: var(--a-primary);
+  color: var(--a-primary); font-weight: 600;
+}
+.adm-radios { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ======================= aprovações ======================= */
+/* Cartão por chamado: o aprovador decide com o pedido inteiro à vista, sem
+   precisar abrir outra tela. */
+.adm-aprov { display: flex; flex-direction: column; }
+.adm-aprov-cab h2 { font-size: 1rem; font-weight: 700; margin: 0 0 2px; color: var(--a-ink); }
+.adm-aprov-cab small { font-size: 0.76rem; color: var(--a-muted); }
+.adm-aprov-desc {
+  font-size: 0.875rem; line-height: 1.6; color: var(--a-gray-600);
+  white-space: pre-wrap; margin: 14px 0;
+  padding: 12px 14px; background: var(--a-gray-50); border-radius: 10px;
+}
+.adm-aprov-campos {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px 18px; margin: 0 0 14px;
+}
+.adm-aprov-campos dt {
+  font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--a-muted);
+}
+.adm-aprov-campos dd { margin: 2px 0 0; font-size: 0.85rem; color: var(--a-ink); }
+
+.adm-btn-recusa { background: #fff; border-color: #fecaca; color: #b91c1c; }
+.adm-btn-recusa:hover { background: #fef2f2; border-color: #b91c1c; }
+
+/* ======================= configuração dos serviços ======================= */
+/* Lista à esquerda, editor à direita: são 20 serviços e trocar de um para o
+   outro é o gesto mais repetido de quem cadastra. */
+.adm-cfg { display: grid; grid-template-columns: 280px 1fr; gap: 18px; align-items: start; }
+.adm-cfg-lista {
+  background: #fff; border: 1px solid var(--a-border); border-radius: 14px;
+  padding: 8px; max-height: 74vh; overflow-y: auto;
+}
+.adm-cfg-grupo + .adm-cfg-grupo { margin-top: 6px; }
+.adm-cfg-grupo-tit {
+  font-size: 0.62rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: #94a3b8; padding: 10px 10px 4px;
+}
+.adm-cfg-item {
+  display: flex; flex-direction: column; gap: 2px; width: 100%;
+  padding: 9px 10px; border: none; border-radius: 9px; background: none;
+  font-family: inherit; text-align: left; cursor: pointer;
+}
+.adm-cfg-item:hover { background: var(--a-gray-50); }
+.adm-cfg-item.is-active { background: var(--a-primary-soft); }
+.adm-cfg-item strong { font-size: 0.82rem; font-weight: 600; color: var(--a-ink); line-height: 1.3; }
+.adm-cfg-item.is-active strong { color: var(--a-primary); }
+.adm-cfg-item small { font-size: 0.7rem; color: var(--a-muted); }
+
+.adm-cfg-editor { min-width: 0; }
+.adm-cfg-campo {
+  border: 1px solid var(--a-border); border-radius: 10px;
+  padding: 12px; margin-bottom: 10px; background: var(--a-gray-50);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.adm-linha { display: flex; align-items: center; gap: 8px; }
+.adm-linha .adm-input, .adm-linha .adm-select { flex: 1; min-width: 0; }
+.adm-select-curto { flex: 0 0 150px; }
+.adm-textarea-curto { min-height: 84px; }
+
+.adm-check {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 0.8rem; font-weight: 500; color: var(--a-gray-600); cursor: pointer;
+}
+.adm-check input { width: 16px; height: 16px; accent-color: var(--a-primary); cursor: pointer; }
+
+@media (max-width: 900px) {
+  /* Empilhado: a lista vira um índice rolável acima do editor. */
+  .adm-cfg { grid-template-columns: 1fr; }
+  .adm-cfg-lista { max-height: 300px; }
+  .adm-linha { flex-wrap: wrap; }
+  .adm-select-curto { flex: 1 1 100%; }
+}
+
 /* ======================= sidebar ======================= */
 .admSb {
   width: 256px; flex-shrink: 0; background: #fff;

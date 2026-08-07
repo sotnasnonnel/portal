@@ -17,10 +17,10 @@ function iniciais(nome, email) {
 // as duas props são inofensivas. Ver useDrawerMobile.js.
 export default function Sidebar({ aberto = false, onFechar }) {
   const pathname = useLocation().pathname || '';
-  const { logout, user } = useAuth();
+  const { logout, user, modules } = useAuth();
   const nome = user?.nome || '';
   const email = user?.email || '';
-  const secoes = navSections();
+  const secoes = navSections({ isAdmin: modules?.administrativo === 'admin' });
 
   // Esc fecha o drawer. Fechar ao navegar é feito no onClick de cada link (toda
   // navegação daqui sai de um <Link>), evitando um efeito que dispararia setState

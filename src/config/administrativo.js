@@ -1,5 +1,5 @@
 import {
-  Users, ShoppingCart, Car, Navigation, Building2, Wrench, Plane, HardHat, Laptop, MoreHorizontal,
+  Users, ShoppingCart, Car, Navigation, Mail, Building2, Monitor, Plane, HardHat, MoreHorizontal,
 } from 'lucide-react';
 
 /**
@@ -25,12 +25,32 @@ import {
  */
 
 /**
- * Trava de lançamento. Enquanto `true`, o módulo aparece como "Em breve" e
- * ninguém entra: some do AppSwitcher e a rota /administrativo devolve para a
- * Home. É o único ponto a mexer para liberar o módulo — Home, AppSwitcher e
- * AppRoutes leem daqui.
+ * Trava de lançamento. Enquanto `true`, o módulo aparece como "Em breve" para a
+ * empresa: some do AppSwitcher e a rota /administrativo devolve para a Home.
+ *
+ * A exceção é a lista abaixo, que continua navegando normalmente para testar
+ * com o módulo ainda fechado. É por e-mail, e não por papel, de propósito: o
+ * papel de admin do Adm será dado a mais gente antes do lançamento, e isso não
+ * pode destravar o módulo sem querer.
+ *
+ * Home, AppSwitcher e AppRoutes leem daqui; para abrir a todos, ADM_EM_BREVE = false.
  */
 export const ADM_EM_BREVE = true;
+
+export const ADM_LIBERADOS = [
+  'marcus.guimaraes@phdengenharia.eng.br',
+  'andre.guimaraes@phdengenharia.eng.br',
+];
+
+export const podeAcessarAdm = (user) => !ADM_EM_BREVE
+  || ADM_LIBERADOS.includes((user?.email || '').trim().toLowerCase());
+
+/**
+ * Cadastro de campos extras escondido enquanto a tela não é validada. O motor
+ * continua de pé: serviço que já tenha campos gravados segue mostrando os
+ * campos no formulário — o que some é a edição.
+ */
+export const CAMPOS_EXTRAS_VISIVEIS = false;
 
 export const NATUREZAS = [
   { valor: 'incidente', label: 'Incidente' },
@@ -45,9 +65,12 @@ export const CLASSES_ADM = [
     label: 'Mobilização',
     icon: Users,
     servicos: [
-      { slug: 'nova-mobilizacao', label: 'Nova mobilização' },
-      { slug: 'desmobilizacao', label: 'Desmobilização' },
-      { slug: 'movimentacao-profissional', label: 'Movimentação de profissional' },
+      // As três situações (nova, movimentação e desmobilização) viraram UM
+      // serviço: mudam poucos campos entre elas e todas falam da mesma coisa,
+      // uma pessoa. Um seletor dentro do formulário diz qual é, e o assunto do
+      // chamado passa a ser a opção escolhida — assim a fila do Adm continua
+      // distinguindo as três.
+      { slug: 'mobilizacao', label: 'Mobilização de profissional', assuntoPorCampo: 'movimento' },
     ],
   },
   {
@@ -70,12 +93,24 @@ export const CLASSES_ADM = [
       { slug: 'outras-demandas', label: 'Outras demandas' },
     ],
   },
+  // Uber e Correio aparecem na aba de Frota da planilha, mas são cards
+  // próprios no catálogo: quem precisa de uma corrida não procura em
+  // "Gestão de frota". Os campos dos dois são os mesmos (CC, origem,
+  // destino, data, horário, justificativa).
   {
     slug: 'uber',
     label: 'Solicitação de Uber',
     icon: Navigation,
     servicos: [
       { slug: 'viagem-uber', label: 'Solicitação de viagem Uber' },
+    ],
+  },
+  {
+    slug: 'correio',
+    label: 'Correio',
+    icon: Mail,
+    servicos: [
+      { slug: 'correio', label: 'Solicitação de correio' },
     ],
   },
   {
@@ -88,11 +123,21 @@ export const CLASSES_ADM = [
     ],
   },
   {
-    slug: 'manutencao-equipamentos',
-    label: 'Manutenção de equipamentos',
-    icon: Wrench,
+    // Substitui a antiga "Manutenção de equipamentos", que tinha um serviço só:
+    // a planilha detalha seis frentes de TI.
+    slug: 'ti',
+    label: 'Manutenção & Instalação TI',
+    icon: Monitor,
     servicos: [
-      { slug: 'manutencao-equipamento', label: 'Manutenção em Equipamento' },
+      { slug: 'instalacao-software', label: 'Instalação de software' },
+      // Novo na revisão: antes só existia a troca. Pedir um equipamento novo e
+      // trocar um que quebrou são pedidos diferentes.
+      { slug: 'solicitacao-equipamentos', label: 'Solicitação de equipamentos e acessórios' },
+      { slug: 'troca-equipamentos', label: 'Troca de equipamentos e acessórios' },
+      { slug: 'liberacao-acessos', label: 'Liberação de acessos' },
+      { slug: 'impressoras', label: 'Instalação e configuração de impressoras' },
+      { slug: 'manutencao-infraestrutura', label: 'Manutenção de infraestrutura' },
+      { slug: 'verificacoes', label: 'Verificações' },
     ],
   },
   {
@@ -103,26 +148,21 @@ export const CLASSES_ADM = [
       { slug: 'passagem', label: 'Solicitação de passagem' },
       { slug: 'hospedagem', label: 'Solicitação de hospedagem' },
       { slug: 'vagas-alojamento-phd', label: 'Solicitação de vagas em alojamento PHD' },
-      { slug: 'novo-alojamento-phd', label: 'Montagem de novo alojamento PHD' },
+      // Era "Montagem de novo alojamento PHD"; a planilha trata como locação.
+      { slug: 'locacao-imovel', label: 'Locação de imóvel' },
     ],
   },
   {
     slug: 'saude-seguranca',
     label: 'Saúde e segurança',
     icon: HardHat,
+    // EPI e uniforme também podem ser pedidos dentro da Mobilização (marcadores).
+    // Aqui é o pedido avulso, para quem já está mobilizado e precisa de item
+    // novo ou de substituição — daí o campo "motivo" na planilha.
     servicos: [
       { slug: 'epi', label: 'Solicitação de EPI' },
       { slug: 'uniforme', label: 'Solicitação de uniforme' },
-      { slug: 'locacao-equipamento', label: 'Locação de equipamento' },
       { slug: 'outras-demandas', label: 'Outras demandas' },
-    ],
-  },
-  {
-    slug: 'equipamentos',
-    label: 'Solicitação de Equipamento',
-    icon: Laptop,
-    servicos: [
-      { slug: 'equipamentos-adicionais', label: 'Equipamentos adicionais' },
     ],
   },
   {
@@ -140,9 +180,18 @@ export const getClasse = (classeSlug) => CLASSES_ADM.find((c) => c.slug === clas
 export const getServico = (classeSlug, servicoSlug) =>
   getClasse(classeSlug)?.servicos.find((s) => s.slug === servicoSlug);
 
-/** Assunto do chamado = título do serviço (campo não digitado pelo solicitante). */
-export const assuntoDoServico = (classeSlug, servicoSlug) =>
-  getServico(classeSlug, servicoSlug)?.label || '';
+/**
+ * Assunto do chamado. Em regra é o título do serviço (nunca digitado). Serviço
+ * que juntou dois pedidos num formulário só — Mobilização — declara
+ * `assuntoPorCampo`, e aí o assunto vem da opção escolhida no seletor, para a
+ * fila continuar distinguindo "Nova mobilização" de "Movimentação".
+ */
+export const assuntoDoServico = (classeSlug, servicoSlug, valores = {}) => {
+  const srv = getServico(classeSlug, servicoSlug);
+  if (!srv) return '';
+  const doCampo = srv.assuntoPorCampo ? valores[srv.assuntoPorCampo] : '';
+  return doCampo || srv.label;
+};
 
 /** Lista achatada (classe + serviço) para buscas e telas de listagem. */
 export const TODOS_SERVICOS = CLASSES_ADM.flatMap((c) =>

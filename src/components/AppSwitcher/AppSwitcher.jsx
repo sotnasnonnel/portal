@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Home, Users, BarChart3, Clock, CreditCard, Headset, ChevronDown } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
-import { ADM_EM_BREVE } from "../../config/administrativo";
+import { podeAcessarAdm } from "../../config/administrativo";
 import "./AppSwitcher.css";
 
 // Seletor de app compartilhado pelas sidebars do portal.
@@ -33,8 +33,8 @@ export default function AppSwitcher({ currentKey, onNavigate }) {
       show: !!modules?.financeiro || !!modules?.reembolso,
     },
     // Administrativo é aberto a todos os logados, como o Controle de Horas —
-    // mas some daqui enquanto o módulo estiver em construção (ADM_EM_BREVE).
-    { key: "administrativo", label: "Administrativo", to: "/administrativo/novo", Icon: Headset, show: !ADM_EM_BREVE },
+    // mas enquanto está em construção só aparece para quem está testando.
+    { key: "administrativo", label: "Administrativo", to: "/administrativo/novo", Icon: Headset, show: podeAcessarAdm(user) },
     { key: "home", label: "Portal (início)", to: "/home", Icon: Home, show: true },
   ].filter((a) => a.show);
 
