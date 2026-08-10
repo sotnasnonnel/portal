@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import logoCal from '../../assets/logo-cal.png';
 import AppSwitcher from '../AppSwitcher/AppSwitcher';
+import AvatarUsuario from '../UI/AvatarUsuario';
 import { isHorasExtrasDp } from '../../config/horasExtras';
 import './Sidebar.css';
 
@@ -295,7 +296,7 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
 
         <div className="sidebar-footer">
           <div className="sidebar-footer-user">
-            <div className="sidebar-avatar">{initials}</div>
+            <AvatarUsuario className="sidebar-avatar" iniciais={initials} />
             <div className="sidebar-user-info">
               <div className="name">{getDisplayName(user.nome)}</div>
               <div className="role">{perfilLabel[user.perfil]}</div>

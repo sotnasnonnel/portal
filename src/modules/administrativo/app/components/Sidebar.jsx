@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Headset, LogOut } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import AppSwitcher from '../../../../components/AppSwitcher/AppSwitcher';
+import AvatarUsuario from '../../../../components/UI/AvatarUsuario';
 import { navSections } from './nav';
 
 function iniciais(nome, email) {
@@ -79,7 +80,7 @@ export default function Sidebar({ aberto = false, onFechar }) {
         </nav>
 
         <div className="admSb-footer">
-          <div className="admSb-avatar">{iniciais(nome, email)}</div>
+          <AvatarUsuario className="admSb-avatar" iniciais={iniciais(nome, email)} />
           <div className="admSb-userinfo">
             <strong title={nome || email}>{nome || 'Usuário'}</strong>
             <span>Administrativo</span>

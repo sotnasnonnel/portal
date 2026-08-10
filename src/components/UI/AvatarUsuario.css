@@ -1,0 +1,9 @@
+/* A foto cobre o círculo do avatar; o visual (tamanho, cor, borda) continua
+   vindo da classe de cada módulo — por isso o raio é herdado. */
+.avatar-foto {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+  display: block;
+}

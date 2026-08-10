@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { isSuperAdmin } from '../../config/superAdmin';
 import { podeAcessarAdm } from '../../config/administrativo';
 import SolucoesModal from './SolucoesModal';
+import AvatarUsuario from '../../components/UI/AvatarUsuario';
 import './Home.css';
 
 const DP_HOME = { admin: '/admin/listagem', gestor: '/gestor', usuario: '/usuario', rh: '/gestor/solicitacoes/acompanhar' };
@@ -99,7 +100,7 @@ export default function Home() {
           <span className="home-logo-brand" role="img" aria-label="PHD Engenharia" />
         </div>
         <div className="home-user">
-          <span className="home-avatar">{iniciais(user?.nome)}</span>
+          <AvatarUsuario className="home-avatar" iniciais={iniciais(user?.nome)} title={user?.nome} />
           <button type="button" className="home-logout" onClick={logout}>
             <LogOut size={16} />
             Sair

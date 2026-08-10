@@ -5,6 +5,7 @@ import { clearSupabaseCache } from "@/lib/supabaseCache";
 import { clearSolicIdentity } from "@/lib/identity";
 import LogoSolicitacoes from "./LogoSolicitacoes";
 import AppSwitcher from "../../../../components/AppSwitcher/AppSwitcher";
+import AvatarUsuario from "../../../../components/UI/AvatarUsuario";
 import styles from "./Sidebar.module.css";
 
 type NavItem = { label: string; href: string; icon: React.ReactNode };
@@ -121,9 +122,11 @@ export function Sidebar({
         <div className={styles.spacer} />
 
         <div className={styles.footer}>
-          <div className={styles.avatar} aria-hidden="true">
-            {initialsFrom(userName, userEmail)}
-          </div>
+          <AvatarUsuario
+            className={styles.avatar}
+            iniciais={initialsFrom(userName, userEmail)}
+            aria-hidden="true"
+          />
           <div className={styles.userInfo}>
             <strong title={userName || userEmail || ""}>{userName || "Usuário"}</strong>
             <small>{isAdmin ? "Administrador" : "Usuário"}</small>
