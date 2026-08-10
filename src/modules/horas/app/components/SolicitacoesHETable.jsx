@@ -6,7 +6,7 @@ import {
   statusClasse,
   DESTINO_LABEL,
   PERIODO_LABEL,
-} from '../../lib/horasExtras';
+} from '../../../../config/horasExtras';
 
 // Tabela de solicitações de hora extra, reutilizada em Minhas / Aprovações /
 // Painel DP. As linhas vêm da RPC horas_extras_listar (nomes já resolvidos).

@@ -15,17 +15,25 @@ const AuthContext = createContext(null);
 //
 // A coluna colaboradores.horas_role funciona como ELEVAÇÃO só-do-Horas: permite
 // tornar alguém gestor/coordenador APENAS neste módulo (ex.: administrar os
-// projetos da equipe) sem promover o perfil e, com isso, sem abrir a Gestão de
-// Pessoas. O papel efetivo é o MAIOR entre o derivado do perfil e o override.
+// projetos da equipe) — ou 'admin', que é o "vê tudo" do módulo (todas as
+// equipes, todas as áreas) — sem promover o perfil e, com isso, sem abrir a
+// Gestão de Pessoas. O papel efetivo é o MAIOR entre o derivado do perfil e o
+// override.
 // Espelha app_private.my_horas_role() no banco.
-const HORAS_RANK = { usuario: 1, coordenador: 2, gestor: 3 };
+// horas_role='admin' (o "vê tudo" do módulo) entra aqui como 'gestor': menus e
+// telas são os mesmos: quem separa o escopo é a RLS / isHorasAdmin.
+const HORAS_RANK = { usuario: 1, coordenador: 2, gestor: 3, admin: 3 };
 const horasRoleFromPerfil = (perfil, horasRole) => {
   const doPerfil = perfil === 'admin' || perfil === 'gestor'
     ? 'gestor'
     : perfil === 'coordenador'
       ? 'coordenador'
       : 'usuario';
-  const override = horasRole === 'gestor' || horasRole === 'coordenador' ? horasRole : 'usuario';
+  const override = horasRole === 'admin'
+    ? 'gestor'
+    : horasRole === 'gestor' || horasRole === 'coordenador'
+      ? horasRole
+      : 'usuario';
   return HORAS_RANK[override] > HORAS_RANK[doPerfil] ? override : doPerfil;
 };
 

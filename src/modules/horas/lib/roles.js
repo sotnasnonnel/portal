@@ -1,5 +1,3 @@
-import { isSuperAdmin } from '../../../config/superAdmin.js';
-
 // Papéis do Controle de Horas — DERIVADOS do perfil da Gestão de Pessoas
 // (colaboradores.perfil), com a coluna horas_role como ELEVAÇÃO só-do-Horas
 // (torna alguém gestor/coordenador apenas aqui, sem abrir a Gestão de Pessoas —
@@ -10,6 +8,13 @@ import { isSuperAdmin } from '../../../config/superAdmin.js';
 //                  empresa toda. (perfil admin também entra aqui.)
 // A visibilidade real (o próprio + a subárvore via superior_id) é garantida
 // pela RLS do banco; aqui os papéis só decidem menus, telas e filtros.
+//
+// horas_role tem ainda um quarto valor, 'admin' (ver isHorasAdmin no fim): é o
+// "vê tudo" do módulo. Não entra em ROLES porque, para menus e telas, ele se
+// comporta como 'gestor' — o que muda é o ESCOPO, decidido pela RLS.
+// Extensão explícita: este arquivo também roda no node:test (roles.test.js).
+import { isSuperAdmin } from '../../../config/superAdmin.js';
+
 export const ROLES = ['usuario', 'coordenador', 'gestor'];
 
 export const ROLE_LABEL = {
@@ -23,20 +28,17 @@ export const isCoordenador = (role) => role === 'coordenador';
 // Quem enxerga/administra a equipe (subárvore): gestor e coordenador.
 export const isGestao = (role) => role === 'gestor' || role === 'coordenador';
 
+// "Admin do módulo": enxerga e administra o Horas INTEIRO — todas as pessoas,
+// todas as áreas, todos os projetos — em vez de só a própria subárvore. São o
+// admin do portal, o super-admin e quem tem horas_role='admin' (a elevação
+// só-daqui, que não abre a Gestão de Pessoas). Recebe o `user`, não o papel,
+// porque o papel de UI dos três é 'gestor'. Espelha app_private.is_horas_admin().
+export const isHorasAdmin = (user) =>
+  user?.perfil === 'admin' || user?.horasRole === 'admin' || isSuperAdmin(user);
+
 // Todos apontam — o antigo papel supervisor "diretoria" (que não apontava)
 // deixou de existir.
 export const podeApontar = () => true;
-
-// DP/Admin das HORAS EXTRAS: trata o destino da hora, cancela, marca compensado,
-// libera exceções de prazo e lê a auditoria. Espelha
-// app_private.is_horas_extras_dp() no banco — quem protege de verdade é a RLS.
-// `rh` é o perfil efetivo de quem tem rh_dp sem ser gestor (ver AuthContext).
-export function isHorasExtrasDp(user) {
-  if (!user) return false;
-  return (
-    user.rhDp === true || user.perfil === 'rh' || user.perfil === 'admin' || isSuperAdmin(user)
-  );
-}
 
 // Escopo do dashboard/registros: usuário vê só o seu; a gestão vê a equipe
 // (a subárvore — a RLS já limita o que volta do banco).

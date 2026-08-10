@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Clock, LogOut } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import AppSwitcher from '../../../../components/AppSwitcher/AppSwitcher';
-import { ROLE_LABEL, isHorasExtrasDp } from '../../lib/roles';
+import { ROLE_LABEL } from '../../lib/roles';
 import { navSections } from './nav';
 
 function iniciais(nome, email) {
@@ -63,7 +63,7 @@ export default function Sidebar({ aberto = false, onFechar }) {
 
         <nav className="horasSb-nav">
           <AppSwitcher currentKey="horas" onNavigate={onFechar} />
-          {navSections(role, { dp: isHorasExtrasDp(user) }).map((sec) => (
+          {navSections(role).map((sec) => (
             <div key={sec.label}>
               <div className="horasSb-seclabel">{sec.label}</div>
               {sec.items.map((item) => (

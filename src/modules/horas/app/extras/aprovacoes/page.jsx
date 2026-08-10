@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Check, X } from 'lucide-react';
 import { useAuth } from '../../../../../contexts/AuthContext';
-import { fetchSolicitacoes, aprovar, reprovar } from '../../../lib/dataHorasExtras';
-import { fmtMin, podeDecidir } from '../../../lib/horasExtras';
+import { fetchSolicitacoes, aprovar, reprovar } from '../../../../../services/horasExtras';
+import { fmtMin, podeDecidir } from '../../../../../config/horasExtras';
 import { notificarHoraExtra } from '../../../../../services/notificarHoraExtra';
 import SolicitacoesHETable from '../../components/SolicitacoesHETable';
 import DestinoHEModal from '../../components/DestinoHEModal';

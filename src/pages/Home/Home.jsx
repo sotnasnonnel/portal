@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, BarChart3, Clock, CreditCard, ShieldCheck, LogOut, ArrowRight, Lock, Blocks, ChevronDown, ExternalLink } from 'lucide-react';
+import { Users, BarChart3, Clock, CreditCard, Headset, ShieldCheck, LogOut, ArrowRight, Lock, Hourglass, Blocks } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { isSuperAdmin } from '../../config/superAdmin';
-import { SOLUCOES_INTEGRADAS } from '../../config/solucoesIntegradas';
+import { podeAcessarAdm } from '../../config/administrativo';
+import SolucoesModal from './SolucoesModal';
 import './Home.css';
 
 const DP_HOME = { admin: '/admin/listagem', gestor: '/gestor', usuario: '/usuario', rh: '/gestor/solicitacoes/acompanhar' };
@@ -16,17 +17,18 @@ function iniciais(nome) {
   return (primeira + ultima).toUpperCase();
 }
 
+// Primeiro + último nome ("Lennon Santos"), na mesma lógica das iniciais. Os
+// nomes do meio ficam de fora e quem só tem um nome não aparece repetido.
+function nomeCurto(nome) {
+  const partes = (nome || '').trim().split(/\s+/).filter(Boolean);
+  if (!partes.length) return '';
+  return partes.length === 1 ? partes[0] : `${partes[0]} ${partes[partes.length - 1]}`;
+}
+
 export default function Home() {
   const { user, modules, logout } = useAuth();
-  const primeiroNome = user?.nome?.split(' ')[0];
+  const saudacao = nomeCurto(user?.nome);
   const [solucoesAbertas, setSolucoesAbertas] = useState(false);
-  const painelSolucoesRef = useRef(null);
-
-  // Ao expandir, traz o painel para a área visível (o card pode estar no fim da tela).
-  useEffect(() => {
-    if (!solucoesAbertas) return;
-    painelSolucoesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }, [solucoesAbertas]);
 
   const cards = [
     {
@@ -58,6 +60,18 @@ export default function Home() {
       desc: 'Apontamento de horas por projeto e atividade',
     },
     {
+      // Módulo aberto a todos, como o Controle de Horas — mas ainda não lançado:
+      // fica visível e travado, exceto para quem está testando
+      // (ver ADM_LIBERADOS em config/administrativo.js).
+      to: '/administrativo/novo',
+      icon: Headset,
+      tone: 'terracotta',
+      title: 'Administrativo',
+      desc: 'Chamados de frota, viagem, compras e manutenção',
+      locked: !podeAcessarAdm(user),
+      emBreve: !podeAcessarAdm(user),
+    },
+    {
       // Reembolsos deixou de ser card próprio: virou um grupo na sidebar do
       // Financeiro. Quem tem só o Reembolso entra por aqui — sem isto, ficaria
       // sem nenhuma porta de acesso.
@@ -86,7 +100,6 @@ export default function Home() {
         </div>
         <div className="home-user">
           <span className="home-avatar">{iniciais(user?.nome)}</span>
-          <span className="home-user-name">{primeiroNome}</span>
           <button type="button" className="home-logout" onClick={logout}>
             <LogOut size={16} />
             Sair
@@ -95,25 +108,33 @@ export default function Home() {
       </header>
 
       <main className="home-main">
-        <h1>Olá, {primeiroNome}! 🚀</h1>
+        <h1>{saudacao ? `Olá, ${saudacao}!` : 'Olá!'} 🚀</h1>
         <p className="home-sub">O que você precisa fazer hoje?</p>
 
         <div className="home-cards">
           {cards.map((c) => {
             const Icon = c.icon;
             if (c.locked) {
+              // Dois motivos de travar levam ao mesmo visual, mas dizem coisas
+              // diferentes: "Em breve" é o módulo que ainda não abriu para
+              // ninguém; "Sem acesso" é permissão que falta a esta pessoa.
+              const Trava = c.emBreve ? Hourglass : Lock;
+              const motivo = c.emBreve ? 'Em breve' : 'Sem acesso';
+              const dica = c.emBreve
+                ? 'Este app ainda está em construção'
+                : 'Você não tem acesso a este app';
               return (
                 <div key={c.title} className="home-card home-card-locked" aria-disabled="true">
                   <span className={`home-card-icon tone-${c.tone}`}>
                     <Icon size={26} />
                   </span>
-                  <span className="home-card-lock" title="Você não tem acesso a este app">
-                    <Lock size={15} />
+                  <span className="home-card-lock" title={dica}>
+                    <Trava size={15} />
                   </span>
                   <h2>{c.title}</h2>
                   <p>{c.desc}</p>
                   <span className="home-card-cta home-card-cta-locked">
-                    <Lock size={14} /> Sem acesso
+                    <Trava size={14} /> {motivo}
                   </span>
                 </div>
               );
@@ -132,15 +153,14 @@ export default function Home() {
             );
           })}
 
-          {/* Card expansível: atalhos para as ferramentas externas da empresa.
-              A lista vem de src/config/solucoesIntegradas.js. */}
-          <div className={`home-card home-card-solucoes${solucoesAbertas ? ' is-open' : ''}`}>
+          {/* Atalhos para as ferramentas externas da empresa: o card não expande,
+              abre o popup SolucoesModal (lista em src/config/solucoesIntegradas.js). */}
+          <div className="home-card home-card-solucoes">
             <button
               type="button"
               className="home-solucoes-toggle"
-              onClick={() => setSolucoesAbertas((v) => !v)}
-              aria-expanded={solucoesAbertas}
-              aria-controls="painel-solucoes"
+              onClick={() => setSolucoesAbertas(true)}
+              aria-haspopup="dialog"
             >
               <span className="home-card-icon tone-terracotta">
                 <Blocks size={26} />
@@ -148,53 +168,16 @@ export default function Home() {
               <h2>Soluções Integradas</h2>
               <p>Acesso rápido às ferramentas usadas na empresa</p>
               <span className="home-card-cta">
-                {solucoesAbertas ? 'Recolher' : 'Ver soluções'}
-                <ChevronDown size={15} className="home-solucoes-chevron" />
+                Ver atalhos <ArrowRight size={15} />
               </span>
             </button>
           </div>
-
-          {/* A lista abre como painel de largura total abaixo da grade: se ficasse
-              dentro do card, os cards vizinhos esticariam junto (align-items: stretch). */}
-          {solucoesAbertas && (
-            <div className="home-solucoes-painel" id="painel-solucoes" ref={painelSolucoesRef}>
-              <ul className="home-solucoes-lista">
-                {SOLUCOES_INTEGRADAS.map((s) => {
-                  const SIcon = s.icon;
-                  if (!s.url) {
-                    return (
-                      <li key={s.nome}>
-                        <span className="home-solucao home-solucao-breve" aria-disabled="true">
-                          <SIcon size={18} />
-                          <span className="home-solucao-txt">
-                            <strong>{s.nome}</strong>
-                            <small>{s.desc}</small>
-                          </span>
-                          <em>Em breve</em>
-                        </span>
-                      </li>
-                    );
-                  }
-                  return (
-                    <li key={s.nome}>
-                      <a className="home-solucao" href={s.url} target="_blank" rel="noopener noreferrer">
-                        <SIcon size={18} />
-                        <span className="home-solucao-txt">
-                          <strong>{s.nome}</strong>
-                          <small>{s.desc}</small>
-                        </span>
-                        <ExternalLink size={15} />
-                      </a>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          )}
         </div>
       </main>
 
       <footer className="home-footer">PHD Engenharia</footer>
+
+      {solucoesAbertas && <SolucoesModal onClose={() => setSolucoesAbertas(false)} />}
     </div>
   );
 }

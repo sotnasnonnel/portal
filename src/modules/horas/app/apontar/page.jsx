@@ -4,7 +4,6 @@ import { Play, Square, Plus } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import {
   fetchProjetosVisiveis,
-  fetchAtividades,
   fetchGerencias,
   fetchApontamentos,
   createApontamento,
@@ -16,7 +15,9 @@ import {
 import { fmtData, fmtDur, startOfDay } from '../../lib/format';
 import { podeApontar } from '../../lib/roles';
 import { lookupProjetos } from '../../lib/lookups';
+import { SELECAO_VAZIA, selecaoValida } from '../../lib/catalogoTarefas';
 import ApontamentosTable from '../components/ApontamentosTable';
+import CamposTarefa from '../components/CamposTarefa';
 import ConfirmModal from '../components/ConfirmModal';
 import ManualModal from '../components/ManualModal';
 import SearchableSelect from '../components/SearchableSelect';
@@ -28,7 +29,6 @@ export default function ApontarPage() {
   const gerenciaId = user?.horasGerenciaId || null;
 
   const [projetos, setProjetos] = useState([]);
-  const [atividades, setAtividades] = useState([]);
   const [gerenciaNome, setGerenciaNome] = useState('');
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState('');
@@ -39,7 +39,15 @@ export default function ApontarPage() {
   const [showManual, setShowManual] = useState(false);
   const [aExcluir, setAExcluir] = useState(null);
 
-  const [form, setForm] = useState({ projetoId: '', ativ: [], descricao: '' });
+  // Projeto + os 4 campos do catálogo fixo (sigla/tarefa/etiqueta/tarefa2).
+  const [form, setForm] = useState({ projetoId: '', ...SELECAO_VAZIA, descricao: '' });
+
+  const tarefaSel = {
+    sigla: form.sigla,
+    tarefa: form.tarefa,
+    etiqueta: form.etiqueta,
+    tarefa2: form.tarefa2,
+  };
 
   const proj = useMemo(() => lookupProjetos(projetos), [projetos]);
 
@@ -67,26 +75,18 @@ export default function ApontarPage() {
       setLoading(true);
       setErro('');
       try {
-        const [ps, ats, gers, timer] = await Promise.all([
+        const [ps, gers, timer] = await Promise.all([
           fetchProjetosVisiveis(),
-          fetchAtividades(gerenciaId),
           fetchGerencias(),
           fetchTimer(colaboradorId),
         ]);
         if (cancel) return;
         setProjetos(ps);
-        setAtividades(ats);
         setGerenciaNome(gers.find((g) => g.id === gerenciaId)?.nome || '');
         setRunning(timer);
-        // Defaults: primeiro projeto e o primeiro valor de cada atividade.
-        // `ativ` é indexado pela ORDEM da atividade (0..2), com '' onde ela
-        // ainda não tem opções — assim Ativ1/2/3 não trocam de significado
-        // quando o gerente configura uma delas mais tarde.
-        setForm((f) => ({
-          projetoId: f.projetoId || ps[0]?.id || '',
-          ativ: ats.map((a) => f.ativ[a.ordem] || a.valores[0] || ''),
-          descricao: f.descricao,
-        }));
+        // Único default é o projeto: sigla/tarefa/etiqueta/tarefa 2 são escolha
+        // consciente de quem aponta, não têm um "primeiro" que faça sentido.
+        setForm((f) => ({ ...f, projetoId: f.projetoId || ps[0]?.id || '' }));
         await carregarHoje();
       } catch (e) {
         if (!cancel) setErro(e?.message || 'Falha ao carregar a configuração da gerência.');
@@ -116,7 +116,10 @@ export default function ApontarPage() {
     if (running) {
       setForm({
         projetoId: running.projetoId || '',
-        ativ: running.ativ || [],
+        sigla: running.sigla || '',
+        tarefa: running.tarefa || '',
+        etiqueta: running.etiqueta || '',
+        tarefa2: running.tarefa2 || '',
         descricao: running.descricao || '',
       });
     }
@@ -138,7 +141,7 @@ export default function ApontarPage() {
             colaboradorId,
             gerenciaId: gerenciaDoProjeto(run.projetoId),
             projetoId: run.projetoId,
-            ativ: run.ativ,
+            tarefaSel: run,
             descricao: run.descricao,
             inicioTs: run.inicio,
             fimTs: Date.now(),
@@ -148,7 +151,7 @@ export default function ApontarPage() {
       } else {
         const run = await startTimer(colaboradorId, {
           projetoId: form.projetoId,
-          ativ: form.ativ,
+          tarefaSel,
           descricao: form.descricao,
         });
         setRunning(run);
@@ -203,22 +206,19 @@ export default function ApontarPage() {
     );
   }
 
-  const setAtiv = (i, v) => setForm((f) => ({ ...f, ativ: f.ativ.map((x, j) => (j === i ? v : x)) }));
-
-  // Uma atividade controlada sem opções cadastradas não aparece: até o gestor
-  // configurá-la, a tela é só Projeto + Descrição.
-  const ativVisiveis = atividades.filter((a) => a.valores.length);
-
   // Sem projetos na área ainda: a tela aparece normal, mas não dá para apontar
-  // até o gestor cadastrar os projetos/atividades em "Configuração".
+  // até o gestor cadastrar os projetos em "Configuração".
   const semProjetos = !projetos.length;
-  const podeIniciar = !!form.projetoId && !semProjetos;
+  // Os 4 campos do catálogo são obrigatórios: o apontamento só faz sentido para
+  // relatório se souber sigla, tarefa, etiqueta e tarefa 2.
+  const podeIniciar = !!form.projetoId && !semProjetos && selecaoValida(tarefaSel);
 
   return (
     <>
       <h1>Apontar Horas</h1>
       <p className="horas-sub">
-        Área: <b>{gerenciaNome}</b> — selecione projeto e atividades e inicie o cronômetro.
+        Área: <b>{gerenciaNome}</b> — selecione projeto, sigla, tarefa, etiqueta e tarefa 2 e inicie
+        o cronômetro.
       </p>
 
       {erro ? <div className="horas-hint">⚠️ {erro}</div> : null}
@@ -247,18 +247,11 @@ export default function ApontarPage() {
               }))}
             />
           </div>
-          {ativVisiveis.map((a) => (
-            <div className="horas-fld" key={a.id}>
-              <label>{a.label}</label>
-              <SearchableSelect
-                value={form.ativ[a.ordem] || ''}
-                disabled={!!running}
-                placeholder={`Selecione ${a.label.toLowerCase()}…`}
-                onChange={(v) => setAtiv(a.ordem, v)}
-                options={a.valores.map((v) => ({ value: v, label: v }))}
-              />
-            </div>
-          ))}
+          <CamposTarefa
+            valor={tarefaSel}
+            disabled={!!running}
+            onChange={(sel) => setForm((f) => ({ ...f, ...sel }))}
+          />
           <div className="horas-fld" style={{ gridColumn: '1 / -1' }}>
             <label>Descrição (opcional)</label>
             <input
@@ -293,6 +286,14 @@ export default function ApontarPage() {
           </button>
         </div>
 
+        {/* Botão desabilitado sem dizer por quê é o tipo de coisa que gera
+            chamado: só falta a seleção do catálogo, e o aviso some sozinho. */}
+        {!running && !semProjetos && !!form.projetoId && !selecaoValida(tarefaSel) ? (
+          <div className="horas-hint" style={{ marginTop: 12 }}>
+            Preencha Sigla, Tarefa, Etiqueta e Tarefa 2 para iniciar o cronômetro.
+          </div>
+        ) : null}
+
         {running ? (
           <div className="horas-live">
             <span className="horas-live-dot" />
@@ -309,12 +310,7 @@ export default function ApontarPage() {
       </div>
 
       {showManual ? (
-        <ManualModal
-          projetos={projetos}
-          atividades={ativVisiveis}
-          onClose={() => setShowManual(false)}
-          onSave={salvarManual}
-        />
+        <ManualModal projetos={projetos} onClose={() => setShowManual(false)} onSave={salvarManual} />
       ) : null}
 
       <ConfirmModal

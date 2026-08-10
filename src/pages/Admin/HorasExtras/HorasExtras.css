@@ -1,0 +1,104 @@
+/* ==========================================================================
+   Horas Extras no módulo Gestão de Pessoas (painel do DP, exceções, auditoria).
+   Só o que o design system do DP (components/UI/Components.css + Admin.css)
+   ainda não cobre. As telas do colaborador/gestor ficam no Controle de Horas e
+   usam o CSS de lá.
+   ========================================================================== */
+
+/* Linha secundária dentro da célula (matrícula, equipe, período previsto). */
+.he-sub {
+  color: var(--color-text-muted, #64748b);
+  font-size: 0.72rem;
+  margin-top: 2px;
+}
+
+.he-num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.he-toolbar {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+/* Os campos de data na toolbar não devem esticar como um form normal. */
+.he-campo-data {
+  margin-bottom: 0;
+  max-width: 160px;
+}
+
+/* Prazo de compensação do banco de horas (180 dias da hora extra). */
+.he-prazo {
+  display: inline-block;
+  font-size: 0.74rem;
+  font-weight: 600;
+  white-space: nowrap;
+  padding: 3px 8px;
+  border-radius: var(--radius-full, 9999px);
+}
+.he-prazo--ok {
+  background: #ecfdf5;
+  color: #065f46;
+}
+.he-prazo--vencendo {
+  background: #fef3c7;
+  color: #92400e;
+}
+.he-prazo--vencido {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Avisos das telas e dos modais. */
+.he-alerta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md, 8px);
+  font-size: 0.84rem;
+  font-weight: 500;
+  margin-bottom: var(--space-md, 12px);
+  border-left: 3px solid transparent;
+}
+.he-alerta--erro {
+  background: #fef2f2;
+  border-left-color: #ef4444;
+  color: #991b1b;
+}
+.he-alerta--ok {
+  background: #ecfdf5;
+  border-left-color: #059669;
+  color: #065f46;
+}
+.he-alerta--info {
+  background: #eff6ff;
+  border-left-color: #2563eb;
+  color: #1e3a8a;
+}
+
+.he-modal-sub {
+  color: var(--color-text-muted, #64748b);
+  font-size: 0.84rem;
+  margin: 0 0 var(--space-md, 12px);
+}
+
+/* Grade dos campos da nova exceção de prazo. */
+.he-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-md, 12px);
+}
+.he-form-grid .he-col-full {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 700px) {
+  .he-campo-data {
+    max-width: none;
+    flex: 1 1 140px;
+  }
+}

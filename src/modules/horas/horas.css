@@ -417,6 +417,14 @@
   min-height: 48px;
   font-size: 0.95rem;
 }
+/* A Tarefa é o campo mais longo do catálogo (nomes de até ~80 caracteres):
+   ocupa duas colunas para não ficar cortada. Só quando cabem 2+ colunas — no
+   celular o grid tem uma só e o span criaria uma coluna fantasma. */
+@media (min-width: 761px) {
+  .horas-timer-grid .horas-fld-largo {
+    grid-column: span 2;
+  }
+}
 
 /* ---- combobox pesquisável (SearchableSelect) ---- */
 .horas-ss {
@@ -690,7 +698,7 @@
 /* ---- horas extras: status da solicitação ----
    O destino faz parte da identidade do status: uma aprovada para medição e uma
    para banco de horas são coisas diferentes na folha, então têm cores distintas
-   (ver statusClasse em lib/horasExtras.js). */
+   (ver statusClasse em src/config/horasExtras.js). */
 .horas-he-badge {
   display: inline-flex;
   align-items: center;

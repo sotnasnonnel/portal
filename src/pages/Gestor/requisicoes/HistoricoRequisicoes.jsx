@@ -17,21 +17,30 @@ const TOM_BADGE = {
   pendente: { label: 'Em andamento', badge: 'pendente' },
   concluida: { label: 'Concluída', badge: 'aprovada' },
   reprovada: { label: 'Reprovada', badge: 'inativo' },
-  devolvida: { label: 'Devolvida p/ ajustes', badge: 'pendente' },
+  cancelada: { label: 'Cancelada', badge: 'inativo' },
 };
 
 const SELECT = `
   id, numero, tipo, status, colaborador_id, justificativa, salario_proposto, funcao_proposta,
-  devolucao_motivo, reenvios, created_at,
+  reenvios, created_at,
   colaborador:colaborador_id ( nome ),
   etapas:solicitacoes_rh_etapas ( id, ordem, aprovador_id, papel, tipo_etapa, status, justificativa, decidido_em )
 `;
+
+// Motivo da reprovação = justificativa da etapa reprovada (a de maior ordem).
+const motivoReprovacao = (etapas) => (etapas || [])
+  .filter((e) => e.status === 'reprovada')
+  .sort((a, b) => (b.ordem || 0) - (a.ordem || 0))[0]?.justificativa || null;
+
+const etapaReprovadaDe = (etapas) => (etapas || [])
+  .filter((e) => e.status === 'reprovada')
+  .sort((a, b) => (b.ordem || 0) - (a.ordem || 0))[0] || null;
 
 /** Histórico das requisições de um tipo, abertas pelo próprio gestor. */
 export default function HistoricoRequisicoes({ req }) {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { reenviarRequisicao } = useRequisicaoForm();
+  const { responderRequisicao } = useRequisicaoForm();
   const [gerando, setGerando] = useState(null);
   const [lista, setLista] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -106,7 +115,8 @@ export default function HistoricoRequisicoes({ req }) {
           {lista.map((s) => {
             const resumo = resumoAndamento(s, s.etapas);
             const tomB = TOM_BADGE[resumo.tom] || TOM_BADGE.pendente;
-            const podeReenviar = s.status === 'devolvida' && !!getReenvioConfig(s.tipo);
+            const podeResponder = s.status === 'reprovada' && !!getReenvioConfig(s.tipo);
+            const motivo = s.status === 'reprovada' ? motivoReprovacao(s.etapas) : null;
             return (
               <div key={s.id} className="sol-card">
                 <div className="sol-card-top">
@@ -123,9 +133,9 @@ export default function HistoricoRequisicoes({ req }) {
                 {s.justificativa && <div className="sol-card-just">{s.justificativa}</div>}
 
                 <div className={`sol-card-resumo tom-${resumo.tom}`}>{resumo.texto}</div>
-                {s.status === 'devolvida' && s.devolucao_motivo && (
-                  <div className="sol-card-just" style={{ borderLeftColor: 'var(--color-warning)' }}>
-                    <strong>Ajuste pedido:</strong> {s.devolucao_motivo}
+                {motivo && (
+                  <div className="sol-card-just" style={{ borderLeftColor: 'var(--color-danger)' }}>
+                    <strong>Motivo da reprovação:</strong> {motivo}
                   </div>
                 )}
 
@@ -137,9 +147,9 @@ export default function HistoricoRequisicoes({ req }) {
                       <FileText size={14} /> Ver respostas
                     </button>
                   )}
-                  {podeReenviar && (
-                    <button className="btn btn-warning btn-sm" onClick={() => setEditando(s)}>
-                      <RotateCcw size={14} /> Editar e reenviar
+                  {podeResponder && (
+                    <button className="btn btn-primary btn-sm" onClick={() => setEditando(s)}>
+                      <RotateCcw size={14} /> Responder
                     </button>
                   )}
                   {s.tipo === 'mapeamento' && s.status === 'concluida' && (
@@ -160,8 +170,9 @@ export default function HistoricoRequisicoes({ req }) {
         <EditarReenviarModal
           sol={editando}
           funcoes={funcoes}
-          onReenviar={reenviarRequisicao}
-          onClose={(reenviou) => { setEditando(null); if (reenviou) carregar(); }}
+          etapaReprovada={etapaReprovadaDe(editando.etapas)}
+          onResponder={responderRequisicao}
+          onClose={(respondeu) => { setEditando(null); if (respondeu) carregar(); }}
         />
       )}
     </div>

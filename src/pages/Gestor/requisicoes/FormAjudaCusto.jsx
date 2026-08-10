@@ -8,6 +8,7 @@ import {
   validarAjudaCusto, montarPayloadAjudaCusto,
 } from '../../../config/ajudaCusto';
 import { formatarData } from '../../../utils/formatters';
+import { enviarArquivo } from './uploadAnexo';
 import CurrencyInput from '../../../components/CurrencyInput';
 import '../../../components/UI/Components.css';
 import '../Gestor.css';
@@ -16,10 +17,6 @@ import './Requisicoes.css';
 const BUCKET = 'ajuda-custo-anexos';
 const ANEXO_MAX_MB = 10;
 const ANEXO_ACCEPT = '.pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg';
-
-const sanitizarNome = (nome) => nome
-  .normalize('NFD').replace(/[̀-ͯ]/g, '')
-  .replace(/[^a-zA-Z0-9._-]/g, '_'); // após NFD, acentos viram combinantes e caem aqui
 
 export default function FormAjudaCusto() {
   const navigate = useNavigate();
@@ -73,9 +70,7 @@ export default function FormAjudaCusto() {
     let anexoPath = null;
     try {
       if (anexo) {
-        anexoPath = `${crypto.randomUUID()}/${sanitizarNome(anexo.name)}`;
-        const { error: eUp } = await supabase.storage.from(BUCKET).upload(anexoPath, anexo);
-        if (eUp) throw new Error(`Falha ao enviar o anexo: ${eUp.message}`);
+        ({ path: anexoPath } = await enviarArquivo(BUCKET, anexo));
       }
 
       const payload = montarPayloadAjudaCusto(form);
@@ -84,7 +79,14 @@ export default function FormAjudaCusto() {
           tipo: 'ajuda_custo',
           justificativa: `Ajuda de Custo: ${form.tipos.join(' + ')} — ${formatarData(form.data_inicio)} a ${formatarData(form.data_final)}`,
           tabela: 'ajudas_custo',
-          detalhe: { ...payload, anexo_path: anexoPath, anexo_nome: anexo ? anexo.name : null },
+          // Grava no array `anexos`, como o Mapeamento e a Nova Vaga. O par
+          // legado anexo_path/anexo_nome era exclusividade daqui e fazia o
+          // anexo original sumir da tela do aprovador no primeiro reenvio (o
+          // ModalRespostas prefere o array quando ele não está vazio).
+          detalhe: {
+            ...payload,
+            anexos: anexoPath ? [{ path: anexoPath, nome: anexo.name }] : [],
+          },
           colaboradorId,
         });
       } catch (err) {

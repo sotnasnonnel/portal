@@ -22,7 +22,7 @@ function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...CORS, "Content-Type": "application/json" } });
 }
 
-// Espelham src/modules/horas/lib/horasExtras.js.
+// Espelham src/config/horasExtras.js.
 const DESTINO_LABEL: Record<string, string> = {
   medicao: "Medição/Pagamento",
   banco: "Banco de Horas",

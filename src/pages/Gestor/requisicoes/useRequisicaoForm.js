@@ -200,46 +200,63 @@ export function useRequisicaoForm() {
   }, [resolverCadeia, aplicarAlcadaGC, funcaoDaEquipe, auditarAlcada, user]);
 
   /**
-   * Reenvia uma requisição DEVOLVIDA, com os ajustes do solicitante.
-   * Atualiza o detalhe (ou campos do envelope), reconstrói a cadeia do zero
-   * (a decisão 2: recomeça do 1º aprovador, pois o conteúdo mudou) e troca as
-   * etapas de forma atômica via RPC, voltando a requisição para 'pendente'.
-   *
-   * A cadeia é reconstruída pela MESMA via da criação (resolverCadeia +
-   * aplicarAlcadaGC), então se o ajuste mudou o que define a alçada (ex.: a
-   * função proposta numa Movimentação), os aprovadores certos entram/saem.
+   * O solicitante RESPONDE a uma requisição REPROVADA: aplica os ajustes e a
+   * requisição volta para a decisão de QUEM REPROVOU (não recomeça a cadeia).
+   * Reabre a etapa reprovada como 'pendente'; as anteriores seguem aprovadas e
+   * as seguintes, pendentes. O aprovador que reprovou reavalia (aprova ou
+   * reprova de novo).
    */
-  const reenviarRequisicao = useCallback(async ({
-    solicitacaoId, tipo, colaboradorId = null, funcaoAlvo = null, foraDoQuadro = false,
+  const responderRequisicao = useCallback(async ({
+    solicitacaoId, etapaReprovadaId, reenviosAtual = 0,
     detalheTabela = null, detalhe = null, envelopePatch = null,
   }) => {
-    // 1) grava os ajustes ANTES de recalcular a cadeia (a alçada pode depender deles).
+    if (!etapaReprovadaId) throw new Error('Não foi possível localizar a etapa reprovada. Atualize a página.');
+
+    // 1) grava os ajustes do solicitante.
+    // Pedimos a linha de volta (.select) e exigimos que venha: quando a RLS
+    // barra um UPDATE, o Postgres NÃO devolve erro — devolve zero linhas. Sem
+    // isso, os ajustes se perderiam em silêncio e a requisição voltaria ao
+    // aprovador com o conteúdo antigo, como se tivesse sido corrigida.
     if (detalheTabela && detalhe) {
-      const { error } = await supabase.from(detalheTabela).update(detalhe).eq('solicitacao_id', solicitacaoId);
+      const { data, error } = await supabase
+        .from(detalheTabela).update(detalhe).eq('solicitacao_id', solicitacaoId)
+        .select('solicitacao_id');
       if (error) throw error;
+      if (!data?.length) throw new Error('Não foi possível salvar os ajustes: você não tem permissão para editar esta requisição.');
     }
     if (envelopePatch) {
-      const { error } = await supabase.from('solicitacoes_rh').update(envelopePatch).eq('id', solicitacaoId);
+      const { data, error } = await supabase
+        .from('solicitacoes_rh').update(envelopePatch).eq('id', solicitacaoId)
+        .select('id');
       if (error) throw error;
+      if (!data?.length) throw new Error('Não foi possível salvar os ajustes: você não tem permissão para editar esta requisição.');
     }
 
-    // 2) reconstrói a cadeia (config + alçada §5) para o conteúdo novo.
-    const base = await resolverCadeia(tipo);
-    const { ids, nomePorId, alcada } = await aplicarAlcadaGC(base, {
-      tipo, alvoId: colaboradorId, funcaoAlvo: funcaoAlvo ?? funcaoDaEquipe(colaboradorId), foraDoQuadro,
-    });
-    const linhas = montarEtapasDeConfig(solicitacaoId, ids, user.id, nomePorId);
+    // 2) reabre a etapa de quem reprovou (guarda: só se ainda estiver 'reprovada').
+    const agora = new Date().toISOString();
+    const { data, error } = await supabase
+      .from('solicitacoes_rh_etapas')
+      .update({ status: 'pendente', justificativa: null, decidido_em: null })
+      .eq('id', etapaReprovadaId)
+      .eq('status', 'reprovada')
+      .select('id');
+    if (error) throw error;
+    if (!data || data.length === 0) throw new Error('Esta requisição já foi retomada. Atualize a página.');
 
-    // 3) troca atômica das etapas + volta para 'pendente' (RPC).
-    const { error: eRpc } = await supabase.rpc('reenviar_requisicao_rh', {
-      p_sol: solicitacaoId, p_etapas: linhas,
-    });
-    if (eRpc) throw eRpc;
+    // 3) requisição volta a 'pendente'. Mesma guarda de linhas do passo 1: aqui
+    // a etapa JÁ foi reaberta, então uma falha silenciosa deixaria a etapa
+    // pendente com o envelope ainda 'reprovada'.
+    const { data: env, error: e2 } = await supabase
+      .from('solicitacoes_rh')
+      .update({ status: 'pendente', reenvios: (reenviosAtual || 0) + 1, updated_at: agora })
+      .eq('id', solicitacaoId)
+      .select('id');
+    if (e2) throw e2;
+    if (!env?.length) throw new Error('Os ajustes foram salvos, mas a requisição não voltou para análise. Avise o DP.');
 
-    auditarAlcada(solicitacaoId, tipo, alcada);
-    notificarAprovadorSolic(solicitacaoId);
+    notificarAprovadorSolic(solicitacaoId);   // avisa quem reprovou que voltou
     window.dispatchEvent(new Event('solicitacoes_rh_atualizadas'));
-  }, [resolverCadeia, aplicarAlcadaGC, funcaoDaEquipe, auditarAlcada, user]);
+  }, []);
 
   // Cria a requisição do Formulário de Contratação (envelope + detalhe).
   // O cargo proposto (cargo_nivel) é o que define a alçada: contratar uma
@@ -256,5 +273,5 @@ export function useRequisicaoForm() {
     });
   }, [criarComDetalhe]);
 
-  return { user, equipe, loadingEquipe, fluxoOk, submitting, setSubmitting, criarComFluxo, criarComDetalhe, criarFormularioContratacao, reenviarRequisicao, refetchFluxo };
+  return { user, equipe, loadingEquipe, fluxoOk, submitting, setSubmitting, criarComFluxo, criarComDetalhe, criarFormularioContratacao, responderRequisicao, refetchFluxo };
 }

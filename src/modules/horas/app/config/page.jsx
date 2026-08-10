@@ -2,35 +2,31 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Plus, Trash2, Archive, ArchiveRestore } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { isSuperAdmin } from '../../../../config/superAdmin';
 import {
   fetchGerencias,
   fetchProjetos,
   createProjeto,
   updateProjeto,
   deleteProjeto,
-  fetchAtividades,
-  updateAtividade,
 } from '../../lib/data';
-import { isGestao } from '../../lib/roles';
+import { isGestao, isHorasAdmin } from '../../lib/roles';
 import ConfirmModal from '../components/ConfirmModal';
-import BlocoAtividade from '../components/BlocoAtividade';
 import SeletorCor from '../components/SeletorCor';
 import { CORES } from '../../lib/cores';
 
-// Configuração da ÁREA do gestor: os projetos e as 3 atividades controladas que
-// a equipe dele vê ao apontar. Cada gestor edita só a sua área; o admin/super vê
-// todas (a RLS garante isso no banco).
+// Configuração da ÁREA do gestor: os PROJETOS que a equipe dele vê ao apontar.
+// Cada gestor edita só a sua área; o admin do módulo vê todas (a RLS garante
+// isso no banco). Sigla, tarefa, etiqueta e tarefa 2 não estão aqui: viraram um
+// catálogo fixo da empresa (lib/catalogoTarefas.js), igual para todas as áreas.
 export default function ConfigPage() {
   const { user, modules } = useAuth();
   const role = modules?.horas || 'usuario';
   const minhaGerencia = user?.horasGerenciaId || null;
-  const veTudo = user?.perfil === 'admin' || isSuperAdmin(user);
+  const veTudo = isHorasAdmin(user);
 
   const [gerencias, setGerencias] = useState([]);
   const [sel, setSel] = useState(minhaGerencia || '');
   const [projetos, setProjetos] = useState([]);
-  const [atividades, setAtividades] = useState([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState('');
   const [novo, setNovo] = useState({ nome: '', cliente: '', cor: CORES[0] });
@@ -71,12 +67,7 @@ export default function ConfigPage() {
     if (!sel) return;
     setErro('');
     try {
-      const [ps, ats] = await Promise.all([
-        fetchProjetos({ gerenciaId: sel, incluirArquivados: true }),
-        fetchAtividades(sel),
-      ]);
-      setProjetos(ps);
-      setAtividades(ats);
+      setProjetos(await fetchProjetos({ gerenciaId: sel, incluirArquivados: true }));
     } catch (e) {
       setErro(e?.message || 'Falha ao carregar a configuração.');
     }
@@ -123,28 +114,6 @@ export default function ConfigPage() {
     }
   }
 
-  // --- Atividades controladas ---
-  async function salvarAtividade(a, patch) {
-    setAtividades((prev) => prev.map((x) => (x.id === a.id ? { ...x, ...patch } : x)));
-    try {
-      await updateAtividade(a.id, patch);
-    } catch (e) {
-      setErro(e?.message || 'Falha ao salvar a atividade.');
-      await carregar();
-    }
-  }
-
-  const setLabel = (a, valor) =>
-    salvarAtividade(a, { label: valor.trim() || `Atividade Controlada ${a.ordem + 1}` });
-
-  const addValor = (a, valor) => {
-    const v = valor.trim();
-    if (!v || a.valores.includes(v)) return;
-    salvarAtividade(a, { valores: [...a.valores, v] });
-  };
-
-  const delValor = (a, i) => salvarAtividade(a, { valores: a.valores.filter((_, j) => j !== i) });
-
   if (loading) {
     return (
       <>
@@ -159,8 +128,8 @@ export default function ConfigPage() {
       <>
         <h1>Configuração da Área</h1>
         <div className="horas-hint">
-          Você não administra nenhuma área. Os projetos e atividades são definidos pelo <b>gestor</b>{' '}
-          da sua equipe.
+          Você não administra nenhuma área. Os projetos são definidos pelo <b>gestor</b> da sua
+          equipe.
         </div>
       </>
     );
@@ -178,14 +147,11 @@ export default function ConfigPage() {
   return (
     <>
       <h1>Configuração da Área</h1>
-      <p className="horas-sub">
-        Defina os projetos e as 3 atividades controladas (Fase do Projeto · Disciplina · Tipo de
-        Esforço) que a sua equipe vê ao apontar.
-      </p>
+      <p className="horas-sub">Defina os projetos que a sua equipe vê ao apontar.</p>
 
       <div className="horas-hint">
-        Cada atividade controlada é uma lista de opções que o colaborador escolhe ao iniciar o
-        cronômetro. Você pode renomear o rótulo e adicionar/remover as opções.
+        Sigla, Tarefa, Etiqueta e Tarefa 2 não são configuráveis por área: vêm do catálogo único da
+        empresa e já saem filtrados uns pelos outros no apontamento.
       </div>
 
       {erro ? <div className="horas-hint">⚠️ {erro}</div> : null}
@@ -286,21 +252,6 @@ export default function ConfigPage() {
             ) : null}
           </tbody>
         </table>
-      </div>
-
-      <div className="horas-sec" style={{ marginTop: 22 }}>
-        Atividades controladas
-      </div>
-      <div className="horas-card">
-        {atividades.map((a) => (
-          <BlocoAtividade
-            key={a.id}
-            atividade={a}
-            onLabel={(v) => setLabel(a, v)}
-            onAdd={(v) => addValor(a, v)}
-            onDel={(i) => delValor(a, i)}
-          />
-        ))}
       </div>
 
       <ConfirmModal

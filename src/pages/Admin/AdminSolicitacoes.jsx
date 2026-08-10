@@ -4,7 +4,7 @@ import { supabase } from '../../services/supabase';
 import { formatarMoeda } from '../../utils/formatters';
 import {
   FileText, Check, X, CheckCheck,
-  Loader2, Filter, Trash2, Wrench, FastForward, History, ChevronDown,
+  Loader2, Filter, Trash2, Wrench, FastForward, History, ChevronDown, Ban,
 } from 'lucide-react';
 import FluxoTimeline from '../../components/Solicitacoes/FluxoTimeline';
 import {
@@ -13,6 +13,7 @@ import {
 import ModalRespostas, { DETALHE, buscarRespostas } from '../Gestor/requisicoes/ModalRespostas';
 import BotaoPdfRequisicao from '../../components/BotaoPdfRequisicao';
 import { notificarAprovadorSolic } from '../../services/notificarAprovadorSolic';
+import { notificarSolicitanteReprovacao } from '../../services/notificarSolicitanteReprovacao';
 import '../../components/UI/Components.css';
 import '../Gestor/requisicoes/Requisicoes.css';
 import './Admin.css';
@@ -20,6 +21,7 @@ const TOM_BADGE = {
   pendente: { label: 'Em andamento', badge: 'pendente' },
   concluida: { label: 'Concluída', badge: 'aprovada' },
   reprovada: { label: 'Reprovada', badge: 'inativo' },
+  cancelada: { label: 'Cancelada', badge: 'inativo' },
 };
 
 const SELECT_SOL = `
@@ -30,7 +32,7 @@ const SELECT_SOL = `
 `;
 
 export default function AdminSolicitacoes() {
-  const { markSolicVisto } = useAuth();
+  const { user, markSolicVisto } = useAuth();
   const [solicitacoes, setSolicitacoes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filtroStatus, setFiltroStatus] = useState('todos');
@@ -120,17 +122,21 @@ export default function AdminSolicitacoes() {
   const todasExpandidas = filtradas.length > 0 && filtradas.every((s) => expandido.has(s.id));
   const alternarTodas = () => setExpandido(todasExpandidas ? new Set() : new Set(filtradas.map((s) => s.id)));
 
+  // Desfechos do admin: 'aprovar', 'reprovar' (avisa o solicitante, que pode
+  // responder) e 'cancelar' (o admin, último da cadeia, encerra a requisição).
+  // Reprovar e cancelar exigem justificativa.
   const confirmarDecisao = async () => {
     if (!decisao) return;
     const { sol, modo } = decisao;
     const atual = etapaAtual(sol.etapas);
     if (!atual) return;
-    const aprovando = modo === 'aprovar';
-    const coment = comentario.trim() || null;
+    const comentTrim = comentario.trim();
+    if (modo !== 'aprovar' && !comentTrim) return; // justificativa obrigatória
+    const coment = comentTrim || null;
     const agora = new Date().toISOString();
     setAcaoId(sol.id);
     try {
-      if (aprovando) {
+      if (modo === 'aprovar') {
         const { error } = await supabase
           .from('solicitacoes_rh_etapas')
           .update({ status: 'aprovada', justificativa: coment, decidido_em: agora })
@@ -138,17 +144,44 @@ export default function AdminSolicitacoes() {
           .eq('id', atual.id);
         if (error) throw error;
         notificarAprovadorSolic(sol.id);
-      } else {
-        const { error: e1 } = await supabase
+      } else if (modo === 'reprovar') {
+        const { data, error: e1 } = await supabase
           .from('solicitacoes_rh_etapas')
           .update({ status: 'reprovada', justificativa: coment, decidido_em: agora })
-          .eq('id', atual.id);
+          .eq('id', atual.id)
+          .eq('status', 'pendente')
+          .select('id');
         if (e1) throw e1;
-        const { error: e2 } = await supabase
-          .from('solicitacoes_rh')
-          .update({ status: 'reprovada', updated_at: agora })
-          .eq('id', sol.id);
-        if (e2) throw e2;
+        if (!data || data.length === 0) { alert('Esta etapa já foi tratada. A lista será atualizada.'); }
+        else {
+          const { error: e2 } = await supabase
+            .from('solicitacoes_rh')
+            .update({ status: 'reprovada', updated_at: agora })
+            .eq('id', sol.id);
+          if (e2) throw e2;
+          notificarSolicitanteReprovacao(sol.id);   // avisa o solicitante (best-effort)
+        }
+      } else if (modo === 'cancelar') {
+        // Marca a etapa atual como cancelada (privilégio de admin, sem filtro por
+        // aprovador) e encerra a requisição com a justificativa do cancelamento.
+        const { data, error: e1 } = await supabase
+          .from('solicitacoes_rh_etapas')
+          .update({ status: 'cancelada', justificativa: coment, decidido_em: agora })
+          .eq('id', atual.id)
+          .eq('status', 'pendente')
+          .select('id');
+        if (e1) throw e1;
+        if (!data || data.length === 0) { alert('Esta etapa já foi tratada. A lista será atualizada.'); }
+        else {
+          const { error: e2 } = await supabase
+            .from('solicitacoes_rh')
+            .update({
+              status: 'cancelada', updated_at: agora,
+              cancelamento_motivo: coment, cancelamento_por: user?.id || null, cancelamento_em: agora,
+            })
+            .eq('id', sol.id);
+          if (e2) throw e2;
+        }
       }
       setDecisao(null);
       setComentario('');
@@ -156,7 +189,8 @@ export default function AdminSolicitacoes() {
       window.dispatchEvent(new Event('solicitacoes_rh_atualizadas'));
     } catch (err) {
       console.error(err);
-      alert(`Erro ao ${aprovando ? 'aprovar' : 'reprovar'}. Tente novamente.`);
+      const verbo = { aprovar: 'aprovar', reprovar: 'reprovar', cancelar: 'cancelar' }[modo];
+      alert(`Erro ao ${verbo}. Tente novamente.`);
     } finally {
       setAcaoId(null);
     }
@@ -444,6 +478,9 @@ export default function AdminSolicitacoes() {
                         <button className="btn btn-outline btn-sm" title="Forçar avanço da etapa atual" disabled={acaoId === s.id} onClick={() => forcarAvanco(s)}>
                           <FastForward size={14} /> Forçar avanço
                         </button>
+                        <button className="btn btn-danger btn-sm" title="Cancelar a requisição (encerra o fluxo)" disabled={acaoId === s.id} onClick={() => { setDecisao({ sol: s, modo: 'cancelar' }); setComentario(''); }}>
+                          <Ban size={14} /> Cancelar requisição
+                        </button>
                       </>
                     )}
                     <button className="btn btn-ghost btn-sm" title="Excluir" disabled={acaoId === s.id} onClick={() => excluir(s.id)} style={{ color: 'var(--color-danger)', marginLeft: 'auto' }}>
@@ -467,38 +504,53 @@ export default function AdminSolicitacoes() {
         onClose={() => { setVerRespostas(null); setSolRespostas(null); }}
       />
 
-      {/* Modal de decisão (aprovar / reprovar) com comentário opcional */}
+      {/* Modal de decisão: aprovar / reprovar / cancelar */}
       {decisao && (() => {
-        const aprovando = decisao.modo === 'aprovar';
+        const cfg = {
+          aprovar: {
+            titulo: 'Aprovar solicitação', btn: 'btn-success', obrig: false,
+            desc: 'A solicitação seguirá para a próxima etapa do fluxo. Você pode deixar um comentário, se quiser.',
+            label: 'Comentário (opcional)', placeholder: 'Adicione um comentário, se quiser...',
+            confirmar: <><Check size={16} /> Confirmar aprovação</>, processando: 'Aprovando...',
+          },
+          reprovar: {
+            titulo: 'Reprovar solicitação', btn: 'btn-danger', obrig: true,
+            desc: <>A solicitação será <strong>reprovada</strong>. O solicitante é avisado por e-mail e pode responder — aí ela volta para a sua decisão.</>,
+            label: 'Motivo da reprovação', placeholder: 'Explique o motivo da reprovação...',
+            confirmar: <><X size={16} /> Confirmar reprovação</>, processando: 'Reprovando...',
+          },
+          cancelar: {
+            titulo: 'Cancelar requisição', btn: 'btn-danger', obrig: true,
+            desc: <>A requisição será <strong>cancelada</strong> e o fluxo encerrado. Registre o motivo do cancelamento.</>,
+            label: 'Motivo do cancelamento', placeholder: 'Explique por que está cancelando...',
+            confirmar: <><Ban size={16} /> Confirmar cancelamento</>, processando: 'Cancelando...',
+          },
+        }[decisao.modo];
+        const faltaJustificativa = cfg.obrig && !comentario.trim();
         return (
         <div className="modal-overlay" onClick={() => setDecisao(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <span className="modal-title">{aprovando ? 'Aprovar solicitação' : 'Reprovar solicitação'}</span>
+              <span className="modal-title">{cfg.titulo}</span>
               <button className="modal-close" onClick={() => setDecisao(null)}><X size={18} /></button>
             </div>
             <div className="modal-body">
-              <p style={{ marginBottom: 'var(--space-md)', color: 'var(--color-text-secondary)', fontSize: '13px' }}>
-                {aprovando
-                  ? 'A solicitação seguirá para a próxima etapa do fluxo. Você pode deixar um comentário, se quiser.'
-                  : <>A solicitação será <strong>encerrada como Reprovada</strong> e todos da cadeia verão o comentário.</>}
-              </p>
+              <p style={{ marginBottom: 'var(--space-md)', color: 'var(--color-text-secondary)', fontSize: '13px' }}>{cfg.desc}</p>
               <div className="form-group">
-                <label className="form-label">Comentário (opcional)</label>
+                <label className="form-label">{cfg.label}{cfg.obrig && <span className="required"> *</span>}</label>
                 <textarea
                   className="form-input" rows={3} style={{ resize: 'vertical', fontFamily: 'inherit' }}
-                  placeholder={aprovando ? 'Adicione um comentário, se quiser...' : 'Explique o motivo da reprovação (opcional)...'}
+                  placeholder={cfg.placeholder}
                   value={comentario}
                   onChange={(e) => setComentario(e.target.value)}
                 />
+                {faltaJustificativa && <span className="contratacao-erro">A justificativa é obrigatória.</span>}
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn btn-outline" onClick={() => setDecisao(null)}>Cancelar</button>
-              <button className={`btn ${aprovando ? 'btn-success' : 'btn-danger'}`} disabled={acaoId === decisao.sol.id} onClick={confirmarDecisao}>
-                {acaoId === decisao.sol.id
-                  ? (aprovando ? 'Aprovando...' : 'Reprovando...')
-                  : (aprovando ? <><Check size={16} /> Confirmar aprovação</> : <><X size={16} /> Confirmar reprovação</>)}
+              <button className="btn btn-outline" onClick={() => setDecisao(null)}>Fechar</button>
+              <button className={`btn ${cfg.btn}`} disabled={acaoId === decisao.sol.id || faltaJustificativa} onClick={confirmarDecisao}>
+                {acaoId === decisao.sol.id ? cfg.processando : cfg.confirmar}
               </button>
             </div>
           </div>

@@ -285,7 +285,7 @@ const HORAS_EXTRA_APROVAR = {
   icon: ClipboardCheck,
   titulo: "Aprove definindo o destino da hora",
   texto:
-    'Em "Aprovações Pendentes" você aprova ou reprova (com motivo) as horas extras da sua equipe. Ao aprovar, escolha Medição/Pagamento ou Banco de Horas — neste caso informe data, período e quantidade previstos para compensação. O percentual não é seu: o DP/RM aplica conforme a CCT.',
+    'Em "Solicitações Pendentes" você aprova ou reprova (com motivo) as horas extras da sua equipe. Ao aprovar, escolha Medição/Pagamento ou Banco de Horas — neste caso informe data, período e quantidade previstos para compensação, e a data precisa caber nos 180 dias seguintes à hora extra. O percentual não é seu: o DP/RM aplica conforme a CCT.',
 };
 
 const HORAS_GESTAO_STEPS = [
@@ -293,13 +293,13 @@ const HORAS_GESTAO_STEPS = [
     icon: Clock,
     titulo: "Você também aponta",
     texto:
-      'Como a equipe, em "Apontar" você registra o seu próprio tempo: escolha projeto e atividades e use o cronômetro (Iniciar/Encerrar) ou o "Lançamento manual".',
+      'Como a equipe, em "Apontar" você registra o seu próprio tempo: escolha projeto, sigla, tarefa, etiqueta e tarefa 2 e use o cronômetro (Iniciar/Encerrar) ou o "Lançamento manual".',
   },
   {
     icon: Settings,
-    titulo: "Configure projetos e atividades",
+    titulo: "Configure os projetos",
     texto:
-      'Em "Configuração" você cadastra os projetos e as atividades controladas da sua área. Sem isso, a equipe não consegue apontar horas.',
+      'Em "Configuração" você cadastra os projetos da sua área. Sem isso, a equipe não consegue apontar horas. Sigla, tarefa, etiqueta e tarefa 2 vêm do catálogo único da empresa.',
   },
   {
     icon: Users,
@@ -311,7 +311,7 @@ const HORAS_GESTAO_STEPS = [
     icon: BarChart3,
     titulo: "Dashboard da equipe",
     texto:
-      'No "Dashboard da Equipe" você acompanha as horas de todos, com totais e distribuição por colaborador, projeto e atividade.',
+      'No "Dashboard da Equipe" você acompanha as horas de todos, com totais e distribuição por colaborador, projeto e sigla.',
   },
   {
     icon: ListChecks,
@@ -334,7 +334,7 @@ export const HORAS_GUIA = {
         icon: Clock,
         titulo: "Aponte suas horas",
         texto:
-          'Em "Apontar", escolha o projeto e as atividades e clique em Iniciar para o cronômetro rodar. Ao terminar, clique em Encerrar — o tempo é salvo automaticamente.',
+          'Em "Apontar", escolha o projeto, a sigla, a tarefa, a etiqueta e a tarefa 2 e clique em Iniciar para o cronômetro rodar. Ao terminar, clique em Encerrar — o tempo é salvo automaticamente.',
       },
       {
         icon: FilePlus2,
@@ -346,7 +346,7 @@ export const HORAS_GUIA = {
         icon: BarChart3,
         titulo: "Acompanhe o seu tempo",
         texto:
-          'Em "Meu Dashboard" você vê o total de horas e a distribuição por projeto e atividade, em gráficos.',
+          'Em "Meu Dashboard" você vê o total de horas e a distribuição por projeto, sigla e etiqueta, em gráficos.',
       },
       {
         icon: ListChecks,

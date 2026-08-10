@@ -16,7 +16,7 @@ const MOEDA = new Set(['moeda']);
 const visiveis = (cfg, form) =>
   (cfg.camposVisiveis ? cfg.camposVisiveis(form) : cfg.campos);
 
-export default function EditarReenviarModal({ sol, funcoes = [], onClose, onReenviar }) {
+export default function EditarReenviarModal({ sol, funcoes = [], etapaReprovada = null, onClose, onResponder }) {
   const cfg = getReenvioConfig(sol?.tipo);
   const [form, setForm] = useState(null);
   const [faltando, setFaltando] = useState([]);
@@ -26,6 +26,7 @@ export default function EditarReenviarModal({ sol, funcoes = [], onClose, onReen
   // os novos entram pelo hook useAnexos. Só para tipos com bucket.
   const [existentes, setExistentes] = useState([]);
   const inicialAnexosRef = useRef([]);   // snapshot p/ saber quais foram removidos
+  const legadoRef = useRef(false);       // o anexo veio do par legado anexo_path/anexo_nome?
   const anexos = useAnexos({ bucket: cfg?.bucket || 'tmp', maxMb: 10 });
 
   const set = (id, v) => setForm((p) => ({ ...p, [id]: v }));
@@ -40,7 +41,16 @@ export default function EditarReenviarModal({ sol, funcoes = [], onClose, onReen
         const { data } = await supabase.from(cfg.tabela).select('*').eq('solicitacao_id', sol.id).maybeSingle();
         base = data || {};
         if (cfg.bucket && vivo) {
-          const arr = Array.isArray(base.anexos) ? base.anexos : [];
+          let arr = Array.isArray(base.anexos) ? base.anexos : [];
+          // Compatibilidade com o anexo ÚNICO legado (anexo_path/anexo_nome),
+          // que a Ajuda de Custo ainda grava na criação. Sem isto ele não
+          // apareceria aqui e, ao reenviar com um anexo novo, sumiria da tela
+          // do aprovador — o ModalRespostas só cai no legado quando o array
+          // está vazio.
+          if (!arr.length && base.anexo_path) {
+            arr = [{ path: base.anexo_path, nome: base.anexo_nome || 'Anexo' }];
+            legadoRef.current = true;   // ao salvar, zera o par legado (ver salvar)
+          }
           inicialAnexosRef.current = arr;
           setExistentes(arr);
         }
@@ -79,16 +89,21 @@ export default function EditarReenviarModal({ sol, funcoes = [], onClose, onReen
       // Sobe os anexos novos ANTES de gravar; a lista final = mantidos + novos.
       if (cfg.bucket) novos = await anexos.enviar();
       const detalhe = cfg.modo === 'detalhe'
-        ? { ...cfg.montarPayload(form), ...(cfg.bucket ? { anexos: [...existentes, ...novos] } : {}) }
+        ? {
+            ...cfg.montarPayload(form),
+            ...(cfg.bucket ? { anexos: [...existentes, ...novos] } : {}),
+            // O anexo legado foi migrado para dentro do array acima: zeramos o
+            // par para o array virar a fonte única. Sem isso, remover o anexo
+            // legado apagaria o arquivo do bucket e deixaria anexo_path
+            // apontando para um caminho morto.
+            ...(legadoRef.current ? { anexo_path: null, anexo_nome: null } : {}),
+          }
         : null;
 
-      const funcaoAlvo = cfg.funcaoAlvoDe ? cfg.funcaoAlvoDe(form) : null;
-      await onReenviar({
+      await onResponder({
         solicitacaoId: sol.id,
-        tipo: sol.tipo,
-        colaboradorId: sol.colaborador_id || null,
-        funcaoAlvo,
-        foraDoQuadro: cfg.foraDoQuadro || false,
+        etapaReprovadaId: etapaReprovada?.id || null,
+        reenviosAtual: sol.reenvios || 0,
         detalheTabela: cfg.modo === 'detalhe' ? cfg.tabela : null,
         detalhe,
         envelopePatch: cfg.modo === 'envelope' ? cfg.montarPatch(form) : null,
@@ -189,15 +204,18 @@ export default function EditarReenviarModal({ sol, funcoes = [], onClose, onReen
     <div className="modal-overlay" onClick={() => onClose(false)}>
       <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 640 }}>
         <div className="modal-header">
-          <span className="modal-title">Editar e reenviar — {cfg.titulo}</span>
+          <span className="modal-title">Responder — {cfg.titulo}</span>
           <button className="modal-close" onClick={() => onClose(false)}><X size={18} /></button>
         </div>
         <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-          {sol.devolucao_motivo && (
-            <div className="sol-card-resumo tom-devolvida" style={{ marginBottom: 'var(--space-md)' }}>
-              Motivo da devolução: {sol.devolucao_motivo}
+          {etapaReprovada?.justificativa && (
+            <div className="sol-card-resumo tom-reprovada" style={{ marginBottom: 'var(--space-md)' }}>
+              Motivo da reprovação: {etapaReprovada.justificativa}
             </div>
           )}
+          <p style={{ margin: '0 0 var(--space-md)', color: 'var(--color-text-secondary)', fontSize: 13 }}>
+            Ajuste o que for necessário e reenvie. A requisição volta para a decisão de quem reprovou.
+          </p>
           {erro && <div className="sol-card-resumo tom-reprovada" style={{ marginBottom: 'var(--space-md)' }}>{erro}</div>}
           {!form ? (
             <div style={{ padding: 'var(--space-lg)', textAlign: 'center' }}><Loader2 size={18} className="animate-spin" /></div>
@@ -248,7 +266,7 @@ export default function EditarReenviarModal({ sol, funcoes = [], onClose, onReen
         <div className="modal-footer">
           <button className="btn btn-outline" onClick={() => onClose(false)}>Cancelar</button>
           <button className="btn btn-primary" disabled={salvando || !form} onClick={salvar}>
-            {salvando ? <><Loader2 size={16} className="animate-spin" /> Reenviando...</> : <><RotateCcw size={16} /> Reenviar para aprovação</>}
+            {salvando ? <><Loader2 size={16} className="animate-spin" /> Reenviando...</> : <><RotateCcw size={16} /> Responder e reenviar</>}
           </button>
         </div>
       </div>

@@ -35,9 +35,18 @@ const ADM_ROLES = [
   ["atendente", "Atendente"],
   ["admin", "Admin"],
 ];
-// Controle de Horas: o papel NÃO é editado aqui — ele deriva da hierarquia da
-// Gestão de Pessoas (perfil + superior_id). Gestor/coordenador enxergam a
-// própria equipe; o resto vê só o próprio tempo.
+// Controle de Horas: o papel BASE deriva da hierarquia da Gestão de Pessoas
+// (perfil + superior_id) — gestor/coordenador enxergam a própria equipe, o
+// resto vê só o próprio tempo. O que se edita aqui é a ELEVAÇÃO (horas_role),
+// que só vale neste módulo e nunca rebaixa: "Pela hierarquia" (= sem elevação)
+// é o padrão, e "Admin do módulo" é o único jeito de ver/administrar TODAS as
+// equipes sem virar admin do portal.
+const HORAS_ROLES = [
+  ["", "Pela hierarquia"],
+  ["coordenador", "Coordenador"],
+  ["gestor", "Gestor"],
+  ["admin", "Admin do módulo"],
+];
 
 export default function PortalAdmin() {
   const { user } = useAuth();
@@ -74,6 +83,9 @@ export default function PortalAdmin() {
         jaLogou: !!c.auth_id,
         dpRole: c.perfil,
         dpRh: c.rh_dp === true,
+        // 'usuario' e NULL são a mesma coisa (sem elevação) — o select mostra
+        // ambos como "Pela hierarquia".
+        horasRole: c.horas_role && c.horas_role !== "usuario" ? c.horas_role : "",
         finRole: c.financeiro_role ?? null,
         admRole: c.administrativo_role ?? null,
         reembId: r?.id ?? null,
@@ -109,6 +121,12 @@ export default function PortalAdmin() {
     } else if (app === "reembolso") {
       res = await supabase.from("reembolso_profiles").update({ role: value }).eq("id", row.reembId);
       patch = { reembRole: value };
+    } else if (app === "horas") {
+      // Elevação só-do-Horas. "" (Pela hierarquia) grava 'usuario' — o papel
+      // volta a ser só o derivado do perfil, já que o efetivo é o maior dos dois.
+      const stored = value === "" ? "usuario" : value;
+      res = await supabase.from("colaboradores").update({ horas_role: stored }).eq("id", row.colabId);
+      patch = { horasRole: value };
     } else if (app === "financeiro") {
       // Papel na própria colaboradores (como o DP). "" (Sem acesso) vira NULL.
       const stored = value === "" ? null : value;
@@ -222,6 +240,7 @@ export default function PortalAdmin() {
                 <th>Pessoa</th>
                 <th className="pa-center">Já entrou?</th>
                 <th>Gestão de Pessoas</th>
+                <th>Controle de Horas</th>
                 <th>Reembolso</th>
                 <th>PMO</th>
                 <th>Financeiro</th>
@@ -252,6 +271,9 @@ export default function PortalAdmin() {
                     <RoleSelect row={row} app="dp" value={row.dpRh ? "rh" : (row.dpRole ?? "")} options={DP_ROLES} hasAccess />
                   </td>
                   <td>
+                    <RoleSelect row={row} app="horas" value={row.horasRole} options={HORAS_ROLES} hasAccess />
+                  </td>
+                  <td>
                     <RoleSelect
                       row={row}
                       app="reembolso"
@@ -279,7 +301,7 @@ export default function PortalAdmin() {
               ))}
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="pa-empty-cell">
+                  <td colSpan={8} className="pa-empty-cell">
                     Ninguém encontrado.
                   </td>
                 </tr>

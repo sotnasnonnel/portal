@@ -6,9 +6,21 @@
 /* Dashboard cards row */
 .dashboard-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: var(--space-lg);
-  margin-bottom: var(--space-xl);
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+/* Uma coluna no celular — mas com o card deitado (ver .stat-card em
+   components/UI/Components.css), o que dá ~56px de altura em vez dos ~158px de
+   antes. Duas colunas espremeriam rótulos longos como "Ausências Pendentes de
+   Aprovação" em 4 ou 5 linhas. */
+@media (max-width: 768px) {
+  .dashboard-cards {
+    grid-template-columns: 1fr;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-lg);
+  }
 }
 
 /* Approval cards */

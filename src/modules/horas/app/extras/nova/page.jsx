@@ -8,15 +8,16 @@ import {
   fetchExcecaoAplicavel,
   fetchUltimaMinha,
   criarSolicitacao,
-} from '../../../lib/dataHorasExtras';
+} from '../../../../../services/horasExtras';
 import {
   MOTIVOS,
   MOTIVO_OUTRO,
   diaISO,
   fmtMin,
+  janelaPedido,
   minutosEntre,
   validarPrazo,
-} from '../../../lib/horasExtras';
+} from '../../../../../config/horasExtras';
 import { notificarHoraExtra } from '../../../../../services/notificarHoraExtra';
 import SearchableSelect from '../../components/SearchableSelect';
 
@@ -107,6 +108,8 @@ export default function NovaHEPage() {
   }, [carregarExcecao]);
 
   const prazo = useMemo(() => validarPrazo({ data: form.dataHe, excecao }), [form.dataHe, excecao]);
+  // O input de data já nasce fechado no passado; só uma exceção ativa o reabre.
+  const janela = useMemo(() => janelaPedido({ excecao }), [excecao]);
   const minutos = minutosEntre(form.horaInicio, form.horaFim);
   const motivoFinal = form.motivo === MOTIVO_OUTRO ? form.outroMotivo.trim() : form.motivo;
 
@@ -249,6 +252,7 @@ export default function NovaHEPage() {
             <input
               type="date"
               value={form.dataHe}
+              min={janela.min}
               onChange={(e) => set({ dataHe: e.target.value })}
             />
           </div>

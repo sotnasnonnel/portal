@@ -1,7 +1,10 @@
 import { supabase } from './supabase';
 
 // ============================================================================
-// Camada de dados da Gestão de HORAS EXTRAS.
+// Camada de dados da Gestão de HORAS EXTRAS, compartilhada pelos DOIS módulos
+// que usam a ferramenta: o Controle de Horas (pedir, acompanhar, aprovar) e a
+// Gestão de Pessoas (painel do DP, exceções de prazo, auditoria). As regras
+// puras ficam em src/config/horasExtras.js.
 // As LEITURAS passam por RPCs SECURITY DEFINER (horas_extras_listar,
 // _auditoria_listar, _colaboradores) porque o DP — que é `rh_dp` sem ser admin —
 // não lê `colaboradores` de toda a empresa pela RLS, e o painel dele precisa dos
@@ -141,9 +144,21 @@ export async function marcarCompensada(id) {
   await atualizar(id, { status: 'compensada', updated_at: new Date().toISOString() });
 }
 
+// Quando a RLS barra um UPDATE, o Postgres não devolve erro: apenas nenhuma
+// linha é afetada. Sem o `.select()`, a tela fecharia o modal dizendo "salvo"
+// sem ter salvo nada. Pedimos a linha de volta e tratamos "0 linhas" como falha.
 async function atualizar(id, patch) {
-  const { error } = await supabase.from('horas_extras_solicitacoes').update(patch).eq('id', id);
+  const { data, error } = await supabase
+    .from('horas_extras_solicitacoes')
+    .update(patch)
+    .eq('id', id)
+    .select('id');
   if (error) throw error;
+  if (!data?.length) {
+    throw new Error(
+      'Nada foi alterado: você não tem permissão para decidir esta solicitação (ou ela mudou de estado). Recarregue a página.'
+    );
+  }
 }
 
 // ---- Exceções de prazo (DP) ----------------------------------------------
@@ -187,9 +202,17 @@ export async function criarExcecao({
   return data;
 }
 
+// Mesmo cuidado do `atualizar`: RLS barrando um UPDATE não gera erro.
 export async function setExcecaoAtiva(id, ativa) {
-  const { error } = await supabase.from('horas_extras_excecoes').update({ ativa }).eq('id', id);
+  const { data, error } = await supabase
+    .from('horas_extras_excecoes')
+    .update({ ativa })
+    .eq('id', id)
+    .select('id');
   if (error) throw error;
+  if (!data?.length) {
+    throw new Error('Nada foi alterado: você não tem permissão para editar exceções de prazo.');
+  }
 }
 
 // ---- Auditoria (DP) -------------------------------------------------------

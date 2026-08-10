@@ -36,17 +36,29 @@ function Empty() {
   return <div className="horas-empty">Sem dados no período.</div>;
 }
 
+// Rótulo do eixo X: nomes de colaborador/projeto não cabem inteiros e um
+// invade o vizinho. Corta com reticências — o nome completo continua no
+// tooltip, que usa o valor cru (o tickFormatter só afeta o eixo).
+const MAX_TICK = 14;
+const cortaTick = (v) => {
+  const s = String(v ?? '');
+  return s.length > MAX_TICK ? `${s.slice(0, MAX_TICK - 1)}…` : s;
+};
+
 // true quando não há nada a plotar (lista vazia ou tudo zerado)
 const semDados = (data) => !data.length || data.every((d) => !(d.ms ?? d.horas));
 
 export function BrandBarChart({ data, onSelect }) {
   const estreito = useMediaQuery(ESTREITO);
   if (semDados(data)) return <Empty />;
+  // Com rótulo longo (nome de pessoa/projeto) ou muitas barras, na horizontal
+  // um nome encosta no outro — aí inclina e reserva altura para o eixo.
+  const inclina = !estreito && (data.length > 6 || data.some((d) => String(d.name ?? '').length > 10));
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart
         data={data}
-        margin={{ top: 8, right: 12, left: 4, bottom: 4 }}
+        margin={{ top: 8, right: 12, left: 4, bottom: inclina ? 8 : 4 }}
         onClick={(s) => s?.activeLabel && onSelect?.(s.activeLabel)}
       >
         <CartesianGrid stroke={GRID} vertical={false} />
@@ -58,6 +70,11 @@ export function BrandBarChart({ data, onSelect }) {
           interval={estreito ? 'preserveStartEnd' : 0}
           tickLine={false}
           axisLine={{ stroke: GRID }}
+          tickFormatter={cortaTick}
+          tickMargin={inclina ? 4 : 6}
+          angle={inclina ? -35 : 0}
+          textAnchor={inclina ? 'end' : 'middle'}
+          height={inclina ? 84 : 30}
         />
         <YAxis tick={tickStyle} tickLine={false} axisLine={false} width={estreito ? 38 : 54} tickFormatter={fmtEixoY} />
         <Tooltip formatter={fmtTip} cursor={{ fill: 'rgba(196,74,40,.06)' }} />

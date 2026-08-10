@@ -712,6 +712,11 @@
   background: rgba(243, 156, 18, 0.14);
 }
 
+.sol-card-resumo.tom-cancelada {
+  color: #566573;
+  background: rgba(127, 140, 141, 0.14);
+}
+
 .sol-card-actions {
   display: flex;
   gap: var(--space-sm);

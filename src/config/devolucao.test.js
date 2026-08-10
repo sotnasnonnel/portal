@@ -25,6 +25,21 @@ test('etapaAtual: reprovada continua encerrando o fluxo', () => {
   assert.equal(etapaAtual(etapas), null);
 });
 
+test('etapaAtual: cancelada encerra o fluxo (não vaza para a execução)', () => {
+  const etapas = cadeia({ id: 'e2', patch: { status: 'cancelada', justificativa: 'Duplicada' } });
+  assert.equal(etapaAtual(etapas), null);
+});
+
+test('etapaAtual: responder reabre a etapa de quem reprovou (a 1ª aprovou, e2 pendente de novo)', () => {
+  // Cenário pós-"responder": e1 aprovada, e2 (quem reprovou) volta a pendente.
+  const respondida = [
+    { id: 'e1', ordem: 1, tipo_etapa: 'aprovacao', status: 'aprovada', aprovador_id: 'a', papel: 'Ana' },
+    { id: 'e2', ordem: 2, tipo_etapa: 'aprovacao', status: 'pendente', aprovador_id: 'b', papel: 'Bruno' },
+    { id: 'e3', ordem: 3, tipo_etapa: 'execucao', status: 'pendente', aprovador_id: 'x', papel: 'Admin (execução)' },
+  ];
+  assert.equal(etapaAtual(respondida)?.id, 'e2');
+});
+
 test('etapaAtual: após reenvio (todas pendentes de novo) volta a apontar a 1ª', () => {
   const reenviada = [
     { id: 'e1', ordem: 1, tipo_etapa: 'aprovacao', status: 'pendente', aprovador_id: 'a', papel: 'Ana' },
@@ -46,4 +61,10 @@ test('resumoAndamento: reprovada e concluída seguem inalteradas', () => {
     cadeia({ id: 'e2', patch: { status: 'reprovada', papel: 'Bruno' } }));
   assert.equal(rep.tom, 'reprovada');
   assert.equal(resumoAndamento({ status: 'concluida' }, cadeia()).tom, 'concluida');
+});
+
+test('resumoAndamento: cancelada tem tom e texto próprios', () => {
+  const r = resumoAndamento({ status: 'cancelada' }, cadeia({ id: 'e2', patch: { status: 'cancelada' } }));
+  assert.equal(r.tom, 'cancelada');
+  assert.match(r.texto, /Cancelada pelo Admin/);
 });

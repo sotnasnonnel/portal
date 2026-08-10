@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { useAuth } from '../../../../../contexts/AuthContext';
-import { fetchSolicitacoes } from '../../../lib/dataHorasExtras';
-import { fmtMin } from '../../../lib/horasExtras';
+import { fetchSolicitacoes } from '../../../../../services/horasExtras';
+import { fmtMin } from '../../../../../config/horasExtras';
 import SolicitacoesHETable from '../../components/SolicitacoesHETable';
 
 // Minhas Solicitações: só as que EU abri (a RPC também devolve as que eu aprovo e

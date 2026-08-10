@@ -10,8 +10,7 @@ import {
   fetchProjetos,
   setGerenciaColaborador,
 } from '../../lib/data';
-import { ROLE_LABEL, isGestao } from '../../lib/roles';
-import { isSuperAdmin } from '../../../../config/superAdmin';
+import { ROLE_LABEL, isGestao, isHorasAdmin } from '../../lib/roles';
 import ConfirmModal from '../components/ConfirmModal';
 
 // Equipe & Gerências.
@@ -60,10 +59,10 @@ export default function EquipePage() {
   // Gate de UI (a RLS e a RPC é que protegem as escritas de verdade).
   if (!isGestao(role)) return <Navigate to="/horas/apontar" replace />;
 
-  // A RPC horas_colaboradores já devolve a equipe do logado (a subárvore).
-  // A criação/vínculo de áreas é automática (uma por gestor); só o admin/super
-  // mexe nisso manualmente.
-  const podeGerencias = user?.perfil === 'admin' || isSuperAdmin(user);
+  // A RPC horas_colaboradores já devolve a equipe do logado (a subárvore) — ou
+  // todo mundo, se for admin do módulo. A criação/vínculo de áreas é automática
+  // (uma por líder); só o admin do módulo mexe nisso manualmente.
+  const podeGerencias = isHorasAdmin(user);
   const visiveis = colabs;
 
   async function criarGerencia() {
@@ -277,7 +276,7 @@ export default function EquipePage() {
       <ConfirmModal
         open={!!aExcluir}
         title="Excluir gerência"
-        message={`Excluir a gerência "${aExcluir?.nome || ''}"? Os projetos e as atividades controladas dela também serão removidos.`}
+        message={`Excluir a gerência "${aExcluir?.nome || ''}"? Os projetos dela também serão removidos.`}
         onConfirm={confirmarExclusaoGerencia}
         onCancel={() => setAExcluir(null)}
       />

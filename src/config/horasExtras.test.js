@@ -2,15 +2,24 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   LIMITE_PADRAO,
+  PRAZO_COMPENSACAO_DIAS,
   minutosEntre,
   horaParaMin,
   fmtMin,
   diaISO,
+  somarDias,
+  diffDias,
   fmtDataBr,
   fmtHora,
   statusLabel,
   statusClasse,
   validarPrazo,
+  janelaPedido,
+  janelaCompensacao,
+  validarCompensacao,
+  situacaoCompensacao,
+  rotuloPrazo,
+  isHorasExtrasDp,
   podeDecidir,
   podeCompensar,
 } from './horasExtras.js';
@@ -135,4 +144,98 @@ test('podeCompensar só no banco de horas aprovado', () => {
   assert.equal(podeCompensar({ status: 'aprovada', destino: 'banco' }), true);
   assert.equal(podeCompensar({ status: 'aprovada', destino: 'medicao' }), false);
   assert.equal(podeCompensar({ status: 'compensada', destino: 'banco' }), false);
+});
+
+// ---------------------------------------------------------------------------
+// Prazo de compensação do banco de horas (180 dias da data da hora extra)
+// ---------------------------------------------------------------------------
+
+test('somarDias atravessa mês, ano e fevereiro bissexto', () => {
+  assert.equal(somarDias('2026-07-30', 180), '2027-01-26');
+  assert.equal(somarDias('2026-12-31', 1), '2027-01-01');
+  assert.equal(somarDias('2028-02-28', 1), '2028-02-29'); // 2028 é bissexto
+  assert.equal(somarDias('2026-07-30', 0), '2026-07-30');
+});
+
+test('diffDias conta dias inteiros entre datas', () => {
+  assert.equal(diffDias('2026-07-30', '2026-08-01'), 2);
+  assert.equal(diffDias('2026-08-01', '2026-07-30'), -2);
+  assert.equal(diffDias('2026-07-30', '2026-07-30'), 0);
+});
+
+test('janelaCompensacao vai da data da hora extra até 180 dias depois', () => {
+  const j = janelaCompensacao('2026-07-30');
+  assert.equal(j.min, '2026-07-30');
+  assert.equal(j.max, '2027-01-26');
+  assert.equal(diffDias(j.min, j.max), PRAZO_COMPENSACAO_DIAS);
+  assert.deepEqual(janelaCompensacao(''), { min: '', max: '' });
+});
+
+test('compensação: aceita dentro da janela, inclusive nas bordas', () => {
+  assert.equal(validarCompensacao({ dataHe: '2026-07-30', dataCompensacao: '2026-08-15' }).ok, true);
+  assert.equal(validarCompensacao({ dataHe: '2026-07-30', dataCompensacao: '2026-07-30' }).ok, true);
+  assert.equal(validarCompensacao({ dataHe: '2026-07-30', dataCompensacao: '2027-01-26' }).ok, true);
+});
+
+test('compensação: recusa 1 dia depois do prazo de 180 dias', () => {
+  const r = validarCompensacao({ dataHe: '2026-07-30', dataCompensacao: '2027-01-27' });
+  assert.equal(r.ok, false);
+  assert.match(r.msg, /até 180 dias/);
+  assert.match(r.msg, /26\/01\/2027/);
+});
+
+test('compensação: recusa data anterior à hora extra e data vazia', () => {
+  const r = validarCompensacao({ dataHe: '2026-07-30', dataCompensacao: '2026-07-29' });
+  assert.equal(r.ok, false);
+  assert.match(r.msg, /anterior à data da hora extra/);
+  assert.equal(validarCompensacao({ dataHe: '2026-07-30', dataCompensacao: '' }).ok, false);
+});
+
+test('situacaoCompensacao só vale para banco de horas aprovado', () => {
+  const base = { destino: 'banco', status: 'aprovada', data_he: '2026-07-30' };
+  assert.ok(situacaoCompensacao(base, em('2026-08-01', 9, 0)));
+  assert.equal(situacaoCompensacao({ ...base, destino: 'medicao' }, em('2026-08-01', 9, 0)), null);
+  assert.equal(situacaoCompensacao({ ...base, status: 'compensada' }, em('2026-08-01', 9, 0)), null);
+  assert.equal(situacaoCompensacao({ ...base, status: 'pendente' }, em('2026-08-01', 9, 0)), null);
+  assert.equal(situacaoCompensacao(null), null);
+});
+
+test('situacaoCompensacao classifica ok, vencendo, vence hoje e vencido', () => {
+  const base = { destino: 'banco', status: 'aprovada', data_he: '2026-07-30' };
+  // vence em 26/01/2027
+  assert.equal(situacaoCompensacao(base, em('2026-08-01', 9, 0)).estado, 'ok');
+  // 30 dias antes do vencimento já entra no alerta
+  assert.equal(situacaoCompensacao(base, em('2026-12-27', 9, 0)).estado, 'vencendo');
+  const hoje = situacaoCompensacao(base, em('2027-01-26', 23, 0));
+  assert.equal(hoje.estado, 'vencendo');
+  assert.equal(hoje.dias, 0);
+  const vencido = situacaoCompensacao(base, em('2027-01-27', 9, 0));
+  assert.equal(vencido.estado, 'vencido');
+  assert.equal(vencido.dias, -1);
+});
+
+test('rotuloPrazo descreve restante, vencimento no dia e atraso', () => {
+  const base = { destino: 'banco', status: 'aprovada', data_he: '2026-07-30' };
+  assert.match(rotuloPrazo(situacaoCompensacao(base, em('2027-01-25', 9, 0))), /^1 dia \(até 26\/01\/2027\)/);
+  assert.match(rotuloPrazo(situacaoCompensacao(base, em('2027-01-26', 9, 0))), /^Vence hoje/);
+  assert.match(rotuloPrazo(situacaoCompensacao(base, em('2027-01-29', 9, 0))), /^Vencido há 3 dias/);
+  assert.equal(rotuloPrazo(null), '');
+});
+
+test('janelaPedido fecha o passado, e a exceção reabre até o início dela', () => {
+  const agora = em('2026-07-30', 9, 0);
+  assert.equal(janelaPedido({ agora }).min, '2026-07-30');
+  const excecao = { data_inicial: '2026-07-27', data_final: '2026-07-29' };
+  assert.equal(janelaPedido({ agora, excecao }).min, '2026-07-27');
+  // Exceção que começa no futuro não deve abrir o passado.
+  assert.equal(janelaPedido({ agora, excecao: { data_inicial: '2026-08-10' } }).min, '2026-07-30');
+});
+
+test('isHorasExtrasDp aceita rh_dp, perfil rh e admin', () => {
+  assert.equal(isHorasExtrasDp({ rhDp: true, perfil: 'gestor' }), true);
+  assert.equal(isHorasExtrasDp({ perfil: 'rh' }), true);
+  assert.equal(isHorasExtrasDp({ perfil: 'admin' }), true);
+  assert.equal(isHorasExtrasDp({ perfil: 'gestor' }), false);
+  assert.equal(isHorasExtrasDp({ perfil: 'usuario' }), false);
+  assert.equal(isHorasExtrasDp(null), false);
 });

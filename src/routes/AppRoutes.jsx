@@ -7,8 +7,10 @@ import ReembolsoAppLayout from '../modules/reembolso/components/layout/AppLayout
 import SolicShell from '../modules/solic/app/components/AppShell';
 import HorasShell from '../modules/horas/app/components/AppShell';
 import { rotaInicial } from '../modules/horas/app/components/nav';
-import { isHorasExtrasDp } from '../modules/horas/lib/roles';
+import { isHorasExtrasDp } from '../config/horasExtras';
 import FinanceiroShell from '../modules/financeiro/app/components/AppShell';
+import AdministrativoShell from '../modules/administrativo/app/components/AppShell';
+import { podeAcessarAdm } from '../config/administrativo';
 
 const Login = lazy(() => import('../pages/Login/Login'));
 const Home = lazy(() => import('../pages/Home/Home'));
@@ -49,14 +51,20 @@ const HorasEquipe = lazy(() => import('../modules/horas/app/equipe/page'));
 const HorasExtrasNova = lazy(() => import('../modules/horas/app/extras/nova/page'));
 const HorasExtrasMinhas = lazy(() => import('../modules/horas/app/extras/minhas/page'));
 const HorasExtrasAprovacoes = lazy(() => import('../modules/horas/app/extras/aprovacoes/page'));
-const HorasExtrasDp = lazy(() => import('../modules/horas/app/extras/dp/page'));
-const HorasExtrasExcecoes = lazy(() => import('../modules/horas/app/extras/excecoes/page'));
-const HorasExtrasAuditoria = lazy(() => import('../modules/horas/app/extras/auditoria/page'));
+// Tratamento do DP das horas extras: vive no módulo Gestão de Pessoas.
+const PainelHorasExtras = lazy(() => import('../pages/Admin/HorasExtras/PainelHorasExtras'));
+const ExcecoesPrazoHE = lazy(() => import('../pages/Admin/HorasExtras/ExcecoesPrazo'));
+const AuditoriaHE = lazy(() => import('../pages/Admin/HorasExtras/AuditoriaHorasExtras'));
 const FinanceiroDashboard = lazy(() => import('../modules/financeiro/app/dashboard/page'));
 const FinanceiroHub = lazy(() => import('../modules/financeiro/app/solicitacoes/hub/page'));
 const NovaSolicitacaoFin = lazy(() => import('../modules/financeiro/app/solicitacoes/nova/page'));
 const AcompanharFin = lazy(() => import('../modules/financeiro/app/solicitacoes/acompanhar/page'));
 const FinanceiroFluxos = lazy(() => import('../modules/financeiro/app/fluxos/page'));
+const CatalogoAdm = lazy(() => import('../modules/administrativo/app/catalogo/page'));
+const NovoChamadoAdm = lazy(() => import('../modules/administrativo/app/novo/page'));
+const MeusChamadosAdm = lazy(() => import('../modules/administrativo/app/meus/page'));
+const ConfigAdm = lazy(() => import('../modules/administrativo/app/config/page'));
+const AprovacoesAdm = lazy(() => import('../modules/administrativo/app/aprovacoes/page'));
 
 function RouteFallback() {
   return <div style={{ padding: 'var(--space-3xl)', textAlign: 'center' }}>Carregando...</div>;
@@ -97,11 +105,21 @@ export function ModuleRoute({ module, children }) {
   return children;
 }
 
-// Telas de DP das horas extras (painel, exceções, auditoria). Gate só de UI — a
-// RLS (app_private.is_horas_extras_dp) é quem protege os dados.
+// Telas de DP das horas extras (painel, exceções, auditoria) dentro da Gestão de
+// Pessoas. Gate só de UI — a RLS (app_private.is_horas_extras_dp) é quem protege
+// os dados. Não dá para usar allowedRoles: um gestor com rh_dp mantém o perfil
+// 'gestor' e mesmo assim é DP das horas extras.
+// Administrativo em construção: só a lista de teste entra. Gate de UI — as
+// tabelas do módulo seguem protegidas pela própria RLS.
+function AdmEmBreveRoute({ children }) {
+  const { user } = useAuth();
+  if (!podeAcessarAdm(user)) return <Navigate to="/home" replace />;
+  return children;
+}
+
 function HorasDpRoute({ children }) {
   const { user } = useAuth();
-  if (!isHorasExtrasDp(user)) return <Navigate to="/horas/extras/minhas" replace />;
+  if (!isHorasExtrasDp(user)) return <Navigate to="/home" replace />;
   return children;
 }
 
@@ -203,6 +221,45 @@ export default function AppRoutes() {
                     <AdminFluxos />
                   </LazyPage>
                 </ProtectedRoute>
+              </ModuleRoute>
+            }
+          />
+
+          {/* Horas Extras — tratamento do DP. O pedido, o acompanhamento e a
+              aprovação ficam no Controle de Horas (/horas/extras). */}
+          <Route
+            path="/admin/horas-extras"
+            element={
+              <ModuleRoute module="dp">
+                <HorasDpRoute>
+                  <LazyPage>
+                    <PainelHorasExtras />
+                  </LazyPage>
+                </HorasDpRoute>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="/admin/horas-extras/excecoes"
+            element={
+              <ModuleRoute module="dp">
+                <HorasDpRoute>
+                  <LazyPage>
+                    <ExcecoesPrazoHE />
+                  </LazyPage>
+                </HorasDpRoute>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="/admin/horas-extras/auditoria"
+            element={
+              <ModuleRoute module="dp">
+                <HorasDpRoute>
+                  <LazyPage>
+                    <AuditoriaHE />
+                  </LazyPage>
+                </HorasDpRoute>
               </ModuleRoute>
             }
           />
@@ -427,15 +484,13 @@ export default function AppRoutes() {
           {/* Rota antiga de Projetos: virou a aba Configuração. */}
           <Route path="projetos" element={<Navigate to="/horas/config" replace />} />
 
-          {/* Horas Extras: solicitação/aprovação. Aberto a todos os logados; as
-              telas de DP têm gate próprio (HorasDpRoute + RLS no banco). */}
+          {/* Horas Extras: pedir, acompanhar e aprovar — aberto a todos os
+              logados, como o resto do módulo. O tratamento do DP (painel,
+              exceções de prazo e auditoria) fica na Gestão de Pessoas. */}
           <Route path="extras" element={<Navigate to="/horas/extras/minhas" replace />} />
           <Route path="extras/nova" element={<LazyPage><HorasExtrasNova /></LazyPage>} />
           <Route path="extras/minhas" element={<LazyPage><HorasExtrasMinhas /></LazyPage>} />
           <Route path="extras/aprovacoes" element={<LazyPage><HorasExtrasAprovacoes /></LazyPage>} />
-          <Route path="extras/dp" element={<HorasDpRoute><LazyPage><HorasExtrasDp /></LazyPage></HorasDpRoute>} />
-          <Route path="extras/excecoes" element={<HorasDpRoute><LazyPage><HorasExtrasExcecoes /></LazyPage></HorasDpRoute>} />
-          <Route path="extras/auditoria" element={<HorasDpRoute><LazyPage><HorasExtrasAuditoria /></LazyPage></HorasDpRoute>} />
         </Route>
 
         <Route
@@ -457,6 +512,29 @@ export default function AppRoutes() {
           <Route path="solicitacoes/nova/:tipo" element={<LazyPage><NovaSolicitacaoFin /></LazyPage>} />
           <Route path="solicitacoes/acompanhar" element={<LazyPage><AcompanharFin /></LazyPage>} />
           <Route path="fluxos" element={<LazyPage><FinanceiroFluxos /></LazyPage>} />
+        </Route>
+
+        {/* Administrativo: módulo aberto a todos os logados (como o Controle de
+            Horas), então só ProtectedRoute — sem ModuleRoute. A camada de
+            aprovação/atendimento é que terá gate próprio quando existir.
+            Enquanto está em construção, a rota inteira (e as filhas junto)
+            devolve para a Home, exceto para quem está testando. */}
+        <Route
+          path="/administrativo"
+          element={
+            <ProtectedRoute>
+              <AdmEmBreveRoute>
+                <AdministrativoShell />
+              </AdmEmBreveRoute>
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="/administrativo/novo" replace />} />
+          <Route path="novo" element={<LazyPage><CatalogoAdm /></LazyPage>} />
+          <Route path="novo/:classe/:servico" element={<LazyPage><NovoChamadoAdm /></LazyPage>} />
+          <Route path="meus" element={<LazyPage><MeusChamadosAdm /></LazyPage>} />
+          <Route path="aprovacoes" element={<LazyPage><AprovacoesAdm /></LazyPage>} />
+          <Route path="config" element={<LazyPage><ConfigAdm /></LazyPage>} />
         </Route>
 
         <Route path="*" element={<Navigate to="/home" replace />} />

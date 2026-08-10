@@ -7,33 +7,25 @@ import {
   FilePlus2,
   FileClock,
   CheckSquare,
-  ShieldAlert,
-  ScrollText,
-  Banknote,
 } from 'lucide-react';
 import { isGestao } from '../../lib/roles';
 
 // Navegação por papel. A gestão (gestor/coordenador) aponta E administra/enxerga
-// a equipe; o usuário só aponta e vê o próprio tempo. A seção "Horas Extras" é o
-// fluxo de solicitação/aprovação — todo mundo pede, a gestão aprova e o DP trata.
+// a equipe; o usuário só aponta e vê o próprio tempo.
+// A seção "Horas Extras" aqui é só a ponta do fluxo que o colaborador e o gestor
+// usam (pedir, acompanhar, aprovar). O tratamento do DP — painel, exceções de
+// prazo e auditoria — vive no módulo Gestão de Pessoas.
 // (Fica fora do Sidebar.jsx para não quebrar o fast refresh: um arquivo de
 // componente só deve exportar componentes.)
-export function navSections(role, { dp = false } = {}) {
+export function navSections(role) {
   const extras = [
     { label: 'Nova Solicitação', href: '/horas/extras/nova', Icon: FilePlus2 },
     { label: 'Minhas Solicitações', href: '/horas/extras/minhas', Icon: FileClock },
   ];
-  // Aprovações aparecem para a gestão e para o DP. Quem é aprovador sem ter o
-  // papel de gestão chega pelo link do e-mail — a rota não depende do menu.
-  if (isGestao(role) || dp) {
-    extras.push({ label: 'Aprovações Pendentes', href: '/horas/extras/aprovacoes', Icon: CheckSquare });
-  }
-  if (dp) {
-    extras.push(
-      { label: 'Painel DP', href: '/horas/extras/dp', Icon: Banknote },
-      { label: 'Central de Exceções', href: '/horas/extras/excecoes', Icon: ShieldAlert },
-      { label: 'Auditoria', href: '/horas/extras/auditoria', Icon: ScrollText }
-    );
+  // Quem é aprovador sem ter o papel de gestão chega pelo link do e-mail — a
+  // rota não depende do menu.
+  if (isGestao(role)) {
+    extras.push({ label: 'Solicitações Pendentes', href: '/horas/extras/aprovacoes', Icon: CheckSquare });
   }
 
   if (isGestao(role)) {

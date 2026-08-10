@@ -81,7 +81,7 @@ export default function AdminCadastro() {
     perfil: formData.perfil,
     formato: formData.formato || null,
     funcao: formData.funcao,
-    superior_id: superiorObrigatorio ? (formData.superior || null) : null,
+    superior_id: formData.superior || null,   // gestor pode ter superior (opcional)
     data_admissao: formData.dataAdmissao || null,
     data_nascimento: formData.dataNascimento || null,
     salario: formData.salario === '' ? null : Number(formData.salario),
@@ -229,17 +229,17 @@ export default function AdminCadastro() {
                   <input className="form-input" name="funcao" value={formData.funcao} onChange={handleChange} placeholder="Ex: Engenheiro Civil" required />
                 </div>
 
-                {superiorObrigatorio && (
-                  <div className="form-group">
-                    <label className="form-label">Superior <span className="required">*</span></label>
-                    <select className="form-select" name="superior" value={formData.superior} onChange={handleChange} required={superiorObrigatorio}>
-                      <option value="">Selecione o superior...</option>
-                      {candidatosSuperior.map((g) => (
-                        <option key={g.id} value={g.id}>{g.nome}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+                <div className="form-group">
+                  <label className="form-label">
+                    Superior {superiorObrigatorio ? <span className="required">*</span> : '(opcional)'}
+                  </label>
+                  <select className="form-select" name="superior" value={formData.superior} onChange={handleChange} required={superiorObrigatorio}>
+                    <option value="">{superiorObrigatorio ? 'Selecione o superior...' : 'Sem superior'}</option>
+                    {candidatosSuperior.map((g) => (
+                      <option key={g.id} value={g.id}>{g.nome}</option>
+                    ))}
+                  </select>
+                </div>
 
                 <div className="form-group">
                   <label className="form-label">Data de Admissão <span className="required">*</span></label>

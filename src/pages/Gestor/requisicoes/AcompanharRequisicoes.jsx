@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { supabase } from '../../../services/supabase';
 import { formatarMoeda, parseDesligamento } from '../../../utils/formatters';
-import { Check, X, Loader2, ClipboardCheck, FileText, ChevronDown, Filter, User, RotateCcw } from 'lucide-react';
+import { Check, X, Loader2, ClipboardCheck, FileText, ChevronDown, Filter, User } from 'lucide-react';
 import FluxoTimeline from '../../../components/Solicitacoes/FluxoTimeline';
 import SearchSelect from '../../../components/UI/SearchSelect';
 import { opcoesSolicitantes } from './solicitantes';
@@ -13,7 +13,7 @@ import {
 import ModalRespostas, { DETALHE, buscarRespostas } from './ModalRespostas';
 import RequisicoesRh from './RequisicoesRh';
 import { notificarAprovadorSolic } from '../../../services/notificarAprovadorSolic';
-import { notificarSolicitanteDevolucao } from '../../../services/notificarSolicitanteDevolucao';
+import { notificarSolicitanteReprovacao } from '../../../services/notificarSolicitanteReprovacao';
 import BotaoPdfRequisicao from '../../../components/BotaoPdfRequisicao';
 import '../../../components/UI/Components.css';
 import '../Gestor.css';
@@ -22,7 +22,7 @@ const TOM_BADGE = {
   pendente: { label: 'Em andamento', badge: 'pendente' },
   concluida: { label: 'Concluída', badge: 'aprovada' },
   reprovada: { label: 'Reprovada', badge: 'inativo' },
-  devolvida: { label: 'Devolvida p/ ajustes', badge: 'pendente' },
+  cancelada: { label: 'Cancelada', badge: 'inativo' },
 };
 
 const SELECT_SOL = `
@@ -108,9 +108,9 @@ export default function AcompanharRequisicoes() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Desfechos: 'aprovar' (segue o fluxo), 'reprovar' (encerra) e 'devolver'
-  // (volta ao solicitante para ajustes e reenvio). Reprovar e devolver exigem
-  // justificativa — validado aqui e no botão do modal.
+  // Desfechos: 'aprovar' (segue o fluxo) e 'reprovar' (encerra e avisa o
+  // solicitante, que pode responder e devolver à decisão de quem reprovou).
+  // Reprovar exige justificativa — validado aqui e no botão do modal.
   const confirmarDecisao = async () => {
     if (!decisao) return;
     const { sol, modo } = decisao;
@@ -119,7 +119,7 @@ export default function AcompanharRequisicoes() {
     const coment = comentario.trim();
     if (modo !== 'aprovar' && !coment) return; // justificativa obrigatória
     const agora = new Date().toISOString();
-    const statusEtapa = { aprovar: 'aprovada', reprovar: 'reprovada', devolver: 'devolvida' }[modo];
+    const statusEtapa = { aprovar: 'aprovada', reprovar: 'reprovada' }[modo];
     setAcaoId(sol.id);
     try {
       const { data, error } = await supabase
@@ -143,16 +143,7 @@ export default function AcompanharRequisicoes() {
           .update({ status: 'reprovada', updated_at: agora })
           .eq('id', sol.id);
         if (e2) throw e2;
-      } else if (modo === 'devolver') {
-        const { error: e2 } = await supabase
-          .from('solicitacoes_rh')
-          .update({
-            status: 'devolvida', updated_at: agora,
-            devolucao_motivo: coment, devolucao_por: user.id, devolucao_em: agora,
-          })
-          .eq('id', sol.id);
-        if (e2) throw e2;
-        notificarSolicitanteDevolucao(sol.id);   // avisa o solicitante (best-effort)
+        notificarSolicitanteReprovacao(sol.id);   // avisa o solicitante (best-effort)
       } else {
         notificarAprovadorSolic(sol.id);
       }
@@ -299,9 +290,6 @@ export default function AcompanharRequisicoes() {
                           <button className="btn btn-success btn-sm" disabled={acaoId === s.id} onClick={() => { setDecisao({ sol: s, modo: 'aprovar' }); setComentario(''); }}>
                             {acaoId === s.id ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />} Aprovar
                           </button>
-                          <button className="btn btn-warning btn-sm" disabled={acaoId === s.id} onClick={() => { setDecisao({ sol: s, modo: 'devolver' }); setComentario(''); }}>
-                            <RotateCcw size={14} /> Devolver p/ ajustes
-                          </button>
                           <button className="btn btn-danger btn-sm" disabled={acaoId === s.id} onClick={() => { setDecisao({ sol: s, modo: 'reprovar' }); setComentario(''); }}>
                             <X size={14} /> Reprovar
                           </button>
@@ -327,15 +315,9 @@ export default function AcompanharRequisicoes() {
             label: 'Comentário (opcional)', placeholder: 'Adicione um comentário, se quiser...',
             confirmar: <><Check size={16} /> Confirmar aprovação</>, processando: 'Aprovando...',
           },
-          devolver: {
-            titulo: 'Devolver para ajustes', btn: 'btn-warning', obrig: true,
-            desc: <>A requisição volta ao solicitante para <strong>correção e reenvio</strong>, sem precisar abrir outra. Explique o que precisa ser ajustado.</>,
-            label: 'Motivo da devolução', placeholder: 'Descreva o que o solicitante precisa ajustar...',
-            confirmar: <><RotateCcw size={16} /> Confirmar devolução</>, processando: 'Devolvendo...',
-          },
           reprovar: {
             titulo: 'Reprovar requisição', btn: 'btn-danger', obrig: true,
-            desc: <>A requisição será <strong>encerrada como Reprovada</strong> e todos da cadeia verão o motivo.</>,
+            desc: <>A requisição será <strong>reprovada</strong>. O solicitante é avisado por e-mail e pode responder — aí ela volta para a sua decisão.</>,
             label: 'Motivo da reprovação', placeholder: 'Explique o motivo da reprovação...',
             confirmar: <><X size={16} /> Confirmar reprovação</>, processando: 'Reprovando...',
           },

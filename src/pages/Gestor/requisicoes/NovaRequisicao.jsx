@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, useNavigate, Navigate } from 'react-router-dom';
+import { useParams, useNavigate, Navigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, FilePlus2, History } from 'lucide-react';
 import { getRequisicao } from '../../../config/requisicoes';
 import FormDesligamento from './FormDesligamento';
@@ -26,8 +26,11 @@ const FORMS = {
 export default function NovaRequisicao() {
   const { tipo } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const req = getRequisicao(tipo);
-  const [aba, setAba] = useState('nova');
+  // ?aba=historico abre direto no Histórico — usado pelo link do e-mail de
+  // reprovação ("Responder"), que leva o solicitante ao lugar de responder.
+  const [aba, setAba] = useState(searchParams.get('aba') === 'historico' ? 'historico' : 'nova');
 
   // Trocar de requisição volta para a aba do formulário (reset durante o render,
   // padrão recomendado pelo React em vez de setState dentro de useEffect).

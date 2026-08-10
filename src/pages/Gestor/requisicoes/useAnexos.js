@@ -1,13 +1,10 @@
 import { useRef, useState } from 'react';
 import { supabase } from '../../../services/supabase';
+import { enviarArquivo } from './uploadAnexo';
 
 // Anexos MÚLTIPLOS de uma requisição. Guarda os arquivos escolhidos, valida
 // tamanho, sobe todos para o bucket e devolve [{ path, nome }] para gravar na
 // coluna jsonb `anexos`. Se um upload falhar, faz rollback dos que já subiram.
-const sanitizarNome = (nome) => nome
-  .normalize('NFD').replace(/[̀-ͯ]/g, '')
-  .replace(/[^a-zA-Z0-9._-]/g, '_');
-
 export function useAnexos({ bucket, maxMb = 10 }) {
   const [arquivos, setArquivos] = useState([]); // File[]
   const [erro, setErro] = useState('');
@@ -40,10 +37,7 @@ export function useAnexos({ bucket, maxMb = 10 }) {
     const enviados = [];
     try {
       for (const f of arquivos) {
-        const path = `${crypto.randomUUID()}/${sanitizarNome(f.name)}`;
-        const { error } = await supabase.storage.from(bucket).upload(path, f);
-        if (error) throw new Error(`Falha ao enviar o anexo "${f.name}": ${error.message}`);
-        enviados.push({ path, nome: f.name });
+        enviados.push(await enviarArquivo(bucket, f));
       }
       return enviados;
     } catch (e) {

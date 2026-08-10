@@ -39,8 +39,23 @@ test('candidatosASuperior exclui o próprio colaborador', () => {
   assert.deepEqual(candidatosASuperior('usuario', pessoas, 'g1').map((c) => c.id), ['g2', 'c1']);
 });
 
-test('candidatosASuperior de gestor: vazio', () => {
-  assert.deepEqual(candidatosASuperior('gestor', pessoas), []);
+test('candidatosASuperior de gestor: outros gestores (a liderança é toda gestor)', () => {
+  assert.deepEqual(candidatosASuperior('gestor', pessoas).map((c) => c.id), ['g2', 'g1']);
+});
+
+test('candidatosASuperior de gestor exclui o próprio', () => {
+  assert.deepEqual(candidatosASuperior('gestor', pessoas, 'g1').map((c) => c.id), ['g2']);
+});
+
+test('candidatosASuperior impede ciclo: não lista descendentes do editado', () => {
+  // Cadeia: g1 (topo) <- c1 <- u1. Ao editar g1, nem c1 nem u1 podem ser o superior dele.
+  const arvore = [
+    { id: 'g1', nome: 'Gestor Um', perfil: 'gestor', superior_id: null },
+    { id: 'g2', nome: 'Gestor Dois', perfil: 'gestor', superior_id: null },
+    { id: 'c1', nome: 'Coord', perfil: 'gestor', superior_id: 'g1' },
+    { id: 'u1', nome: 'Sub', perfil: 'gestor', superior_id: 'c1' },
+  ];
+  assert.deepEqual(candidatosASuperior('gestor', arvore, 'g1').map((c) => c.id), ['g2']);
 });
 
 test('candidatosASuperior tolera lista nula', () => {

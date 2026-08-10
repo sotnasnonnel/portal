@@ -140,6 +140,22 @@ export function montarEtapasAlcada({ solicitacaoId, etapasCadeia = [], etapasAlc
 }
 
 /**
+ * Pessoas que NUNCA entram como aprovadoras numa requisição do DP, mesmo que a
+ * resolução de papéis as devolva. Vale só para o DP (Gente & Cultura) — no
+ * módulo Financeiro elas seguem normais.
+ *
+ * ALESSANDRA ANDRADE SOBRAL: caía nas requisições sem ninguém tê-la escolhido.
+ * O papel FINANCEIRO é de GRUPO e, no DP, grupo colapsa na primeira pessoa da
+ * lista; como ninguém está cadastrado em `alcadas_papeis` para FINANCEIRO, a
+ * RPC usa o fallback `financeiro_role='admin' order by nome` e ela é a primeira
+ * em ordem alfabética. Ela é removida e NINGUÉM entra no lugar: se o papel
+ * resolver só nela, a etapa simplesmente não é criada.
+ */
+const EXCLUIDOS_DP = new Set([
+  '67baf407-547d-4a94-8c30-9de37cd719e5', // ALESSANDRA ANDRADE SOBRAL
+]);
+
+/**
  * §5 — Aprovadores exigidos por uma requisição do DP (Gente & Cultura).
  *
  * Devolve os aprovadores a ACRESCENTAR à cadeia configurada do gestor. Se o
@@ -182,7 +198,7 @@ export async function aprovadoresGenteCultura({
       ? e.nome
       : `${e.candidatos[0]?.nome || e.nome} — ${PAPEL_LABEL[e.papel] || e.papel}`,
     papel: e.papel,
-  })).filter((a) => a.id);
+  })).filter((a) => a.id && !EXCLUIDOS_DP.has(a.id.toLowerCase()));
 
   return { aprovadores, lacunas, decisao };
 }

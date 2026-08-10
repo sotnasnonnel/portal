@@ -19,10 +19,30 @@ import {
   ChevronsRight,
   Lock,
   LogOut,
+  Clock,
+  ShieldAlert,
+  ScrollText,
 } from 'lucide-react';
 import logoCal from '../../assets/logo-cal.png';
 import AppSwitcher from '../AppSwitcher/AppSwitcher';
+import { isHorasExtrasDp } from '../../config/horasExtras';
 import './Sidebar.css';
+
+// Horas Extras: só o TRATAMENTO do DP mora aqui. Pedir, acompanhar e aprovar
+// ficam no Controle de Horas. Não entra no menuConfig por perfil porque quem
+// enxerga é quem passa em isHorasExtrasDp — inclusive um gestor com rh_dp, que
+// continua com o perfil 'gestor'.
+const HORAS_EXTRAS_GROUP = {
+  group: true,
+  key: 'horasExtras',
+  label: 'Horas Extras',
+  icon: Clock,
+  children: [
+    { label: 'Painel', icon: ClipboardCheck, path: '/admin/horas-extras' },
+    { label: 'Exceções de Prazo', icon: ShieldAlert, path: '/admin/horas-extras/excecoes' },
+    { label: 'Auditoria', icon: ScrollText, path: '/admin/horas-extras/auditoria' },
+  ],
+};
 
 const menuConfig = {
   admin: [
@@ -103,7 +123,9 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
   const location = useLocation();
   const [openGroups, setOpenGroups] = useState({});
 
-  const items = user ? (menuConfig[user.perfil] || []) : [];
+  const items = user
+    ? [...(menuConfig[user.perfil] || []), ...(isHorasExtrasDp(user) ? [HORAS_EXTRAS_GROUP] : [])]
+    : [];
 
   const isChildActive = (children) =>
     children.some(

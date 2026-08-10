@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ROLES, ROLE_LABEL, isGestor, isCoordenador, isGestao, podeApontar, escopo } from './roles.js';
+import { ROLES, ROLE_LABEL, isGestor, isCoordenador, isGestao, isHorasAdmin, podeApontar, escopo } from './roles.js';
+import { SUPER_ADMIN_EMAIL } from '../../../config/superAdmin.js';
 
 test('os três papéis e seus rótulos', () => {
   assert.deepEqual(ROLES, ['usuario', 'coordenador', 'gestor']);
@@ -30,6 +31,18 @@ test('escopo: usuário vê o seu, a gestão vê a equipe', () => {
   assert.equal(escopo('usuario'), 'meu');
   assert.equal(escopo('coordenador'), 'equipe');
   assert.equal(escopo('gestor'), 'equipe');
+});
+
+test('admin do módulo: vê todas as equipes sem ser admin do portal', () => {
+  // A elevação horas_role='admin' basta, mesmo com perfil de gestor comum.
+  assert.equal(isHorasAdmin({ perfil: 'gestor', horasRole: 'admin' }), true);
+  // O admin do portal e o super-admin continuam entrando.
+  assert.equal(isHorasAdmin({ perfil: 'admin' }), true);
+  assert.equal(isHorasAdmin({ perfil: 'usuario', email: SUPER_ADMIN_EMAIL }), true);
+  // Gestor/coordenador comum vê só a própria subárvore.
+  assert.equal(isHorasAdmin({ perfil: 'gestor', horasRole: 'gestor' }), false);
+  assert.equal(isHorasAdmin({ perfil: 'coordenador' }), false);
+  assert.equal(isHorasAdmin(null), false);
 });
 
 test('valor desconhecido cai no papel mais restrito', () => {

@@ -106,7 +106,7 @@
 }
 
 .code{
-  font-weight: 900;
+  font-weight: 700;
   color: #26405d;
   line-height: 1.05;
   min-width: 0;
@@ -137,13 +137,13 @@
   border: 1px solid rgba(38,64,93,0.14);
   border-radius: 999px;
   padding: 3px 10px;
-  font-weight: 900;
+  font-weight: 700;
   font-size: 12px;
   background: rgba(255,255,255,0.7);
 }
 
 .name{
-  font-weight: 900;
+  font-weight: 600;
   color: rgba(38,64,93,0.85);
   margin-bottom: 8px;
   font-size: 13px;
@@ -158,6 +158,12 @@
   color: rgba(38,64,93,0.72);
   line-height: 1.35;
   overflow-wrap: anywhere;
+}
+
+/* "Necessidade:", "Entrega:", "ID:" — o <b> puxava 700 e competia com o resto
+   do cartão; 600 já diferencia o rótulo do valor. */
+.meta b{
+  font-weight: 600;
 }
 
 .empty{

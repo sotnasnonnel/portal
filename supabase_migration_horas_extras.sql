@@ -156,7 +156,7 @@ create table if not exists public.horas_extras_auditoria (
 create index if not exists horas_extras_audit_criado_idx
   on public.horas_extras_auditoria (criado_em desc);
 
--- Rótulos legíveis no detalhe da auditoria (espelham lib/horasExtras.js).
+-- Rótulos legíveis no detalhe da auditoria (espelham src/config/horasExtras.js).
 create or replace function app_private.horas_extras_destino_label(p text)
 returns text language sql immutable set search_path = '' as $$
   select case p when 'medicao' then 'Medição/Pagamento' when 'banco' then 'Banco de Horas' else coalesce(p, '—') end

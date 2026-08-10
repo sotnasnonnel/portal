@@ -1,8 +1,16 @@
 import { GraduationCap, Activity, Headset, CreditCard, Handshake, BookOpen } from 'lucide-react';
 
 /**
- * Ferramentas externas usadas na empresa, agrupadas no card expansível
- * "Soluções Integradas" da tela inicial (src/pages/Home/Home.jsx).
+ * Item em destaque do popup "Soluções Integradas": aparece sozinho no topo,
+ * acima da grade de ferramentas. Deixe `null` para o popup abrir direto na grade.
+ *
+ * Ex.: { nome: 'Portal PHD', desc: 'Portal corporativo…', url: 'https://…', icon: Compass }
+ */
+export const SOLUCAO_DESTAQUE = null;
+
+/**
+ * Ferramentas externas usadas na empresa, listadas no popup
+ * "Soluções Integradas" da tela inicial (src/pages/Home/SolucoesModal.jsx).
  *
  * - nome: rótulo exibido
  * - desc: linha curta de apoio

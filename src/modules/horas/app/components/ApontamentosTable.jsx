@@ -7,11 +7,17 @@ import { fmtData, fmtDur } from '../../lib/format';
 //  - onDelete: se passado, mostra a coluna de excluir (chamada por linha permitida)
 //  - podeExcluir(apont) -> bool; sem ele, todas as linhas mostram o botão
 //  - nameOf: se passado, mostra a coluna Colaborador (colaboradorId -> nome)
-// As 3 atividades controladas aparecem como tags, com a descrição abaixo.
+// Sigla, tarefa, etiqueta e tarefa 2 aparecem como tags, com a descrição abaixo.
+// `ativ` é o legado (atividades controladas por gerência) e só aparece nos
+// apontamentos antigos, que não têm os campos novos.
 export default function ApontamentosTable({ list, projetoNome, projetoCor, onDelete, podeExcluir, nameOf }) {
   if (!list.length) {
     return <div className="horas-empty">Nenhum apontamento.</div>;
   }
+  const tags = (a) => {
+    const novos = [a.sigla, a.tarefa, a.etiqueta, a.tarefa2].filter(Boolean);
+    return novos.length ? novos : (a.ativ || []).filter(Boolean);
+  };
   // horas-tbl-resp + data-label: no mobile o CSS transforma cada linha num
   // cartao e usa o data-label no lugar do cabecalho (7 colunas nao cabem).
   return (
@@ -20,7 +26,7 @@ export default function ApontamentosTable({ list, projetoNome, projetoCor, onDel
         <tr>
           {nameOf ? <th>Colaborador</th> : null}
           <th>Projeto</th>
-          <th>Atividades</th>
+          <th>Tarefa</th>
           <th>Início</th>
           <th>Fim</th>
           <th className="horas-right">Duração</th>
@@ -38,8 +44,8 @@ export default function ApontamentosTable({ list, projetoNome, projetoCor, onDel
               />
               {projetoNome ? projetoNome(a.projetoId) : '—'}
             </td>
-            <td data-label="Atividades">
-              {(a.ativ || []).filter(Boolean).map((v, i) => (
+            <td data-label="Tarefa">
+              {tags(a).map((v, i) => (
                 <span className="horas-tag" key={i}>
                   {v}
                 </span>
@@ -49,9 +55,7 @@ export default function ApontamentosTable({ list, projetoNome, projetoCor, onDel
                   {a.descricao}
                 </div>
               ) : null}
-              {!a.descricao && !(a.ativ || []).filter(Boolean).length ? (
-                <span className="horas-muted">—</span>
-              ) : null}
+              {!a.descricao && !tags(a).length ? <span className="horas-muted">—</span> : null}
             </td>
             <td className="horas-muted" data-label="Início">{fmtData(a.inicio)}</td>
             <td className="horas-muted" data-label="Fim">{fmtData(a.fim)}</td>

@@ -1,11 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
+import { FileSpreadsheet } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
-import {
-  fetchApontamentos,
-  fetchProjetos,
-  fetchColaboradores,
-  fetchAtividades,
-} from '../../lib/data';
+import { fetchApontamentos, fetchProjetos, fetchColaboradores } from '../../lib/data';
 import { agruparHoras, serieDiaria, somaMs } from '../../lib/aggregate';
 import { fmtHoras, startOfDay, startOfWeek, startOfMonth, periodoPadrao, intervaloTs } from '../../lib/format';
 import { escopo, isGestao } from '../../lib/roles';
@@ -24,7 +20,6 @@ export default function DashboardPage() {
   const [apont, setApont] = useState([]);
   const [projetos, setProjetos] = useState([]);
   const [colabs, setColabs] = useState([]);
-  const [atividades, setAtividades] = useState([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState('');
   const [range, setRange] = useState(() => periodoPadrao(30));
@@ -58,39 +53,11 @@ export default function DashboardPage() {
     };
   }, [role, colaboradorId, gerenciaId, range]);
 
-  // Rótulos das atividades controladas: da gerência do próprio usuário.
-  const gerenciaRotulos = gerenciaId;
-  useEffect(() => {
-    let cancel = false;
-    (async () => {
-      if (!gerenciaRotulos) {
-        setAtividades([]);
-        return;
-      }
-      try {
-        const ats = await fetchAtividades(gerenciaRotulos);
-        if (!cancel) setAtividades(ats);
-      } catch {
-        if (!cancel) setAtividades([]);
-      }
-    })();
-    return () => {
-      cancel = true;
-    };
-  }, [gerenciaRotulos]);
-
   const proj = useMemo(() => lookupProjetos(projetos), [projetos]);
   const colab = useMemo(() => lookupColaboradores(colabs), [colabs]);
 
   // O filtro só oferece projetos que aparecem nos apontamentos do escopo.
   const projetosEscopo = useMemo(() => proj.usadosEm(apont), [proj, apont]);
-
-  // Só as atividades já configuradas (com opções) entram nos gráficos.
-  const ativsUsadas = useMemo(() => atividades.filter((a) => a.valores.length), [atividades]);
-  const ativA = ativsUsadas[0] || null; // gráfico próprio
-  // Quebra do "Meu Dashboard": a SEGUNDA atividade. Sem fallback para a primeira,
-  // senão o mesmo dado apareceria em dois gráficos.
-  const ativB = ativsUsadas[1] || null;
 
   const list = useMemo(() => {
     let l = apont;
@@ -112,21 +79,18 @@ export default function DashboardPage() {
   );
 
   // Quarta quebra:
-  //   equipe -> por colaborador;  meu -> pela 2ª atividade controlada.
+  //   equipe -> por colaborador;  meu -> por etiqueta (campo fixo do catálogo).
   const breakSpec = useMemo(() => {
     if (tipo === 'equipe') {
       return { titulo: 'Horas por colaborador', key: (a) => colab.nome(a.colaboradorId), tipoGrafico: 'bar' };
     }
-    if (!ativB) return null; // nenhuma atividade configurada ainda
-    return {
-      titulo: `Distribuição por ${ativB.label.toLowerCase()}`,
-      key: (a) => a.ativ?.[ativB.ordem],
-      tipoGrafico: 'pie',
-    };
-  }, [tipo, colab, ativB]);
+    return { titulo: 'Distribuição por etiqueta', key: (a) => a.etiqueta, tipoGrafico: 'pie' };
+  }, [tipo, colab]);
 
   const porProjeto = useMemo(() => agruparHoras(list, (a) => proj.nome(a.projetoId)), [list, proj]);
-  const porAtivA = useMemo(() => (ativA ? agruparHoras(list, (a) => a.ativ?.[ativA.ordem]) : []), [list, ativA]);
+  // A sigla é a quebra mais grossa do catálogo (PTA/POP/PES/PTO) — dá a visão de
+  // tipo de trabalho sem estourar o gráfico com as 162 tarefas.
+  const porSigla = useMemo(() => agruparHoras(list, (a) => a.sigla), [list]);
   const porFuncao = useMemo(
     () => (isGestao(role) ? agruparHoras(list, (a) => colab.funcao(a.colaboradorId)) : []),
     [list, role, colab]
@@ -137,6 +101,42 @@ export default function DashboardPage() {
   const openPopup = (title, predicate) => setPopup({ title, list: list.filter(predicate) });
 
   const mostraColaborador = tipo !== 'meu';
+
+  // Exporta o que está na tela: os apontamentos já filtrados (detalhe) e o
+  // resumo de cada gráfico. Import dinâmico do xlsx igual aos outros módulos.
+  async function exportarXLSX() {
+    const { utils, writeFile } = await import('xlsx');
+
+    const detalhe = list.map((a) => ({
+      ...(mostraColaborador ? { Colaborador: colab.nome(a.colaboradorId) || '—' } : {}),
+      ...(mostraColaborador ? { Função: colab.funcao(a.colaboradorId) || '—' } : {}),
+      Projeto: proj.nome(a.projetoId) || '—',
+      Sigla: a.sigla || '',
+      Tarefa: a.tarefa || '',
+      Etiqueta: a.etiqueta || '',
+      'Tarefa 2': a.tarefa2 || '',
+      Início: new Date(a.inicio).toLocaleString('pt-BR'),
+      Fim: new Date(a.fim).toLocaleString('pt-BR'),
+      'Duração (h)': Number((a.duracao / 3600000).toFixed(2)),
+      Descrição: a.descricao || '',
+    }));
+
+    // Uma linha por grupo, com a mesma quebra dos gráficos.
+    const resumo = [];
+    const addResumo = (quebra, dados) =>
+      dados.forEach((d) =>
+        resumo.push({ Quebra: quebra, Item: d.name, 'Duração (h)': Number((d.ms / 3600000).toFixed(2)) })
+      );
+    addResumo('Projeto', porProjeto);
+    addResumo('Sigla', porSigla);
+    if (breakSpec) addResumo(breakSpec.titulo, porBreak);
+    if (isGestao(role)) addResumo('Função', porFuncao);
+
+    const wb = utils.book_new();
+    utils.book_append_sheet(wb, utils.json_to_sheet(detalhe), 'Apontamentos');
+    utils.book_append_sheet(wb, utils.json_to_sheet(resumo), 'Resumo');
+    writeFile(wb, `horas_${range.de}_a_${range.ate}.xlsx`);
+  }
 
   const titulo = tipo === 'equipe' ? 'Dashboard da Equipe' : 'Meu Dashboard';
   let subt = tipo === 'equipe' ? 'Horas apontadas pela sua equipe.' : 'Suas horas apontadas.';
@@ -169,19 +169,16 @@ export default function DashboardPage() {
     },
   ];
 
-  // Só existe quando a gerência já configurou uma atividade controlada.
-  if (ativA) {
-    graficos.push({
-      id: 'ativA',
-      titulo: `Horas por ${ativA.label.toLowerCase()}`,
-      chart: (
-        <BrandBarChart
-          data={porAtivA}
-          onSelect={(n) => openPopup(`${ativA.label} · ${n}`, (a) => (a.ativ?.[ativA.ordem] || '—') === n)}
-        />
-      ),
-    });
-  }
+  graficos.push({
+    id: 'sigla',
+    titulo: 'Horas por sigla',
+    chart: (
+      <BrandBarChart
+        data={porSigla}
+        onSelect={(n) => openPopup(`Sigla · ${n}`, (a) => (a.sigla || '—') === n)}
+      />
+    ),
+  });
 
   graficos.push({
     id: 'evolucao',
@@ -275,6 +272,9 @@ export default function DashboardPage() {
               Limpar filtros
             </button>
           ) : null}
+          <button className="horas-btn2" type="button" onClick={exportarXLSX} disabled={!list.length}>
+            <FileSpreadsheet size={16} color="#1D6F42" /> Exportar Excel
+          </button>
         </div>
       </div>
 

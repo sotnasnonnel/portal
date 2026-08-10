@@ -6,6 +6,8 @@ export const APROVADORES = {
   // Marcador da etapa de execução: a conta de sistema do DP. Não é uma pessoa —
   // quem executa é qualquer admin pela tela Admin > Requisições, e a notificação
   // de execução vai para todos os admins (edge function notify-solic-aprovador).
+  // ⚠️ Tem FK para colaboradores(id): trocar por um id inexistente derruba a
+  // criação de TODA requisição (a etapa de execução entra em todas).
   admin: '99f54a6a-34f7-45f4-9cb8-6e10980ed637', // Sistema PHD (DP) — executor final
 };
 
@@ -159,10 +161,11 @@ export function montarEtapasDeConfig(solicitacaoId, aprovadores, criadorId, nome
  */
 export function etapaAtual(etapas) {
   const lista = etapas || [];
-  // Reprovada encerra de vez; devolvida devolve ao solicitante — em ambos os
-  // casos NÃO há aprovador da vez (a devolvida volta a ter quando for reenviada,
-  // pois o reenvio recria as etapas todas como 'pendente').
-  if (lista.some((e) => e.status === 'reprovada' || e.status === 'devolvida')) return null;
+  // Estados terminais: reprovada (aguarda o solicitante responder — volta a ter
+  // etapa atual quando ele reabre a etapa de quem rejeitou), cancelada (Admin
+  // encerrou) e a antiga devolvida (mantida por compatibilidade). Em qualquer
+  // deles NÃO há aprovador da vez, mesmo que existam etapas seguintes pendentes.
+  if (lista.some((e) => e.status === 'reprovada' || e.status === 'devolvida' || e.status === 'cancelada')) return null;
   return (
     lista
       .filter((e) => (e.tipo_etapa === 'aprovacao' || e.tipo_etapa === 'execucao') && e.status === 'pendente')
@@ -178,6 +181,9 @@ export function resumoAndamento(solicitacao, etapas) {
   if (solicitacao.status === 'reprovada') {
     const rep = lista.find((e) => e.status === 'reprovada');
     return { texto: `Reprovada por ${nomeDe(rep)}`, tom: 'reprovada' };
+  }
+  if (solicitacao.status === 'cancelada') {
+    return { texto: 'Cancelada pelo Admin', tom: 'cancelada' };
   }
   if (solicitacao.status === 'devolvida') {
     const dev = lista.find((e) => e.status === 'devolvida');

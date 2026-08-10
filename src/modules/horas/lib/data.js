@@ -4,10 +4,27 @@ import { supabase } from './supabase';
 // Camada de dados do Controle de Horas.
 // Pessoas vêm de `colaboradores`. O papel do módulo (horas_role) e a gerência
 // (horas_gerencia_id) vivem lá e são editados em /portal-admin e /horas/equipe.
-// Cada GERÊNCIA tem seus projetos e 3 atividades controladas; o apontamento
-// guarda a gerência (snapshot) e os 3 valores escolhidos.
+// Cada GERÊNCIA tem os seus projetos; os demais campos do apontamento (sigla,
+// tarefa, etiqueta e tarefa 2) vêm do catálogo fixo da empresa
+// (lib/catalogoTarefas.js). O apontamento guarda a gerência (snapshot), o
+// projeto e os 4 campos escolhidos.
 // `duracao_ms` é calculada no banco e o cronômetro vive em `horas_timer_ativo`.
 // ============================================================================
+
+// Campos do catálogo, como vão/vêm do banco. Um só lugar para o mapeamento.
+const camposTarefa = (sel = {}) => ({
+  sigla: sel.sigla || null,
+  tarefa: sel.tarefa || null,
+  etiqueta: sel.etiqueta || null,
+  tarefa2: sel.tarefa2 || null,
+});
+
+const lerCamposTarefa = (row) => ({
+  sigla: row.sigla || '',
+  tarefa: row.tarefa || '',
+  etiqueta: row.etiqueta || '',
+  tarefa2: row.tarefa2 || '',
+});
 
 // ---- Gerências ------------------------------------------------------------
 export async function fetchGerencias() {
@@ -16,7 +33,6 @@ export async function fetchGerencias() {
   return data || [];
 }
 
-// As 3 atividades controladas são criadas por trigger no banco.
 export async function createGerencia(nome) {
   const { data, error } = await supabase.from('horas_gerencias').insert({ nome }).select().single();
   if (error) throw error;
@@ -25,23 +41,6 @@ export async function createGerencia(nome) {
 
 export async function deleteGerencia(id) {
   const { error } = await supabase.from('horas_gerencias').delete().eq('id', id);
-  if (error) throw error;
-}
-
-// ---- Atividades controladas (3 por gerência, ordem 0..2) -------------------
-export async function fetchAtividades(gerenciaId) {
-  if (!gerenciaId) return [];
-  const { data, error } = await supabase
-    .from('horas_atividades')
-    .select('*')
-    .eq('gerencia_id', gerenciaId)
-    .order('ordem');
-  if (error) throw error;
-  return data || [];
-}
-
-export async function updateAtividade(id, patch) {
-  const { error } = await supabase.from('horas_atividades').update(patch).eq('id', id);
   if (error) throw error;
 }
 
@@ -115,7 +114,7 @@ export async function createApontamento({
   colaboradorId,
   gerenciaId,
   projetoId,
-  ativ,
+  tarefaSel,
   descricao,
   inicioTs,
   fimTs,
@@ -126,7 +125,7 @@ export async function createApontamento({
       colaborador_id: colaboradorId,
       gerencia_id: gerenciaId || null,
       projeto_id: projetoId || null,
-      ativ: ativ || [],
+      ...camposTarefa(tarefaSel),
       descricao: descricao || null,
       inicio: new Date(inicioTs).toISOString(),
       fim: new Date(fimTs).toISOString(),
@@ -172,6 +171,9 @@ function normalizeApont(row) {
     colaboradorId: row.colaborador_id,
     gerenciaId: row.gerencia_id,
     projetoId: row.projeto_id,
+    ...lerCamposTarefa(row),
+    // Legado: os apontamentos feitos com as antigas atividades controladas por
+    // gerência. Só serve para não sumir com o histórico nas listagens.
     ativ: row.ativ || [],
     descricao: row.descricao || '',
     inicio: new Date(row.inicio).getTime(),
@@ -189,7 +191,7 @@ function normalizeTimer(row) {
   if (!row) return null;
   return {
     projetoId: row.projeto_id,
-    ativ: row.ativ || [],
+    ...lerCamposTarefa(row),
     descricao: row.descricao || '',
     inicio: new Date(row.inicio).getTime(),
   };
@@ -205,13 +207,13 @@ export async function fetchTimer(colaboradorId) {
   return normalizeTimer(data);
 }
 
-export async function startTimer(colaboradorId, { projetoId, ativ, descricao }) {
+export async function startTimer(colaboradorId, { projetoId, tarefaSel, descricao }) {
   const { data, error } = await supabase
     .from('horas_timer_ativo')
     .upsert({
       colaborador_id: colaboradorId,
       projeto_id: projetoId || null,
-      ativ: ativ || [],
+      ...camposTarefa(tarefaSel),
       descricao: descricao || null,
       inicio: new Date().toISOString(),
       atualizado_em: new Date().toISOString(),

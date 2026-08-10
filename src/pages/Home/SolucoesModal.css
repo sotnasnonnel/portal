@@ -1,0 +1,332 @@
+/* Popup "Soluções Integradas" — aberto pelo card da Home (SolucoesModal.jsx) */
+
+.solmodal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(20, 32, 48, 0.34);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  animation: solmodal-fade 140ms ease-out;
+}
+
+.solmodal {
+  width: 100%;
+  max-width: 880px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #ffffff;
+  border: 1px solid rgba(38, 64, 93, 0.10);
+  box-shadow: 0 28px 70px rgba(20, 32, 48, 0.28);
+  text-align: left;
+  animation: solmodal-in 180ms ease-out;
+}
+
+@keyframes solmodal-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes solmodal-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---------- cabeçalho ---------- */
+
+.solmodal-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 22px 22px 20px;
+  border-bottom: 1px solid rgba(38, 64, 93, 0.10);
+}
+
+.solmodal-head-icon {
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(195, 94, 30, 0.10);
+  color: #c35e1e;
+}
+
+.solmodal-head-txt {
+  flex: 1;
+  min-width: 0;
+}
+
+.solmodal-head-txt h2 {
+  margin: 0 0 3px;
+  font-size: 19px;
+  font-weight: 700;
+  color: #26405d;
+  letter-spacing: -0.01em;
+}
+
+.solmodal-head-txt p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: rgba(38, 64, 93, 0.62);
+}
+
+.solmodal-close {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(38, 64, 93, 0.14);
+  background: #ffffff;
+  color: #26405d;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.solmodal-close:hover {
+  background: rgba(38, 64, 93, 0.06);
+  border-color: rgba(38, 64, 93, 0.24);
+}
+
+/* ---------- corpo ---------- */
+
+.solmodal-body {
+  padding: 18px 22px 24px;
+  overflow-y: auto;
+}
+
+/* Item em destaque: barra terracota à esquerda + fundo levemente tingido. */
+.solmodal-destaque {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px 16px 22px;
+  border-radius: 14px;
+  border: 1px solid rgba(195, 94, 30, 0.22);
+  background: rgba(195, 94, 30, 0.045);
+  text-decoration: none;
+  color: #26405d;
+  overflow: hidden;
+  transition: background 150ms ease, box-shadow 150ms ease;
+}
+
+.solmodal-destaque::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: #c35e1e;
+}
+
+.solmodal-destaque:hover {
+  background: rgba(195, 94, 30, 0.085);
+  box-shadow: 0 10px 26px rgba(195, 94, 30, 0.14);
+}
+
+.solmodal-destaque-icon {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #c35e1e;
+  color: #ffffff;
+}
+
+.solmodal-destaque-txt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.solmodal-destaque-txt strong {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.solmodal-destaque-txt small {
+  font-size: 13px;
+  color: rgba(38, 64, 93, 0.62);
+}
+
+.solmodal-destaque-cta {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #c35e1e;
+  transition: gap 150ms ease;
+}
+
+.solmodal-destaque:hover .solmodal-destaque-cta {
+  gap: 8px;
+}
+
+/* ---------- grade de ferramentas ---------- */
+
+.solmodal-secao {
+  margin: 22px 0 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgba(38, 64, 93, 0.48);
+}
+
+/* Sem destaque configurado, a grade começa colada no topo do corpo. */
+.solmodal-destaque + .solmodal-secao {
+  margin-top: 24px;
+}
+
+.solmodal-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.solmodal-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 100%;
+  padding: 13px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(38, 64, 93, 0.12);
+  background: #ffffff;
+  text-decoration: none;
+  color: #26405d;
+  transition: border-color 150ms ease, background 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+}
+
+a.solmodal-item:hover {
+  border-color: rgba(195, 94, 30, 0.35);
+  background: rgba(195, 94, 30, 0.04);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(38, 64, 93, 0.10);
+}
+
+.solmodal-item-icon {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(27, 39, 53, 0.06);
+  color: #334155;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+a.solmodal-item:hover .solmodal-item-icon {
+  background: rgba(195, 94, 30, 0.12);
+  color: #c35e1e;
+}
+
+.solmodal-item-txt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.solmodal-item-txt strong {
+  font-size: 14.5px;
+  font-weight: 700;
+}
+
+.solmodal-item-txt small {
+  font-size: 12.5px;
+  color: rgba(38, 64, 93, 0.62);
+}
+
+.solmodal-item-dominio {
+  font-size: 11.5px;
+  color: rgba(38, 64, 93, 0.40);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.solmodal-item-seta {
+  flex: none;
+  color: rgba(38, 64, 93, 0.35);
+  transition: color 150ms ease, transform 150ms ease;
+}
+
+a.solmodal-item:hover .solmodal-item-seta {
+  color: #c35e1e;
+  transform: translate(2px, -2px);
+}
+
+.solmodal-item-breve {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.solmodal-item-breve em {
+  flex: none;
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: rgba(38, 64, 93, 0.55);
+}
+
+/* ---------- mobile ---------- */
+
+@media (max-width: 640px) {
+  .solmodal-overlay {
+    padding: 12px;
+    align-items: flex-end;
+  }
+
+  .solmodal {
+    max-height: 92vh;
+    border-radius: 18px;
+  }
+
+  .solmodal-head {
+    padding: 18px 16px 16px;
+  }
+
+  .solmodal-body {
+    padding: 16px 16px 20px;
+  }
+
+  .solmodal-lista {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .solmodal-destaque {
+    flex-wrap: wrap;
+  }
+}
