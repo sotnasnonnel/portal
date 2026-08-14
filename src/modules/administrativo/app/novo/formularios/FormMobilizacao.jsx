@@ -108,8 +108,13 @@ export default function FormMobilizacao({ valores, onChange, pessoas = [] }) {
 
       <div className="adm-campo">
         <label>Adicionais</label>
+        {/* Exames e treinamentos não entram aqui de propósito: são tratados no
+            sistema do RH e só se definem na assinatura do contrato. Dizer isso
+            evita que alguém procure o campo e abra outro chamado por causa. */}
         <span className="adm-campo-dica">
-          Marque só o que este profissional precisa. Tudo aqui é opcional.
+          Marque só o que este profissional precisa — tudo aqui é opcional, e quem já é da casa
+          costuma usar o que tem. Exames e treinamentos não entram nesta lista: são tratados
+          pelo RH na assinatura do contrato.
         </span>
         <div className="adm-marcadores">
           <Marcador titulo="Equipamento e acessórios" itens={OPCOES_EQUIPAMENTO}

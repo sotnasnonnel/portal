@@ -20,7 +20,10 @@ export default function Sidebar({ aberto = false, onFechar }) {
   const { logout, user, modules } = useAuth();
   const nome = user?.nome || '';
   const email = user?.email || '';
-  const secoes = navSections({ isAdmin: modules?.administrativo === 'admin' });
+  const secoes = navSections({
+    isAdmin: modules?.administrativo === 'admin',
+    isTime: modules?.administrativo === 'admin' || modules?.administrativo === 'atendente',
+  });
 
   // Esc fecha o drawer. Fechar ao navegar é feito no onClick de cada link (toda
   // navegação daqui sai de um <Link>), evitando um efeito que dispararia setState

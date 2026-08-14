@@ -353,6 +353,217 @@
 .adm-btn-recusa { background: #fff; border-color: #fecaca; color: #b91c1c; }
 .adm-btn-recusa:hover { background: #fef2f2; border-color: #b91c1c; }
 
+/* ======================= quadro (Kanban) ======================= */
+/* Quadro precisa de mais largura que as outras telas: cinco colunas em 1180px
+   ficam estreitas demais para o assunto do chamado. */
+.adm-page-full { max-width: 1600px; }
+
+/* minmax(0, 1fr) e não minmax(220px, 1fr): com um mínimo fixo, cinco colunas
+   somam mais que a área útil em telas médias e a última fica cortada para fora
+   da página. Assim elas encolhem juntas, e abaixo de 1200px o quadro vira faixa
+   rolável — onde estreitar demais deixaria de ajudar. */
+.adm-quadro {
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px; align-items: start; max-width: 100%;
+}
+/* min-width: 0 impede que o conteúdo do cartão force a coluna a crescer. */
+.adm-col {
+  min-width: 0;
+  background: var(--a-gray-50); border: 1px solid var(--a-border); border-radius: 14px;
+}
+.adm-col-cab {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 14px; border-bottom: 1px solid var(--a-border);
+}
+.adm-col-cab h2 {
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--a-gray-600); margin: 0;
+}
+.adm-col-cont {
+  margin-left: auto; min-width: 22px; padding: 1px 7px; border-radius: 999px;
+  background: #fff; border: 1px solid var(--a-border);
+  font-size: 0.7rem; font-weight: 700; color: var(--a-muted); text-align: center;
+}
+.adm-col-corpo { padding: 10px; display: flex; flex-direction: column; gap: 8px; min-height: 60px; }
+.adm-col-vazia { margin: 6px 0; text-align: center; color: #cbd5e1; }
+
+.adm-cartao {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 11px 12px; background: #fff; text-decoration: none;
+  border: 1px solid var(--a-border); border-radius: 11px;
+  box-shadow: var(--a-shadow-sm); transition: border-color 0.15s, transform 0.15s;
+}
+.adm-cartao:hover { border-color: var(--a-primary); transform: translateY(-1px); }
+.adm-cartao-topo { display: flex; align-items: center; gap: 8px; }
+.adm-cartao-num { font-size: 0.72rem; font-weight: 700; color: var(--a-muted); font-variant-numeric: tabular-nums; }
+.adm-cartao-msg {
+  display: inline-flex; align-items: center; gap: 3px; margin-left: auto;
+  padding: 1px 7px; border-radius: 999px; background: var(--a-primary); color: #fff;
+  font-size: 0.68rem; font-weight: 700;
+}
+/* Assunto pode ter palavra longa (código de patrimônio, nome de arquivo): sem
+   quebrar, ela empurraria a coluna inteira. */
+.adm-cartao-assunto {
+  font-size: 0.85rem; font-weight: 600; color: var(--a-ink); line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.adm-cartao-classe { font-size: 0.7rem; color: var(--a-muted); overflow-wrap: anywhere; }
+.adm-cartao-rodape { display: flex; align-items: center; gap: 8px; margin-top: 2px; flex-wrap: wrap; }
+.adm-cartao-dono {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+  background: var(--a-primary-soft); color: var(--a-primary);
+  font-size: 0.65rem; font-weight: 700;
+}
+.adm-cartao-sem-dono {
+  font-size: 0.68rem; font-weight: 700; color: #b45309;
+  background: #fff3d6; padding: 2px 7px; border-radius: 999px;
+}
+/* Semáforo do prazo: a cor é o dado, o texto é a confirmação. */
+.adm-prazo {
+  margin-left: auto; font-size: 0.68rem; font-weight: 600;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.adm-prazo.tom-ok { color: #047857; }
+.adm-prazo.tom-perto { color: #b45309; }
+.adm-prazo.tom-vencido { color: #b91c1c; font-weight: 800; }
+.adm-prazo.tom-sem-prazo { color: #94a3b8; }
+
+/* 1460px é onde as cinco colunas ainda cabem com ~220px cada (descontando a
+   sidebar de 256px e o respiro da página). Abaixo disso elas ficariam estreitas
+   demais para o assunto do chamado: melhor rolar de lado do que espremer. */
+@media (max-width: 1460px) {
+  .adm-quadro {
+    display: flex; overflow-x: auto; scroll-snap-type: x proximity;
+    padding-bottom: 8px;
+  }
+  .adm-col { flex: 0 0 260px; scroll-snap-align: start; }
+}
+
+@media (max-width: 620px) {
+  /* No celular, uma coluna por vez, com o encaixe ajudando a não parar no meio. */
+  .adm-quadro { scroll-snap-type: x mandatory; }
+  .adm-col { flex: 0 0 82vw; }
+}
+
+/* ======================= detalhe e fila ======================= */
+.adm-link {
+  background: none; border: none; padding: 0; font: inherit;
+  color: var(--a-primary); text-decoration: none; cursor: pointer; text-align: left;
+}
+.adm-link:hover { text-decoration: underline; }
+.adm-sem-dono { color: #b45309; font-size: 0.78rem; }
+/* Contador de mensagens não lidas ao lado do assunto, nas listas. */
+.adm-nao-lidas {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 5px; margin-left: 8px;
+  border-radius: 999px; background: var(--a-primary); color: #fff;
+  font-size: 0.68rem; font-weight: 700; vertical-align: middle;
+}
+/* Prazo estourado precisa saltar na fila, não só constar. */
+.adm-tabela td.is-vencido { color: #b91c1c; font-weight: 700; }
+
+.adm-form-cab .adm-badge { margin-left: auto; }
+
+/* ---- conversa ---- */
+.adm-msgs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.adm-msg { border: 1px solid var(--a-border); border-radius: 11px; padding: 12px 14px; background: #fff; }
+/* Nota interna é visualmente distinta: quem escreve precisa ver, num relance,
+   que aquilo não vai para o solicitante. */
+.adm-msg.is-interna { background: #fff9ed; border-color: #f0d9a8; }
+.adm-msg-cab { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+.adm-msg-cab strong { font-size: 0.85rem; color: var(--a-ink); }
+.adm-msg-cab span { font-size: 0.72rem; color: var(--a-muted); }
+.adm-msg-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 999px; background: #fdf0d5; color: #8a6300;
+  font-size: 0.68rem; font-weight: 700;
+}
+.adm-msg p { margin: 0; font-size: 0.875rem; line-height: 1.6; color: var(--a-gray-600); white-space: pre-wrap; }
+
+.adm-avaliar { border-color: var(--a-primary); box-shadow: 0 0 0 1px var(--a-primary); }
+
+/* ---- estrelas da pesquisa de satisfação ---- */
+.adm-estrelas { display: flex; align-items: center; gap: 4px; }
+.adm-estrela {
+  display: flex; padding: 4px; border: none; background: none; cursor: pointer;
+  color: #d4d8de; transition: color 0.12s, transform 0.12s;
+}
+.adm-estrela:hover { transform: scale(1.12); }
+/* Preenchida usa o âmbar clássico de avaliação, não o azul do módulo: aqui a
+   cor é o dado, e o usuário já reconhece essa convenção. */
+.adm-estrela.is-on { color: #f0a500; }
+.adm-estrela.is-on svg { fill: currentColor; }
+.adm-estrelas.is-leitura .adm-estrela { cursor: default; padding: 2px; }
+.adm-estrelas.is-leitura .adm-estrela:hover { transform: none; }
+.adm-estrelas-legenda { margin-left: 8px; font-size: 0.82rem; color: var(--a-gray-600); }
+
+/* ======================= satisfação ======================= */
+.adm-sat-topo { display: grid; grid-template-columns: minmax(200px, 260px) 1fr; gap: 14px; align-items: start; }
+
+/* A média geral é um número-manchete: nenhum gráfico comunicaria melhor que
+   o próprio número. */
+.adm-sat-hero { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.adm-sat-rot {
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--a-muted);
+}
+.adm-sat-num { font-size: 2.6rem; font-weight: 700; line-height: 1.1; color: var(--a-ink); }
+.adm-sat-estrelas { display: flex; gap: 2px; color: #d4d8de; }
+.adm-sat-estrelas .is-on { color: #f0a500; fill: #f0a500; }
+.adm-sat-pe { font-size: 0.78rem; color: var(--a-muted); margin-top: 2px; }
+
+/* Distribuição: uma série só, escala ordinal. Sem legenda — o rótulo de cada
+   linha já diz o que ela é. */
+.adm-sat-dist { display: flex; flex-direction: column; }
+.adm-sat-linha {
+  display: grid; grid-template-columns: 42px 1fr 34px 44px;
+  align-items: center; gap: 10px; padding: 3px 0;
+}
+.adm-sat-nota {
+  display: inline-flex; align-items: center; gap: 3px; justify-content: flex-end;
+  font-size: 0.8rem; font-weight: 600; color: var(--a-gray-600);
+}
+.adm-sat-nota svg { color: #f0a500; fill: #f0a500; }
+.adm-sat-trilho { height: 10px; background: var(--a-gray-100); border-radius: 4px; }
+/* Ponta arredondada e base reta, ancorada no eixo. */
+.adm-sat-barra { display: block; height: 100%; background: var(--a-primary); border-radius: 0 4px 4px 0; }
+.adm-sat-valor { font-size: 0.82rem; font-weight: 600; color: var(--a-ink); font-variant-numeric: tabular-nums; text-align: right; }
+.adm-sat-pct { font-size: 0.75rem; color: var(--a-muted); font-variant-numeric: tabular-nums; text-align: right; }
+
+/* A média por serviço ganha um tom de estado — mas com o número sempre visível,
+   nunca cor sozinha. */
+.adm-sat-media { font-weight: 700; font-variant-numeric: tabular-nums; }
+.adm-sat-media.tom-baixa { color: #b91c1c; }
+.adm-sat-media.tom-media { color: #b45309; }
+.adm-sat-media.tom-alta { color: #047857; }
+
+@media (max-width: 760px) {
+  .adm-sat-topo { grid-template-columns: 1fr; }
+}
+
+/* ---- filtros do quadro ---- */
+.adm-filtros { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin-bottom: 14px; }
+.adm-filtro { display: flex; flex-direction: column; gap: 5px; min-width: 220px; }
+.adm-filtro label {
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--a-muted);
+}
+.adm-filtro-limpa { min-height: 40px; }
+
+/* Evento é registro do sistema: discreto e sem balão, para não competir com as
+   mensagens de gente. É o que mostra que o chamado andou sem ninguém escrever. */
+.adm-evento {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 4px; font-size: 0.8rem; color: var(--a-muted);
+}
+.adm-evento svg { color: var(--a-primary); flex-shrink: 0; }
+.adm-evento span { flex: 1; min-width: 0; }
+.adm-evento time { font-size: 0.72rem; white-space: nowrap; }
+
+.adm-badge.tom-em_atendimento { background: var(--a-primary-soft); color: var(--a-primary); }
+.adm-badge.tom-aguardando_solicitante { background: #fff3d6; color: #8a6300; }
+
 /* ======================= configuração dos serviços ======================= */
 /* Lista à esquerda, editor à direita: são 20 serviços e trocar de um para o
    outro é o gesto mais repetido de quem cadastra. */
@@ -383,7 +594,14 @@
   padding: 12px; margin-bottom: 10px; background: var(--a-gray-50);
   display: flex; flex-direction: column; gap: 8px;
 }
-.adm-linha { display: flex; align-items: center; gap: 8px; }
+.adm-linha { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+/* Número da etapa: deixa a ordem da cadeia legível sem contar linhas. */
+.adm-ordem {
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--a-primary-soft); color: var(--a-primary);
+  font-size: 0.72rem; font-weight: 700;
+}
 .adm-linha .adm-input, .adm-linha .adm-select { flex: 1; min-width: 0; }
 .adm-select-curto { flex: 0 0 150px; }
 .adm-textarea-curto { min-height: 84px; }

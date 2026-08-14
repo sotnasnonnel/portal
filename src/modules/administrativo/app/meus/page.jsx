@@ -3,14 +3,9 @@ import { Link } from 'react-router-dom';
 import { Inbox, Archive, Loader2, AlertCircle, Star } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { listarMeusChamados, buscarAvaliacaoPendente } from '../../lib/chamados';
+import { STATUS_LABEL as ROTULO_STATUS } from '../../lib/statusChamado';
 
-const ROTULO_STATUS = {
-  aguardando_aprovacao: 'Aguardando aprovação',
-  aberto: 'Aberto',
-  fechado: 'Fechado',
-  reprovado: 'Reprovado',
-  cancelado: 'Cancelado',
-};
+
 
 const data = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR') : '—');
 const dataHora = (iso) => (iso
@@ -60,6 +55,7 @@ export default function MeusChamadosAdm() {
           <span>
             O chamado <strong>#{pendente.numero} — {pendente.assunto}</strong> foi fechado e ainda
             não foi avaliado. Enquanto a avaliação não for feita, você não consegue abrir novos chamados.
+            {' '}<Link className="adm-link" to={`/administrativo/chamado/${pendente.id}`}>Avaliar agora</Link>.
           </span>
         </div>
       )}
@@ -101,8 +97,17 @@ export default function MeusChamadosAdm() {
             <tbody>
               {linhas.map((c) => (
                 <tr key={c.id}>
-                  <td className="num">#{c.numero}</td>
-                  <td>{c.assunto}</td>
+                  <td className="num">
+                    <Link className="adm-link" to={`/administrativo/chamado/${c.id}`}>#{c.numero}</Link>
+                  </td>
+                  <td>
+                    <Link className="adm-link" to={`/administrativo/chamado/${c.id}`}>{c.assunto}</Link>
+                    {c.naoLidas > 0 && (
+                      <span className="adm-nao-lidas" title={`${c.naoLidas} mensagem(ns) não lida(s)`}>
+                        {c.naoLidas}
+                      </span>
+                    )}
+                  </td>
                   {!fechados && (
                     <td>
                       <span className={`adm-badge tom-${c.status}`}>

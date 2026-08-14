@@ -236,6 +236,33 @@ const SEM_ANEXO = new Set([
   'mobilizacao/mobilizacao',
 ]);
 
+/**
+ * Rótulos dos campos dos formulários escritos em código. A tela de detalhe
+ * mostra o que foi preenchido, e sem isto ela exibiria a chave crua
+ * ("data_inicio_cliente") para quem só quer ler o pedido.
+ */
+const ROTULOS_CODIFICADOS = {
+  movimento: 'Movimentação', profissional: 'Profissional', gestor: 'Gestor',
+  cc: 'Centro de custo', local_obra: 'Local da obra',
+  data_inicio_cliente: 'Data de início no cliente', equipamentos: 'Equipamento e acessórios',
+  softwares: 'Software', epis: 'EPI', uniforme: 'Uniforme',
+  contato_cliente: 'Contato do setor do cliente', devolucao: 'Há devolução',
+  devolucao_descricao: 'O que será devolvido',
+  tipo: 'Tipo', tipo_livre: 'Peças e tamanhos', motivo: 'Motivo',
+  localizacao: 'Localização', observacao: 'Observação',
+};
+
+/** Rótulo de um campo gravado em chamados_adm.campos. */
+export function rotuloDoCampo(classe, servico, chave) {
+  const doSchema = (schemaDoServico(classe, servico) || []).find((c) => c.chave === chave);
+  if (doSchema) return doSchema.rotulo;
+  if (ROTULOS_CODIFICADOS[chave]) return ROTULOS_CODIFICADOS[chave];
+  return chave.replace(/_/g, ' ');
+}
+
+/** Campos internos que não fazem sentido exibir como dado do pedido. */
+export const CAMPOS_OCULTOS = new Set(['profissional_id', 'pessoa_id']);
+
 export const usaDescricao = (classe, servico) => COM_DESCRICAO.has(`${classe}/${servico}`);
 export const usaAnexo = (classe, servico) => !SEM_ANEXO.has(`${classe}/${servico}`);
 
