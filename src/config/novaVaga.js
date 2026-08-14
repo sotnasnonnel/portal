@@ -5,7 +5,7 @@
  *        | 'funcao' (lista oficial + Outro) | 'uf' | 'bool' | 'check' (checkbox único, default false) | 'text'
  * Filial depende da Empresa (mapa FILIAIS); o anexo é tratado fora do schema.
  */
-import { parseCurrency } from '../utils/currencyMask';
+import { parseCurrency } from '../utils/currencyMask.js';
 
 export const EMPRESAS = ['PHD ENGENHARIA', 'PHD ASSESSORIA'];
 

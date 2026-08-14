@@ -16,8 +16,8 @@ import { CORES } from '../../lib/cores';
 
 // Configuração da ÁREA do gestor: os PROJETOS que a equipe dele vê ao apontar.
 // Cada gestor edita só a sua área; o admin do módulo vê todas (a RLS garante
-// isso no banco). Sigla, tarefa, etiqueta e tarefa 2 não estão aqui: viraram um
-// catálogo fixo da empresa (lib/catalogoTarefas.js), igual para todas as áreas.
+// isso no banco). Os demais campos do apontamento (sigla, frente, o que a
+// equipe quiser) ficam em "Config. do Apontamento" — ver config/apontamento.
 export default function ConfigPage() {
   const { user, modules } = useAuth();
   const role = modules?.horas || 'usuario';
@@ -150,8 +150,9 @@ export default function ConfigPage() {
       <p className="horas-sub">Defina os projetos que a sua equipe vê ao apontar.</p>
 
       <div className="horas-hint">
-        Sigla, Tarefa, Etiqueta e Tarefa 2 não são configuráveis por área: vêm do catálogo único da
-        empresa e já saem filtrados uns pelos outros no apontamento.
+        Aqui ficam só os projetos. Os demais campos do apontamento (sigla, tarefa, frente de
+        serviço — o que fizer sentido para a sua equipe) são definidos centralmente, em{' '}
+        <b>Config. do Apontamento</b>: peça a quem administra o Controle de Horas.
       </div>
 
       {erro ? <div className="horas-hint">⚠️ {erro}</div> : null}

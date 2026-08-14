@@ -1,30 +1,17 @@
 import { supabase } from './supabase';
+import { camposDoApontamento, normalizarCampo, paraBanco } from './camposEquipe';
 
 // ============================================================================
 // Camada de dados do Controle de Horas.
 // Pessoas vêm de `colaboradores`. O papel do módulo (horas_role) e a gerência
 // (horas_gerencia_id) vivem lá e são editados em /portal-admin e /horas/equipe.
-// Cada GERÊNCIA tem os seus projetos; os demais campos do apontamento (sigla,
-// tarefa, etiqueta e tarefa 2) vêm do catálogo fixo da empresa
-// (lib/catalogoTarefas.js). O apontamento guarda a gerência (snapshot), o
-// projeto e os 4 campos escolhidos.
+// Cada GERÊNCIA (equipe) tem os seus projetos E os seus CAMPOS de apontamento
+// (horas_campos_apontamento: rótulo, tipo, opções e obrigatoriedade), montados
+// em /horas/config/apontamento. O apontamento guarda a gerência (snapshot), o
+// projeto e o que foi preenchido nesses campos — em jsonb, com o rótulo junto
+// (ver lib/camposEquipe.js).
 // `duracao_ms` é calculada no banco e o cronômetro vive em `horas_timer_ativo`.
 // ============================================================================
-
-// Campos do catálogo, como vão/vêm do banco. Um só lugar para o mapeamento.
-const camposTarefa = (sel = {}) => ({
-  sigla: sel.sigla || null,
-  tarefa: sel.tarefa || null,
-  etiqueta: sel.etiqueta || null,
-  tarefa2: sel.tarefa2 || null,
-});
-
-const lerCamposTarefa = (row) => ({
-  sigla: row.sigla || '',
-  tarefa: row.tarefa || '',
-  etiqueta: row.etiqueta || '',
-  tarefa2: row.tarefa2 || '',
-});
 
 // ---- Gerências ------------------------------------------------------------
 export async function fetchGerencias() {
@@ -90,6 +77,70 @@ export async function deleteProjeto(id) {
   if (error) throw error;
 }
 
+// ---- Campos do apontamento (por equipe) -----------------------------------
+// Leitura livre (a pessoa precisa dos campos da PRÓPRIA equipe para apontar);
+// a escrita é da liderança daquela área — quem garante é a RLS
+// (app_private.pode_gerir_gerencia), igual aos projetos.
+export async function fetchCamposEquipe(gerenciaId) {
+  if (!gerenciaId) return [];
+  const { data, error } = await supabase
+    .from('horas_campos_apontamento')
+    .select('*')
+    .eq('gerencia_id', gerenciaId)
+    .order('ordem')
+    .order('criado_em');
+  if (error) throw error;
+  return (data || []).map(normalizarCampo);
+}
+
+export async function createCampoEquipe(gerenciaId, campo) {
+  const { data, error } = await supabase
+    .from('horas_campos_apontamento')
+    .insert(paraBanco(campo, gerenciaId))
+    .select()
+    .single();
+  if (error) throw error;
+  return normalizarCampo(data);
+}
+
+export async function updateCampoEquipe(id, campo) {
+  const { data, error } = await supabase
+    .from('horas_campos_apontamento')
+    .update(paraBanco(campo))
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return normalizarCampo(data);
+}
+
+export async function deleteCampoEquipe(id) {
+  const { error } = await supabase.from('horas_campos_apontamento').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// Reordenar é só reescrever a coluna `ordem` dos campos que mudaram de lugar.
+export async function reordenarCamposEquipe(campos) {
+  for (const [i, c] of campos.entries()) {
+    if (c.ordem === i) continue;
+    const { error } = await supabase
+      .from('horas_campos_apontamento')
+      .update({ ordem: i })
+      .eq('id', c.id);
+    if (error) throw error;
+  }
+}
+
+// Cria os campos de um modelo (ex.: MODELO_PADRAO) de uma vez, na ordem dada.
+export async function criarCamposEmLote(gerenciaId, modelo) {
+  const { data, error } = await supabase
+    .from('horas_campos_apontamento')
+    .insert(modelo.map((c, ordem) => paraBanco({ ...c, ordem }, gerenciaId)))
+    .select();
+  if (error) throw error;
+  return (data || []).map(normalizarCampo);
+}
+
 // ---- Apontamentos ---------------------------------------------------------
 // Escopo agora segue a HIERARQUIA da Gestão de Pessoas (via RLS):
 //   usuario                -> os próprios;
@@ -114,7 +165,7 @@ export async function createApontamento({
   colaboradorId,
   gerenciaId,
   projetoId,
-  tarefaSel,
+  campos,
   descricao,
   inicioTs,
   fimTs,
@@ -125,7 +176,7 @@ export async function createApontamento({
       colaborador_id: colaboradorId,
       gerencia_id: gerenciaId || null,
       projeto_id: projetoId || null,
-      ...camposTarefa(tarefaSel),
+      campos: campos || [],
       descricao: descricao || null,
       inicio: new Date(inicioTs).toISOString(),
       fim: new Date(fimTs).toISOString(),
@@ -171,10 +222,10 @@ function normalizeApont(row) {
     colaboradorId: row.colaborador_id,
     gerenciaId: row.gerencia_id,
     projetoId: row.projeto_id,
-    ...lerCamposTarefa(row),
-    // Legado: os apontamentos feitos com as antigas atividades controladas por
-    // gerência. Só serve para não sumir com o histórico nas listagens.
-    ativ: row.ativ || [],
+    // [{ id, label, valor }] — já resolvendo os dois legados (o catálogo fixo em
+    // sigla/tarefa/etiqueta/tarefa2 e as atividades controladas em `ativ`), para
+    // as telas lidarem com um formato só.
+    campos: camposDoApontamento(row),
     descricao: row.descricao || '',
     inicio: new Date(row.inicio).getTime(),
     fim: new Date(row.fim).getTime(),
@@ -191,7 +242,7 @@ function normalizeTimer(row) {
   if (!row) return null;
   return {
     projetoId: row.projeto_id,
-    ...lerCamposTarefa(row),
+    campos: camposDoApontamento(row),
     descricao: row.descricao || '',
     inicio: new Date(row.inicio).getTime(),
   };
@@ -207,13 +258,13 @@ export async function fetchTimer(colaboradorId) {
   return normalizeTimer(data);
 }
 
-export async function startTimer(colaboradorId, { projetoId, tarefaSel, descricao }) {
+export async function startTimer(colaboradorId, { projetoId, campos, descricao }) {
   const { data, error } = await supabase
     .from('horas_timer_ativo')
     .upsert({
       colaborador_id: colaboradorId,
       projeto_id: projetoId || null,
-      ...camposTarefa(tarefaSel),
+      campos: campos || [],
       descricao: descricao || null,
       inicio: new Date().toISOString(),
       atualizado_em: new Date().toISOString(),

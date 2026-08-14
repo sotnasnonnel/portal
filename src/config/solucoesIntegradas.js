@@ -1,4 +1,4 @@
-import { GraduationCap, Activity, Headset, CreditCard, Handshake, BookOpen } from 'lucide-react';
+import { GraduationCap, Activity, Headset, CreditCard, Handshake, BookOpen, Radar, Gauge } from 'lucide-react';
 
 /**
  * Item em destaque do popup "Soluções Integradas": aparece sozinho no topo,
@@ -50,6 +50,18 @@ export const SOLUCOES_INTEGRADAS = [
     desc: 'CRM de vendas',
     url: 'https://accounts.rdstation.com/',
     icon: Handshake,
+  },
+  {
+    nome: 'MAS',
+    desc: '',
+    url: 'https://mas.phdengenharia.tech',
+    icon: Radar,
+  },
+  {
+    nome: 'MinePulse',
+    desc: '',
+    url: 'https://minepulse.phdengenharia.tech',
+    icon: Gauge,
   },
   {
     nome: 'Biblioteca',

@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { toDatetimeLocal } from '../../lib/format';
-import { SELECAO_VAZIA, selecaoValida } from '../../lib/catalogoTarefas';
-import CamposTarefa from './CamposTarefa';
+import { faltando, paraPersistencia, valoresIniciais } from '../../lib/camposEquipe';
+import CamposApontamento from './CamposApontamento';
 import SearchableSelect from './SearchableSelect';
 
 // Lançamento manual de um apontamento (quem esqueceu de ligar o cronômetro).
-// Os campos são os mesmos do cronômetro — projeto + o catálogo fixo.
-export default function ManualModal({ projetos, onClose, onSave }) {
+// Os campos são os mesmos do cronômetro — projeto + os campos da equipe.
+export default function ManualModal({ projetos, campos = [], onClose, onSave }) {
   const [projetoId, setProjetoId] = useState(projetos[0]?.id || '');
-  const [tarefaSel, setTarefaSel] = useState(SELECAO_VAZIA);
+  const [valores, setValores] = useState(() => valoresIniciais(campos));
   const [descricao, setDescricao] = useState('');
   const [ini, setIni] = useState(() => toDatetimeLocal(Date.now() - 3600000));
   const [fim, setFim] = useState(() => toDatetimeLocal(Date.now()));
@@ -21,11 +21,12 @@ export default function ManualModal({ projetos, onClose, onSave }) {
       setErro('O horário de fim deve ser maior que o de início.');
       return;
     }
-    if (!selecaoValida(tarefaSel)) {
-      setErro('Selecione sigla, tarefa, etiqueta e tarefa 2.');
+    const pendentes = faltando(campos, valores);
+    if (pendentes.length) {
+      setErro(`Preencha ${pendentes.join(', ')}.`);
       return;
     }
-    onSave({ projetoId, tarefaSel, descricao, inicioTs, fimTs });
+    onSave({ projetoId, campos: paraPersistencia(campos, valores), descricao, inicioTs, fimTs });
   }
 
   return (
@@ -44,7 +45,11 @@ export default function ManualModal({ projetos, onClose, onSave }) {
             }))}
           />
         </div>
-        <CamposTarefa valor={tarefaSel} onChange={setTarefaSel} />
+        <CamposApontamento
+          campos={campos}
+          valores={valores}
+          onChange={(id, v) => setValores((vals) => ({ ...vals, [id]: v }))}
+        />
         <div className="horas-fld">
           <label>Descrição</label>
           <input type="text" value={descricao} onChange={(e) => setDescricao(e.target.value)} />

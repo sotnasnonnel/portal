@@ -5,16 +5,11 @@ import { getEquipeIds } from '../../services/equipe';
 import { getStatusCalculado, formatarData } from '../../utils/formatters';
 import { Users, ClipboardCheck, CalendarClock, TrendingUp, AlertCircle, ClipboardList, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { acaoDisponivel, resumoAndamento, TIPO_LABEL } from '../../config/aprovacao';
+import { acaoDisponivel, resumoAndamento, badgeDeStatus, TIPO_LABEL } from '../../config/aprovacao';
 import '../../components/UI/Components.css';
 import './Gestor.css';
 
 // Mapeia o tom do andamento da requisição para rótulo + classe de badge (igual ao Acompanhar).
-const TOM_BADGE = {
-  pendente: { label: 'Em andamento', badge: 'pendente' },
-  concluida: { label: 'Concluída', badge: 'aprovada' },
-  reprovada: { label: 'Reprovada', badge: 'inativo' },
-};
 
 export default function GestorDashboard() {
   const [equipe, setEquipe] = useState([]);
@@ -211,7 +206,7 @@ export default function GestorDashboard() {
               <tbody>
                 {reqRecentes.map((s) => {
                   const resumo = resumoAndamento(s, s.etapas);
-                  const tomB = TOM_BADGE[resumo.tom] || TOM_BADGE.pendente;
+                  const tomB = badgeDeStatus(resumo.tom);
                   return (
                     <tr key={s.id}>
                       <td style={{ fontWeight: 600 }}>{TIPO_LABEL[s.tipo] || s.tipo}</td>

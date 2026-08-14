@@ -7,17 +7,15 @@ import { fmtData, fmtDur } from '../../lib/format';
 //  - onDelete: se passado, mostra a coluna de excluir (chamada por linha permitida)
 //  - podeExcluir(apont) -> bool; sem ele, todas as linhas mostram o botão
 //  - nameOf: se passado, mostra a coluna Colaborador (colaboradorId -> nome)
-// Sigla, tarefa, etiqueta e tarefa 2 aparecem como tags, com a descrição abaixo.
-// `ativ` é o legado (atividades controladas por gerência) e só aparece nos
-// apontamentos antigos, que não têm os campos novos.
+// Os campos preenchidos (os que a equipe configurou) aparecem como tags, com a
+// descrição abaixo. A lista pode misturar equipes com campos diferentes — e
+// registros do catálogo fixo antigo —, então o rótulo de cada valor vai no
+// title, que é o que dá sentido a uma tag solta como "PTA".
 export default function ApontamentosTable({ list, projetoNome, projetoCor, onDelete, podeExcluir, nameOf }) {
   if (!list.length) {
     return <div className="horas-empty">Nenhum apontamento.</div>;
   }
-  const tags = (a) => {
-    const novos = [a.sigla, a.tarefa, a.etiqueta, a.tarefa2].filter(Boolean);
-    return novos.length ? novos : (a.ativ || []).filter(Boolean);
-  };
+  const tags = (a) => a.campos || [];
   // horas-tbl-resp + data-label: no mobile o CSS transforma cada linha num
   // cartao e usa o data-label no lugar do cabecalho (7 colunas nao cabem).
   return (
@@ -26,7 +24,7 @@ export default function ApontamentosTable({ list, projetoNome, projetoCor, onDel
         <tr>
           {nameOf ? <th>Colaborador</th> : null}
           <th>Projeto</th>
-          <th>Tarefa</th>
+          <th>Detalhes</th>
           <th>Início</th>
           <th>Fim</th>
           <th className="horas-right">Duração</th>
@@ -44,10 +42,10 @@ export default function ApontamentosTable({ list, projetoNome, projetoCor, onDel
               />
               {projetoNome ? projetoNome(a.projetoId) : '—'}
             </td>
-            <td data-label="Tarefa">
-              {tags(a).map((v, i) => (
-                <span className="horas-tag" key={i}>
-                  {v}
+            <td data-label="Detalhes">
+              {tags(a).map((c, i) => (
+                <span className="horas-tag" key={i} title={`${c.label}: ${c.valor}`}>
+                  {c.valor}
                 </span>
               ))}
               {a.descricao ? (

@@ -6,6 +6,7 @@ import { agruparHoras, serieDiaria, somaMs } from '../../lib/aggregate';
 import { fmtHoras, startOfDay, startOfWeek, startOfMonth, periodoPadrao, intervaloTs } from '../../lib/format';
 import { escopo, isGestao } from '../../lib/roles';
 import { lookupProjetos, lookupColaboradores } from '../../lib/lookups';
+import { labelsUsados, valorDoCampo } from '../../lib/camposEquipe';
 import { BrandBarChart, BrandLineChart, BrandPieChart } from '../components/Charts';
 import ApontamentosTable from '../components/ApontamentosTable';
 import SearchableSelect from '../components/SearchableSelect';
@@ -24,6 +25,7 @@ export default function DashboardPage() {
   const [erro, setErro] = useState('');
   const [range, setRange] = useState(() => periodoPadrao(30));
   const [filtro, setFiltro] = useState({ projeto: '', colab: '' });
+  const [quebra, setQuebra] = useState(''); // campo do apontamento escolhido
   const [popup, setPopup] = useState(null);
 
   useEffect(() => {
@@ -78,19 +80,27 @@ export default function DashboardPage() {
     [list, agora]
   );
 
-  // Quarta quebra:
-  //   equipe -> por colaborador;  meu -> por etiqueta (campo fixo do catálogo).
-  const breakSpec = useMemo(() => {
-    if (tipo === 'equipe') {
-      return { titulo: 'Horas por colaborador', key: (a) => colab.nome(a.colaboradorId), tipoGrafico: 'bar' };
-    }
-    return { titulo: 'Distribuição por etiqueta', key: (a) => a.etiqueta, tipoGrafico: 'pie' };
-  }, [tipo, colab]);
+  // Quarta quebra: só na visão de equipe (por colaborador). Na visão "meu" o
+  // gráfico do campo escolhido já dá o recorte de tipo de trabalho.
+  const breakSpec = useMemo(
+    () =>
+      tipo === 'equipe'
+        ? { titulo: 'Horas por colaborador', key: (a) => colab.nome(a.colaboradorId), tipoGrafico: 'bar' }
+        : null,
+    [tipo, colab]
+  );
+
+  // Campos disponíveis para a quebra: os que APARECEM nos apontamentos do
+  // período (não a configuração atual da equipe) — assim o histórico do catálogo
+  // antigo e as várias equipes de um gestor continuam rendendo gráfico.
+  const labelsDisponiveis = useMemo(() => labelsUsados(apont), [apont]);
+  const quebraAtual = labelsDisponiveis.includes(quebra) ? quebra : labelsDisponiveis[0] || '';
 
   const porProjeto = useMemo(() => agruparHoras(list, (a) => proj.nome(a.projetoId)), [list, proj]);
-  // A sigla é a quebra mais grossa do catálogo (PTA/POP/PES/PTO) — dá a visão de
-  // tipo de trabalho sem estourar o gráfico com as 162 tarefas.
-  const porSigla = useMemo(() => agruparHoras(list, (a) => a.sigla), [list]);
+  const porCampo = useMemo(
+    () => (quebraAtual ? agruparHoras(list, (a) => valorDoCampo(a, quebraAtual)) : []),
+    [list, quebraAtual]
+  );
   const porFuncao = useMemo(
     () => (isGestao(role) ? agruparHoras(list, (a) => colab.funcao(a.colaboradorId)) : []),
     [list, role, colab]
@@ -107,14 +117,13 @@ export default function DashboardPage() {
   async function exportarXLSX() {
     const { utils, writeFile } = await import('xlsx');
 
+    // Uma coluna por campo presente nos apontamentos exportados.
+    const labels = labelsUsados(list);
     const detalhe = list.map((a) => ({
       ...(mostraColaborador ? { Colaborador: colab.nome(a.colaboradorId) || '—' } : {}),
       ...(mostraColaborador ? { Função: colab.funcao(a.colaboradorId) || '—' } : {}),
       Projeto: proj.nome(a.projetoId) || '—',
-      Sigla: a.sigla || '',
-      Tarefa: a.tarefa || '',
-      Etiqueta: a.etiqueta || '',
-      'Tarefa 2': a.tarefa2 || '',
+      ...Object.fromEntries(labels.map((l) => [l, valorDoCampo(a, l)])),
       Início: new Date(a.inicio).toLocaleString('pt-BR'),
       Fim: new Date(a.fim).toLocaleString('pt-BR'),
       'Duração (h)': Number((a.duracao / 3600000).toFixed(2)),
@@ -128,7 +137,7 @@ export default function DashboardPage() {
         resumo.push({ Quebra: quebra, Item: d.name, 'Duração (h)': Number((d.ms / 3600000).toFixed(2)) })
       );
     addResumo('Projeto', porProjeto);
-    addResumo('Sigla', porSigla);
+    if (quebraAtual) addResumo(quebraAtual, porCampo);
     if (breakSpec) addResumo(breakSpec.titulo, porBreak);
     if (isGestao(role)) addResumo('Função', porFuncao);
 
@@ -169,16 +178,37 @@ export default function DashboardPage() {
     },
   ];
 
-  graficos.push({
-    id: 'sigla',
-    titulo: 'Horas por sigla',
-    chart: (
-      <BrandBarChart
-        data={porSigla}
-        onSelect={(n) => openPopup(`Sigla · ${n}`, (a) => (a.sigla || '—') === n)}
-      />
-    ),
-  });
+  // Quebra pelos campos do apontamento. Como cada equipe monta os seus, o campo
+  // é escolhido aqui em vez de fixo — e o seletor só aparece quando há mais de
+  // um para escolher.
+  if (quebraAtual) {
+    graficos.push({
+      id: 'campo',
+      titulo: `Horas por ${quebraAtual.toLowerCase()}`,
+      acao:
+        labelsDisponiveis.length > 1 ? (
+          <select
+            value={quebraAtual}
+            onChange={(e) => setQuebra(e.target.value)}
+            style={{ maxWidth: 220 }}
+          >
+            {labelsDisponiveis.map((l) => (
+              <option key={l} value={l}>
+                {l}
+              </option>
+            ))}
+          </select>
+        ) : null,
+      chart: (
+        <BrandBarChart
+          data={porCampo}
+          onSelect={(n) =>
+            openPopup(`${quebraAtual} · ${n}`, (a) => (valorDoCampo(a, quebraAtual) || '—') === n)
+          }
+        />
+      ),
+    });
+  }
 
   graficos.push({
     id: 'evolucao',
@@ -295,7 +325,16 @@ export default function DashboardPage() {
             key={g.id}
             style={graficos.length % 2 === 1 && i === graficos.length - 1 ? { gridColumn: '1 / -1' } : undefined}
           >
-            <div className="horas-sec">{g.titulo}</div>
+            {g.acao ? (
+              <div className="horas-campo-topo">
+                <div className="horas-sec" style={{ margin: 0 }}>
+                  {g.titulo}
+                </div>
+                {g.acao}
+              </div>
+            ) : (
+              <div className="horas-sec">{g.titulo}</div>
+            )}
             <div className="horas-chart-wrap">{g.chart}</div>
           </div>
         ))}

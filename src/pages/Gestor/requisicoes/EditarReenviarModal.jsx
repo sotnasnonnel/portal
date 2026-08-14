@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { X, Loader2, RotateCcw, Paperclip } from 'lucide-react';
+import { X, Loader2, RotateCcw, Paperclip, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../../services/supabase';
 import { getReenvioConfig } from '../../../config/reenvio';
 import { UFS } from '../../../config/mapeamento';
@@ -16,9 +16,31 @@ const MOEDA = new Set(['moeda']);
 const visiveis = (cfg, form) =>
   (cfg.camposVisiveis ? cfg.camposVisiveis(form) : cfg.campos);
 
-export default function EditarReenviarModal({ sol, funcoes = [], etapaReprovada = null, onClose, onResponder }) {
+// Os dois caminhos do solicitante. Mudam só os textos e a exigência do motivo —
+// o editor de campos e anexos é o mesmo; quem executa cada um é o chamador.
+const MODOS = {
+  responder: {
+    titulo: 'Responder',
+    aviso: 'Ajuste o que for necessário e reenvie. A requisição volta para a decisão de quem reprovou.',
+    acao: 'Responder e reenviar',
+    processando: 'Reenviando...',
+    exigeMotivo: false,
+  },
+  editar: {
+    titulo: 'Editar requisição',
+    aviso: 'Ao salvar, a requisição volta para o INÍCIO da cadeia de aprovação: as aprovações já registradas são descartadas e todos os aprovadores decidem de novo sobre o conteúdo novo.',
+    acao: 'Salvar e reenviar para aprovação',
+    processando: 'Salvando...',
+    exigeMotivo: true,
+  },
+};
+
+export default function EditarReenviarModal({ sol, funcoes = [], modo = 'responder', etapaReprovada = null, onClose, onSalvar }) {
   const cfg = getReenvioConfig(sol?.tipo);
+  const m = MODOS[modo] || MODOS.responder;
   const [form, setForm] = useState(null);
+  const [motivo, setMotivo] = useState('');
+  const [faltaMotivo, setFaltaMotivo] = useState(false);
   const [faltando, setFaltando] = useState([]);
   const [erro, setErro] = useState('');
   const [salvando, setSalvando] = useState(false);
@@ -81,7 +103,9 @@ export default function EditarReenviarModal({ sol, funcoes = [], etapaReprovada 
     setErro('');
     const falta = (cfg.validar ? cfg.validar(form) : []).map((c) => c.id);
     setFaltando(falta);
-    if (falta.length) return;
+    const semMotivo = m.exigeMotivo && !motivo.trim();
+    setFaltaMotivo(semMotivo);
+    if (falta.length || semMotivo) return;
 
     setSalvando(true);
     let novos = [];
@@ -100,13 +124,18 @@ export default function EditarReenviarModal({ sol, funcoes = [], etapaReprovada 
           }
         : null;
 
-      await onResponder({
+      await onSalvar({
         solicitacaoId: sol.id,
         etapaReprovadaId: etapaReprovada?.id || null,
         reenviosAtual: sol.reenvios || 0,
         detalheTabela: cfg.modo === 'detalhe' ? cfg.tabela : null,
         detalhe,
         envelopePatch: cfg.modo === 'envelope' ? cfg.montarPatch(form) : null,
+        motivo: motivo.trim() || null,
+        // O que define a alçada pode ter MUDADO na edição (ex.: outra função
+        // proposta): manda o valor novo para a cadeia ser recalculada com ele.
+        funcaoAlvo: cfg.funcaoAlvoDe ? cfg.funcaoAlvoDe(form) : null,
+        foraDoQuadro: !!cfg.foraDoQuadro,
       });
 
       // Sucesso: remove do bucket os anexos que o solicitante tirou (best-effort).
@@ -204,7 +233,7 @@ export default function EditarReenviarModal({ sol, funcoes = [], etapaReprovada 
     <div className="modal-overlay" onClick={() => onClose(false)}>
       <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 640 }}>
         <div className="modal-header">
-          <span className="modal-title">Responder — {cfg.titulo}</span>
+          <span className="modal-title">{m.titulo} — {cfg.titulo}</span>
           <button className="modal-close" onClick={() => onClose(false)}><X size={18} /></button>
         </div>
         <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
@@ -213,14 +242,31 @@ export default function EditarReenviarModal({ sol, funcoes = [], etapaReprovada 
               Motivo da reprovação: {etapaReprovada.justificativa}
             </div>
           )}
-          <p style={{ margin: '0 0 var(--space-md)', color: 'var(--color-text-secondary)', fontSize: 13 }}>
-            Ajuste o que for necessário e reenvie. A requisição volta para a decisão de quem reprovou.
-          </p>
+          {modo === 'editar' ? (
+            <div className="sol-card-resumo tom-devolvida" style={{ marginBottom: 'var(--space-md)', display: 'flex', gap: 8 }}>
+              <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
+              <span>{m.aviso}</span>
+            </div>
+          ) : (
+            <p style={{ margin: '0 0 var(--space-md)', color: 'var(--color-text-secondary)', fontSize: 13 }}>
+              {m.aviso}
+            </p>
+          )}
           {erro && <div className="sol-card-resumo tom-reprovada" style={{ marginBottom: 'var(--space-md)' }}>{erro}</div>}
           {!form ? (
             <div style={{ padding: 'var(--space-lg)', textAlign: 'center' }}><Loader2 size={18} className="animate-spin" /></div>
           ) : (
             <>
+              {m.exigeMotivo && (
+                <div className="form-group" style={{ marginBottom: 'var(--space-md)' }}>
+                  <label className="form-label">Motivo da edição<span className="required"> *</span></label>
+                  <textarea className={`form-input${faltaMotivo ? ' input-erro' : ''}`} rows={2}
+                    style={{ resize: 'vertical', fontFamily: 'inherit' }}
+                    placeholder="Explique o que mudou — os aprovadores verão este texto."
+                    value={motivo} onChange={(e) => { setMotivo(e.target.value); setFaltaMotivo(false); }} />
+                  {faltaMotivo && <span className="contratacao-erro">Informe o motivo da edição.</span>}
+                </div>
+              )}
               {listaCampos.map((c) => (
                 <div key={c.id} className="form-group" style={{ marginBottom: 'var(--space-md)' }}>
                   <label className="form-label">{c.label}{c.obrigatorio && <span className="required"> *</span>}</label>
@@ -266,7 +312,9 @@ export default function EditarReenviarModal({ sol, funcoes = [], etapaReprovada 
         <div className="modal-footer">
           <button className="btn btn-outline" onClick={() => onClose(false)}>Cancelar</button>
           <button className="btn btn-primary" disabled={salvando || !form} onClick={salvar}>
-            {salvando ? <><Loader2 size={16} className="animate-spin" /> Reenviando...</> : <><RotateCcw size={16} /> Responder e reenviar</>}
+            {salvando
+              ? <><Loader2 size={16} className="animate-spin" /> {m.processando}</>
+              : <><RotateCcw size={16} /> {m.acao}</>}
           </button>
         </div>
       </div>

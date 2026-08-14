@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
-import { Clock, CheckCheck, X, ClipboardCheck, FileText, User } from 'lucide-react';
+import { Clock, CheckCheck, X, Ban, ClipboardCheck, FileText, User } from 'lucide-react';
 import FluxoTimeline from '../../../components/Solicitacoes/FluxoTimeline';
-import { resumoAndamento, TIPO_LABEL, INICIATIVA_LABEL } from '../../../config/aprovacao';
+import { resumoAndamento, badgeDeStatus, TIPO_LABEL, INICIATIVA_LABEL } from '../../../config/aprovacao';
 import { formatarMoeda, parseDesligamento } from '../../../utils/formatters';
 import ModalRespostas, { DETALHE, buscarRespostas } from './ModalRespostas';
 import BotaoPdfRequisicao from '../../../components/BotaoPdfRequisicao';
@@ -10,17 +10,13 @@ import { opcoesSolicitantes } from './solicitantes';
 
 // Visão do RH/DP: vê TODAS as requisições (somente leitura). Cards de status no
 // topo filtram a lista compacta; clicar numa requisição abre o detalhe (fluxo).
-const TOM_BADGE = {
-  pendente: { label: 'Em andamento', badge: 'pendente' },
-  concluida: { label: 'Concluída', badge: 'aprovada' },
-  reprovada: { label: 'Reprovada', badge: 'inativo' },
-};
-
 const CARDS = [
   { key: 'todos', label: 'Todas', tone: 'accent', Icon: ClipboardCheck },
   { key: 'pendente', label: 'Em andamento', tone: 'warning', Icon: Clock },
   { key: 'concluida', label: 'Concluídas', tone: 'success', Icon: CheckCheck },
   { key: 'reprovada', label: 'Reprovadas', tone: 'danger', Icon: X },
+  // Sem este cartão, uma requisição cancelada só era alcançável por "Todas".
+  { key: 'cancelada', label: 'Canceladas', tone: 'accent', Icon: Ban },
 ];
 
 export default function RequisicoesRh({ participa, nomes, loading }) {
@@ -104,7 +100,7 @@ export default function RequisicoesRh({ participa, nomes, loading }) {
               </thead>
               <tbody>
                 {filtradas.map((s) => {
-                  const tomB = TOM_BADGE[tomDe(s)] || TOM_BADGE.pendente;
+                  const tomB = badgeDeStatus(tomDe(s));
                   return (
                     <tr key={s.id} style={{ cursor: 'pointer' }} onClick={() => setAberta(s)}>
                       <td style={{ fontWeight: 600 }}>{s.numero ?? '—'}</td>
@@ -125,7 +121,7 @@ export default function RequisicoesRh({ participa, nomes, loading }) {
       {aberta ? (() => {
         const s = aberta;
         const resumo = resumoAndamento(s, s.etapas);
-        const tomB = TOM_BADGE[resumo.tom] || TOM_BADGE.pendente;
+        const tomB = badgeDeStatus(resumo.tom);
         const det = s.tipo === 'desligamento' ? parseDesligamento(s.justificativa) : { data: null, texto: s.justificativa };
         return (
           <div className="modal-overlay" onClick={() => setAberta(null)}>
@@ -163,6 +159,15 @@ export default function RequisicoesRh({ participa, nomes, loading }) {
                   )}
                 </div>
                 {det.texto && <div className="sol-card-just">{det.texto}</div>}
+
+                {/* Editada pelo solicitante depois de enviada: a cadeia recomeçou. */}
+                {s.edicao_motivo && (
+                  <div className="sol-card-resumo tom-devolvida">
+                    <strong>
+                      Editada pelo solicitante{s.edicao_em ? ` em ${new Date(s.edicao_em).toLocaleDateString('pt-BR')}` : ''} — a aprovação recomeçou:
+                    </strong> {s.edicao_motivo}
+                  </div>
+                )}
 
                 <div className={`sol-card-resumo tom-${resumo.tom}`}>{resumo.texto}</div>
 

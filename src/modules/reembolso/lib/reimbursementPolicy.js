@@ -6,8 +6,8 @@
 export const POLICY = {
   // Limites por refeição (R$)
   alimentacao: [
-    { label: "Almoço", value: 30 },
-    { label: "Jantar", value: 30 },
+    { label: "Almoço", value: 40 },
+    { label: "Jantar", value: 40 },
     { label: "Café da manhã", value: 20 },
   ],
   // Diária cheia = alimentação + hospedagem (R$)
@@ -26,13 +26,13 @@ export const POLICY = {
 };
 
 // Limite por refeição, casado pela descrição do item (acento-insensível).
-// Café da manhã tem teto menor (R$20); as demais refeições, R$30. As chaves
+// Café da manhã tem teto menor (R$20); almoço e jantar, R$40. As chaves
 // cobrem tanto a categoria que a IA atribui (ALMOÇO, JANTA, CAFÉ, COMIDA)
 // quanto palavras comuns nas descrições dos itens.
 const FOOD_LIMITS = [
   { keys: ["CAFE DA MANHA", "CAFE MANHA", "CAFE"], label: "Café da manhã", limit: 20 },
-  { keys: ["ALMOCO"], label: "Almoço", limit: 30 },
-  { keys: ["JANTAR", "JANTA", "JANTAR"], label: "Jantar", limit: 30 },
+  { keys: ["ALMOCO"], label: "Almoço", limit: 40 },
+  { keys: ["JANTAR", "JANTA", "JANTAR"], label: "Jantar", limit: 40 },
   // refeição genérica (a IA usa "COMIDA"; também pega lanche/restaurante)
   { keys: ["COMIDA", "REFEICAO", "RESTAURANTE", "LANCHE"], label: "Refeição", limit: 30 },
 ];
@@ -118,7 +118,7 @@ function mealOfGroup(group) {
 }
 
 // Avalia uma lista de itens e calcula o quanto a alimentação passou do limite.
-// O limite (almoço/jantar R$30, café R$20) é POR REFEIÇÃO, não por linha do
+// O limite (almoço/jantar R$40, café R$20) é POR REFEIÇÃO, não por linha do
 // cupom: itens da mesma nota são somados e comparados ao limite uma única vez.
 // Itens digitados à mão (sem nota) contam como uma refeição cada.
 //   spent   -> total gasto em refeições de alimentação

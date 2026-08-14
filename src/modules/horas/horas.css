@@ -1055,3 +1055,25 @@
     box-shadow: none;
   }
 }
+
+/* ---- configuração dos campos do apontamento (por equipe) ---- */
+/* Cabeçalho do cartão de um campo: nome à esquerda, reordenar/excluir à direita. */
+.horas-campo-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+/* As opções da lista suspensa são digitadas (ou coladas de uma planilha) uma
+   por linha — daí a fonte monoespaçada e o wrap desligado. */
+.horasRoot .horas-opcoes {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  white-space: pre;
+  overflow-wrap: normal;
+  overflow-x: auto;
+  resize: vertical;
+}

@@ -5,7 +5,7 @@
  * tipos: 'date' | 'number' | 'text' | 'textarea' | 'checkbox'
  * O colaborador e o anexo são tratados fora do schema.
  */
-import { parseCurrency } from '../utils/currencyMask';
+import { parseCurrency } from '../utils/currencyMask.js';
 
 export const TIPOS_AJUDA = ['Alimentação', 'Mobilidade', 'Moradia'];
 

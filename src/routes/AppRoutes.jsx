@@ -47,6 +47,7 @@ const HorasApontar = lazy(() => import('../modules/horas/app/apontar/page'));
 const HorasRegistros = lazy(() => import('../modules/horas/app/registros/page'));
 const HorasDashboard = lazy(() => import('../modules/horas/app/dashboard/page'));
 const HorasConfig = lazy(() => import('../modules/horas/app/config/page'));
+const HorasConfigApontamento = lazy(() => import('../modules/horas/app/config/apontamento/page'));
 const HorasEquipe = lazy(() => import('../modules/horas/app/equipe/page'));
 const HorasExtrasNova = lazy(() => import('../modules/horas/app/extras/nova/page'));
 const HorasExtrasMinhas = lazy(() => import('../modules/horas/app/extras/minhas/page'));
@@ -65,6 +66,11 @@ const NovoChamadoAdm = lazy(() => import('../modules/administrativo/app/novo/pag
 const MeusChamadosAdm = lazy(() => import('../modules/administrativo/app/meus/page'));
 const ConfigAdm = lazy(() => import('../modules/administrativo/app/config/page'));
 const AprovacoesAdm = lazy(() => import('../modules/administrativo/app/aprovacoes/page'));
+const FilaAdm = lazy(() => import('../modules/administrativo/app/fila/page'));
+const ChamadoAdm = lazy(() => import('../modules/administrativo/app/chamado/page'));
+const FluxosAdm = lazy(() => import('../modules/administrativo/app/fluxos/page'));
+const KanbanAdm = lazy(() => import('../modules/administrativo/app/kanban/page'));
+const SatisfacaoAdm = lazy(() => import('../modules/administrativo/app/satisfacao/page'));
 
 function RouteFallback() {
   return <div style={{ padding: 'var(--space-3xl)', textAlign: 'center' }}>Carregando...</div>;
@@ -480,6 +486,8 @@ export default function AppRoutes() {
           <Route path="dashboard" element={<LazyPage><HorasDashboard /></LazyPage>} />
           <Route path="registros" element={<LazyPage><HorasRegistros /></LazyPage>} />
           <Route path="config" element={<LazyPage><HorasConfig /></LazyPage>} />
+          {/* Campos que a equipe pede antes de iniciar o cronômetro. */}
+          <Route path="config/apontamento" element={<LazyPage><HorasConfigApontamento /></LazyPage>} />
           <Route path="equipe" element={<LazyPage><HorasEquipe /></LazyPage>} />
           {/* Rota antiga de Projetos: virou a aba Configuração. */}
           <Route path="projetos" element={<Navigate to="/horas/config" replace />} />
@@ -534,7 +542,12 @@ export default function AppRoutes() {
           <Route path="novo/:classe/:servico" element={<LazyPage><NovoChamadoAdm /></LazyPage>} />
           <Route path="meus" element={<LazyPage><MeusChamadosAdm /></LazyPage>} />
           <Route path="aprovacoes" element={<LazyPage><AprovacoesAdm /></LazyPage>} />
+          <Route path="fila" element={<LazyPage><FilaAdm /></LazyPage>} />
+          <Route path="kanban" element={<LazyPage><KanbanAdm /></LazyPage>} />
+          <Route path="chamado/:id" element={<LazyPage><ChamadoAdm /></LazyPage>} />
           <Route path="config" element={<LazyPage><ConfigAdm /></LazyPage>} />
+          <Route path="fluxos" element={<LazyPage><FluxosAdm /></LazyPage>} />
+          <Route path="satisfacao" element={<LazyPage><SatisfacaoAdm /></LazyPage>} />
         </Route>
 
         <Route path="*" element={<Navigate to="/home" replace />} />

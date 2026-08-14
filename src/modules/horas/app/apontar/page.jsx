@@ -5,6 +5,7 @@ import { useAuth } from '../../../../contexts/AuthContext';
 import {
   fetchProjetosVisiveis,
   fetchGerencias,
+  fetchCamposEquipe,
   fetchApontamentos,
   createApontamento,
   deleteApontamento,
@@ -13,11 +14,11 @@ import {
   stopTimer,
 } from '../../lib/data';
 import { fmtData, fmtDur, startOfDay } from '../../lib/format';
-import { podeApontar } from '../../lib/roles';
+import { isGestao, podeApontar, podeConfigurarApontamento } from '../../lib/roles';
 import { lookupProjetos } from '../../lib/lookups';
-import { SELECAO_VAZIA, selecaoValida } from '../../lib/catalogoTarefas';
+import { faltando, paraPersistencia, valoresIniciais } from '../../lib/camposEquipe';
 import ApontamentosTable from '../components/ApontamentosTable';
-import CamposTarefa from '../components/CamposTarefa';
+import CamposApontamento from '../components/CamposApontamento';
 import ConfirmModal from '../components/ConfirmModal';
 import ManualModal from '../components/ManualModal';
 import SearchableSelect from '../components/SearchableSelect';
@@ -29,6 +30,7 @@ export default function ApontarPage() {
   const gerenciaId = user?.horasGerenciaId || null;
 
   const [projetos, setProjetos] = useState([]);
+  const [campos, setCampos] = useState([]); // os que a EQUIPE configurou
   const [gerenciaNome, setGerenciaNome] = useState('');
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState('');
@@ -39,17 +41,14 @@ export default function ApontarPage() {
   const [showManual, setShowManual] = useState(false);
   const [aExcluir, setAExcluir] = useState(null);
 
-  // Projeto + os 4 campos do catálogo fixo (sigla/tarefa/etiqueta/tarefa2).
-  const [form, setForm] = useState({ projetoId: '', ...SELECAO_VAZIA, descricao: '' });
-
-  const tarefaSel = {
-    sigla: form.sigla,
-    tarefa: form.tarefa,
-    etiqueta: form.etiqueta,
-    tarefa2: form.tarefa2,
-  };
+  // Projeto e descrição são fixos do módulo; o miolo do formulário são os
+  // campos da equipe, guardados por id do campo em `valores`.
+  const [form, setForm] = useState({ projetoId: '', descricao: '' });
+  const [valores, setValores] = useState({});
 
   const proj = useMemo(() => lookupProjetos(projetos), [projetos]);
+  const setValor = (campoId, valor) => setValores((v) => ({ ...v, [campoId]: valor }));
+  const pendentes = faltando(campos, valores);
 
   // O apontamento é atribuído à área DONA do projeto (que pode ser a de um gestor
   // acima, por herança). Fallback: a própria área, se o projeto não for encontrado.
@@ -75,18 +74,21 @@ export default function ApontarPage() {
       setLoading(true);
       setErro('');
       try {
-        const [ps, gers, timer] = await Promise.all([
+        const [ps, gers, cps, timer] = await Promise.all([
           fetchProjetosVisiveis(),
           fetchGerencias(),
+          fetchCamposEquipe(gerenciaId),
           fetchTimer(colaboradorId),
         ]);
         if (cancel) return;
         setProjetos(ps);
+        setCampos(cps);
         setGerenciaNome(gers.find((g) => g.id === gerenciaId)?.nome || '');
         setRunning(timer);
-        // Único default é o projeto: sigla/tarefa/etiqueta/tarefa 2 são escolha
-        // consciente de quem aponta, não têm um "primeiro" que faça sentido.
+        // Único default é o projeto: os campos da equipe são escolha consciente
+        // de quem aponta, não têm um "primeiro" que faça sentido.
         setForm((f) => ({ ...f, projetoId: f.projetoId || ps[0]?.id || '' }));
+        setValores((v) => (Object.keys(v).length ? v : valoresIniciais(cps)));
         await carregarHoje();
       } catch (e) {
         if (!cancel) setErro(e?.message || 'Falha ao carregar a configuração da gerência.');
@@ -112,18 +114,13 @@ export default function ApontarPage() {
   }, [running]);
 
   // Ao iniciar/parar, reflete no form os valores em andamento (campos desabilitados).
+  // O timer guarda o que foi preenchido com rótulo e id; reidratamos pelo id.
   useEffect(() => {
     if (running) {
-      setForm({
-        projetoId: running.projetoId || '',
-        sigla: running.sigla || '',
-        tarefa: running.tarefa || '',
-        etiqueta: running.etiqueta || '',
-        tarefa2: running.tarefa2 || '',
-        descricao: running.descricao || '',
-      });
+      setForm({ projetoId: running.projetoId || '', descricao: running.descricao || '' });
+      setValores(valoresIniciais(campos, running.campos));
     }
-  }, [running]);
+  }, [running, campos]);
 
   // A diretoria supervisiona; não aponta horas (como no protótipo).
   if (!podeApontar(role)) return <Navigate to="/horas/dashboard" replace />;
@@ -141,7 +138,9 @@ export default function ApontarPage() {
             colaboradorId,
             gerenciaId: gerenciaDoProjeto(run.projetoId),
             projetoId: run.projetoId,
-            tarefaSel: run,
+            // O que foi preenchido ao dar play, como estava naquele momento —
+            // se a equipe mexeu na configuração no meio, o registro não muda.
+            campos: run.campos,
             descricao: run.descricao,
             inicioTs: run.inicio,
             fimTs: Date.now(),
@@ -151,7 +150,7 @@ export default function ApontarPage() {
       } else {
         const run = await startTimer(colaboradorId, {
           projetoId: form.projetoId,
-          tarefaSel,
+          campos: paraPersistencia(campos, valores),
           descricao: form.descricao,
         });
         setRunning(run);
@@ -209,16 +208,14 @@ export default function ApontarPage() {
   // Sem projetos na área ainda: a tela aparece normal, mas não dá para apontar
   // até o gestor cadastrar os projetos em "Configuração".
   const semProjetos = !projetos.length;
-  // Os 4 campos do catálogo são obrigatórios: o apontamento só faz sentido para
-  // relatório se souber sigla, tarefa, etiqueta e tarefa 2.
-  const podeIniciar = !!form.projetoId && !semProjetos && selecaoValida(tarefaSel);
+  // Além do projeto, só falta o que a EQUIPE marcou como obrigatório.
+  const podeIniciar = !!form.projetoId && !semProjetos && !pendentes.length;
 
   return (
     <>
       <h1>Apontar Horas</h1>
       <p className="horas-sub">
-        Área: <b>{gerenciaNome}</b> — selecione projeto, sigla, tarefa, etiqueta e tarefa 2 e inicie
-        o cronômetro.
+        Área: <b>{gerenciaNome}</b> — preencha os campos abaixo e inicie o cronômetro.
       </p>
 
       {erro ? <div className="horas-hint">⚠️ {erro}</div> : null}
@@ -228,6 +225,23 @@ export default function ApontarPage() {
           ⚠️ A sua área (<b>{gerenciaNome}</b>) ainda não tem projetos cadastrados, então não é
           possível apontar por enquanto. O <b>gestor</b> da sua equipe precisa cadastrá-los em
           "Configuração".
+        </div>
+      ) : null}
+
+      {/* Equipe sem campos configurados não fica travada: aponta com projeto e
+          descrição. O aviso só vai para quem pode fazer algo a respeito — quem
+          configura resolve na hora; a liderança sabe a quem pedir. */}
+      {!campos.length && podeConfigurarApontamento(user) ? (
+        <div className="horas-hint">
+          A sua equipe ainda não tem campos de apontamento configurados. Defina-os em{' '}
+          <b>Config. do Apontamento</b> para pedir sigla, tarefa, frente de serviço — o que fizer
+          sentido aqui — antes do cronômetro.
+        </div>
+      ) : null}
+      {!campos.length && isGestao(role) && !podeConfigurarApontamento(user) ? (
+        <div className="horas-hint">
+          A sua equipe ainda não tem campos de apontamento configurados — dá para apontar só com
+          projeto e descrição. Peça a configuração ao administrador do Controle de Horas.
         </div>
       ) : null}
 
@@ -247,10 +261,11 @@ export default function ApontarPage() {
               }))}
             />
           </div>
-          <CamposTarefa
-            valor={tarefaSel}
+          <CamposApontamento
+            campos={campos}
+            valores={valores}
             disabled={!!running}
-            onChange={(sel) => setForm((f) => ({ ...f, ...sel }))}
+            onChange={setValor}
           />
           <div className="horas-fld" style={{ gridColumn: '1 / -1' }}>
             <label>Descrição (opcional)</label>
@@ -287,10 +302,10 @@ export default function ApontarPage() {
         </div>
 
         {/* Botão desabilitado sem dizer por quê é o tipo de coisa que gera
-            chamado: só falta a seleção do catálogo, e o aviso some sozinho. */}
-        {!running && !semProjetos && !!form.projetoId && !selecaoValida(tarefaSel) ? (
+            chamado: dizemos qual campo falta, e o aviso some sozinho. */}
+        {!running && !semProjetos && !!form.projetoId && pendentes.length ? (
           <div className="horas-hint" style={{ marginTop: 12 }}>
-            Preencha Sigla, Tarefa, Etiqueta e Tarefa 2 para iniciar o cronômetro.
+            Preencha {pendentes.join(', ')} para iniciar o cronômetro.
           </div>
         ) : null}
 
@@ -310,7 +325,12 @@ export default function ApontarPage() {
       </div>
 
       {showManual ? (
-        <ManualModal projetos={projetos} onClose={() => setShowManual(false)} onSave={salvarManual} />
+        <ManualModal
+          projetos={projetos}
+          campos={campos}
+          onClose={() => setShowManual(false)}
+          onSave={salvarManual}
+        />
       ) : null}
 
       <ConfirmModal

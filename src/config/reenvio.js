@@ -3,11 +3,11 @@
 // que já dirigem os formulários de criação — para não divergir das regras.
 import {
   CAMPOS_AJUDA_CUSTO, camposVisiveisAjudaCusto, validarAjudaCusto, montarPayloadAjudaCusto,
-} from './ajudaCusto';
-import { CAMPOS_MAPEAMENTO, validarMapeamento, montarPayloadMapeamento } from './mapeamento';
-import { CAMPOS_NOVA_VAGA, validarNovaVaga, montarPayloadNovaVaga } from './novaVaga';
-import { CAMPOS, camposVisiveis, validar as validarContratacao, montarPayload as montarPayloadContratacao } from './formularioContratacao';
-import { parseCurrency } from '../utils/currencyMask';
+} from './ajudaCusto.js';
+import { CAMPOS_MAPEAMENTO, validarMapeamento, montarPayloadMapeamento } from './mapeamento.js';
+import { CAMPOS_NOVA_VAGA, validarNovaVaga, montarPayloadNovaVaga } from './novaVaga.js';
+import { CAMPOS, camposVisiveis, validar as validarContratacao, montarPayload as montarPayloadContratacao } from './formularioContratacao.js';
+import { parseCurrency } from '../utils/currencyMask.js';
 
 // Campos do envelope editáveis diretamente (tipos sem tabela de detalhe).
 const CAMPO_JUSTIFICATIVA = { id: 'justificativa', label: 'Justificativa', tipo: 'textarea', obrigatorio: true };
@@ -64,3 +64,25 @@ export const REENVIO_CONFIG = {
 };
 
 export const getReenvioConfig = (tipo) => REENVIO_CONFIG[tipo] || null;
+
+// Dono da requisição = quem a abriu (gestor_id). Comparação normalizada porque
+// os ids trafegam ora do banco, ora do contexto de auth.
+const ehDono = (sol, userId) => {
+  const a = String(sol?.gestor_id || '').trim().toLowerCase();
+  const b = String(userId || '').trim().toLowerCase();
+  return !!a && a === b;
+};
+
+/**
+ * EDITAR (recomeça a cadeia): só o solicitante e só enquanto a requisição está
+ * EM ANDAMENTO. Concluída/cancelada não se mexe mais; reprovada segue pelo
+ * caminho de "Responder" abaixo, que volta a quem reprovou sem reiniciar tudo.
+ */
+export const podeEditarRequisicao = (sol, userId) => (
+  !!getReenvioConfig(sol?.tipo) && sol?.status === 'pendente' && ehDono(sol, userId)
+);
+
+/** RESPONDER (volta a quem reprovou): só o solicitante, só quando reprovada. */
+export const podeResponderRequisicao = (sol, userId) => (
+  !!getReenvioConfig(sol?.tipo) && sol?.status === 'reprovada' && ehDono(sol, userId)
+);

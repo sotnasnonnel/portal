@@ -6,6 +6,8 @@ export const STATUS_LABEL = {
   pendente: 'Em andamento',
   concluida: 'Concluída',
   reprovada: 'Reprovada',
+  cancelada: 'Cancelada',
+  devolvida: 'Devolvida para ajustes',   // legado
 };
 
 const sanitizar = (s) => String(s ?? '')

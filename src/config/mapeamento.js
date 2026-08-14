@@ -7,7 +7,7 @@
  * `n` é sequencial (1..N) e vira o número do item no form/visualizações; o anexo
  * é o item N+1.
  */
-import { MODALIDADES_CONTRATACAO } from './novaVaga';
+import { MODALIDADES_CONTRATACAO } from './novaVaga.js';
 
 export const UFS = [
   'AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MG', 'MS', 'MT',
@@ -47,6 +47,32 @@ export function validarMapeamento(form) {
     (c) => c.obrigatorio && (form[c.id] == null || String(form[c.id]).trim() === '')
   );
 }
+
+/**
+ * Quem pode transformar um Mapeamento em Nova Vaga: o SOLICITANTE, em qualquer
+ * situação que não seja um fim de linha (reprovada/cancelada).
+ *
+ * Antes exigia `status = 'concluida'`, e isso na prática escondia o botão quase
+ * sempre: 'concluida' não significa "aprovado", significa "o Admin do DP já
+ * executou a etapa final". Entre a aprovação da cadeia e a execução do DP — que
+ * é onde o gestor de fato quer abrir a vaga — a requisição segue 'pendente' e a
+ * opção não aparecia.
+ *
+ * Gerar a vaga cedo é seguro: a Nova Vaga é uma requisição NOVA e passa pela
+ * própria cadeia completa (§5.1 — Diretor da área + Financeiro, e a Trava
+ * Headcount se for liderança). O Mapeamento é insumo, não autorização; nada
+ * entra no quadro sem a vaga em si ser aprovada.
+ */
+export function podeGerarNovaVaga(sol, userId) {
+  if (sol?.tipo !== 'mapeamento') return false;
+  if (sol?.status === 'reprovada' || sol?.status === 'cancelada') return false;
+  const dono = String(sol?.gestor_id || '').trim().toLowerCase();
+  const eu = String(userId || '').trim().toLowerCase();
+  return !!dono && dono === eu;
+}
+
+/** O Mapeamento de origem ainda não passou por toda a cadeia? (só p/ avisar na tela) */
+export const mapeamentoEmAprovacao = (sol) => sol?.status !== 'concluida';
 
 /**
  * Pré-preenche o formulário de Nova Vaga a partir dos dados de um Mapeamento

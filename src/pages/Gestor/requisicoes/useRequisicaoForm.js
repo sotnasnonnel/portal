@@ -258,6 +258,69 @@ export function useRequisicaoForm() {
     window.dispatchEvent(new Event('solicitacoes_rh_atualizadas'));
   }, []);
 
+  /**
+   * O solicitante EDITA a própria requisição enquanto ela está EM ANDAMENTO.
+   * Diferente de responderRequisicao (reprovada → volta só a quem reprovou),
+   * aqui a cadeia RECOMEÇA do primeiro aprovador: o conteúdo mudou, então as
+   * aprovações já dadas ficam obsoletas.
+   *
+   * A cadeia é reconstruída pela MESMA via da criação (resolverCadeia +
+   * aplicarAlcadaGC), então se o ajuste muda o que define a alçada (ex.: a
+   * função proposta numa Movimentação), os aprovadores certos entram e saem.
+   *
+   * A troca das etapas + volta para 'pendente' é atômica na RPC, que revalida
+   * dono e status no banco. A pré-checagem de status aqui é só para falhar
+   * cedo, ANTES de gravar os ajustes, se alguém decidiu enquanto o modal estava
+   * aberto — quem decide de verdade é a RPC.
+   */
+  const editarRequisicao = useCallback(async ({
+    solicitacaoId, tipo, motivo = null, colaboradorId = null, funcaoAlvo = null, foraDoQuadro = false,
+    detalheTabela = null, detalhe = null, envelopePatch = null,
+  }) => {
+    const { data: atual, error: eSel } = await supabase
+      .from('solicitacoes_rh').select('status').eq('id', solicitacaoId).maybeSingle();
+    if (eSel) throw eSel;
+    if (!atual) throw new Error('Requisição não encontrada. Atualize a página.');
+    if (atual.status !== 'pendente') {
+      throw new Error('Esta requisição não está mais em andamento — não é possível editá-la. Atualize a página.');
+    }
+
+    // 1) grava os ajustes ANTES de recalcular a cadeia (a alçada depende deles).
+    // Pedimos a linha de volta (.select) e exigimos que venha: quando a RLS
+    // barra um UPDATE, o Postgres NÃO devolve erro — devolve zero linhas.
+    if (detalheTabela && detalhe) {
+      const { data, error } = await supabase
+        .from(detalheTabela).update(detalhe).eq('solicitacao_id', solicitacaoId)
+        .select('solicitacao_id');
+      if (error) throw error;
+      if (!data?.length) throw new Error('Não foi possível salvar os ajustes: você não tem permissão para editar esta requisição.');
+    }
+    if (envelopePatch) {
+      const { data, error } = await supabase
+        .from('solicitacoes_rh').update(envelopePatch).eq('id', solicitacaoId)
+        .select('id');
+      if (error) throw error;
+      if (!data?.length) throw new Error('Não foi possível salvar os ajustes: você não tem permissão para editar esta requisição.');
+    }
+
+    // 2) reconstrói a cadeia (fluxo configurado + alçada §5) para o conteúdo novo.
+    const base = await resolverCadeia(tipo);
+    const { ids, nomePorId, alcada } = await aplicarAlcadaGC(base, {
+      tipo, alvoId: colaboradorId, funcaoAlvo: funcaoAlvo ?? funcaoDaEquipe(colaboradorId), foraDoQuadro,
+    });
+    const linhas = montarEtapasDeConfig(solicitacaoId, ids, user.id, nomePorId);
+
+    // 3) troca atômica das etapas + volta para 'pendente' + rastro da edição.
+    const { error: eRpc } = await supabase.rpc('reenviar_requisicao_rh', {
+      p_sol: solicitacaoId, p_etapas: linhas, p_motivo: motivo,
+    });
+    if (eRpc) throw eRpc;
+
+    auditarAlcada(solicitacaoId, tipo, alcada);
+    notificarAprovadorSolic(solicitacaoId);   // avisa o 1º aprovador da cadeia nova
+    window.dispatchEvent(new Event('solicitacoes_rh_atualizadas'));
+  }, [resolverCadeia, aplicarAlcadaGC, funcaoDaEquipe, auditarAlcada, user]);
+
   // Cria a requisição do Formulário de Contratação (envelope + detalhe).
   // O cargo proposto (cargo_nivel) é o que define a alçada: contratar uma
   // liderança exige CEO/COO, e alta liderança aciona a Trava Headcount (§5.3).
@@ -273,5 +336,5 @@ export function useRequisicaoForm() {
     });
   }, [criarComDetalhe]);
 
-  return { user, equipe, loadingEquipe, fluxoOk, submitting, setSubmitting, criarComFluxo, criarComDetalhe, criarFormularioContratacao, responderRequisicao, refetchFluxo };
+  return { user, equipe, loadingEquipe, fluxoOk, submitting, setSubmitting, criarComFluxo, criarComDetalhe, criarFormularioContratacao, responderRequisicao, editarRequisicao, refetchFluxo };
 }

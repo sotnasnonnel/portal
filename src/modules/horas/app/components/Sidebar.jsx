@@ -63,7 +63,7 @@ export default function Sidebar({ aberto = false, onFechar }) {
 
         <nav className="horasSb-nav">
           <AppSwitcher currentKey="horas" onNavigate={onFechar} />
-          {navSections(role).map((sec) => (
+          {navSections(role, user).map((sec) => (
             <div key={sec.label}>
               <div className="horasSb-seclabel">{sec.label}</div>
               {sec.items.map((item) => (
@@ -71,7 +71,13 @@ export default function Sidebar({ aberto = false, onFechar }) {
                   key={item.href}
                   to={item.href}
                   title={item.label}
-                  className={`horasSb-link ${pathname.startsWith(item.href) ? 'is-active' : ''}`}
+                  // `exato` é para o item que é PREFIXO de outro (/horas/config
+                  // e /horas/config/apontamento): sem ele os dois acendiam juntos.
+                  className={`horasSb-link ${
+                    (item.exato ? pathname === item.href : pathname.startsWith(item.href))
+                      ? 'is-active'
+                      : ''
+                  }`}
                   onClick={onFechar}
                 >
                   <item.Icon size={16} />

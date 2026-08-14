@@ -36,6 +36,23 @@ export const isGestao = (role) => role === 'gestor' || role === 'coordenador';
 export const isHorasAdmin = (user) =>
   user?.perfil === 'admin' || user?.horasRole === 'admin' || isSuperAdmin(user);
 
+// Quem configura os CAMPOS DO APONTAMENTO (/horas/config/apontamento) — e
+// configura os de QUALQUER equipe. É uma curadoria central, mais restrita que a
+// dos projetos (que cada líder mantém na sua área): os campos definem o formato
+// do apontamento da empresa toda e são o que os relatórios agrupam.
+// Não é isHorasAdmin de propósito — aquilo inclui todo perfil='admin' (hoje 5
+// pessoas, com o usuário de sistema junto).
+// Espelha app_private.pode_configurar_campos_apontamento() no banco, que é quem
+// protege de verdade; mudar a lista é mudar nos dois lugares.
+export const CONFIG_APONTAMENTO_EMAILS = [
+  'marcus.guimaraes@phdengenharia.eng.br', // Marcus Guimarães
+  'lennon.santos@phdengenharia.eng.br', // Lennon Santos
+  'vinicius.costa@phdengenharia.eng.br', // Vinicius Costa
+];
+
+export const podeConfigurarApontamento = (user) =>
+  CONFIG_APONTAMENTO_EMAILS.includes((user?.email || '').toLowerCase());
+
 // Todos apontam — o antigo papel supervisor "diretoria" (que não apontava)
 // deixou de existir.
 export const podeApontar = () => true;

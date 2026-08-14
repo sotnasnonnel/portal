@@ -1,24 +1,22 @@
 // ============================================================================
-// Catálogo FIXO de tarefas do Controle de Horas.
+// MODELO PADRÃO dos campos do apontamento — o catálogo que valeu para a empresa
+// inteira antes de os campos virarem configuráveis por equipe.
 // Fonte: referencia/Cópia de Clockify tarefas.xlsx (aba "Clockify") — gerado a
 // partir das colunas SIGLA / TAREFAS / ETIQUETAS / TAREFA 2, sem alterar texto.
 //
-// Substituiu as "atividades controladas" que cada gerência configurava: os
-// campos do apontamento agora são os mesmos para toda a empresa.
+// Hoje quem manda são os campos de cada equipe (lib/camposEquipe.js +
+// horas_campos_apontamento). Este arquivo sobrou com um papel só: ser o ponto de
+// partida oferecido na tela de configuração ("usar o modelo padrão"), e é a
+// mesma fonte de onde a migração supabase_migration_horas_campos_por_equipe.sql
+// semeou os 4 campos iniciais de cada equipe.
 //
-// Cadeia de filtro (regra da planilha):
-//   SIGLA -> TAREFA  — só existem os pares listados em CATALOGO. A tarefa fica
-//                      BLOQUEADA até a sigla ser escolhida, e trocar a sigla
-//                      derruba a tarefa que não pertence mais a ela.
-//   ETIQUETA e TAREFA 2 — listas fechadas independentes: na planilha essas duas
-//                      colunas não acompanham a linha da tarefa (só as 13
-//                      primeiras linhas estão preenchidas, sem relação com a
-//                      sigla), então valem para qualquer par sigla/tarefa e não
-//                      dependem de campo nenhum.
+// O que a planilha tinha e o modelo NÃO reproduz: a cadeia SIGLA -> TAREFA (a
+// tarefa saía filtrada pela sigla). Campo configurável é independente por
+// definição, então Tarefa entra como uma lista suspensa com todas as tarefas —
+// e cada equipe corta a sua.
 //
 // A mesma tarefa pode existir em mais de uma sigla (ex.: "CURVA FINANCEIRA"
-// está em PTA e POP) — por isso a validação é sempre pelo PAR, nunca pela
-// tarefa sozinha.
+// está em PTA e POP); por isso TAREFAS é a lista de tarefas DISTINTAS.
 // ============================================================================
 
 // [sigla, tarefa]
@@ -191,61 +189,18 @@ export const ETIQUETAS = ['FIN', 'ENG', 'LPS', 'PLA'];
 
 export const TAREFAS2 = ['CONTROLAR', 'ELABORAR', 'REVISAR'];
 
-// Campos na ordem em que aparecem na tela. `chave` é o nome no formulário e na
-// coluna do banco; o rótulo é o mesmo cabeçalho da planilha. `dependeDe` marca
-// o campo que filtra este — a tela usa isso para bloquear o dropdown enquanto o
-// anterior não for escolhido.
-export const CAMPOS = [
-  { chave: 'sigla', label: 'Sigla' },
-  { chave: 'tarefa', label: 'Tarefa', dependeDe: 'sigla' },
-  { chave: 'etiqueta', label: 'Etiqueta' },
-  { chave: 'tarefa2', label: 'Tarefa 2' },
-];
-
 const ordenar = (arr) => [...arr].sort((a, b) => a.localeCompare(b, 'pt-BR'));
 
 export const SIGLAS = ordenar([...new Set(CATALOGO.map(([s]) => s))]);
+export const TAREFAS = ordenar([...new Set(CATALOGO.map(([, t]) => t))]);
 
-// Tarefas de uma sigla. Sem sigla não há o que oferecer: o campo Tarefa fica
-// bloqueado até a sigla ser escolhida.
-export function tarefasDe(sigla) {
-  if (!sigla) return [];
-  return ordenar([...new Set(CATALOGO.filter(([s]) => s === sigla).map(([, t]) => t))]);
-}
-
-export const SELECAO_VAZIA = { sigla: '', tarefa: '', etiqueta: '', tarefa2: '' };
-
-// Opções de cada dropdown para a seleção atual — é aqui que a sigla filtra a
-// tarefa. Etiqueta e Tarefa 2 são sempre as listas inteiras.
-export function opcoesDe(sel = SELECAO_VAZIA) {
-  return {
-    sigla: SIGLAS,
-    tarefa: tarefasDe(sel.sigla),
-    etiqueta: ETIQUETAS,
-    tarefa2: TAREFAS2,
-  };
-}
-
-// Um campo está bloqueado enquanto o campo que o filtra não tiver valor.
-export function campoBloqueado(sel = SELECAO_VAZIA, chave) {
-  const { dependeDe } = CAMPOS.find((c) => c.chave === chave) || {};
-  return !!dependeDe && !sel[dependeDe];
-}
-
-// Aplica a escolha de um campo e reconcilia o que depende dele: trocar (ou
-// limpar) a sigla derruba a tarefa que não pertence mais a ela — senão ficaria
-// gravado um par que não existe na planilha.
-export function aplicarSelecao(sel, campo, valor) {
-  const novo = { ...SELECAO_VAZIA, ...sel, [campo]: valor };
-  if (campo === 'sigla' && !tarefasDe(novo.sigla).includes(novo.tarefa)) novo.tarefa = '';
-  return novo;
-}
-
-// Todo apontamento precisa dos 4 campos preenchidos e coerentes.
-export function selecaoValida(sel = SELECAO_VAZIA) {
-  return (
-    CATALOGO.some(([s, t]) => s === sel.sigla && t === sel.tarefa) &&
-    ETIQUETAS.includes(sel.etiqueta) &&
-    TAREFAS2.includes(sel.tarefa2)
-  );
-}
+// Os 4 campos como a empresa toda usava, no formato de horas_campos_apontamento
+// (ver lib/camposEquipe.js). A tela de configuração cria a partir daqui a equipe
+// que ainda não tem campo nenhum — depois é tudo dela: renomear, cortar opção,
+// trocar o tipo, apagar.
+export const MODELO_PADRAO = [
+  { label: 'Sigla', tipo: 'dropdown', opcoes: SIGLAS, obrigatorio: true },
+  { label: 'Tarefa', tipo: 'dropdown', opcoes: TAREFAS, obrigatorio: true },
+  { label: 'Etiqueta', tipo: 'dropdown', opcoes: ETIQUETAS, obrigatorio: true },
+  { label: 'Tarefa 2', tipo: 'dropdown', opcoes: TAREFAS2, obrigatorio: true },
+].map((c, ordem) => ({ ...c, ordem }));

@@ -11,6 +11,7 @@ import {
 import { fmtHoras, periodoPadrao, intervaloTs } from '../../lib/format';
 import { isGestao } from '../../lib/roles';
 import { lookupProjetos, lookupColaboradores, lookupGerencias } from '../../lib/lookups';
+import { labelsUsados, valorDoCampo } from '../../lib/camposEquipe';
 import ApontamentosTable from '../components/ApontamentosTable';
 import ConfirmModal from '../components/ConfirmModal';
 import SearchableSelect from '../components/SearchableSelect';
@@ -95,14 +96,14 @@ export default function RegistrosPage() {
   }
 
   function exportarCSV() {
+    // Uma coluna por campo que APARECE nos registros exportados: cada equipe
+    // configura os seus, e a listagem de um gestor pode misturar mais de uma.
+    const labels = labelsUsados(filtrado);
     const head = [
       ...(mostraColaborador ? ['Colaborador'] : []),
       'Gerencia',
       'Projeto',
-      'Sigla',
-      'Tarefa',
-      'Etiqueta',
-      'Tarefa 2',
+      ...labels,
       'Inicio',
       'Fim',
       'Duracao(h)',
@@ -112,10 +113,7 @@ export default function RegistrosPage() {
       ...(mostraColaborador ? [colab.nome(a.colaboradorId)] : []),
       ger.nome(a.gerenciaId),
       proj.nome(a.projetoId),
-      a.sigla || '',
-      a.tarefa || '',
-      a.etiqueta || '',
-      a.tarefa2 || '',
+      ...labels.map((l) => valorDoCampo(a, l)),
       new Date(a.inicio).toLocaleString('pt-BR'),
       new Date(a.fim).toLocaleString('pt-BR'),
       (a.duracao / 3600000).toFixed(2).replace('.', ','),

@@ -48,6 +48,28 @@ export const TIPO_LABEL_CURTO = {
   nova_vaga: 'Nova Vaga',
 };
 
+/**
+ * Rótulo e cor do selo de cada situação — FONTE ÚNICA das telas de requisição.
+ *
+ * Existiam três cópias deste mapa (RH, Dashboard do gestor, Admin) e uma ficou
+ * sem 'cancelada': como o fallback era "pendente", uma requisição cancelada
+ * aparecia como **Em andamento** (visto na #126). Cobre os cinco status aceitos
+ * pelo CHECK de solicitacoes_rh.status.
+ */
+export const STATUS_BADGE = {
+  pendente: { label: 'Em andamento', badge: 'pendente' },
+  concluida: { label: 'Concluída', badge: 'aprovada' },
+  reprovada: { label: 'Reprovada', badge: 'inativo' },
+  cancelada: { label: 'Cancelada', badge: 'inativo' },
+  devolvida: { label: 'Devolvida para ajustes', badge: 'pendente' },  // legado
+};
+
+/**
+ * Selo de uma situação. Situação desconhecida mostra o próprio nome dela — o
+ * fallback NUNCA pode ser "Em andamento", que é o que escondeu o bug acima.
+ */
+export const badgeDeStatus = (tom) => STATUS_BADGE[tom] || { label: tom || '—', badge: 'inativo' };
+
 // Tipos de requisição que têm fluxo de aprovação próprio (ordem de exibição).
 export const TIPOS_FLUXO = [
   'aumento_salario', 'desligamento', 'formulario_contratacao',

@@ -8,7 +8,8 @@ import {
 } from 'lucide-react';
 import FluxoTimeline from '../../components/Solicitacoes/FluxoTimeline';
 import {
-  APROVADORES, etapaAtual, acaoDisponivel, resumoAndamento, INICIATIVA_LABEL, TIPO_LABEL, TIPO_LABEL_CURTO,
+  APROVADORES, etapaAtual, acaoDisponivel, resumoAndamento, badgeDeStatus,
+  INICIATIVA_LABEL, TIPO_LABEL, TIPO_LABEL_CURTO,
 } from '../../config/aprovacao';
 import ModalRespostas, { DETALHE, buscarRespostas } from '../Gestor/requisicoes/ModalRespostas';
 import BotaoPdfRequisicao from '../../components/BotaoPdfRequisicao';
@@ -17,15 +18,10 @@ import { notificarSolicitanteReprovacao } from '../../services/notificarSolicita
 import '../../components/UI/Components.css';
 import '../Gestor/requisicoes/Requisicoes.css';
 import './Admin.css';
-const TOM_BADGE = {
-  pendente: { label: 'Em andamento', badge: 'pendente' },
-  concluida: { label: 'Concluída', badge: 'aprovada' },
-  reprovada: { label: 'Reprovada', badge: 'inativo' },
-  cancelada: { label: 'Cancelada', badge: 'inativo' },
-};
 
 const SELECT_SOL = `
   id, numero, tipo, status, iniciativa, gestor_id, colaborador_id, justificativa, salario_proposto, funcao_proposta, cargo_proposto, created_at, concluida_em,
+  reenvios, edicao_motivo, edicao_em,
   colaborador:colaborador_id ( id, nome, funcao, salario ),
   gestor:gestor_id ( nome ),
   etapas:solicitacoes_rh_etapas ( id, ordem, aprovador_id, papel, tipo_etapa, status, justificativa, decidido_em )
@@ -389,7 +385,7 @@ export default function AdminSolicitacoes() {
           <div style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
             {filtradas.map((s) => {
               const resumo = resumoAndamento(s, s.etapas);
-              const tomB = TOM_BADGE[resumo.tom] || TOM_BADGE.pendente;
+              const tomB = badgeDeStatus(resumo.tom);
               const acao = acaoDisponivel(APROVADORES.admin, s.etapas); // 'aprovacao' | 'execucao' | null
               const det = s.tipo === 'desligamento' ? parseDesligamento(s.justificativa) : { data: null, texto: s.justificativa };
               return (
@@ -442,6 +438,16 @@ export default function AdminSolicitacoes() {
                     )}
                   </div>
                   {det.texto && <div className="sol-card-just">{det.texto}</div>}
+
+                  {/* Editada pelo solicitante depois de enviada: a cadeia recomeçou,
+                      então o que já tinha sido aprovado antes não vale mais. */}
+                  {s.edicao_motivo && (
+                    <div className="sol-card-resumo tom-devolvida">
+                      <strong>
+                        Editada pelo solicitante{s.edicao_em ? ` em ${new Date(s.edicao_em).toLocaleDateString('pt-BR')}` : ''} — a aprovação recomeçou:
+                      </strong> {s.edicao_motivo}
+                    </div>
+                  )}
 
                   <div className={`sol-card-resumo tom-${resumo.tom}`}>{resumo.texto}</div>
 

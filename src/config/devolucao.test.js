@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { etapaAtual, resumoAndamento } from './aprovacao.js';
+import { etapaAtual, resumoAndamento, badgeDeStatus, STATUS_BADGE } from './aprovacao.js';
 
 // Cadeia típica: 2 aprovações + execução do admin.
 const cadeia = (over = {}) => ([
@@ -67,4 +67,34 @@ test('resumoAndamento: cancelada tem tom e texto próprios', () => {
   const r = resumoAndamento({ status: 'cancelada' }, cadeia({ id: 'e2', patch: { status: 'cancelada' } }));
   assert.equal(r.tom, 'cancelada');
   assert.match(r.texto, /Cancelada pelo Admin/);
+});
+
+// ---- Selo de situação (bug da #126: cancelada aparecia como "Em andamento") ----
+
+test('badgeDeStatus: cancelada NÃO pode virar "Em andamento"', () => {
+  const b = badgeDeStatus('cancelada');
+  assert.equal(b.label, 'Cancelada');
+  assert.notEqual(b.label, 'Em andamento');
+});
+
+test('badgeDeStatus: cobre os 5 status aceitos pelo CHECK do banco', () => {
+  for (const st of ['pendente', 'concluida', 'reprovada', 'devolvida', 'cancelada']) {
+    assert.ok(STATUS_BADGE[st], `sem selo para "${st}"`);
+    assert.equal(badgeDeStatus(st), STATUS_BADGE[st]);
+  }
+});
+
+test('badgeDeStatus: situação desconhecida mostra o próprio nome, nunca "Em andamento"', () => {
+  // Era o fallback silencioso que escondia o status faltando no mapa.
+  const b = badgeDeStatus('status_futuro');
+  assert.equal(b.label, 'status_futuro');
+  assert.notEqual(b.label, 'Em andamento');
+  assert.equal(badgeDeStatus(undefined).label, '—');
+});
+
+test('resumoAndamento e o selo concordam numa requisição cancelada', () => {
+  const etapas = cadeia({ id: 'e2', patch: { status: 'cancelada', justificativa: 'Valor errado' } });
+  const r = resumoAndamento({ status: 'cancelada' }, etapas);
+  assert.equal(badgeDeStatus(r.tom).label, 'Cancelada');
+  assert.equal(etapaAtual(etapas), null);   // e não "aguardando" ninguém
 });

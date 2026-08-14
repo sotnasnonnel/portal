@@ -2,15 +2,17 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { supabase } from '../../../services/supabase';
 import { formatarMoeda, parseDesligamento } from '../../../utils/formatters';
-import { Check, X, Loader2, ClipboardCheck, FileText, ChevronDown, Filter, User } from 'lucide-react';
+import { Check, X, Loader2, ClipboardCheck, FileText, ChevronDown, Filter, User, AlertTriangle } from 'lucide-react';
 import FluxoTimeline from '../../../components/Solicitacoes/FluxoTimeline';
 import SearchSelect from '../../../components/UI/SearchSelect';
 import { opcoesSolicitantes } from './solicitantes';
 import {
-  etapaAtual, acaoDisponivel, resumoAndamento,
+  etapaAtual, acaoDisponivel, resumoAndamento, badgeDeStatus,
   INICIATIVA_LABEL, TIPO_LABEL, TIPO_LABEL_CURTO,
 } from '../../../config/aprovacao';
 import ModalRespostas, { DETALHE, buscarRespostas } from './ModalRespostas';
+import BotaoGerarNovaVaga from './BotaoGerarNovaVaga';
+import AcoesEditarRequisicao from './AcoesEditarRequisicao';
 import RequisicoesRh from './RequisicoesRh';
 import { notificarAprovadorSolic } from '../../../services/notificarAprovadorSolic';
 import { notificarSolicitanteReprovacao } from '../../../services/notificarSolicitanteReprovacao';
@@ -18,15 +20,9 @@ import BotaoPdfRequisicao from '../../../components/BotaoPdfRequisicao';
 import '../../../components/UI/Components.css';
 import '../Gestor.css';
 
-const TOM_BADGE = {
-  pendente: { label: 'Em andamento', badge: 'pendente' },
-  concluida: { label: 'Concluída', badge: 'aprovada' },
-  reprovada: { label: 'Reprovada', badge: 'inativo' },
-  cancelada: { label: 'Cancelada', badge: 'inativo' },
-};
-
 const SELECT_SOL = `
   id, numero, tipo, status, iniciativa, gestor_id, colaborador_id, justificativa, salario_proposto, funcao_proposta, cargo_proposto, created_at,
+  reenvios, edicao_motivo, edicao_em,
   colaborador:colaborador_id ( nome, funcao, salario ),
   gestor:gestor_id ( nome ),
   etapas:solicitacoes_rh_etapas ( id, ordem, aprovador_id, papel, tipo_etapa, status, justificativa, decidido_em )
@@ -217,7 +213,7 @@ export default function AcompanharRequisicoes() {
           <div style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
             {filtradas.map((s) => {
               const resumo = resumoAndamento(s, s.etapas);
-              const tomB = TOM_BADGE[resumo.tom] || TOM_BADGE.pendente;
+              const tomB = badgeDeStatus(resumo.tom);
               const podeAprovar = !user?.rhDp && acaoDisponivel(user?.id, s.etapas) === 'aprovacao';
               const det = s.tipo === 'desligamento' ? parseDesligamento(s.justificativa) : { data: null, texto: s.justificativa };
               const nomeSolic = nomes[s.gestor_id] || s.gestor?.nome || '—';
@@ -273,6 +269,19 @@ export default function AcompanharRequisicoes() {
                   </div>
                   {det.texto && <div className="sol-card-just">{det.texto}</div>}
 
+                  {/* O solicitante editou depois de enviada: a cadeia foi reiniciada e
+                      quem já tinha aprovado decide de novo — precisa saber o que mudou. */}
+                  {s.edicao_motivo && (
+                    <div className="sol-card-resumo tom-devolvida" style={{ display: 'flex', gap: 8 }}>
+                      <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
+                      <span>
+                        <strong>
+                          Editada pelo solicitante{s.edicao_em ? ` em ${new Date(s.edicao_em).toLocaleDateString('pt-BR')}` : ''} — a aprovação recomeçou:
+                        </strong> {s.edicao_motivo}
+                      </span>
+                    </div>
+                  )}
+
                   <div className={`sol-card-resumo tom-${resumo.tom}`}>{resumo.texto}</div>
 
                   <FluxoTimeline etapas={s.etapas} />
@@ -285,6 +294,10 @@ export default function AcompanharRequisicoes() {
                           <FileText size={14} /> Ver respostas
                         </button>
                       )}
+                      {/* Estas duas só aparecem para o SOLICITANTE da requisição
+                          (ver podeEditarRequisicao / podeGerarNovaVaga). */}
+                      <AcoesEditarRequisicao sol={s} onFeito={fetchParticipa} />
+                      <BotaoGerarNovaVaga sol={s} />
                       {podeAprovar && (
                         <>
                           <button className="btn btn-success btn-sm" disabled={acaoId === s.id} onClick={() => { setDecisao({ sol: s, modo: 'aprovar' }); setComentario(''); }}>

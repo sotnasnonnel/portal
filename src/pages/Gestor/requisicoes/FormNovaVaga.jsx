@@ -264,9 +264,13 @@ export default function FormNovaVaga() {
 
         <form onSubmit={onSubmit} style={{ padding: 'var(--space-xl)' }}>
           {origem && (
-            <div className="sol-card-resumo tom-concluida" style={{ marginBottom: 'var(--space-lg)', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <ClipboardList size={16} />
-              Gerada a partir do Mapeamento{origem.numero != null ? ` #${origem.numero}` : ''}. Alguns campos já vieram preenchidos — confira e complete os demais.
+            <div className={`sol-card-resumo ${origem.emAprovacao ? 'tom-devolvida' : 'tom-concluida'}`}
+              style={{ marginBottom: 'var(--space-lg)', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+              <ClipboardList size={16} style={{ flexShrink: 0, marginTop: 1 }} />
+              <span>
+                Gerada a partir do Mapeamento{origem.numero != null ? ` #${origem.numero}` : ''}. Alguns campos já vieram preenchidos — confira e complete os demais.
+                {origem.emAprovacao && ' Atenção: esse mapeamento ainda está em aprovação — esta vaga passa pela própria cadeia, independente dele.'}
+              </span>
             </div>
           )}
           {faltando.length > 0 && (
