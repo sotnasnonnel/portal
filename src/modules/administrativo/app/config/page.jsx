@@ -7,17 +7,18 @@ import { useAuth } from '../../../../contexts/AuthContext';
 import { CLASSES_ADM, CAMPOS_EXTRAS_VISIVEIS } from '../../../../config/administrativo';
 import { listarConfigs, salvarConfigServico, listarPessoas } from '../../lib/chamados';
 import { TIPOS_CAMPO, chaveUnica } from '../../lib/camposExtras';
+import { schemaDoServico } from '../novo/formularios/schemas';
 
 const PREFIXO_NOVO = '__novo_';
 
 const CONFIG_VAZIA = {
-  atendente_id: null, sla_horas: null, exige_aprovacao: false, aprovadores: [], campos_extras: [],
+  atendente_id: null, sla_dias_uteis: null, exige_aprovacao: false, aprovadores: [], campos_extras: [],
 };
 
 // Cópia editável da config salva (nunca mutar o objeto que veio do banco).
 const rascunhoDe = (cfg = CONFIG_VAZIA) => ({
   atendente_id: cfg.atendente_id ?? null,
-  sla_horas: cfg.sla_horas ?? null,
+  sla_dias_uteis: cfg.sla_dias_uteis ?? null,
   exige_aprovacao: !!cfg.exige_aprovacao,
   aprovadores: [...(cfg.aprovadores || [])],
   campos_extras: (cfg.campos_extras || []).map((c) => ({ ...c })),
@@ -117,11 +118,18 @@ export default function ConfigAdm() {
     try {
       // Chave definitiva dos campos novos, derivada do rótulo. As já salvas
       // passam intactas para não órfãos os valores gravados nos chamados.
-      const usadas = rascunho.campos_extras
-        .filter((c) => !c.chave.startsWith(PREFIXO_NOVO)).map((c) => c.chave);
+      //
+      // As chaves do próprio serviço entram na lista de ocupadas: um campo
+      // extra chamado "Valor base" geraria a chave `valor_base` e sobrescreveria
+      // o campo do formulário dentro do mesmo jsonb, sem aviso.
+      const usadas = [
+        ...(schemaDoServico(sel.classeSlug, sel.slug) || []).map((c) => c.chave),
+        ...rascunho.campos_extras
+          .filter((c) => !c.chave.startsWith(PREFIXO_NOVO)).map((c) => c.chave),
+      ];
       const dados = {
         ...rascunho,
-        sla_horas: rascunho.sla_horas === '' ? null : rascunho.sla_horas,
+        sla_dias_uteis: rascunho.sla_dias_uteis === '' ? null : rascunho.sla_dias_uteis,
         campos_extras: rascunho.campos_extras.map((c) => {
           let { chave } = c;
           if (chave.startsWith(PREFIXO_NOVO)) {
@@ -155,7 +163,7 @@ export default function ConfigAdm() {
     if (!c) return 'Não configurado';
     const partes = [];
     partes.push(c.atendente_id ? (nomePessoa[c.atendente_id] || 'Atendente definido') : 'Sem atendente');
-    partes.push(c.sla_horas ? `SLA ${c.sla_horas}h` : 'Sem SLA');
+    partes.push(c.sla_dias_uteis ? `SLA ${c.sla_dias_uteis} dia${c.sla_dias_uteis > 1 ? 's' : ''} úteis` : 'Sem SLA');
     if (c.exige_aprovacao) partes.push('Com alçada');
     const n = (c.campos_extras || []).length;
     if (n) partes.push(`${n} campo${n > 1 ? 's' : ''}`);
@@ -218,12 +226,12 @@ export default function ConfigAdm() {
                   </div>
 
                   <div className="adm-campo">
-                    <label htmlFor="cfg-sla">Prazo de atendimento (horas)</label>
+                    <label htmlFor="cfg-sla">Prazo de atendimento (dias úteis)</label>
                     <input id="cfg-sla" type="number" min="1" className="adm-input"
-                      value={rascunho.sla_horas ?? ''}
-                      onChange={(e) => mexer({ sla_horas: e.target.value ? Number(e.target.value) : null })} />
+                      value={rascunho.sla_dias_uteis ?? ''}
+                      onChange={(e) => mexer({ sla_dias_uteis: e.target.value ? Number(e.target.value) : null })} />
                     <span className="adm-campo-dica">
-                      Com alçada, o prazo só começa a contar depois da aprovação.
+                      Sábado e domingo não contam. Com alçada, o prazo só começa depois da aprovação.
                     </span>
                   </div>
 
@@ -240,8 +248,9 @@ export default function ConfigAdm() {
                       Pessoas — mesma regra das horas extras. */}
                   {rascunho.exige_aprovacao && (
                     <p className="adm-campo-dica">
-                      O chamado vai para o superior direto de quem abriu. Quem não tem superior
-                      cadastrado entra direto na fila, sem aprovação.
+                      O chamado vai para o fluxo cadastrado do solicitante ou, na falta dele,
+                      para o superior direto. Quem não tem nenhum dos dois não consegue abrir
+                      o chamado — só a direção, que não tem a quem recorrer, passa direto.
                     </p>
                   )}
                 </div>

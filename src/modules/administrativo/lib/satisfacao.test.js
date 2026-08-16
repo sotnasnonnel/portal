@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { media, resumoSatisfacao, NOTAS_POSSIVEIS } from './satisfacao.js';
+import {
+  media, resumoSatisfacao, NOTAS_POSSIVEIS, faixaDaMedia, posicaoNaEscala,
+} from './satisfacao.js';
 
 const av = (nota, servico = 'a', classe = 'ti') => ({ nota, classe, servico });
 
@@ -69,4 +71,37 @@ test('serviços homônimos de classes diferentes não se misturam', () => {
     av(1, 'outras-demandas', 'saude-seguranca'),
   ]);
   assert.equal(r.porServico.length, 2);
+});
+
+// ---- faixa e posição no gráfico ----
+
+test('a faixa muda exatamente nos cortes de 3 e 4', () => {
+  assert.equal(faixaDaMedia(2.9), 'baixa');
+  assert.equal(faixaDaMedia(3), 'media');
+  assert.equal(faixaDaMedia(3.9), 'media');
+  assert.equal(faixaDaMedia(4), 'alta');
+  assert.equal(faixaDaMedia(5), 'alta');
+});
+
+// Serviço sem nota não pode cair na faixa "baixa" — ele não foi mal avaliado,
+// ele não foi avaliado.
+test('média nula tem faixa própria, não "baixa"', () => {
+  assert.equal(faixaDaMedia(null), 'vazia');
+  assert.equal(faixaDaMedia(undefined), 'vazia');
+});
+
+// A régua vai de 1 a 5: nota 1 encosta no início, nota 3 fica no meio.
+test('a posição no trilho respeita a escala de 1 a 5', () => {
+  assert.equal(posicaoNaEscala(1), 0);
+  assert.equal(posicaoNaEscala(3), 50);
+  assert.equal(posicaoNaEscala(5), 100);
+  assert.equal(posicaoNaEscala(4), 75);
+});
+
+// Valor fora da escala viraria `left` negativo ou acima de 100% — o ponto
+// sairia do trilho em vez de encostar na ponta.
+test('nota fora da escala fica presa nas pontas', () => {
+  assert.equal(posicaoNaEscala(0), 0);
+  assert.equal(posicaoNaEscala(9), 100);
+  assert.equal(posicaoNaEscala(null), 0);
 });

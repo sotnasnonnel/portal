@@ -75,3 +75,18 @@ export function limparValores(definicao = [], valores = {}) {
   }
   return saida;
 }
+
+/**
+ * Junta o que o formulário do serviço preencheu com os campos extras
+ * cadastrados — os dois convivem no mesmo objeto `campos`.
+ *
+ * Não dá para usar só `limparValores`: ele devolve apenas as chaves da
+ * definição e apagaria os campos do serviço. Nem só espalhar por cima: as
+ * chaves extras vazias sobreviveriam como string vazia no jsonb. Por isso as
+ * chaves da definição são removidas antes e reinseridas já limpas.
+ */
+export function mesclarComExtras(valores = {}, definicao = []) {
+  const saida = { ...valores };
+  for (const campo of definicao) delete saida[campo.chave];
+  return { ...saida, ...limparValores(definicao, valores) };
+}

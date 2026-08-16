@@ -7,6 +7,37 @@
 
 export const NOTAS_POSSIVEIS = [5, 4, 3, 2, 1];
 
+/** Extremos da escala. A pior nota possível é 1 — ninguém tira zero. */
+export const NOTA_MIN = 1;
+export const NOTA_MAX = 5;
+
+/** Abaixo disso a média é ruído, não sinal: dá para virar com um chamado só. */
+export const MINIMO_CONFIAVEL = 3;
+
+/**
+ * Faixa da média, usada pela cor do gráfico e da tabela. Uma regra só, num
+ * lugar só — cor e número discordarem seria pior que não ter cor.
+ */
+export function faixaDaMedia(m) {
+  if (m === null || m === undefined) return 'vazia';
+  if (m < 3) return 'baixa';
+  if (m < 4) return 'media';
+  return 'alta';
+}
+
+/**
+ * Onde a média cai no trilho, em %.
+ *
+ * A escala vai de 1 a 5, não de 0 a 5: como a régua começa em 1, o ponto marca
+ * POSIÇÃO, não comprimento. Por isso o gráfico usa ponto e não barra — barra
+ * teria de sair do zero para o tamanho não mentir.
+ */
+export function posicaoNaEscala(m) {
+  if (m === null || m === undefined) return 0;
+  const preso = Math.min(NOTA_MAX, Math.max(NOTA_MIN, m));
+  return ((preso - NOTA_MIN) / (NOTA_MAX - NOTA_MIN)) * 100;
+}
+
 /** Média com uma casa, ou null quando não há nota — média de nada não é zero. */
 export function media(notas = []) {
   if (!notas.length) return null;

@@ -187,6 +187,15 @@
 }
 .adm-travado svg { position: absolute; right: 13px; top: 50%; transform: translateY(-50%); color: #94a3b8; }
 
+/* Campo com prefixo (R$): o símbolo fica dentro da caixa, para o rótulo não
+   precisar carregar a unidade e a leitura sair formatada como moeda. */
+.adm-prefixado { position: relative; display: block; }
+.adm-prefixado .adm-input { padding-left: 40px; }
+.adm-prefixo {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  font-size: 0.85rem; font-weight: 600; color: var(--a-muted); pointer-events: none;
+}
+
 /* ---- anexos ---- */
 .adm-anexo-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -465,6 +474,28 @@
 
 .adm-form-cab .adm-badge { margin-left: auto; }
 
+/* ---- fluxo de aprovação (mesmo papel do FluxoTimeline do DP) ---- */
+.adm-fluxo { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.adm-fluxo-passo { display: flex; align-items: flex-start; gap: 12px; padding: 8px 0; }
+.adm-fluxo-ico {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 1px solid currentColor; background: #fff;
+}
+/* Quem ainda não chegou fica recessivo: o olho precisa cair em quem decide agora. */
+.adm-fluxo-passo.tom-depois { color: #b0b0b0; }
+.adm-fluxo-passo.tom-espera { color: #b45309; }
+.adm-fluxo-passo.tom-ok { color: #047857; }
+.adm-fluxo-passo.tom-nao { color: #b91c1c; }
+.adm-fluxo-corpo { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.adm-fluxo-corpo strong { font-size: 0.85rem; font-weight: 600; color: var(--a-ink); }
+.adm-fluxo-status { font-size: 0.78rem; color: currentColor; font-weight: 600; }
+.adm-fluxo-just {
+  margin: 4px 0 0; font-size: 0.8rem; line-height: 1.5;
+  color: var(--a-gray-600); font-style: italic;
+}
+.adm-fluxo-passo.is-vez .adm-fluxo-ico { box-shadow: 0 0 0 3px rgba(180, 83, 9, 0.15); }
+
 /* ---- conversa ---- */
 .adm-msgs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .adm-msg { border: 1px solid var(--a-border); border-radius: 11px; padding: 12px 14px; background: #fff; }
@@ -538,8 +569,85 @@
 .adm-sat-media.tom-media { color: #b45309; }
 .adm-sat-media.tom-alta { color: #047857; }
 
+/* ---- gráfico: média por tipo de chamado ----
+   Ponto, e não barra, porque a régua começa em 1: barra teria de sair do zero
+   para o comprimento não mentir, e aí 3,8 e 4,6 viram quase o mesmo traço.
+   Preenchimentos validados aos pares (inclusive daltonismo); o tom de texto é
+   mais escuro que o do ponto porque texto precisa de mais contraste. */
+.adm-graf { margin: 10px 0 4px; }
+.adm-graf-linha {
+  display: grid;
+  grid-template-columns: minmax(0, 190px) minmax(0, 1fr) 34px 42px;
+  align-items: center; gap: 10px; padding: 3px 0;
+}
+.adm-graf-rot {
+  font-size: 0.82rem; color: var(--a-ink);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* A margem lateral abre espaço para o ponto nos extremos (1 e 5) não vazar. */
+.adm-graf-trilho {
+  position: relative; height: 18px; margin: 0 9px;
+}
+.adm-graf-trilho::before {
+  content: ''; position: absolute; left: 0; right: 0; top: 50%;
+  height: 2px; margin-top: -1px; background: var(--a-gray-100); border-radius: 2px;
+}
+.adm-graf-marca {
+  position: absolute; top: 50%; width: 1px; height: 8px; margin-top: -4px;
+  background: var(--a-border);
+}
+.adm-graf-guia {
+  position: absolute; left: 0; top: 50%; height: 2px; margin-top: -1px;
+  background: var(--a-primary-line); border-radius: 2px;
+}
+/* Anel da cor da superfície: separa o ponto da linha-guia por baixo dele. */
+.adm-graf-ponto {
+  position: absolute; top: 50%; width: 13px; height: 13px;
+  margin: -7px 0 0 -7px; border-radius: 50%;
+  box-shadow: 0 0 0 2px #fff;
+}
+.adm-graf-ponto.tom-baixa { background: #b91c1c; }
+.adm-graf-ponto.tom-media { background: #d97706; }
+.adm-graf-ponto.tom-alta  { background: #047857; }
+/* Poucas avaliações: ponto vazado. A média aparece, mas não se veste de certeza. */
+.adm-graf-ponto.is-poucos { background: #fff; box-shadow: 0 0 0 2px #fff, inset 0 0 0 2px currentColor; }
+.adm-graf-ponto.is-poucos.tom-baixa { color: #b91c1c; }
+.adm-graf-ponto.is-poucos.tom-media { color: #d97706; }
+.adm-graf-ponto.is-poucos.tom-alta  { color: #047857; }
+.adm-graf-linha .adm-sat-media { font-size: 0.85rem; text-align: right; }
+.adm-graf-n {
+  font-size: 0.72rem; color: var(--a-muted);
+  font-variant-numeric: tabular-nums; text-align: right;
+}
+.adm-graf-n.is-poucos { font-style: italic; }
+
+.adm-graf-eixo { padding-top: 2px; }
+.adm-graf-eixo .adm-graf-trilho { height: 14px; }
+.adm-graf-eixo .adm-graf-trilho::before { background: none; }
+.adm-graf-num {
+  position: absolute; top: 0; transform: translateX(-50%);
+  font-size: 0.7rem; font-style: normal; color: var(--a-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.adm-graf-nota {
+  display: flex; flex-wrap: wrap; gap: 4px 14px;
+  margin: 8px 0 14px; font-size: 0.73rem; color: var(--a-muted);
+}
+.adm-graf-chave { display: inline-flex; align-items: center; gap: 5px; }
+.adm-graf-chave i { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.adm-graf-chave i.tom-baixa { background: #b91c1c; }
+.adm-graf-chave i.tom-media { background: #d97706; }
+.adm-graf-chave i.tom-alta  { background: #047857; }
+.adm-graf-chave i.is-poucos { background: #fff; box-shadow: inset 0 0 0 2px var(--a-muted); }
+.adm-graf-chave-fim { font-style: italic; }
+
 @media (max-width: 760px) {
   .adm-sat-topo { grid-template-columns: 1fr; }
+  .adm-graf-linha { grid-template-columns: minmax(0, 1fr) 32px 40px; gap: 8px; }
+  /* Sem espaço para nome e trilho lado a lado: o nome sobe e ocupa a linha. */
+  .adm-graf-rot { grid-column: 1 / -1; white-space: normal; font-weight: 600; }
+  .adm-graf-eixo .adm-graf-rot { display: none; }
 }
 
 /* ---- filtros do quadro ---- */

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   SCHEMAS, schemaDoServico, inicialDoSchema, schemaUsaPessoa, usaDescricao, usaAnexo,
+  formatarValorCampo,
 } from './schemas.js';
 import { TODOS_SERVICOS } from '../../../../../config/administrativo.js';
 
@@ -123,4 +124,35 @@ test('schemaDoServico devolve null para serviço sem esquema', () => {
   assert.equal(schemaDoServico('mobilizacao', 'mobilizacao'), null);
   assert.equal(schemaDoServico('nao', 'existe'), null);
   assert.ok(schemaDoServico('uber', 'viagem-uber'));
+});
+
+// ---- formatação para leitura ----
+// Intl separa "R$" do número com espaço NÃO SEPARÁVEL (U+00A0). Comparar com
+// espaço comum faria o teste falhar mostrando dois textos visualmente iguais.
+const semNbsp = (s) => s.replace(/\u00A0/g, ' ');
+
+test('dinheiro sai em reais', () => {
+  assert.equal(semNbsp(formatarValorCampo('compra', 'solicitacao-compra', 'valor_base', 12400)), 'R$ 12.400,00');
+  assert.equal(semNbsp(formatarValorCampo('compra', 'solicitacao-compra', 'valor_base', '1234.5')), 'R$ 1.234,50');
+});
+
+// new Date('2026-09-01') é interpretado como UTC e, no nosso fuso, exibiria 31/08.
+test('data não escorrega um dia por causa de fuso', () => {
+  assert.equal(formatarValorCampo('compra', 'solicitacao-compra', 'data_necessidade', '2026-09-01'), '01/09/2026');
+  assert.equal(formatarValorCampo('frota', 'reserva-veiculos', 'retirada_em', '2026-09-01T14:30'), '01/09/2026 14:30');
+  assert.equal(formatarValorCampo('uber', 'viagem-uber', 'horario', '08:05:00'), '08:05');
+});
+
+// Patrimônio e número de série parecem número, mas são texto: formatar pelo
+// conteúdo transformaria "004512" em "4512" ou em moeda.
+test('campo de texto que parece número continua texto', () => {
+  assert.equal(formatarValorCampo('ti', 'troca-equipamentos', 'patrimonio', '004512'), '004512');
+  assert.equal(formatarValorCampo('ti', 'troca-equipamentos', 'numero_serie', '8871'), '8871');
+});
+
+test('sim/não, listas e vazio', () => {
+  assert.equal(formatarValorCampo('ti', 'instalacao-software', 'homologado', 'sim'), 'Sim');
+  assert.equal(formatarValorCampo('mobilizacao', 'mobilizacao', 'epis', ['Capacete', 'Botina']), 'Capacete, Botina');
+  assert.equal(formatarValorCampo('compra', 'solicitacao-compra', 'valor_base', ''), '');
+  assert.equal(formatarValorCampo('compra', 'solicitacao-compra', 'valor_base', null), '');
 });

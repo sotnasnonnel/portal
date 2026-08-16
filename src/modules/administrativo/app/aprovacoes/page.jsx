@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ClipboardCheck, Check, X, Loader2, AlertCircle, Paperclip } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { getClasse, getServico } from '../../../../config/administrativo';
+import { rotuloDoCampo, formatarValorCampo } from '../novo/formularios/schemas';
 import { listarAprovacoesPendentes, decidirChamado } from '../../lib/chamados';
 
 const dataHora = (iso) => (iso
@@ -91,8 +92,8 @@ export default function AprovacoesAdm() {
                 <dl className="adm-aprov-campos">
                   {campos.map(([chave, valor]) => (
                     <div key={chave}>
-                      <dt>{chave.replace(/_/g, ' ')}</dt>
-                      <dd>{String(valor)}</dd>
+                      <dt>{rotuloDoCampo(c.classe, c.servico, chave)}</dt>
+                      <dd>{formatarValorCampo(c.classe, c.servico, chave, valor)}</dd>
                     </div>
                   ))}
                 </dl>

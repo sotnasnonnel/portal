@@ -6,11 +6,12 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { getClasse, getServico } from '../../../../config/administrativo';
-import { rotuloDoCampo, CAMPOS_OCULTOS } from '../novo/formularios/schemas';
+import { rotuloDoCampo, formatarValorCampo, CAMPOS_OCULTOS } from '../novo/formularios/schemas';
 import {
-  buscarChamado, listarInteracoes, listarEventos, responder, marcarLidas, assumirChamado,
-  fecharChamado, reabrirChamado, avaliarChamado, urlDoAnexo,
+  buscarChamado, listarInteracoes, listarEventos, listarEtapas, responder, marcarLidas,
+  assumirChamado, fecharChamado, reabrirChamado, avaliarChamado, urlDoAnexo,
 } from '../../lib/chamados';
+import FluxoAprovacao from './FluxoAprovacao';
 import { montarLinhaDoTempo, textoDoEvento } from '../../lib/linhaDoTempo';
 
 // Satisfação de 1 a 5 estrelas. Até 3 exige comentário — é onde mora a
@@ -32,13 +33,6 @@ const dataHora = (iso) => (iso
   ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
   : '—');
 
-// Valor gravado no jsonb pode ser lista (marcadores) ou booleano (devolução).
-const mostrarValor = (v) => {
-  if (Array.isArray(v)) return v.join(', ');
-  if (typeof v === 'boolean') return v ? 'Sim' : 'Não';
-  return String(v);
-};
-
 export default function ChamadoAdm() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -47,6 +41,8 @@ export default function ChamadoAdm() {
   const [interacoes, setInteracoes] = useState([]);
   const [eventos, setEventos] = useState([]);
   const [nomesEventos, setNomesEventos] = useState({});
+  const [etapas, setEtapas] = useState([]);
+  const [nomesEtapas, setNomesEtapas] = useState({});
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
   const [ocupado, setOcupado] = useState('');
@@ -66,10 +62,14 @@ export default function ChamadoAdm() {
       const c = await buscarChamado(id);
       if (!c) { setErro('Chamado não encontrado ou sem permissão de acesso.'); return; }
       setChamado(c);
-      const [msgs, hist] = await Promise.all([listarInteracoes(id), listarEventos(id)]);
+      const [msgs, hist, fluxo] = await Promise.all([
+        listarInteracoes(id), listarEventos(id), listarEtapas(id),
+      ]);
       setInteracoes(msgs);
       setEventos(hist.eventos);
       setNomesEventos(hist.nomes);
+      setEtapas(fluxo.etapas);
+      setNomesEtapas(fluxo.nomes);
       marcarLidas(id, { souSolicitante: c.solicitante_id === user?.id });
     } catch (e) {
       setErro(e.message);
@@ -198,7 +198,7 @@ export default function ChamadoAdm() {
           {campos.map(([chave, valor]) => (
             <div key={chave}>
               <dt>{rotuloDoCampo(chamado.classe, chamado.servico, chave)}</dt>
-              <dd>{mostrarValor(valor)}</dd>
+              <dd>{formatarValorCampo(chamado.classe, chamado.servico, chave, valor)}</dd>
             </div>
           ))}
         </dl>
@@ -281,6 +281,8 @@ export default function ChamadoAdm() {
           </div>
         </div>
       )}
+
+      <FluxoAprovacao etapas={etapas} nomes={nomesEtapas} />
 
       {/* Mensagens e eventos numa lista só: é o que mostra ao solicitante que o
           pedido andou, mesmo quando ninguém escreveu nada. */}

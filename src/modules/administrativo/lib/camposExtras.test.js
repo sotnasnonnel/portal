@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { chaveDoRotulo, chaveUnica, validarCamposExtras, limparValores } from './camposExtras.js';
+import {
+  chaveDoRotulo, chaveUnica, validarCamposExtras, limparValores, mesclarComExtras,
+} from './camposExtras.js';
+import { schemaDoServico } from '../app/novo/formularios/schemas.js';
 
 const campo = (over = {}) => ({
   chave: 'nome_do_cliente', rotulo: 'Nome do cliente', tipo: 'texto', obrigatorio: false, opcoes: [], ...over,
@@ -50,4 +53,45 @@ test('limparValores: descarta vazios e converte número', () => {
 // Valor de campo removido do cadastro não deve viajar junto no jsonb.
 test('limparValores: ignora valor sem definição correspondente', () => {
   assert.deepEqual(limparValores([campo()], { nome_do_cliente: 'Vale', fantasma: 'x' }), { nome_do_cliente: 'Vale' });
+});
+
+// ---- convivência entre o formulário do serviço e os campos extras ----
+
+const DEF = [
+  { chave: 'centro_custo', rotulo: 'Centro de custo', tipo: 'texto' },
+  { chave: 'quantidade', rotulo: 'Quantidade', tipo: 'numero' },
+];
+
+// O bug que isto tranca: usar limparValores sozinho devolvia só as chaves da
+// definição e apagava tudo que o formulário do serviço tinha preenchido.
+test('os campos do serviço sobrevivem à mesclagem', () => {
+  const r = mesclarComExtras(
+    { valor_base: 1200, fornecedor: 'ACME', centro_custo: 'CC-10' }, DEF,
+  );
+  assert.equal(r.valor_base, 1200);
+  assert.equal(r.fornecedor, 'ACME');
+  assert.equal(r.centro_custo, 'CC-10');
+});
+
+test('campo extra numérico chega como número, não como texto', () => {
+  assert.equal(mesclarComExtras({ quantidade: '7' }, DEF).quantidade, 7);
+});
+
+// Espalhar por cima deixaria a chave vazia viver como '' dentro do jsonb.
+test('campo extra em branco não é gravado', () => {
+  const r = mesclarComExtras({ valor_base: 10, centro_custo: '   ' }, DEF);
+  assert.ok(!('centro_custo' in r), 'chave vazia foi gravada');
+  assert.equal(r.valor_base, 10);
+});
+
+test('sem campos extras cadastrados, nada do serviço se perde', () => {
+  assert.deepEqual(mesclarComExtras({ a: 1, b: 'x' }, []), { a: 1, b: 'x' });
+});
+
+// Um campo extra "Valor base" geraria a chave `valor_base`, a mesma do campo de
+// Compras — e sobrescreveria o valor do serviço dentro do mesmo jsonb.
+test('campo extra não rouba a chave de um campo do serviço', () => {
+  const doServico = schemaDoServico('compra', 'solicitacao-compra').map((c) => c.chave);
+  assert.ok(doServico.includes('valor_base'));
+  assert.equal(chaveUnica('Valor base', doServico), 'valor_base_2');
 });

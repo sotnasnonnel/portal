@@ -54,7 +54,7 @@ export const SCHEMAS = {
   'compra/solicitacao-compra': [
     cc(),
     { chave: 'tipo', rotulo: 'Tipo', tipo: 'selecao', obrigatorio: true, opcoes: ['Produto', 'Serviço'] },
-    { chave: 'valor_base', rotulo: 'Valor base (R$)', tipo: 'numero', obrigatorio: true },
+    { chave: 'valor_base', rotulo: 'Valor base', tipo: 'numero', formato: 'moeda', obrigatorio: true },
     dataNecessidade(),
     observacao(),
   ],
@@ -73,7 +73,7 @@ export const SCHEMAS = {
   ],
   'frota/recarga-ticket-log': [
     placa(),
-    { chave: 'valor', rotulo: 'Valor (R$)', tipo: 'numero', obrigatorio: true },
+    { chave: 'valor', rotulo: 'Valor', tipo: 'numero', formato: 'moeda', obrigatorio: true },
     { chave: 'motivo', rotulo: 'Motivo', tipo: 'texto_longo', obrigatorio: true },
     dataNecessidade(),
   ],
@@ -197,7 +197,7 @@ export const SCHEMAS = {
       chave: 'publico', rotulo: 'Público', tipo: 'selecao', obrigatorio: false,
       opcoes: ['Masculino', 'Feminino', 'Misto'],
     },
-    { chave: 'custo_previsto', rotulo: 'Custo previsto (R$)', tipo: 'numero', obrigatorio: false },
+    { chave: 'custo_previsto', rotulo: 'Custo previsto', tipo: 'numero', formato: 'moeda', obrigatorio: false },
     { chave: 'incluso_custo', rotulo: 'Incluso no custo', tipo: 'texto_longo', obrigatorio: false },
     observacao(),
   ],
@@ -258,6 +258,45 @@ export function rotuloDoCampo(classe, servico, chave) {
   if (doSchema) return doSchema.rotulo;
   if (ROTULOS_CODIFICADOS[chave]) return ROTULOS_CODIFICADOS[chave];
   return chave.replace(/_/g, ' ');
+}
+
+const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
+/**
+ * Data vinda de <input type="date"> é "2026-09-01" — texto, não instante.
+ * Passar isso por `new Date()` interpreta como UTC e, no nosso fuso, exibe o
+ * DIA ANTERIOR. Por isso a formatação é feita quebrando a string.
+ */
+const dataBr = (v) => {
+  const [ano, mes, dia] = String(v).slice(0, 10).split('-');
+  return (ano && mes && dia) ? `${dia}/${mes}/${ano}` : String(v);
+};
+
+/**
+ * Formata o valor de um campo para leitura, usando o TIPO declarado no esquema
+ * — não o formato do texto. Adivinhar pelo conteúdo erraria em campo de texto
+ * que por acaso parece número (patrimônio, número de série).
+ */
+export function formatarValorCampo(classe, servico, chave, valor) {
+  if (valor === null || valor === undefined || valor === '') return '';
+  if (Array.isArray(valor)) return valor.join(', ');
+  if (typeof valor === 'boolean') return valor ? 'Sim' : 'Não';
+
+  const def = (schemaDoServico(classe, servico) || []).find((c) => c.chave === chave);
+
+  if (def?.formato === 'moeda') {
+    const n = Number(valor);
+    return Number.isFinite(n) ? BRL.format(n) : String(valor);
+  }
+  if (def?.tipo === 'data') return dataBr(valor);
+  if (def?.tipo === 'datahora') {
+    const [d, h] = String(valor).split('T');
+    return h ? `${dataBr(d)} ${h.slice(0, 5)}` : dataBr(d);
+  }
+  if (def?.tipo === 'hora') return String(valor).slice(0, 5);
+  if (def?.tipo === 'sim_nao') return valor === 'sim' ? 'Sim' : 'Não';
+
+  return String(valor);
 }
 
 /** Campos internos que não fazem sentido exibir como dado do pedido. */

@@ -6,7 +6,7 @@ import {
 import { getClasse, getServico, assuntoDoServico } from '../../../../config/administrativo';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { criarChamado, buscarConfigServico, listarPessoas } from '../../lib/chamados';
-import { validarCamposExtras, limparValores } from '../../lib/camposExtras';
+import { validarCamposExtras, limparValores, mesclarComExtras } from '../../lib/camposExtras';
 import CampoExtra from './CampoExtra';
 import { formDoServico } from './formularios';
 import { usaDescricao, usaAnexo } from './formularios/schemas';
@@ -98,7 +98,11 @@ export default function NovoChamadoAdm() {
     e.preventDefault();
     if (temDescricao && !descricao.trim()) return setErro('A descrição é obrigatória.');
     const definicao = config?.campos_extras || [];
-    const erroExtra = form ? form.validar(extras) : validarCamposExtras(definicao, extras);
+    // As duas validações: a do formulário do serviço e a dos campos cadastrados.
+    // Antes só uma delas rodava, então campo extra obrigatório num serviço com
+    // formulário próprio passava batido.
+    const erroExtra = (form ? form.validar(extras) : '')
+      || validarCamposExtras(definicao, extras);
     if (erroExtra) return setErro(erroExtra);
     setErro('');
     setEnviando(true);
@@ -111,7 +115,8 @@ export default function NovoChamadoAdm() {
         assunto: assuntoDoServico(classe, servico, extras),
         natureza: NATUREZA_PADRAO,
         descricao,
-        campos: form ? extras : limparValores(definicao, extras),
+        // Campos do serviço + campos extras cadastrados, no mesmo objeto.
+        campos: form ? mesclarComExtras(extras, definicao) : limparValores(definicao, extras),
         arquivos: temAnexo ? anexos : [],
         solicitanteId: user.id,
         config,
@@ -194,7 +199,9 @@ export default function NovoChamadoAdm() {
               classe={classe} servico={servico} />
           )}
 
-          {!form && (config?.campos_extras || []).map((campo) => (
+          {/* Depois dos campos do serviço, nunca no lugar deles: o que o time do
+              Adm cadastra é um acréscimo àquele formulário, não um substituto. */}
+          {(config?.campos_extras || []).map((campo) => (
             <CampoExtra
               key={campo.chave}
               campo={campo}

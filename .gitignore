@@ -29,3 +29,6 @@ portal_phd/
 portal_phd.zip
 
 .env
+
+# Cache da CLI do Supabase
+supabase/.temp/

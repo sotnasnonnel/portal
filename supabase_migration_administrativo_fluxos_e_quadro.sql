@@ -226,3 +226,25 @@ comment on column public.chamados_adm_avaliacoes.nota is
   'Satisfação de 1 a 5 estrelas. Até 3 exige comentário.';
 
 notify pgrst, 'reload schema';
+
+-- ----------------------------------------------------------------------------
+-- 7) SLA passa de HORAS CORRIDAS para DIAS ÚTEIS
+--
+-- Em horas corridas, um chamado aberto na sexta à tarde vencia no domingo sem
+-- ninguém ter trabalhado: o indicador acusava atraso que não existiu. Sábado e
+-- domingo deixam de contar (feriados ainda não são tratados — o portal não tem
+-- calendário deles).
+--
+-- Conversão: o valor antigo era em horas CORRIDAS, então divide por 24.
+-- ----------------------------------------------------------------------------
+alter table public.chamados_adm_config
+  rename column sla_horas to sla_dias_uteis;
+
+update public.chamados_adm_config
+   set sla_dias_uteis = greatest(1, ceil(sla_dias_uteis / 24.0)::int)
+ where sla_dias_uteis is not null;
+
+comment on column public.chamados_adm_config.sla_dias_uteis is
+  'Prazo de atendimento em dias úteis. Sábado e domingo não contam; feriados ainda não são tratados.';
+
+notify pgrst, 'reload schema';

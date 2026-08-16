@@ -7,6 +7,7 @@ import { avaliarAlcada } from '../../../config/alcadas';
 import { resolverPapeis, PapelNaoAtribuidoError } from '../../../services/alcadas';
 import { decidirAprovacao, cadeiaDoFluxo } from './alcadaAdm';
 import { proximoStatusAoResponder } from './statusChamado';
+import { venceEmISO } from './prazo';
 import { contarNaoLidas } from './painel';
 import { notificarChamadoAdm } from '../../../services/notificarChamadoAdm';
 
@@ -20,13 +21,13 @@ export const BUCKET_ADM = 'chamados-adm-anexos';
 export async function buscarConfigServico(classe, servico) {
   const { data, error } = await supabase
     .from('chamados_adm_config')
-    .select('atendente_id, sla_horas, exige_aprovacao, aprovadores, campos_extras')
+    .select('atendente_id, sla_dias_uteis, exige_aprovacao, aprovadores, campos_extras')
     .eq('classe', classe)
     .eq('servico', servico)
     .maybeSingle();
   if (error) throw new Error(`Não foi possível ler a configuração do serviço: ${error.message}`);
   return data || {
-    atendente_id: null, sla_horas: null, exige_aprovacao: false, aprovadores: [], campos_extras: [],
+    atendente_id: null, sla_dias_uteis: null, exige_aprovacao: false, aprovadores: [], campos_extras: [],
   };
 }
 
@@ -34,7 +35,7 @@ export async function buscarConfigServico(classe, servico) {
 export async function listarConfigs() {
   const { data, error } = await supabase
     .from('chamados_adm_config')
-    .select('classe, servico, atendente_id, sla_horas, exige_aprovacao, aprovadores, campos_extras');
+    .select('classe, servico, atendente_id, sla_dias_uteis, exige_aprovacao, aprovadores, campos_extras');
   if (error) throw new Error(`Não foi possível carregar as configurações: ${error.message}`);
   return data || [];
 }
@@ -69,8 +70,49 @@ export async function buscarFluxos(solicitanteId) {
 }
 
 /**
+ * Erro de cadeia vazia. Tipado para a tela poder tratar diferente de uma falha
+ * de rede: aqui não adianta tentar de novo, alguém precisa cadastrar.
+ */
+export class SemAprovadorError extends Error {
+  constructor() {
+    super('Este serviço exige aprovação, mas não há aprovador definido para você. '
+      + 'Peça ao Administrativo para cadastrar seu fluxo ou seu gestor no organograma.');
+    this.name = 'SemAprovadorError';
+  }
+}
+
+/**
+ * Cadeia padrão de quem não tem fluxo próprio: o superior direto, tirado do
+ * organograma pela mesma RPC que a alçada usa.
+ *
+ * Ela cobre 130 dos 135 ativos e acompanha troca de gestor sozinha — cadastrar
+ * pessoa por pessoa ficaria desatualizado no primeiro remanejamento. Note que
+ * NÃO é o fluxo do RH: lá a cadeia é do documento (aumento de salário sobe até
+ * a diretoria), não da pessoa, e serviria mal para um pedido de Uber.
+ */
+async function superiorDireto(solicitanteId) {
+  const { etapas } = await resolverPapeis(solicitanteId, ['GERENTE']);
+  return etapas.map((e) => e.aprovadorId || e.candidatos?.[0]?.id).filter(Boolean);
+}
+
+/**
+ * Quem está no topo da hierarquia não tem superior — e não é uma lacuna de
+ * cadastro, é o fim da linha. Exigir aprovador dele travaria o CEO com um
+ * "peça para cadastrar seu gestor" que ninguém pode atender.
+ *
+ * Checado pelo papel na tabela de alçadas, não por nome ou e-mail: quando a
+ * cadeira trocar de ocupante, isto acompanha sozinho.
+ */
+async function ehTopoDaHierarquia(solicitanteId) {
+  const { etapas } = await resolverPapeis(solicitanteId, ['CEO']);
+  return etapas.some((e) => e.aprovadorId === solicitanteId
+    || e.candidatos?.some((c) => c.id === solicitanteId));
+}
+
+/**
  * Resolve QUEM aprova, nas duas dinâmicas do portal:
- * serviço com gasto → alçada por valor; os demais → fluxo cadastrado.
+ * serviço com gasto → alçada por valor; os demais → fluxo cadastrado, e na
+ * falta dele o superior direto.
  *
  * Devolve a lista ordenada de ids. Lança com mensagem pronta quando a alçada
  * exige um papel que não tem ninguém atrás — deixar passar seria pior do que
@@ -83,7 +125,19 @@ export async function resolverAprovadores({ classe, servico, campos, exigeAprova
 
   if (decisao.modo === 'fluxo') {
     const fluxos = await buscarFluxos(solicitanteId);
-    return { aprovadores: cadeiaDoFluxo(fluxos, classe), decisao };
+    const cadeia = cadeiaDoFluxo(fluxos, classe);
+    const aprovadores = cadeia.length ? cadeia : await superiorDireto(solicitanteId);
+
+    if (!aprovadores.length) {
+      // Topo da hierarquia decide sozinho; qualquer outro sem cadeia é lacuna
+      // de cadastro e o chamado NÃO abre. Deixar seguir transformaria "exige
+      // aprovação" em letra morta, que é justamente o furo que isto corrige.
+      if (await ehTopoDaHierarquia(solicitanteId)) {
+        return { aprovadores: [], decisao: { ...decisao, origem: 'topo' } };
+      }
+      throw new SemAprovadorError();
+    }
+    return { aprovadores, decisao: { ...decisao, origem: cadeia.length ? 'fluxo' : 'superior' } };
   }
 
   // Alçada: o motor devolve PAPÉIS; a RPC traduz papel → pessoa subindo a cadeia.
@@ -123,6 +177,19 @@ export async function criarChamado({
   // evita uma segunda ida ao banco no momento do envio.
   const cfg = config || await buscarConfigServico(classe, servico);
 
+  // Cadeia de aprovação: alçada por valor nos serviços de gasto, fluxo
+  // cadastrado (ou o superior direto) nos demais. Serviço que exige aprovação e
+  // não tem ninguém atrás lança — a lista só chega aqui vazia quando o serviço
+  // realmente dispensa aprovação.
+  //
+  // Resolvido ANTES do upload de propósito: barrar depois de subir os arquivos
+  // deixaria anexo órfão no bucket e teria feito quem está em link de obra
+  // esperar o upload inteiro para só então ouvir que o chamado não abre.
+  const { aprovadores } = await resolverAprovadores({
+    classe, servico, campos, exigeAprovacao: cfg.exige_aprovacao === true, solicitanteId,
+  });
+  const exigeAprovacao = aprovadores.length > 0;
+
   const anexos = [];
   for (const file of arquivos) {
     // Sequencial de propósito: o upload já tem retry próprio e subir tudo de uma
@@ -130,17 +197,8 @@ export async function criarChamado({
     anexos.push(await enviarArquivo(BUCKET_ADM, file));
   }
 
-  // Cadeia de aprovação: alçada por valor nos serviços de gasto, fluxo
-  // cadastrado nos demais. Sem ninguém na cadeia, o chamado entra direto na
-  // fila — segurá-lo sem aprovador o deixaria preso para sempre.
-  const { aprovadores } = await resolverAprovadores({
-    classe, servico, campos, exigeAprovacao: cfg.exige_aprovacao === true, solicitanteId,
-  });
-  const exigeAprovacao = aprovadores.length > 0;
   const agora = new Date();
-  const vence = (!exigeAprovacao && cfg.sla_horas)
-    ? new Date(agora.getTime() + cfg.sla_horas * 3600 * 1000).toISOString()
-    : null;
+  const vence = exigeAprovacao ? null : venceEmISO(agora, cfg.sla_dias_uteis);
 
   const { data: chamado, error } = await supabase
     .from('chamados_adm')
@@ -334,9 +392,7 @@ export async function decidirChamado({ chamadoId, etapaId, aprovar, justificativ
   const { data: chamado } = await supabase
     .from('chamados_adm').select('classe, servico').eq('id', chamadoId).maybeSingle();
   const cfg = chamado ? await buscarConfigServico(chamado.classe, chamado.servico) : null;
-  const vence = cfg?.sla_horas
-    ? new Date(agora.getTime() + cfg.sla_horas * 3600 * 1000).toISOString()
-    : null;
+  const vence = venceEmISO(agora, cfg?.sla_dias_uteis);
 
   const { data, error } = await supabase
     .from('chamados_adm')
@@ -476,6 +532,27 @@ export async function listarQuadro(colaboradorId, { apenasMeus = false, souTime 
     cc: c.campos?.cc || '',
     naoLidas: naoLidas[c.id] || 0,
   }));
+}
+
+/**
+ * Cadeia de aprovação do chamado, com os nomes resolvidos. A RLS já libera a
+ * cadeia inteira para quem participa dela — solicitante, aprovadores e time do Adm.
+ */
+export async function listarEtapas(chamadoId) {
+  const { data, error } = await supabase
+    .from('chamados_adm_etapas')
+    .select('id, ordem, aprovador_id, status, justificativa, decidido_em')
+    .eq('chamado_id', chamadoId)
+    .order('ordem', { ascending: true });
+  if (error) throw new Error(`Não foi possível carregar o fluxo de aprovação: ${error.message}`);
+
+  const ids = [...new Set((data || []).map((e) => e.aprovador_id).filter(Boolean))];
+  const nomes = {};
+  if (ids.length) {
+    const { data: pessoas } = await supabase.rpc('nomes_colaboradores', { p_ids: ids });
+    (pessoas || []).forEach((p) => { nomes[p.id] = p.nome; });
+  }
+  return { etapas: data || [], nomes };
 }
 
 /** Conversa do chamado. A RLS já esconde a nota interna de quem é solicitante. */

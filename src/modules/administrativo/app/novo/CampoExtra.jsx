@@ -27,7 +27,16 @@ export default function CampoExtra({ campo, valor, onChange, pessoas = [] }) {
       </label>
 
       {campo.tipo === 'texto_longo' && <textarea className="adm-textarea adm-textarea-curto" {...comum} />}
-      {campo.tipo === 'numero' && <input type="number" className="adm-input" {...comum} />}
+      {campo.tipo === 'numero' && (campo.formato === 'moeda' ? (
+        // Prefixo dentro do campo: o rótulo não precisa carregar "(R$)", e na
+        // leitura o valor já sai formatado como moeda.
+        <span className="adm-prefixado">
+          <span className="adm-prefixo">R$</span>
+          <input type="number" step="0.01" min="0" className="adm-input" {...comum} />
+        </span>
+      ) : (
+        <input type="number" className="adm-input" {...comum} />
+      ))}
       {campo.tipo === 'data' && <input type="date" className="adm-input" {...comum} />}
       {campo.tipo === 'hora' && <input type="time" className="adm-input" {...comum} />}
       {campo.tipo === 'datahora' && <input type="datetime-local" className="adm-input" {...comum} />}

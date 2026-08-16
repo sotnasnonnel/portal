@@ -47,11 +47,11 @@ export const podeAcessarAdm = (user) => !ADM_EM_BREVE
   || ADM_LIBERADOS.includes((user?.email || '').trim().toLowerCase());
 
 /**
- * Cadastro de campos extras escondido enquanto a tela não é validada. O motor
- * continua de pé: serviço que já tenha campos gravados segue mostrando os
- * campos no formulário — o que some é a edição.
+ * Cadastro de campos extras. Ficou escondido enquanto o caminho não fechava:
+ * os campos eram gravados mas só apareciam nos dois serviços sem formulário
+ * próprio, falhando calado nos outros 24. Corrigido e reaberto.
  */
-export const CAMPOS_EXTRAS_VISIVEIS = false;
+export const CAMPOS_EXTRAS_VISIVEIS = true;
 
 export const NATUREZAS = [
   { valor: 'incidente', label: 'Incidente' },
