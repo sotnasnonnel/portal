@@ -536,13 +536,13 @@ export const ADMINISTRATIVO_GUIA = {
         icon: Settings,
         titulo: "Configure cada serviço antes de liberar",
         texto:
-          'Em Administração → "Configuração" você define, para cada serviço: quem atende (o nome que aparece para o solicitante), o prazo de atendimento em horas e se exige aprovação. Serviço sem configuração ainda funciona, mas o chamado nasce sem responsável e sem prazo — vale preencher antes de o time começar a usar.',
+          'Em Administração → "Configuração" você define, para cada serviço: quem atende (o nome que aparece para o solicitante), o prazo de atendimento em dias úteis e se exige aprovação. Serviço sem configuração ainda funciona, mas o chamado nasce sem responsável e sem prazo — vale preencher antes de o time começar a usar.',
       },
       {
         icon: ClipboardCheck,
         titulo: "Como a aprovação funciona",
         texto:
-          "Ao marcar um serviço como sujeito a aprovação, o chamado vai para o superior direto de quem abriu, lido do organograma da Gestão de Pessoas — não há cadeia para cadastrar. Quem não tem superior cadastrado entra direto na fila, para o chamado não ficar parado sem ninguém para liberar.",
+          "Ao marcar um serviço como sujeito a aprovação, o chamado segue o fluxo cadastrado do solicitante ou, na falta dele, vai para o superior direto lido do organograma da Gestão de Pessoas. Quem não tem nenhum dos dois não consegue abrir o chamado — só a direção, que não tem a quem recorrer, passa direto. Serviços com gasto (compra, recarga de cartão, locação de imóvel) ignoram o fluxo e seguem a alçada por valor.",
       },
       {
         icon: Paperclip,

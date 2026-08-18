@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  media, resumoSatisfacao, NOTAS_POSSIVEIS, faixaDaMedia, posicaoNaEscala,
+  media, resumoSatisfacao, NOTAS_POSSIVEIS, faixaDaMedia, posicaoNaEscala, temAvaliacao,
 } from './satisfacao.js';
 
 const av = (nota, servico = 'a', classe = 'ti') => ({ nota, classe, servico });
@@ -104,4 +104,23 @@ test('nota fora da escala fica presa nas pontas', () => {
   assert.equal(posicaoNaEscala(0), 0);
   assert.equal(posicaoNaEscala(9), 100);
   assert.equal(posicaoNaEscala(null), 0);
+});
+
+// ---- forma do embed do PostgREST ----
+// `chamado_id` tem UNIQUE, então o embed vem como OBJETO. Testar `.length` nele
+// dava undefined e todo chamado avaliado passava por não avaliado — travando a
+// abertura de chamados justamente para quem tinha avaliado.
+
+test('embed objeto (relação um-para-um) conta como avaliado', () => {
+  assert.equal(temAvaliacao({ id: 'abc' }), true);
+});
+
+test('embed lista também conta, se a UNIQUE cair um dia', () => {
+  assert.equal(temAvaliacao([{ id: 'abc' }]), true);
+  assert.equal(temAvaliacao([]), false);
+});
+
+test('sem avaliação, nas duas formas de vazio', () => {
+  assert.equal(temAvaliacao(null), false);
+  assert.equal(temAvaliacao(undefined), false);
 });

@@ -40,7 +40,13 @@ export default function MeusChamadosAdm() {
     }
   }, [user?.id, fechados]);
 
-  useEffect(() => { carregar(); }, [carregar]);
+  // Também ao voltar para a aba: a avaliação que destrava tudo é feita na tela
+  // do chamado, e o aviso aqui ficaria pedindo algo que já foi feito.
+  useEffect(() => {
+    carregar();
+    window.addEventListener('focus', carregar);
+    return () => window.removeEventListener('focus', carregar);
+  }, [carregar]);
 
   return (
     <div className="adm-page adm-page-wide">

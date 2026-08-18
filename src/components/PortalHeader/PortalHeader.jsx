@@ -6,7 +6,9 @@ import "./PortalHeader.css";
 // saudação + botão "?" que abre o guia do app + data.
 //  - userName: nome do usuário logado
 //  - onMenuToggle: opcional; quando passado, mostra o botão de menu (drawer mobile)
-export default function PortalHeader({ userName, onMenuToggle, upper = false }) {
+//  - acoes: opcional; botões do app entram à esquerda do "?". Fica vazio nos
+//    apps que não passam nada, então a barra continua idêntica nos outros dois.
+export default function PortalHeader({ userName, onMenuToggle, upper = false, acoes = null }) {
   const hoje = new Date().toLocaleDateString("pt-BR", {
     weekday: "long",
     day: "2-digit",
@@ -32,6 +34,7 @@ export default function PortalHeader({ userName, onMenuToggle, upper = false }) 
       </div>
 
       <div className="portal-header-right">
+        {acoes}
         <button
           type="button"
           className="portal-header-help"

@@ -4,6 +4,7 @@ import PortalHeader from '../../../../components/PortalHeader/PortalHeader';
 import GuiaModal from '../../../../components/Guia/GuiaModal';
 import { ADMINISTRATIVO_GUIA } from '../../../../components/Guia/guides';
 import Sidebar from './Sidebar';
+import AjudaPrazos from './AjudaPrazos';
 import { useDrawerMobile } from '../../../../hooks/useDrawerMobile';
 import '../../administrativo.css';
 
@@ -16,7 +17,9 @@ export default function AppShell() {
     <div className="admRoot">
       <Sidebar aberto={aberto} onFechar={fechar} />
       <div className="admCol">
-        <PortalHeader userName={userName} onMenuToggle={alternar} />
+        {/* Dois botões na barra: o "?" abre o guia do módulo, o relógio explica
+            os prazos. Separados porque são dúvidas diferentes. */}
+        <PortalHeader userName={userName} onMenuToggle={alternar} acoes={<AjudaPrazos />} />
         <main className="admMain">
           <Outlet />
         </main>

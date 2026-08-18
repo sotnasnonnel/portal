@@ -7,6 +7,23 @@
 
 export const NOTAS_POSSIVEIS = [5, 4, 3, 2, 1];
 
+/**
+ * O chamado já foi avaliado?
+ *
+ * Parece bobo, mas não é: `chamado_id` tem UNIQUE em chamados_adm_avaliacoes, e
+ * por causa disso o PostgREST entende a relação como um-para-um e devolve o
+ * embed como OBJETO, não como lista. Testar `.length` num objeto dá `undefined`
+ * — e todo chamado avaliado passava por não avaliado, travando a abertura de
+ * novos para quem já tinha avaliado.
+ *
+ * Aceita as duas formas de propósito: se a UNIQUE cair um dia, o embed volta a
+ * ser lista e isto continua certo.
+ */
+export function temAvaliacao(embed) {
+  if (!embed) return false;
+  return Array.isArray(embed) ? embed.length > 0 : true;
+}
+
 /** Extremos da escala. A pior nota possível é 1 — ninguém tira zero. */
 export const NOTA_MIN = 1;
 export const NOTA_MAX = 5;

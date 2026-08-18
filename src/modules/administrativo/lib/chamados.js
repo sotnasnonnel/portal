@@ -9,6 +9,12 @@ import { decidirAprovacao, cadeiaDoFluxo } from './alcadaAdm';
 import { proximoStatusAoResponder } from './statusChamado';
 import { venceEmISO } from './prazo';
 import { contarNaoLidas } from './painel';
+import { temAvaliacao } from './satisfacao';
+import { desdobrarMobilizacao } from './desdobramento';
+import { getServico } from '../../../config/administrativo';
+
+/** Rótulo do serviço no catálogo — o assunto do chamado, como no resto do módulo. */
+const rotuloDoServico = (classe, servico) => getServico(classe, servico)?.label || servico;
 import { notificarChamadoAdm } from '../../../services/notificarChamadoAdm';
 
 export const BUCKET_ADM = 'chamados-adm-anexos';
@@ -152,12 +158,27 @@ export async function resolverAprovadores({ classe, servico, campos, exigeAprova
   return { aprovadores, decisao: { ...decisao, papeis: avaliacao.papeis, rotulo: avaliacao.rotulo } };
 }
 
-// A trava do POP 9.1 chega como violação de RLS, que é ilegível para o usuário.
-const traduzirErroInsert = (msg) => (
-  /row-level security/i.test(msg || '')
-    ? 'Você tem um chamado fechado esperando avaliação. Avalie-o para poder abrir um novo.'
-    : `Não foi possível abrir o chamado: ${msg}`
-);
+/**
+ * A trava do POP 9.1 chega como violação de RLS, que é ilegível para o usuário.
+ * Mas a policy tem DUAS condições — a avaliação pendente e o solicitante ser
+ * você mesmo — e antes qualquer violação virava "avalie o chamado anterior",
+ * mandando a pessoa procurar uma avaliação que podia não existir.
+ *
+ * Por isso a pendência é confirmada antes de acusá-la, e o número entra na
+ * mensagem: sem ele, não dá para saber qual chamado avaliar.
+ */
+async function traduzirErroInsert(msg, solicitanteId) {
+  if (!/row-level security/i.test(msg || '')) {
+    return `Não foi possível abrir o chamado: ${msg}`;
+  }
+  const pendente = await buscarAvaliacaoPendente(solicitanteId);
+  if (pendente) {
+    return `O chamado #${pendente.numero} foi fechado e ainda espera sua avaliação. `
+      + 'Avalie-o em Meus chamados para poder abrir um novo.';
+  }
+  return 'Não foi possível abrir o chamado: seu usuário não tem permissão para '
+    + 'abrir chamados em nome de outra pessoa. Se o erro persistir, avise o Administrativo.';
+}
 
 /**
  * Abre o chamado: sobe os anexos, grava o envelope e monta a cadeia de
@@ -171,7 +192,7 @@ const traduzirErroInsert = (msg) => (
  */
 export async function criarChamado({
   classe, servico, assunto, natureza, descricao, campos = {}, arquivos = [], solicitanteId,
-  config = null,
+  config = null, origemChamadoId = null,
 }) {
   // O formulário já carregou a config para desenhar os campos extras; reusar
   // evita uma segunda ida ao banco no momento do envio.
@@ -215,10 +236,13 @@ export async function criarChamado({
       exige_aprovacao: exigeAprovacao,
       status: exigeAprovacao ? 'aguardando_aprovacao' : 'aberto',
       sla_vence_em: vence,
+      // Só vai no insert quando existe: chamado avulso não tem origem, e mandar
+      // a coluna com null em todo insert acoplaria o fluxo comum a esta feature.
+      ...(origemChamadoId ? { origem_chamado_id: origemChamadoId } : {}),
     })
     .select('id, numero, status, atendente_id')
     .single();
-  if (error) throw new Error(traduzirErroInsert(error.message));
+  if (error) throw new Error(await traduzirErroInsert(error.message, solicitanteId));
 
   // A cadeia inteira, na ordem: quem vem primeiro decide primeiro, e o chamado
   // só é liberado quando não sobrar etapa pendente.
@@ -253,6 +277,87 @@ export async function criarChamado({
   if (exigeAprovacao) notificarChamadoAdm(chamado.id, 'aprovacao');
 
   return { chamado, atendenteNome };
+}
+
+/**
+ * Abre a mobilização e, junto, os chamados dos adicionais escolhidos.
+ *
+ * A mobilização continua inteira, como foi preenchida. Os adicionais viram
+ * pedidos próprios no serviço de TI ou de Saúde e segurança, para que quem
+ * aprova equipamento não precise abrir mobilizações de pessoa para achar o que
+ * lhe cabe.
+ *
+ * TUDO é validado antes de qualquer gravação. Não há transação entre inserts
+ * pelo cliente, então a única defesa contra "mobilização gravada e filhos pela
+ * metade" é descobrir cedo que um deles não passaria — tipicamente por falta de
+ * aprovador. Se algo escapar mesmo assim, o pai já existe e o erro diz quais
+ * filhos ficaram de fora, com o número do pai para não perdê-lo de vista.
+ *
+ * @returns {{chamado, atendenteNome, filhos: Array<{numero, classe, servico}>}}
+ */
+export async function criarMobilizacaoComAdicionais({
+  assunto, natureza, descricao, campos = {}, solicitanteId, config = null,
+}) {
+  const filhos = desdobrarMobilizacao(campos);
+
+  // Configuração de cada filho, buscada uma vez só e reaproveitada no insert.
+  const preparados = [];
+  for (const filho of filhos) {
+    const cfg = await buscarConfigServico(filho.classe, filho.servico);
+    // Lança quando falta aprovador — de propósito, ANTES de gravar o pai.
+    await resolverAprovadores({
+      classe: filho.classe,
+      servico: filho.servico,
+      campos: filho.campos,
+      exigeAprovacao: cfg.exige_aprovacao === true,
+      solicitanteId,
+    });
+    preparados.push({ ...filho, config: cfg });
+  }
+
+  const pai = await criarChamado({
+    classe: 'mobilizacao',
+    servico: 'mobilizacao',
+    assunto,
+    natureza,
+    descricao,
+    campos,
+    arquivos: [],          // mobilização não tem anexo
+    solicitanteId,
+    config,
+  });
+
+  const criados = [];
+  const falhas = [];
+  for (const filho of preparados) {
+    try {
+      const { chamado } = await criarChamado({
+        classe: filho.classe,
+        servico: filho.servico,
+        assunto: rotuloDoServico(filho.classe, filho.servico),
+        natureza,
+        descricao: filho.descricao,
+        campos: filho.campos,
+        arquivos: [],
+        solicitanteId,
+        config: filho.config,
+        origemChamadoId: pai.chamado.id,
+      });
+      criados.push({ numero: chamado.numero, classe: filho.classe, servico: filho.servico });
+    } catch (e) {
+      falhas.push(`${rotuloDoServico(filho.classe, filho.servico)} (${e.message})`);
+    }
+  }
+
+  if (falhas.length) {
+    throw new Error(
+      `A mobilização foi aberta com o número #${pai.chamado.numero}, mas estes pedidos `
+      + `não puderam ser abertos junto: ${falhas.join('; ')}. `
+      + 'Abra-os pelo catálogo ou avise o time do Administrativo.',
+    );
+  }
+
+  return { ...pai, filhos: criados };
 }
 
 /**
@@ -740,5 +845,5 @@ export async function buscarAvaliacaoPendente(solicitanteId) {
     .eq('status', 'fechado')
     .order('fechado_em', { ascending: true });
   if (error) return null;
-  return (data || []).find((c) => !c.chamados_adm_avaliacoes?.length) || null;
+  return (data || []).find((c) => !temAvaliacao(c.chamados_adm_avaliacoes)) || null;
 }

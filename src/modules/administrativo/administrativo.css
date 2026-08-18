@@ -227,6 +227,11 @@
 }
 .adm-aviso svg { flex-shrink: 0; margin-top: 1px; }
 .adm-aviso.tom-erro { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+/* O aviso recebe foco por código quando o envio falha (para rolar até ele e
+   fazer o leitor de tela anunciar). O anel só aparece para quem navega por
+   teclado — a `:focus-visible` distingue isso do foco programático no mouse. */
+.adm-aviso:focus { outline: none; }
+.adm-aviso:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
 .adm-aviso.tom-info { background: var(--a-primary-soft); color: var(--a-primary); border: 1px solid var(--a-primary-line); }
 
 .adm-acoes { display: flex; align-items: center; gap: 10px; margin-top: 18px; }
@@ -648,6 +653,60 @@
   /* Sem espaço para nome e trilho lado a lado: o nome sobe e ocupa a linha. */
   .adm-graf-rot { grid-column: 1 / -1; white-space: normal; font-weight: 600; }
   .adm-graf-eixo .adm-graf-rot { display: none; }
+}
+
+/* Chamados que nasceram junto com a mobilização, na tela de sucesso. */
+.adm-sucesso-filhos {
+  margin: 4px 0 14px; text-align: left; font-size: 0.82rem;
+  background: var(--a-primary-soft); border: 1px solid var(--a-primary-line);
+  border-radius: 8px; padding: 10px 14px; color: var(--a-gray-600);
+}
+.adm-sucesso-filhos strong {
+  display: block; margin-bottom: 5px; font-weight: 600; color: var(--a-ink);
+}
+.adm-sucesso-filhos ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; }
+
+/* ---- ajuda de prazos (modal do relógio na barra superior) ----
+   Reusa a casca do GuiaModal para não inventar um segundo estilo de diálogo;
+   muda só o corpo, que aqui é consulta e não passo a passo. */
+.adm-prazos-modal { max-width: 620px; }
+.adm-prazos-corpo {
+  padding: 4px 24px 18px; overflow-y: auto; max-height: min(64vh, 560px);
+}
+.adm-prazos-corpo h3 { margin: 0 0 14px; font-size: 1.05rem; color: var(--a-ink); }
+.adm-prazos-corpo h4 {
+  margin: 20px 0 8px; font-size: 0.85rem; color: var(--a-ink);
+  padding-top: 14px; border-top: 1px solid var(--a-border);
+}
+
+.adm-prazos-regras { margin: 0; display: flex; flex-direction: column; gap: 12px; }
+.adm-prazos-regras dt {
+  font-size: 0.82rem; font-weight: 600; color: var(--a-ink); margin-bottom: 2px;
+}
+.adm-prazos-regras dd {
+  margin: 0; font-size: 0.82rem; line-height: 1.5; color: var(--a-gray-600);
+}
+
+.adm-prazos-cores { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+.adm-prazos-cores li {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.8rem; color: var(--a-gray-600);
+}
+/* Mesmas cores do prazo no card do quadro — legenda que diverge do que a
+   pessoa vê na tela é pior do que não ter legenda. */
+.adm-prazos-cores i { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.adm-prazos-cores i.tom-ok      { background: #047857; }
+.adm-prazos-cores i.tom-perto   { background: #b45309; }
+.adm-prazos-cores i.tom-vencido { background: #b91c1c; }
+.adm-prazos-cores i.tom-sem     { background: #94a3b8; }
+
+.adm-prazos-vazio {
+  display: flex; align-items: center; gap: 6px;
+  margin: 8px 0 0; font-size: 0.78rem; color: var(--a-muted);
+}
+
+@media (max-width: 560px) {
+  .adm-prazos-corpo { padding: 4px 16px 14px; max-height: 68vh; }
 }
 
 /* ---- filtros do quadro ---- */

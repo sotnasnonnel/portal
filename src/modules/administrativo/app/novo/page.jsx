@@ -1,11 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, Navigate, Link } from 'react-router-dom';
 import {
-  ArrowLeft, Lock, Paperclip, X, Send, AlertCircle, FileText, CheckCircle2, Loader2,
+  ArrowLeft, Lock, Paperclip, X, Send, AlertCircle, FileText, CheckCircle2, Loader2, Star,
+  Layers,
 } from 'lucide-react';
 import { getClasse, getServico, assuntoDoServico } from '../../../../config/administrativo';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { criarChamado, buscarConfigServico, listarPessoas } from '../../lib/chamados';
+import {
+  criarChamado, criarMobilizacaoComAdicionais, buscarConfigServico, listarPessoas,
+  buscarAvaliacaoPendente,
+} from '../../lib/chamados';
+import { desdobrarMobilizacao } from '../../lib/desdobramento';
 import { validarCamposExtras, limparValores, mesclarComExtras } from '../../lib/camposExtras';
 import CampoExtra from './CampoExtra';
 import { formDoServico } from './formularios';
@@ -35,6 +40,11 @@ export default function NovoChamadoAdm() {
   const [sucesso, setSucesso] = useState(null);   // { numero, atendenteNome, aguardandoAprovacao }
   const [config, setConfig] = useState(null);     // null = ainda carregando
   const [pessoas, setPessoas] = useState([]);
+  const [pendente, setPendente] = useState(null); // avaliação que trava a abertura
+  const avisoErro = useRef(null);
+  // Contador de tentativas, não o texto do erro: errar DUAS vezes no mesmo campo
+  // repete a mesma mensagem, e um efeito preso ao texto não dispararia de novo.
+  const [tentativa, setTentativa] = useState(0);
 
   // Serviço com formulário próprio (mobilização) traz o estado inicial dele;
   // os demais começam com os campos extras cadastrados, que são chave/valor.
@@ -66,6 +76,44 @@ export default function NovoChamadoAdm() {
     return () => { cancelado = true; };
   }, [form?.precisaPessoas]);
 
+  // A trava do POP 9.1 é da RLS, mas descobri-la só no envio faz a pessoa
+  // preencher o formulário inteiro para levar um "não" — e sem saber qual
+  // chamado avaliar. Consultada na abertura, ela vira um aviso com link.
+  const verificarPendencia = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      const p = await buscarAvaliacaoPendente(user.id);
+      setPendente(p);
+      // Quem avalia numa aba e volta para esta encontrava o aviso do envio
+      // anterior ainda na tela: `erro` só é reescrito no envio seguinte, então
+      // a mensagem sobrevivia ao próprio motivo dela.
+      if (!p) setErro((atual) => (/avalia/i.test(atual) ? '' : atual));
+    } catch {
+      // Silencioso: a RLS barra de todo jeito no envio.
+    }
+  }, [user?.id]);
+
+  // Revalidado ao voltar para a aba, e não só na montagem: avaliar acontece em
+  // outra tela, e às vezes em outra janela.
+  useEffect(() => {
+    verificarPendencia();
+    window.addEventListener('focus', verificarPendencia);
+    return () => window.removeEventListener('focus', verificarPendencia);
+  }, [verificarPendencia]);
+
+  // Envio recusado: rola até o aviso e o foca. Sem isso, em serviço com muitos
+  // campos o erro aparece fora da tela e o clique parece não ter funcionado.
+  // Focar (e não só rolar) leva junto quem navega por teclado e faz o leitor de
+  // tela anunciar o motivo.
+  useEffect(() => {
+    if (!tentativa || !avisoErro.current) return;
+    const semAnimacao = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    avisoErro.current.scrollIntoView({
+      behavior: semAnimacao ? 'auto' : 'smooth', block: 'center',
+    });
+    avisoErro.current.focus({ preventScroll: true });
+  }, [tentativa]);
+
   // Definição dos campos extras: vem do cadastro, por serviço.
   useEffect(() => {
     let cancelado = false;
@@ -81,6 +129,12 @@ export default function NovoChamadoAdm() {
   const temDescricao = usaDescricao(classe, servico);
   const temAnexo = usaAnexo(classe, servico);
 
+  // Mobilização desdobra os adicionais em chamados próprios. Calculado durante
+  // o preenchimento para a pessoa ver o que vai acontecer antes de enviar —
+  // descobrir depois que "abriu 4 chamados" pareceria erro do sistema.
+  const ehMobilizacao = classe === 'mobilizacao' && servico === 'mobilizacao';
+  const desdobramentos = ehMobilizacao ? desdobrarMobilizacao(extras) : [];
+
   // Par (classe, serviço) inexistente: volta ao catálogo.
   if (!srv) return <Navigate to="/administrativo/novo" replace />;
 
@@ -94,19 +148,46 @@ export default function NovoChamadoAdm() {
 
   const removerAnexo = (idx) => setAnexos((atual) => atual.filter((_, i) => i !== idx));
 
+  // O botão fica no fim do formulário e o aviso no topo: em serviço com muitos
+  // campos, o erro nasce fora da tela e a pessoa acha que o clique não pegou.
+  const falhar = (msg) => {
+    setErro(msg);
+    setTentativa((n) => n + 1);
+  };
+
   const enviar = async (e) => {
     e.preventDefault();
-    if (temDescricao && !descricao.trim()) return setErro('A descrição é obrigatória.');
+    if (temDescricao && !descricao.trim()) return falhar('A descrição é obrigatória.');
     const definicao = config?.campos_extras || [];
     // As duas validações: a do formulário do serviço e a dos campos cadastrados.
     // Antes só uma delas rodava, então campo extra obrigatório num serviço com
     // formulário próprio passava batido.
     const erroExtra = (form ? form.validar(extras) : '')
       || validarCamposExtras(definicao, extras);
-    if (erroExtra) return setErro(erroExtra);
+    if (erroExtra) return falhar(erroExtra);
     setErro('');
     setEnviando(true);
     try {
+      // Mobilização tem caminho próprio: além do pedido dela, abre um chamado
+      // para cada adicional escolhido, no serviço que já cuida daquilo.
+      if (ehMobilizacao) {
+        const r = await criarMobilizacaoComAdicionais({
+          assunto: assuntoDoServico(classe, servico, extras),
+          natureza: NATUREZA_PADRAO,
+          descricao,
+          campos: extras,
+          solicitanteId: user.id,
+          config,
+        });
+        setSucesso({
+          numero: r.chamado.numero,
+          atendenteNome: r.atendenteNome,
+          aguardandoAprovacao: r.chamado.status === 'aguardando_aprovacao',
+          filhos: r.filhos,
+        });
+        return;
+      }
+
       const { chamado, atendenteNome } = await criarChamado({
         classe,
         servico,
@@ -127,7 +208,9 @@ export default function NovoChamadoAdm() {
         aguardandoAprovacao: chamado.status === 'aguardando_aprovacao',
       });
     } catch (err) {
-      setErro(err.message);
+      // Também aqui: a recusa do servidor (alçada sem aprovador, RLS) chega
+      // depois do upload, quando a pessoa já rolou a tela para baixo.
+      falhar(err.message);
     } finally {
       setEnviando(false);
     }
@@ -165,6 +248,20 @@ export default function NovoChamadoAdm() {
                 : 'Sua solicitação foi cadastrada. O time do Administrativo vai definir o responsável.'}
             </p>
           )}
+          {/* Os adicionais viraram pedidos próprios: dizer quais e com que
+              número evita a impressão de que o portal abriu chamado demais. */}
+          {sucesso.filhos?.length > 0 && (
+            <div className="adm-sucesso-filhos">
+              <strong>Também foram abertos, cada um com seu aprovador e prazo:</strong>
+              <ul>
+                {sucesso.filhos.map((f) => (
+                  <li key={f.numero}>
+                    #{f.numero} — {getServico(f.classe, f.servico)?.label || f.servico}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           <div className="adm-acoes">
             <Link className="adm-btn adm-btn-primary" to="/administrativo/meus">Ver meus chamados</Link>
             <Link className="adm-btn adm-btn-ghost" to="/administrativo/novo">Abrir outro</Link>
@@ -173,7 +270,26 @@ export default function NovoChamadoAdm() {
       ) : (
       <form onSubmit={enviar} noValidate>
         {erro && (
-          <div className="adm-aviso tom-erro"><AlertCircle size={16} /> {erro}</div>
+          <div className="adm-aviso tom-erro" ref={avisoErro} tabIndex={-1} role="alert">
+            <AlertCircle size={16} /> {erro}
+          </div>
+        )}
+
+        {/* Avisado aqui em cima, com o número e o link: a trava é da RLS e vale
+            de qualquer jeito, mas descobri-la depois de preencher tudo — e sem
+            saber qual chamado é — não ajuda ninguém. */}
+        {pendente && (
+          <div className="adm-aviso tom-erro">
+            <Star size={16} />
+            <span>
+              O chamado <strong>#{pendente.numero} — {pendente.assunto}</strong> foi fechado e
+              ainda espera sua avaliação. Avalie-o para poder abrir um novo.
+              {' '}
+              <Link className="adm-link" to={`/administrativo/chamado/${pendente.id}`}>
+                Avaliar agora
+              </Link>.
+            </span>
+          </div>
         )}
 
         {/* UM cartão só. Antes os campos do serviço vinham num segundo cartão e
@@ -255,8 +371,25 @@ export default function NovoChamadoAdm() {
           )}
         </div>
 
+        {/* Antes do botão, não depois: ver "serão abertos 4 chamados" só na tela
+            de sucesso pareceria erro do sistema. */}
+        {desdobramentos.length > 0 && (
+          <div className="adm-aviso tom-info">
+            <Layers size={16} />
+            <span>
+              Os adicionais escolhidos serão abertos como pedidos separados, cada um com
+              seu aprovador e prazo — a mobilização segue inteira, como você preencheu.
+              Serão {desdobramentos.length === 1 ? 'mais 1 chamado' : `mais ${desdobramentos.length} chamados`}:
+              {' '}
+              {desdobramentos
+                .map((f) => getServico(f.classe, f.servico)?.label || f.servico)
+                .join(', ')}.
+            </span>
+          </div>
+        )}
+
         <div className="adm-acoes">
-          <button type="submit" className="adm-btn adm-btn-primary" disabled={enviando}>
+          <button type="submit" className="adm-btn adm-btn-primary" disabled={enviando || !!pendente}>
             {enviando ? <><Loader2 size={16} className="adm-spin" /> Enviando…</> : <><Send size={16} /> Abrir chamado</>}
           </button>
           <button type="button" className="adm-btn adm-btn-ghost" disabled={enviando}
