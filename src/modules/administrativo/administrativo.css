@@ -875,3 +875,77 @@
   .adm-acoes { flex-direction: column-reverse; align-items: stretch; }
   .adm-btn { width: 100%; }
 }
+
+/* ---- diagrama do fluxo de aprovação ----
+   Mesmo formato da Gestão de Pessoas (Solicitante → etapas → Execução), mas com
+   classes próprias: importar o Admin.css traria centenas de regras alheias e
+   colidiria com o escopo `adm-`. */
+.adm-fx-canvas {
+  display: flex; align-items: stretch; flex-wrap: wrap; gap: 4px;
+  padding: 22px 16px; margin: 4px 0 10px;
+  border: 1px solid var(--a-border); border-radius: 10px;
+  background: radial-gradient(circle, rgba(38, 64, 93, 0.07) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+.adm-fx-seg { display: flex; align-items: center; gap: 4px; }
+.adm-fx-seta { color: var(--a-muted); flex-shrink: 0; }
+
+.adm-fx-no {
+  display: flex; align-items: center; gap: 9px;
+  min-width: 190px; padding: 10px 12px;
+  border-radius: 10px; background: #fff;
+  border: 1.5px solid var(--a-border); box-shadow: var(--a-shadow-sm);
+}
+.adm-fx-avatar {
+  width: 32px; height: 32px; flex: none; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; font-weight: 700;
+  background: var(--a-primary-soft); color: var(--a-primary);
+}
+.adm-fx-corpo { display: flex; flex-direction: column; min-width: 0; flex: 1; gap: 1px; }
+.adm-fx-corpo small {
+  font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--a-muted); font-weight: 600;
+}
+.adm-fx-corpo strong {
+  font-size: 0.82rem; font-weight: 600; color: var(--a-ink);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.adm-fx-no-inicio { border-color: var(--a-primary-line); }
+.adm-fx-no-fim { border-color: var(--a-primary-line); background: var(--a-primary-soft); }
+/* Tracejado: é o que vale hoje, mas não está cadastrado — a diferença precisa
+   ser visível, senão o padrão parece uma etapa salva. */
+.adm-fx-no-padrao { border-style: dashed; background: var(--a-gray-50); }
+
+.adm-fx-num {
+  position: absolute; margin: -34px 0 0 -22px;
+  width: 18px; height: 18px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.62rem; font-weight: 700;
+  background: var(--a-primary); color: #fff;
+}
+.adm-fx-no-etapa { position: relative; min-width: 220px; }
+.adm-fx-tools { display: flex; flex-direction: column; gap: 1px; }
+.adm-fx-tools button {
+  border: none; background: none; cursor: pointer; padding: 1px;
+  color: var(--a-muted); line-height: 0; border-radius: 4px;
+}
+.adm-fx-tools button:hover:not(:disabled) { background: var(--a-gray-100); color: var(--a-ink); }
+.adm-fx-tools button:disabled { opacity: 0.3; cursor: default; }
+.adm-fx-tools button.del:hover { color: var(--a-red); }
+
+.adm-fx-add {
+  display: flex; align-items: center; gap: 6px;
+  padding: 10px 14px; min-height: 54px;
+  border: 1.5px dashed var(--a-primary-line); border-radius: 10px;
+  background: none; color: var(--a-primary); cursor: pointer;
+  font-size: 0.8rem; font-weight: 600;
+}
+.adm-fx-add:hover { background: var(--a-primary-soft); }
+
+@media (max-width: 860px) {
+  .adm-fx-canvas { flex-direction: column; align-items: stretch; }
+  .adm-fx-seg { flex-direction: column; align-items: stretch; }
+  .adm-fx-seta { transform: rotate(90deg); align-self: center; }
+  .adm-fx-num { position: static; margin: 0; }
+}

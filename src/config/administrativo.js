@@ -41,6 +41,7 @@ export const ADM_LIBERADOS = [
   'marcus.guimaraes@phdengenharia.eng.br',
   'andre.guimaraes@phdengenharia.eng.br',
   'jarbas.junior@phdengenharia.eng.br',
+  'lennon.santos@phdengenharia.eng.br',
 ];
 
 export const podeAcessarAdm = (user) => !ADM_EM_BREVE

@@ -21,6 +21,15 @@ import { usaDescricao, usaAnexo } from './formularios/schemas';
 // A coluna continua no banco, preenchida com este valor.
 const NATUREZA_PADRAO = 'solicitacao_servico';
 
+/**
+ * "Fulano", "Fulano e Beltrano", "Fulano, Beltrano e Sicrano" — na ordem em que
+ * vão decidir. Nomear quem aprova evita a leitura de que dois pedidos parecidos
+ * foram para pessoas diferentes por defeito: o que muda o aprovador é o valor.
+ */
+const listarNomes = (nomes = []) => (nomes.length <= 1
+  ? (nomes[0] || '')
+  : `${nomes.slice(0, -1).join(', ')} e ${nomes[nomes.length - 1]}`);
+
 const formatarTamanho = (bytes) => {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
@@ -182,13 +191,14 @@ export default function NovoChamadoAdm() {
         setSucesso({
           numero: r.chamado.numero,
           atendenteNome: r.atendenteNome,
+          aprovadores: r.aprovadoresNomes,
           aguardandoAprovacao: r.chamado.status === 'aguardando_aprovacao',
           filhos: r.filhos,
         });
         return;
       }
 
-      const { chamado, atendenteNome } = await criarChamado({
+      const { chamado, atendenteNome, aprovadoresNomes } = await criarChamado({
         classe,
         servico,
         // Mobilização define o assunto pelo seletor (nova x movimentação);
@@ -205,6 +215,7 @@ export default function NovoChamadoAdm() {
       setSucesso({
         numero: chamado.numero,
         atendenteNome,
+        aprovadores: aprovadoresNomes,
         aguardandoAprovacao: chamado.status === 'aguardando_aprovacao',
       });
     } catch (err) {
@@ -238,8 +249,9 @@ export default function NovoChamadoAdm() {
           <h2>Chamado #{sucesso.numero} aberto</h2>
           {sucesso.aguardandoAprovacao ? (
             <p>
-              Sua solicitação foi cadastrada e enviada para aprovação. O prazo de atendimento
-              começa a contar assim que o gestor aprovar.
+              Sua solicitação foi cadastrada e enviada para aprovação
+              {sucesso.aprovadores?.length ? <> de <strong>{listarNomes(sucesso.aprovadores)}</strong></> : null}.
+              {' '}O prazo de atendimento começa a contar assim que o gestor aprovar.
             </p>
           ) : (
             <p>

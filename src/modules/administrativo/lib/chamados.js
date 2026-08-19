@@ -3,21 +3,23 @@ import { supabase } from '../../../services/supabase';
 // "só na nuvem" (OneDrive) e o retry de rede, que custaram caro para acertar.
 // Duplicar aqui seria perder isso silenciosamente.
 import { enviarArquivo } from '../../../pages/Gestor/requisicoes/uploadAnexo';
-import { avaliarAlcada } from '../../../config/alcadas';
 import { resolverPapeis, PapelNaoAtribuidoError } from '../../../services/alcadas';
-import { decidirAprovacao, cadeiaDoFluxo } from './alcadaAdm';
+import { avaliarAlcada, PAPEL_LABEL } from '../../../config/alcadas';
+import {
+  decidirAprovacao, cadeiaDoFluxo, juntarCadeias, papeisForaDaCadeia,
+} from './alcadaAdm';
 import { proximoStatusAoResponder } from './statusChamado';
 import { venceEmISO } from './prazo';
 import { contarNaoLidas } from './painel';
 import { temAvaliacao } from './satisfacao';
 import { desdobrarMobilizacao } from './desdobramento';
 import { getServico } from '../../../config/administrativo';
-
-/** Rótulo do serviço no catálogo — o assunto do chamado, como no resto do módulo. */
-const rotuloDoServico = (classe, servico) => getServico(classe, servico)?.label || servico;
 import { notificarChamadoAdm } from '../../../services/notificarChamadoAdm';
 
 export const BUCKET_ADM = 'chamados-adm-anexos';
+
+/** Rótulo do serviço no catálogo — o assunto do chamado, como no resto do módulo. */
+const rotuloDoServico = (classe, servico) => getServico(classe, servico)?.label || servico;
 
 /**
  * Configuração do par (classe, serviço): atendente padrão, SLA e alçada.
@@ -88,6 +90,23 @@ export class SemAprovadorError extends Error {
 }
 
 /**
+ * A faixa exige um papel que não existe acima do solicitante no organograma.
+ *
+ * Diferente de "papel sem ninguém": aqui existe gente com o cargo, só não na
+ * cadeia desta pessoa. Cair nela seria mandar a compra para um gestor de outra
+ * área — por isso bloqueia, e a mensagem diz que o conserto é no organograma.
+ */
+export class PapelForaDaCadeiaError extends Error {
+  constructor(papeis = []) {
+    const nomes = papeis.map((p) => PAPEL_LABEL[p] || p).join(', ');
+    super(`Este pedido precisa da aprovação de ${nomes}, mas não há ninguém com essa `
+      + 'função acima de você no organograma. Peça ao Administrativo para ajustar '
+      + 'o organograma antes de reenviar.');
+    this.name = 'PapelForaDaCadeiaError';
+  }
+}
+
+/**
  * Cadeia padrão de quem não tem fluxo próprio: o superior direto, tirado do
  * organograma pela mesma RPC que a alçada usa.
  *
@@ -151,11 +170,31 @@ export async function resolverAprovadores({ classe, servico, campos, exigeAprova
   const { etapas, lacunas } = await resolverPapeis(solicitanteId, avaliacao.papeis);
   if (lacunas.length) throw new PapelNaoAtribuidoError(lacunas);
 
+  // Papel de cadeia resolvido fora dela é pior do que papel não resolvido: o
+  // chamado seguiria para alguém de outra área, com aparência de normalidade.
+  const foraDaCadeia = papeisForaDaCadeia(etapas);
+  if (foraDaCadeia.length) throw new PapelForaDaCadeiaError(foraDaCadeia);
+
   // Papel de GRUPO volta com aprovadorId nulo (qualquer um do grupo agiria).
   // Aqui ele colapsa na primeira pessoa, como o DP faz hoje — a tabela de
   // etapas do Adm exige um aprovador nomeado.
-  const aprovadores = etapas.map((e) => e.aprovadorId || e.candidatos?.[0]?.id).filter(Boolean);
-  return { aprovadores, decisao: { ...decisao, papeis: avaliacao.papeis, rotulo: avaliacao.rotulo } };
+  const daAlcada = etapas.map((e) => e.aprovadorId || e.candidatos?.[0]?.id).filter(Boolean);
+
+  // O gerente decide ANTES da faixa, como no Financeiro: quem responde pela
+  // pessoa avaliza o pedido, e só então ele sobe para quem responde pelo valor.
+  // Sem isso, uma compra de R$ 20 mil ia direto ao COO sem o gestor saber.
+  //
+  // Ausência de gerente NÃO bloqueia aqui — diferente do fluxo comum: a alçada
+  // já garante aprovador, e exigir gestor travaria justamente quem está no topo.
+  const fluxos = await buscarFluxos(solicitanteId);
+  const cadeiaConfigurada = cadeiaDoFluxo(fluxos, classe);
+  const cabeca = cadeiaConfigurada.length ? cadeiaConfigurada : await superiorDireto(solicitanteId);
+
+  const aprovadores = juntarCadeias(cabeca, daAlcada);
+  return {
+    aprovadores,
+    decisao: { ...decisao, papeis: avaliacao.papeis, rotulo: avaliacao.rotulo },
+  };
 }
 
 /**
@@ -267,16 +306,25 @@ export async function criarChamado({
   // Pela RPC, não por select direto: a policy colaboradores_select só libera a
   // própria linha e a equipe, então o solicitante comum não leria o nome do
   // técnico — e o aviso do passo 5 sairia sem o nome, calado.
-  let atendenteNome = '';
-  if (chamado.atendente_id) {
-    const { data } = await supabase.rpc('nomes_colaboradores', { p_ids: [chamado.atendente_id] });
-    atendenteNome = data?.[0]?.nome || '';
+  //
+  // Técnico e cadeia de aprovação vão na MESMA chamada: são a mesma pergunta
+  // ("como se chamam estas pessoas?") e separá-las custaria uma ida a mais.
+  const paraNomear = [chamado.atendente_id, ...aprovadores].filter(Boolean);
+  const nomes = new Map();
+  if (paraNomear.length) {
+    const { data } = await supabase.rpc('nomes_colaboradores', { p_ids: paraNomear });
+    (data || []).forEach((p) => nomes.set(p.id, p.nome));
   }
+  const atendenteNome = nomes.get(chamado.atendente_id) || '';
+  // Na ordem em que vão decidir — quem abriu precisa saber por quem o pedido
+  // passa, e em que sequência. Sem isso, dois pedidos parecidos com valores
+  // diferentes caem em aprovadores diferentes e parece defeito do sistema.
+  const aprovadoresNomes = aprovadores.map((id) => nomes.get(id)).filter(Boolean);
 
   // Aviso ao aprovador da vez: sem e-mail, ele só descobriria se abrisse a tela.
   if (exigeAprovacao) notificarChamadoAdm(chamado.id, 'aprovacao');
 
-  return { chamado, atendenteNome };
+  return { chamado, atendenteNome, aprovadoresNomes };
 }
 
 /**
