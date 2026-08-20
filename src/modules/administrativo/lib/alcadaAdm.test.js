@@ -4,6 +4,7 @@ import {
   SERVICOS_COM_ALCADA, alcadaDoServico, valorParaAlcada, decidirAprovacao, cadeiaDoFluxo,
   juntarCadeias, papeisForaDaCadeia,
 } from './alcadaAdm.js';
+import { avaliarAlcada } from '../../../config/alcadas.js';
 
 test('só os três serviços com gasto entram na alçada', () => {
   assert.deepEqual(Object.keys(SERVICOS_COM_ALCADA).sort(), [
@@ -21,7 +22,7 @@ test('serviço com valor usa alçada, mesmo sem exigir aprovação no cadastro',
   });
   assert.equal(d.modo, 'alcada');
   assert.equal(d.valor, 12400);
-  assert.equal(d.tabela, 'compras');
+  assert.equal(d.tabela, 'administrativo');
 });
 
 // O erro que uma alçada existe para evitar: sem valor, a faixa mais baixa
@@ -126,4 +127,33 @@ test('grupo com ao menos um da cadeia passa', () => {
     papel: 'GERENTE_EXECUTIVO',
     candidatos: [{ id: 'a', origem: 'ATRIBUIDO' }, { id: 'b', origem: 'CADEIA' }],
   }]), []);
+});
+
+// ---- faixas do Administrativo (decisão da diretoria, ago/2026) ----
+// Até 20 mil quem aprova é só o fluxo da pessoa; acima entram Morais e Daniela.
+
+test('até R$ 20.000 a faixa não exige papel nenhum', () => {
+  for (const v of [1, 1500, 4000, 12400, 20000]) {
+    assert.deepEqual(avaliarAlcada({ tabela: 'administrativo', valor: v }).papeis, [], `R$ ${v}`);
+  }
+});
+
+test('acima de R$ 20.000 entram COO e Gerente Financeiro', () => {
+  for (const v of [20000.01, 45000, 90000]) {
+    assert.deepEqual(avaliarAlcada({ tabela: 'administrativo', valor: v }).papeis,
+      ['COO', 'GERENTE_FINANCEIRO'], `R$ ${v}`);
+  }
+});
+
+// O limite é inclusivo: 20 mil exatos ficam embaixo, não sobem.
+test('R$ 20.000 exatos ficam na faixa de baixo', () => {
+  assert.deepEqual(avaliarAlcada({ tabela: 'administrativo', valor: 20000 }).papeis, []);
+  assert.equal(avaliarAlcada({ tabela: 'administrativo', valor: 20001 }).papeis.length, 2);
+});
+
+// O Financeiro segue o Documento Parte 3 e não pode ser arrastado por esta
+// decisão, que vale só para o chamado do Administrativo.
+test('a tabela do Financeiro continua intacta', () => {
+  assert.deepEqual(avaliarAlcada({ tabela: 'compras', valor: 3200 }).papeis, ['GERENTE_EXECUTIVO']);
+  assert.deepEqual(avaliarAlcada({ tabela: 'compras', valor: 45000 }).papeis, ['CEO']);
 });

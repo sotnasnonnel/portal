@@ -24,9 +24,9 @@
  * `tabela` é a tabela de alçada de config/alcadas.js.
  */
 export const SERVICOS_COM_ALCADA = {
-  'compra/solicitacao-compra': { campo: 'valor_base', tabela: 'compras', rotulo: 'Valor base' },
-  'frota/recarga-ticket-log': { campo: 'valor', tabela: 'compras', rotulo: 'Valor' },
-  'viagem-hospedagem/locacao-imovel': { campo: 'custo_previsto', tabela: 'compras', rotulo: 'Custo previsto' },
+  'compra/solicitacao-compra': { campo: 'valor_base', tabela: 'administrativo', rotulo: 'Valor base' },
+  'frota/recarga-ticket-log': { campo: 'valor', tabela: 'administrativo', rotulo: 'Valor' },
+  'viagem-hospedagem/locacao-imovel': { campo: 'custo_previsto', tabela: 'administrativo', rotulo: 'Custo previsto' },
 };
 
 export const alcadaDoServico = (classe, servico) => SERVICOS_COM_ALCADA[`${classe}/${servico}`] || null;

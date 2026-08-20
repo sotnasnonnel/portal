@@ -8,9 +8,8 @@ import { useAuth } from '../../../../contexts/AuthContext';
 import { supabase } from '../../../../services/supabase';
 import { CLASSES_ADM } from '../../../../config/administrativo';
 import SearchSelect from '../../../../components/UI/SearchSelect';
-import { listarPessoas } from '../../lib/chamados';
+import { listarPessoas, previewCadeiaEfetiva } from '../../lib/chamados';
 import { SERVICOS_COM_ALCADA, FLUXO_GERAL } from '../../lib/alcadaAdm';
-import { resolverPapeis } from '../../../../services/alcadas';
 
 /** Iniciais para o avatar do nó, como no diagrama da Gestão de Pessoas. */
 const iniciais = (nome) => String(nome || '').trim().split(/\s+/).filter(Boolean)
@@ -83,15 +82,11 @@ export default function FluxosAdm() {
     if (!solicitanteId) { setPadrao(null); return undefined; }
     let cancelado = false;
     setPadrao(null);
-    resolverPapeis(solicitanteId, ['GERENTE'])
-      .then((r) => {
-        if (cancelado) return;
-        const primeira = (r?.etapas || [])[0];
-        setPadrao({ nome: primeira?.nome || primeira?.candidatos?.[0]?.nome || '' });
-      })
-      .catch(() => { if (!cancelado) setPadrao({ nome: '' }); });
+    previewCadeiaEfetiva(solicitanteId, classe)
+      .then((r) => { if (!cancelado) setPadrao(r); })
+      .catch(() => { if (!cancelado) setPadrao({ origem: 'superior', pessoas: [] }); });
     return () => { cancelado = true; };
-  }, [solicitanteId]);
+  }, [solicitanteId, classe]);
 
   const nomePorId = useMemo(
     () => Object.fromEntries(pessoas.map((p) => [p.id, p.nome])),
@@ -196,14 +191,17 @@ export default function FluxosAdm() {
                   <GitBranch size={16} />
                   <span>
                     {padrao === null
-                      ? 'Consultando o organograma…'
-                      : padrao?.nome
-                        ? <>Nada cadastrado para esta pessoa, então vale o padrão do organograma:
-                          o chamado vai para <strong>{padrao.nome}</strong>, o superior direto.
-                          Cadastre abaixo só se o caminho precisar ser outro.</>
-                        : <>Esta pessoa não tem superior no organograma nem fluxo cadastrado —
-                          hoje ela <strong>não consegue abrir</strong> chamado que exija aprovação.
-                          Monte a cadeia abaixo para destravar.</>}
+                      ? 'Consultando o organograma e o Gestão de Pessoas…'
+                      : padrao.pessoas.length
+                        ? <>Nada cadastrado aqui, então vale o caminho padrão:{' '}
+                          <strong>{padrao.pessoas.map((p) => p.nome).join(' → ')}</strong>
+                          {padrao.origem === 'rh'
+                            ? ' — o gestor direto seguido da cadeia do Gestão de Pessoas.'
+                            : ' — o gestor direto, do organograma.'}
+                          {' '}Cadastre abaixo só para abrir exceção.</>
+                        : <>Esta pessoa não tem gestor no organograma nem cadeia no Gestão de
+                          Pessoas — hoje ela <strong>não consegue abrir</strong> chamado que
+                          exija aprovação. Monte a cadeia abaixo para destravar.</>}
                   </span>
                 </div>
               )}
@@ -219,18 +217,21 @@ export default function FluxosAdm() {
 
                 {/* Padrão do organograma desenhado como etapa fantasma: mostra o
                     que acontece hoje sem fingir que está cadastrado. */}
-                {!temCadastro && cadeia.length === 0 && padrao?.nome && (
-                  <div className="adm-fx-seg">
-                    <ChevronRight className="adm-fx-seta" size={18} />
-                    <div className="adm-fx-no adm-fx-no-padrao">
-                      <span className="adm-fx-avatar">{iniciais(padrao.nome)}</span>
-                      <span className="adm-fx-corpo">
-                        <small>Padrão · superior direto</small>
-                        <strong>{padrao.nome}</strong>
-                      </span>
+                {!temCadastro && cadeia.length === 0
+                  && (padrao?.pessoas || []).map((p, i) => (
+                    <div key={p.id} className="adm-fx-seg">
+                      <ChevronRight className="adm-fx-seta" size={18} />
+                      <div className="adm-fx-no adm-fx-no-padrao">
+                        <span className="adm-fx-avatar">{iniciais(p.nome)}</span>
+                        <span className="adm-fx-corpo">
+                          <small>
+                            {i === 0 ? 'Padrão · gestor direto' : `Padrão · Gestão de Pessoas ${i}`}
+                          </small>
+                          <strong>{p.nome}</strong>
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  ))}
 
                 {cadeia.map((id, i) => (
                   <div key={`${id}-${i}`} className="adm-fx-seg">

@@ -129,8 +129,24 @@ export const TABELA_COMERCIAL_FARMER = [
   { nivel: 3, ate: Infinity, papeis: [P.CEO], rotulo: 'Nery' },
 ];
 
+/**
+ * Administrativo — decisão da diretoria (ago/2026), NÃO é o Documento Parte 3.
+ *
+ * O chamado do Adm é operacional: até R$ 20.000 quem aprova é o fluxo da própria
+ * pessoa, sem papel de alçada nenhum. Acima disso entram COO e Gerente
+ * Financeiro, depois do fluxo.
+ *
+ * Tabela separada de propósito: o Financeiro segue o documento, com as faixas de
+ * 2 mil, 5 mil, 50 mil e Conselho. Mexer em TABELA_COMPRAS mudaria os dois.
+ */
+export const TABELA_ADMINISTRATIVO = [
+  { nivel: 1, ate: 20000, papeis: [], rotulo: 'Somente o fluxo do solicitante' },
+  { nivel: 2, ate: Infinity, papeis: [P.COO, P.GERENTE_FINANCEIRO], rotulo: 'COO + Gerente Financeiro' },
+];
+
 export const TABELAS = {
   compras: TABELA_COMPRAS,
+  administrativo: TABELA_ADMINISTRATIVO,
   contratos: TABELA_COMPRAS,   // §3.1: mesmas faixas, valor enquadrado diferente
   pagamentos: TABELA_PAGAMENTOS,
   comercial_hunter: TABELA_COMERCIAL_HUNTER,

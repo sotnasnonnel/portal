@@ -1,3 +1,4 @@
+import { Lock } from 'lucide-react';
 import SearchSelect from '../../../../components/UI/SearchSelect';
 
 // Tipos com desenho próprio. O que não estiver aqui cai no input de texto, para
@@ -11,13 +12,28 @@ const COM_DESENHO_PROPRIO = ['texto_longo', 'numero', 'data', 'hora', 'datahora'
  * É o ponto único de renderização de campo do módulo: assim os 22 serviços
  * ficam idênticos entre si sem ninguém precisar repetir estilo e marcação.
  */
-export default function CampoExtra({ campo, valor, onChange, pessoas = [] }) {
+export default function CampoExtra({ campo, valor, onChange, pessoas = [], travado = false }) {
   const id = `extra-${campo.chave}`;
   const comum = {
     id,
     value: valor ?? '',
     onChange: (e) => onChange(campo.chave, e.target.value),
   };
+
+  // Travado: o valor vem do cadastro (hoje só o centro de custo, lido do
+  // organograma). Mesma apresentação do Assunto, que também não é digitado.
+  if (travado) {
+    return (
+      <div className="adm-campo">
+        <label htmlFor={id}>{campo.rotulo}</label>
+        <div className="adm-travado">
+          <input id={id} className="adm-input" value={valor ?? ''} readOnly tabIndex={-1} />
+          <Lock size={15} aria-hidden="true" />
+        </div>
+        <span className="adm-campo-dica">Vem da sua gerência no organograma.</span>
+      </div>
+    );
+  }
 
   return (
     <div className="adm-campo">

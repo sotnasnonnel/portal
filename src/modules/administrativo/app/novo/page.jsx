@@ -8,7 +8,7 @@ import { getClasse, getServico, assuntoDoServico } from '../../../../config/admi
 import { useAuth } from '../../../../contexts/AuthContext';
 import {
   criarChamado, criarMobilizacaoComAdicionais, buscarConfigServico, listarPessoas,
-  buscarAvaliacaoPendente,
+  buscarAvaliacaoPendente, buscarCentroDeCusto,
 } from '../../lib/chamados';
 import { desdobrarMobilizacao } from '../../lib/desdobramento';
 import { validarCamposExtras, limparValores, mesclarComExtras } from '../../lib/camposExtras';
@@ -50,6 +50,8 @@ export default function NovoChamadoAdm() {
   const [config, setConfig] = useState(null);     // null = ainda carregando
   const [pessoas, setPessoas] = useState([]);
   const [pendente, setPendente] = useState(null); // avaliação que trava a abertura
+  // Centro de custo do organograma. '' = pessoa sem gerência; null = carregando.
+  const [centroCusto, setCentroCusto] = useState(null);
   const avisoErro = useRef(null);
   // Contador de tentativas, não o texto do erro: errar DUAS vezes no mesmo campo
   // repete a mesma mensagem, e um efeito preso ao texto não dispararia de novo.
@@ -122,6 +124,23 @@ export default function NovoChamadoAdm() {
     });
     avisoErro.current.focus({ preventScroll: true });
   }, [tentativa]);
+
+  // Centro de custo vem do organograma, não do teclado: digitado à mão, cada
+  // pessoa escrevia de um jeito e nenhum relatório por CC fechava depois.
+  useEffect(() => {
+    let cancelado = false;
+    buscarCentroDeCusto(user?.horasGerenciaId)
+      .then((n) => { if (!cancelado) setCentroCusto(n); })
+      .catch(() => { if (!cancelado) setCentroCusto(''); });
+    return () => { cancelado = true; };
+  }, [user?.horasGerenciaId]);
+
+  // Preenche o campo assim que o nome chega, sem pisar no que a pessoa digitou
+  // (nos casos em que ela pôde digitar, por não ter gerência).
+  useEffect(() => {
+    if (!centroCusto) return;
+    setExtras((a) => (a.cc === centroCusto ? a : { ...a, cc: centroCusto }));
+  }, [centroCusto, chaveAtual]);
 
   // Definição dos campos extras: vem do cadastro, por serviço.
   useEffect(() => {
@@ -324,7 +343,7 @@ export default function NovoChamadoAdm() {
           {/* Campos do serviço: no mesmo cartão, na sequência natural. */}
           {form && (
             <form.Componente valores={extras} onChange={setExtras} pessoas={pessoas}
-              classe={classe} servico={servico} />
+              classe={classe} servico={servico} travarCc={!!centroCusto} />
           )}
 
           {/* Depois dos campos do serviço, nunca no lugar deles: o que o time do

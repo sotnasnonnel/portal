@@ -67,6 +67,55 @@ export async function salvarConfigServico(classe, servico, dados) {
   if (error) throw new Error(`Não foi possível salvar: ${error.message}`);
 }
 
+/**
+ * Tipo do Gestão de Pessoas usado como cadeia base do Administrativo.
+ *
+ * Lá o fluxo é por DOCUMENTO, não por pessoa: cada um tem uma cadeia por tipo.
+ * `ajuda_custo` é o análogo mais próximo de um pedido de despesa, então é ele
+ * que serve de base aqui. Uma constante para a troca ser de uma linha.
+ */
+export const TIPO_RH_BASE = 'ajuda_custo';
+
+/**
+ * Cadeia do solicitante no Gestão de Pessoas.
+ *
+ * Decisão da diretoria: o Adm não mantém cadeia própria, usa a que já existe
+ * lá — assim quem muda de gestor não precisa ser recadastrado em dois lugares.
+ * Quem não tem fluxo no RH cai no superior direto (105 das 134 pessoas hoje).
+ */
+export async function buscarFluxoRh(solicitanteId) {
+  const { data, error } = await supabase
+    .from('solicitacoes_rh_fluxos')
+    .select('aprovadores')
+    .eq('solicitante_id', solicitanteId)
+    .eq('tipo', TIPO_RH_BASE)
+    .maybeSingle();
+  if (error) return [];               // silencioso: o superior direto cobre
+  const lista = data?.aprovadores;
+  return Array.isArray(lista) ? lista.filter(Boolean) : [];
+}
+
+/**
+ * Nome da gerência do solicitante — o centro de custo do chamado.
+ *
+ * Vem do organograma (colaboradores.horas_gerencia_id), não do teclado: a
+ * pessoa digitava o CC à mão em quase todo formulário e cada um escrevia de um
+ * jeito, o que inviabiliza qualquer relatório por centro de custo depois.
+ *
+ * Devolve '' quando a pessoa não tem gerência (6 dos 134 hoje) — nesse caso o
+ * campo volta a ser editável, em vez de travar num valor vazio.
+ */
+export async function buscarCentroDeCusto(gerenciaId) {
+  if (!gerenciaId) return '';
+  const { data, error } = await supabase
+    .from('horas_gerencias')
+    .select('nome')
+    .eq('id', gerenciaId)
+    .maybeSingle();
+  if (error) return '';
+  return data?.nome || '';
+}
+
 /** Cadeias cadastradas do solicitante (a geral e as por classe). */
 export async function buscarFluxos(solicitanteId) {
   const { data, error } = await supabase
@@ -107,17 +156,42 @@ export class PapelForaDaCadeiaError extends Error {
 }
 
 /**
- * Cadeia padrão de quem não tem fluxo próprio: o superior direto, tirado do
- * organograma pela mesma RPC que a alçada usa.
- *
- * Ela cobre 130 dos 135 ativos e acompanha troca de gestor sozinha — cadastrar
- * pessoa por pessoa ficaria desatualizado no primeiro remanejamento. Note que
- * NÃO é o fluxo do RH: lá a cadeia é do documento (aumento de salário sobe até
- * a diretoria), não da pessoa, e serviria mal para um pedido de Uber.
+ * Superior direto, tirado do organograma pela mesma RPC que a alçada usa.
+ * Acompanha troca de gestor sozinho — cadastro pessoa a pessoa ficaria
+ * desatualizado no primeiro remanejamento.
  */
 async function superiorDireto(solicitanteId) {
   const { etapas } = await resolverPapeis(solicitanteId, ['GERENTE']);
   return etapas.map((e) => e.aprovadorId || e.candidatos?.[0]?.id).filter(Boolean);
+}
+
+/**
+ * Quem aprova ANTES de qualquer papel de alçada, em três degraus:
+ *
+ *   1. cadeia própria do Adm, quando alguém cadastrou uma exceção;
+ *   2. cadeia do Gestão de Pessoas — a decisão é usar a que já existe lá, para
+ *      ninguém manter a mesma informação em dois lugares;
+ *   3. superior direto do organograma, que cobre quem não tem nenhuma das duas
+ *      (hoje 105 das 134 pessoas não têm fluxo no RH).
+ */
+async function cabecaDaCadeia(solicitanteId, classe) {
+  // Exceção cadastrada no próprio Adm manda em tudo: alguém a criou de
+  // propósito para esta pessoa.
+  const doAdm = cadeiaDoFluxo(await buscarFluxos(solicitanteId), classe);
+  if (doAdm.length) return { ids: doAdm, origem: 'adm' };
+
+  const [gerente, doRh] = await Promise.all([
+    superiorDireto(solicitanteId),
+    buscarFluxoRh(solicitanteId),
+  ]);
+
+  // O gerente entra SEMPRE na frente, mesmo quando a cadeia do RH existe.
+  // Em 9 das 23 pessoas com fluxo de ajuda de custo a cadeia do RH começa por
+  // outra pessoa, e sem isto o gestor direto deixaria de ver o pedido do
+  // próprio time. Quando os dois coincidem, a dedução resolve.
+  if (doRh.length) return { ids: juntarCadeias(gerente, doRh), origem: 'rh' };
+
+  return { ids: gerente, origem: 'superior' };
 }
 
 /**
@@ -135,6 +209,22 @@ async function ehTopoDaHierarquia(solicitanteId) {
 }
 
 /**
+ * Cadeia efetiva do solicitante, COM NOMES — para a tela de fluxos mostrar o
+ * que valeria hoje, e não uma promessa que o motor não cumpre.
+ *
+ * Usa exatamente a mesma `cabecaDaCadeia` da criação do chamado: se as duas
+ * lógicas divergissem, a tela viraria documentação errada de si mesma.
+ */
+export async function previewCadeiaEfetiva(solicitanteId, classe) {
+  const { ids, origem } = await cabecaDaCadeia(solicitanteId, classe);
+  if (!ids.length) return { origem, pessoas: [] };
+
+  const { data } = await supabase.rpc('nomes_colaboradores', { p_ids: ids });
+  const nomes = new Map((data || []).map((p) => [p.id, p.nome]));
+  return { origem, pessoas: ids.map((id) => ({ id, nome: nomes.get(id) || '—' })) };
+}
+
+/**
  * Resolve QUEM aprova, nas duas dinâmicas do portal:
  * serviço com gasto → alçada por valor; os demais → fluxo cadastrado, e na
  * falta dele o superior direto.
@@ -149,9 +239,7 @@ export async function resolverAprovadores({ classe, servico, campos, exigeAprova
   if (decisao.erro) throw new Error(decisao.erro);
 
   if (decisao.modo === 'fluxo') {
-    const fluxos = await buscarFluxos(solicitanteId);
-    const cadeia = cadeiaDoFluxo(fluxos, classe);
-    const aprovadores = cadeia.length ? cadeia : await superiorDireto(solicitanteId);
+    const { ids: aprovadores, origem } = await cabecaDaCadeia(solicitanteId, classe);
 
     if (!aprovadores.length) {
       // Topo da hierarquia decide sozinho; qualquer outro sem cadeia é lacuna
@@ -162,7 +250,7 @@ export async function resolverAprovadores({ classe, servico, campos, exigeAprova
       }
       throw new SemAprovadorError();
     }
-    return { aprovadores, decisao: { ...decisao, origem: cadeia.length ? 'fluxo' : 'superior' } };
+    return { aprovadores, decisao: { ...decisao, origem } };
   }
 
   // Alçada: o motor devolve PAPÉIS; a RPC traduz papel → pessoa subindo a cadeia.
@@ -180,20 +268,22 @@ export async function resolverAprovadores({ classe, servico, campos, exigeAprova
   // etapas do Adm exige um aprovador nomeado.
   const daAlcada = etapas.map((e) => e.aprovadorId || e.candidatos?.[0]?.id).filter(Boolean);
 
-  // O gerente decide ANTES da faixa, como no Financeiro: quem responde pela
-  // pessoa avaliza o pedido, e só então ele sobe para quem responde pelo valor.
-  // Sem isso, uma compra de R$ 20 mil ia direto ao COO sem o gestor saber.
+  // O fluxo da pessoa decide ANTES da faixa: quem responde por ela avaliza o
+  // pedido, e só então ele sobe para quem responde pelo valor. Abaixo de
+  // R$ 20.000 a faixa não pede ninguém, então a cadeia é só o fluxo.
   //
-  // Ausência de gerente NÃO bloqueia aqui — diferente do fluxo comum: a alçada
-  // já garante aprovador, e exigir gestor travaria justamente quem está no topo.
-  const fluxos = await buscarFluxos(solicitanteId);
-  const cadeiaConfigurada = cadeiaDoFluxo(fluxos, classe);
-  const cabeca = cadeiaConfigurada.length ? cadeiaConfigurada : await superiorDireto(solicitanteId);
+  // Ausência de cabeça NÃO bloqueia aqui — diferente do fluxo comum: acima de
+  // R$ 20.000 a faixa já garante aprovador, e exigir gestor travaria justamente
+  // quem está no topo da hierarquia.
+  const cabeca = await cabecaDaCadeia(solicitanteId, classe);
+  const aprovadores = juntarCadeias(cabeca.ids, daAlcada);
 
-  const aprovadores = juntarCadeias(cabeca, daAlcada);
+  if (!aprovadores.length && !(await ehTopoDaHierarquia(solicitanteId))) {
+    throw new SemAprovadorError();
+  }
   return {
     aprovadores,
-    decisao: { ...decisao, papeis: avaliacao.papeis, rotulo: avaliacao.rotulo },
+    decisao: { ...decisao, papeis: avaliacao.papeis, rotulo: avaliacao.rotulo, origem: cabeca.origem },
   };
 }
 
