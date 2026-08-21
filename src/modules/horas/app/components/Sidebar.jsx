@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Clock, LogOut } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import AppSwitcher from '../../../../components/AppSwitcher/AppSwitcher';
+import AvatarUsuario from '../../../../components/UI/AvatarUsuario';
 import { ROLE_LABEL } from '../../lib/roles';
 import { navSections } from './nav';
 
@@ -89,7 +90,7 @@ export default function Sidebar({ aberto = false, onFechar }) {
         </nav>
 
         <div className="horasSb-footer">
-          <div className="horasSb-avatar">{iniciais(nome, email)}</div>
+          <AvatarUsuario className="horasSb-avatar" iniciais={iniciais(nome, email)} />
           <div className="horasSb-userinfo">
             <strong title={nome || email}>{nome || 'Usuário'}</strong>
             <span>{ROLE_LABEL[role]}</span>

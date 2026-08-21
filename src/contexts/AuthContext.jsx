@@ -5,6 +5,7 @@ import { resetPreload } from '../modules/reembolso/services/dataPreload.js';
 import { clearSolicIdentity } from '../modules/solic/lib/identity.ts';
 import { clearSupabaseCache as clearSolicCache } from '../modules/solic/lib/supabaseCache.ts';
 import { temCargoFinanceiro } from '../config/financeiroAcesso';
+import { carregarFotoMicrosoft, fotoEmCache, limparFotoMicrosoft } from '../services/fotoMicrosoft';
 
 const AuthContext = createContext(null);
 
@@ -104,6 +105,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);          // colaborador (formato legado: id, nome, email, perfil, funcao, dataAdmissao)
   const [reembolsoProfile, setReembolsoProfile] = useState(null);
   const [solicProfile, setSolicProfile] = useState(null);
+  const [fotoUrl, setFotoUrl] = useState(null);    // foto do Microsoft 365 (bolinha do usuário)
   const [blocked, setBlocked] = useState(null);    // e-mail sem cadastro em colaboradores
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -117,7 +119,7 @@ export function AuthProvider({ children }) {
     const { data: sub } = supabase.auth.onAuthStateChange((_e, next) => {
       setSession(next ?? null);
       if (!next) {
-        setUser(null); setReembolsoProfile(null); setSolicProfile(null);
+        setUser(null); setReembolsoProfile(null); setSolicProfile(null); setFotoUrl(null);
         setLoading(false);
       }
     });
@@ -182,12 +184,26 @@ export function AuthProvider({ children }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- user lido só p/ short-circuit do refresh
   }, [session]);
 
+  // Foto do Microsoft 365 para a bolinha do usuário: pinta o cache na hora e, em
+  // paralelo, tenta o Graph com o provider_token que só vem no retorno do login
+  // (detalhes em services/fotoMicrosoft.js).
+  useEffect(() => {
+    const authId = session?.user?.id;
+    if (!authId) { setFotoUrl(null); return undefined; }
+    setFotoUrl(fotoEmCache(authId));
+    let cancelled = false;
+    carregarFotoMicrosoft(session).then((url) => { if (!cancelled) setFotoUrl(url); });
+    return () => { cancelled = true; };
+  }, [session]);
+
   const signInWithMicrosoft = useCallback(async () => {
     setError(''); setBlocked(null);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'azure',
       options: {
-        scopes: 'openid profile email',
+        // User.Read: o token do Graph (session.provider_token) que baixa a foto
+        // do perfil para a bolinha do usuário.
+        scopes: 'openid profile email User.Read',
         redirectTo: window.location.origin + window.location.pathname,
       },
     });
@@ -201,8 +217,9 @@ export function AuthProvider({ children }) {
     resetPreload();
     clearSolicIdentity();
     clearSolicCache();
+    limparFotoMicrosoft();
     await supabase.auth.signOut();
-    setUser(null); setReembolsoProfile(null); setSolicProfile(null);
+    setUser(null); setReembolsoProfile(null); setSolicProfile(null); setFotoUrl(null);
   }, []);
 
   const refreshReembolsoProfile = useCallback(async () => {
@@ -271,10 +288,10 @@ export function AuthProvider({ children }) {
   }), [user, reembolsoProfile, solicProfile]);
 
   const value = useMemo(() => ({
-    user, session, modules, reembolsoProfile, solicProfile,
+    user, session, modules, reembolsoProfile, solicProfile, fotoUrl,
     blocked, loading, error,
     signInWithMicrosoft, logout, refreshReembolsoProfile, markSolicVisto, refreshHorasIdentity,
-  }), [user, session, modules, reembolsoProfile, solicProfile, blocked, loading, error,
+  }), [user, session, modules, reembolsoProfile, solicProfile, fotoUrl, blocked, loading, error,
        signInWithMicrosoft, logout, refreshReembolsoProfile, markSolicVisto, refreshHorasIdentity]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
