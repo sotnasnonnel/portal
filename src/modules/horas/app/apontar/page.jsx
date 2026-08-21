@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Play, Square, Plus } from 'lucide-react';
+import { Play, Square, Plus, Save } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import {
   fetchProjetosVisiveis,
@@ -8,19 +8,22 @@ import {
   fetchCamposEquipe,
   fetchApontamentos,
   createApontamento,
+  updateApontamento,
   deleteApontamento,
   fetchTimer,
   startTimer,
+  updateTimer,
   stopTimer,
 } from '../../lib/data';
-import { fmtData, fmtDur, startOfDay } from '../../lib/format';
-import { isGestao, podeApontar, podeConfigurarApontamento } from '../../lib/roles';
+import { fmtData, fmtDur, fmtHoras, startOfDay, startOfWeek, startOfMonth } from '../../lib/format';
+import { somaMs } from '../../lib/aggregate';
+import { isGestao, podeApontar, podeConfigurarHoras } from '../../lib/roles';
 import { lookupProjetos } from '../../lib/lookups';
 import { faltando, paraPersistencia, valoresIniciais } from '../../lib/camposEquipe';
 import ApontamentosTable from '../components/ApontamentosTable';
+import ApontamentoModal from '../components/ApontamentoModal';
 import CamposApontamento from '../components/CamposApontamento';
 import ConfirmModal from '../components/ConfirmModal';
-import ManualModal from '../components/ManualModal';
 import SearchableSelect from '../components/SearchableSelect';
 
 export default function ApontarPage() {
@@ -36,9 +39,12 @@ export default function ApontarPage() {
   const [erro, setErro] = useState('');
   const [running, setRunning] = useState(null); // timer em andamento (do banco)
   const [busy, setBusy] = useState(false); // evita duplo clique em iniciar/encerrar
-  const [hoje, setHoje] = useState([]);
+  // O mês inteiro: a tabela mostra só hoje, mas os totais do topo precisam da
+  // semana e do mês, e é uma consulta só.
+  const [doMes, setDoMes] = useState([]);
   const [elapsed, setElapsed] = useState(0);
   const [showManual, setShowManual] = useState(false);
+  const [aEditar, setAEditar] = useState(null);
   const [aExcluir, setAExcluir] = useState(null);
 
   // Projeto e descrição são fixos do módulo; o miolo do formulário são os
@@ -50,15 +56,42 @@ export default function ApontarPage() {
   const setValor = (campoId, valor) => setValores((v) => ({ ...v, [campoId]: valor }));
   const pendentes = faltando(campos, valores);
 
+  const agora = Date.now();
+  const listaHoje = useMemo(
+    () => doMes.filter((a) => a.inicio >= startOfDay(agora)),
+    [doMes, agora]
+  );
+  // O cronômetro em andamento ainda não é apontamento, mas as horas de hoje só
+  // fazem sentido com ele somado — senão o número fica parado enquanto se trabalha.
+  const totais = useMemo(
+    () => ({
+      hoje: somaMs(listaHoje) + elapsed,
+      semana: somaMs(doMes.filter((a) => a.inicio >= startOfWeek(agora))) + elapsed,
+      mes: somaMs(doMes) + elapsed,
+    }),
+    [doMes, listaHoje, agora, elapsed]
+  );
+
+  // Enquanto roda, dá para corrigir o que foi escolhido. O botão de salvar só
+  // aparece quando há de fato diferença para o que está gravado no timer.
+  const camposAtuais = paraPersistencia(campos, valores);
+  const timerAlterado =
+    !!running &&
+    (form.projetoId !== (running.projetoId || '') ||
+      (form.descricao || '') !== (running.descricao || '') ||
+      JSON.stringify(camposAtuais) !== JSON.stringify(running.campos || []));
+
   // O apontamento é atribuído à área DONA do projeto (que pode ser a de um gestor
   // acima, por herança). Fallback: a própria área, se o projeto não for encontrado.
   const gerenciaDoProjeto = (projetoId) =>
     projetos.find((p) => p.id === projetoId)?.gerencia_id || gerenciaId;
 
-  const carregarHoje = useCallback(async () => {
+  const carregar = useCallback(async () => {
     if (!colaboradorId) return;
     try {
-      setHoje(await fetchApontamentos({ role: 'usuario', colaboradorId, sinceTs: startOfDay(Date.now()) }));
+      setDoMes(
+        await fetchApontamentos({ role: 'usuario', colaboradorId, sinceTs: startOfMonth(Date.now()) })
+      );
     } catch (e) {
       setErro(e?.message || 'Falha ao carregar apontamentos.');
     }
@@ -89,7 +122,7 @@ export default function ApontarPage() {
         // de quem aponta, não têm um "primeiro" que faça sentido.
         setForm((f) => ({ ...f, projetoId: f.projetoId || ps[0]?.id || '' }));
         setValores((v) => (Object.keys(v).length ? v : valoresIniciais(cps)));
-        await carregarHoje();
+        await carregar();
       } catch (e) {
         if (!cancel) setErro(e?.message || 'Falha ao carregar a configuração da gerência.');
       } finally {
@@ -99,7 +132,7 @@ export default function ApontarPage() {
     return () => {
       cancel = true;
     };
-  }, [colaboradorId, gerenciaId, carregarHoje]);
+  }, [colaboradorId, gerenciaId, carregar]);
 
   // Cronômetro: atualiza os ms decorridos a cada segundo (Date.now só no effect).
   useEffect(() => {
@@ -145,7 +178,7 @@ export default function ApontarPage() {
             inicioTs: run.inicio,
             fimTs: Date.now(),
           });
-          await carregarHoje();
+          await carregar();
         }
       } else {
         const run = await startTimer(colaboradorId, {
@@ -162,14 +195,40 @@ export default function ApontarPage() {
     }
   }
 
-  async function salvarManual(payload) {
+  // Corrige o cronômetro em andamento. O `inicio` não é tocado: o tempo já
+  // corrido continua valendo.
+  async function salvarAlteracoesTimer() {
+    if (busy || pendentes.length) return;
+    setBusy(true);
+    setErro('');
     try {
-      await createApontamento({ colaboradorId, gerenciaId: gerenciaDoProjeto(payload.projetoId), ...payload });
-      setShowManual(false);
-      await carregarHoje();
+      setRunning(
+        await updateTimer(colaboradorId, {
+          projetoId: form.projetoId,
+          campos: camposAtuais,
+          descricao: form.descricao,
+        })
+      );
     } catch (e) {
-      setErro(e?.message || 'Falha ao salvar o lançamento.');
+      setErro(e?.message || 'Falha ao salvar as alterações.');
+    } finally {
+      setBusy(false);
     }
+  }
+
+  async function salvarEdicao(payload) {
+    await updateApontamento(aEditar.id, {
+      ...payload,
+      gerenciaId: gerenciaDoProjeto(payload.projetoId),
+    });
+    setAEditar(null);
+    await carregar();
+  }
+
+  async function salvarManual(payload) {
+    await createApontamento({ colaboradorId, gerenciaId: gerenciaDoProjeto(payload.projetoId), ...payload });
+    setShowManual(false);
+    await carregar();
   }
 
   async function confirmarExclusao() {
@@ -178,7 +237,7 @@ export default function ApontarPage() {
     if (!a) return;
     try {
       await deleteApontamento(a.id);
-      await carregarHoje();
+      await carregar();
     } catch (e) {
       setErro(e?.message || 'Falha ao excluir.');
     }
@@ -218,6 +277,15 @@ export default function ApontarPage() {
         Área: <b>{gerenciaNome}</b> — preencha os campos abaixo e inicie o cronômetro.
       </p>
 
+      {/* Total de horas em evidência: é a primeira coisa que se procura ao abrir
+          a tela, e inclui o cronômetro que está correndo agora. */}
+      <div className="horas-stats">
+        <Stat k="Hoje" v={fmtHoras(totais.hoje)} />
+        <Stat k="Esta semana" v={fmtHoras(totais.semana)} />
+        <Stat k="Este mês" v={fmtHoras(totais.mes)} />
+        <Stat k="Apontamentos hoje" v={listaHoje.length} />
+      </div>
+
       {erro ? <div className="horas-hint">⚠️ {erro}</div> : null}
 
       {semProjetos ? (
@@ -231,14 +299,14 @@ export default function ApontarPage() {
       {/* Equipe sem campos configurados não fica travada: aponta com projeto e
           descrição. O aviso só vai para quem pode fazer algo a respeito — quem
           configura resolve na hora; a liderança sabe a quem pedir. */}
-      {!campos.length && podeConfigurarApontamento(user) ? (
+      {!campos.length && podeConfigurarHoras(user) ? (
         <div className="horas-hint">
           A sua equipe ainda não tem campos de apontamento configurados. Defina-os em{' '}
           <b>Config. do Apontamento</b> para pedir sigla, tarefa, frente de serviço — o que fizer
           sentido aqui — antes do cronômetro.
         </div>
       ) : null}
-      {!campos.length && isGestao(role) && !podeConfigurarApontamento(user) ? (
+      {!campos.length && isGestao(role) && !podeConfigurarHoras(user) ? (
         <div className="horas-hint">
           A sua equipe ainda não tem campos de apontamento configurados — dá para apontar só com
           projeto e descrição. Peça a configuração ao administrador do Controle de Horas.
@@ -252,7 +320,6 @@ export default function ApontarPage() {
             <label>Projeto</label>
             <SearchableSelect
               value={form.projetoId}
-              disabled={!!running}
               placeholder="Selecione o projeto…"
               onChange={(v) => setForm((f) => ({ ...f, projetoId: v }))}
               options={projetos.map((p) => ({
@@ -261,19 +328,13 @@ export default function ApontarPage() {
               }))}
             />
           </div>
-          <CamposApontamento
-            campos={campos}
-            valores={valores}
-            disabled={!!running}
-            onChange={setValor}
-          />
+          <CamposApontamento campos={campos} valores={valores} onChange={setValor} />
           <div className="horas-fld" style={{ gridColumn: '1 / -1' }}>
             <label>Descrição (opcional)</label>
             <input
               type="text"
               placeholder="No que você está trabalhando?"
               value={form.descricao}
-              disabled={!!running}
               onChange={(e) => setForm((f) => ({ ...f, descricao: e.target.value }))}
             />
           </div>
@@ -291,6 +352,16 @@ export default function ApontarPage() {
             {running ? <Square size={16} /> : <Play size={16} />}
             {running ? 'Encerrar' : 'Iniciar'}
           </button>
+          {timerAlterado ? (
+            <button
+              className="horas-btn2"
+              type="button"
+              onClick={salvarAlteracoesTimer}
+              disabled={busy || !!pendentes.length}
+            >
+              <Save size={16} /> Salvar alterações
+            </button>
+          ) : null}
           <button
             className="horas-btn2"
             type="button"
@@ -309,6 +380,13 @@ export default function ApontarPage() {
           </div>
         ) : null}
 
+        {timerAlterado ? (
+          <div className="horas-hint" style={{ marginTop: 12 }}>
+            Você mudou o apontamento em andamento. Clique em <b>Salvar alterações</b> para valer —
+            encerrar sem salvar grava o que estava antes.
+          </div>
+        ) : null}
+
         {running ? (
           <div className="horas-live">
             <span className="horas-live-dot" />
@@ -321,15 +399,31 @@ export default function ApontarPage() {
         Apontamentos de hoje
       </div>
       <div className="horas-card horas-table-wrap">
-        <ApontamentosTable list={hoje} projetoNome={proj.nome} projetoCor={proj.cor} onDelete={setAExcluir} />
+        <ApontamentosTable
+          list={listaHoje}
+          projetoNome={proj.nome}
+          projetoCor={proj.cor}
+          onEdit={setAEditar}
+          onDelete={setAExcluir}
+        />
       </div>
 
       {showManual ? (
-        <ManualModal
+        <ApontamentoModal
           projetos={projetos}
           campos={campos}
           onClose={() => setShowManual(false)}
           onSave={salvarManual}
+        />
+      ) : null}
+
+      {aEditar ? (
+        <ApontamentoModal
+          projetos={projetos}
+          campos={campos}
+          inicial={aEditar}
+          onClose={() => setAEditar(null)}
+          onSave={salvarEdicao}
         />
       ) : null}
 
@@ -341,5 +435,14 @@ export default function ApontarPage() {
         onCancel={() => setAExcluir(null)}
       />
     </>
+  );
+}
+
+function Stat({ k, v }) {
+  return (
+    <div className="horas-stat">
+      <div className="k">{k}</div>
+      <div className="v">{v}</div>
+    </div>
   );
 }

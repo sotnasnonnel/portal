@@ -48,6 +48,7 @@ const HorasRegistros = lazy(() => import('../modules/horas/app/registros/page'))
 const HorasDashboard = lazy(() => import('../modules/horas/app/dashboard/page'));
 const HorasConfig = lazy(() => import('../modules/horas/app/config/page'));
 const HorasConfigApontamento = lazy(() => import('../modules/horas/app/config/apontamento/page'));
+const HorasConfigProjetos = lazy(() => import('../modules/horas/app/config/projetos/page'));
 const HorasEquipe = lazy(() => import('../modules/horas/app/equipe/page'));
 const HorasExtrasNova = lazy(() => import('../modules/horas/app/extras/nova/page'));
 const HorasExtrasMinhas = lazy(() => import('../modules/horas/app/extras/minhas/page'));
@@ -489,6 +490,8 @@ export default function AppRoutes() {
           <Route path="config" element={<LazyPage><HorasConfig /></LazyPage>} />
           {/* Campos que a equipe pede antes de iniciar o cronômetro. */}
           <Route path="config/apontamento" element={<LazyPage><HorasConfigApontamento /></LazyPage>} />
+          {/* Quem enxerga cada projeto no seletor do apontamento. */}
+          <Route path="config/projetos" element={<LazyPage><HorasConfigProjetos /></LazyPage>} />
           <Route path="equipe" element={<LazyPage><HorasEquipe /></LazyPage>} />
           {/* Rota antiga de Projetos: virou a aba Configuração. */}
           <Route path="projetos" element={<Navigate to="/horas/config" replace />} />

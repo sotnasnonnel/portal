@@ -6,6 +6,8 @@ import {
   fetchProjetos,
   fetchColaboradores,
   fetchGerencias,
+  fetchCamposEquipe,
+  updateApontamento,
   deleteApontamento,
 } from '../../lib/data';
 import { fmtHoras, periodoPadrao, intervaloTs } from '../../lib/format';
@@ -13,6 +15,7 @@ import { isGestao } from '../../lib/roles';
 import { lookupProjetos, lookupColaboradores, lookupGerencias } from '../../lib/lookups';
 import { labelsUsados, valorDoCampo } from '../../lib/camposEquipe';
 import ApontamentosTable from '../components/ApontamentosTable';
+import ApontamentoModal from '../components/ApontamentoModal';
 import ConfirmModal from '../components/ConfirmModal';
 import SearchableSelect from '../components/SearchableSelect';
 
@@ -29,6 +32,7 @@ export default function RegistrosPage() {
   const [erro, setErro] = useState('');
   const [range, setRange] = useState(() => periodoPadrao(30));
   const [filtro, setFiltro] = useState({ projeto: '', colab: '' });
+  const [aEditar, setAEditar] = useState(null); // { apont, campos }
   const [aExcluir, setAExcluir] = useState(null);
 
   useEffect(() => {
@@ -79,9 +83,36 @@ export default function RegistrosPage() {
   const total = filtrado.reduce((s, a) => s + a.duracao, 0);
   const mostraColaborador = isGestao(role);
 
-  // Espelha a RLS: o próprio, ou a subárvore (gestão). Se tentar excluir algo
-  // fora da subárvore, a RLS bloqueia — o botão só facilita o caminho feliz.
-  const podeExcluir = (a) => isGestao(role) || a.colaboradorId === colaboradorId;
+  // Espelha a RLS: o próprio, ou a subárvore (gestão). Vale para editar e para
+  // excluir (as duas policies são a mesma regra). Se tentar mexer em algo fora
+  // da subárvore, a RLS bloqueia — o botão só facilita o caminho feliz.
+  const podeAlterar = (a) => isGestao(role) || a.colaboradorId === colaboradorId;
+
+  // Os campos do formulário são os da equipe de QUEM fez o apontamento, não os
+  // de quem está editando — um gestor corrige registro de gente de outra equipe.
+  async function abrirEdicao(a) {
+    setErro('');
+    try {
+      const gerenciaDaPessoa =
+        a.colaboradorId === colaboradorId
+          ? user?.horasGerenciaId
+          : colabs.find((c) => c.id === a.colaboradorId)?.gerenciaId;
+      setAEditar({ apont: a, campos: await fetchCamposEquipe(gerenciaDaPessoa) });
+    } catch (e) {
+      setErro(e?.message || 'Falha ao carregar os campos da equipe.');
+    }
+  }
+
+  async function salvarEdicao(payload) {
+    const atualizado = await updateApontamento(aEditar.apont.id, {
+      ...payload,
+      // Mesma regra do apontamento: a gerência é a DONA do projeto escolhido.
+      gerenciaId:
+        projetos.find((p) => p.id === payload.projetoId)?.gerencia_id || aEditar.apont.gerenciaId,
+    });
+    setAEditar(null);
+    setList((prev) => prev.map((x) => (x.id === atualizado.id ? atualizado : x)));
+  }
 
   async function confirmarExclusao() {
     const a = aExcluir;
@@ -149,7 +180,7 @@ export default function RegistrosPage() {
             <label>Até</label>
             <input type="date" value={range.ate} onChange={(e) => setRange((r) => ({ ...r, ate: e.target.value }))} />
           </div>
-          <div className="horas-fld" style={{ maxWidth: 200 }}>
+          <div className="horas-fld" style={{ maxWidth: 340, flex: '1 1 260px' }}>
             <label>Projeto</label>
             <SearchableSelect
               value={filtro.projeto}
@@ -187,11 +218,22 @@ export default function RegistrosPage() {
             projetoNome={proj.nome}
             projetoCor={proj.cor}
             nameOf={mostraColaborador ? colab.nome : undefined}
+            onEdit={abrirEdicao}
             onDelete={setAExcluir}
-            podeExcluir={podeExcluir}
+            podeAlterar={podeAlterar}
           />
         )}
       </div>
+
+      {aEditar ? (
+        <ApontamentoModal
+          projetos={projetos}
+          campos={aEditar.campos}
+          inicial={aEditar.apont}
+          onClose={() => setAEditar(null)}
+          onSave={salvarEdicao}
+        />
+      ) : null}
 
       <ConfirmModal
         open={!!aExcluir}

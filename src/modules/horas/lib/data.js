@@ -41,16 +41,19 @@ export async function fetchProjetos({ gerenciaId, incluirArquivados = false } = 
   return data || [];
 }
 
-// Projetos visíveis ao usuário AO APONTAR: os da sua área + os das áreas de
-// todos os gestores acima dele na árvore (herança pela cadeia de gestores). A
-// RPC (SECURITY DEFINER) resolve a cadeia; a leitura dos projetos é livre (RLS
-// `using(true)`), então filtramos aqui pelas gerências devolvidas.
+// Projetos visíveis ao usuário AO APONTAR. A RPC (SECURITY DEFINER) devolve os
+// IDS já resolvidos, aplicando as duas regras de uma vez: a herança por área (os
+// projetos da sua equipe + os das equipes dos gestores acima na árvore) e as
+// exceções por pessoa de /horas/config/projetos, que podem tirar um projeto da
+// área ou conceder um de fora dela. A leitura de horas_projetos continua livre
+// (RLS `using(true)`) porque Registros/Dashboard precisam resolver o NOME de
+// qualquer projeto do histórico — por isso o recorte vem da RPC, não da tabela.
 export async function fetchProjetosVisiveis({ incluirArquivados = false } = {}) {
-  const { data: ger, error: gerErr } = await supabase.rpc('horas_gerencias_visiveis');
-  if (gerErr) throw gerErr;
-  const ids = (ger || []).map((r) => (typeof r === 'string' ? r : r?.horas_gerencias_visiveis)).filter(Boolean);
+  const { data: vis, error: visErr } = await supabase.rpc('horas_projetos_visiveis');
+  if (visErr) throw visErr;
+  const ids = (vis || []).map((r) => (typeof r === 'string' ? r : r?.horas_projetos_visiveis)).filter(Boolean);
   if (!ids.length) return [];
-  let q = supabase.from('horas_projetos').select('*').in('gerencia_id', ids).order('nome');
+  let q = supabase.from('horas_projetos').select('*').in('id', ids).order('nome');
   if (!incluirArquivados) q = q.eq('arquivado', false);
   const { data, error } = await q;
   if (error) throw error;
@@ -141,6 +144,47 @@ export async function criarCamposEmLote(gerenciaId, modelo) {
   return (data || []).map(normalizarCampo);
 }
 
+// ---- Acesso a projetos (quem vê cada projeto no seletor do apontamento) ----
+// Fonte da tela: a RPC devolve TODA pessoa ativa com a situação dela naquele
+// projeto — `porArea` é o padrão herdado, `override` a exceção (null = não há) e
+// `efetivo` o que vale hoje. Só a lista nominal de podeConfigurarHoras recebe
+// linhas (a RPC é SECURITY DEFINER e expõe a empresa inteira).
+export async function fetchAcessoProjeto(projetoId) {
+  const { data, error } = await supabase.rpc('horas_acesso_projeto', { p_projeto: projetoId });
+  if (error) throw error;
+  return (data || []).map((r) => ({
+    colaboradorId: r.colaborador_id,
+    nome: r.nome || '',
+    funcao: r.funcao || '',
+    equipe: r.equipe || '',
+    porArea: !!r.por_area,
+    override: r.override === null || r.override === undefined ? null : !!r.override,
+    efetivo: !!r.efetivo,
+  }));
+}
+
+// Grava a exceção. Voltar ao padrão da área é APAGAR a linha (ver
+// limparAcessoProjeto), não gravar o valor que a área já daria.
+export async function setAcessoProjeto({ projetoId, colaboradorId, permitido, definidoPor }) {
+  const { error } = await supabase.from('horas_projeto_acesso').upsert({
+    projeto_id: projetoId,
+    colaborador_id: colaboradorId,
+    permitido,
+    definido_por: definidoPor || null,
+    definido_em: new Date().toISOString(),
+  });
+  if (error) throw error;
+}
+
+export async function limparAcessoProjeto(projetoId, colaboradorId) {
+  const { error } = await supabase
+    .from('horas_projeto_acesso')
+    .delete()
+    .eq('projeto_id', projetoId)
+    .eq('colaborador_id', colaboradorId);
+  if (error) throw error;
+}
+
 // ---- Apontamentos ---------------------------------------------------------
 // Escopo agora segue a HIERARQUIA da Gestão de Pessoas (via RLS):
 //   usuario                -> os próprios;
@@ -181,6 +225,27 @@ export async function createApontamento({
       inicio: new Date(inicioTs).toISOString(),
       fim: new Date(fimTs).toISOString(),
     })
+    .select()
+    .single();
+  if (error) throw error;
+  return normalizeApont(data);
+}
+
+// Editar um apontamento já gravado. `duracao_ms` não é enviada: continua sendo
+// coluna gerada (fim - inicio), então corrigir o horário recalcula sozinho.
+// A RLS de update é a mesma da exclusão (o próprio, ou a subárvore da gestão).
+export async function updateApontamento(id, { projetoId, gerenciaId, campos, descricao, inicioTs, fimTs }) {
+  const { data, error } = await supabase
+    .from('horas_apontamentos')
+    .update({
+      projeto_id: projetoId || null,
+      gerencia_id: gerenciaId || null,
+      campos: campos || [],
+      descricao: descricao || null,
+      inicio: new Date(inicioTs).toISOString(),
+      fim: new Date(fimTs).toISOString(),
+    })
+    .eq('id', id)
     .select()
     .single();
   if (error) throw error;
@@ -269,6 +334,24 @@ export async function startTimer(colaboradorId, { projetoId, campos, descricao }
       inicio: new Date().toISOString(),
       atualizado_em: new Date().toISOString(),
     })
+    .select()
+    .single();
+  if (error) throw error;
+  return normalizeTimer(data);
+}
+
+// Corrige o que está em andamento. `inicio` NÃO é tocado: o cronômetro segue
+// contando de onde começou — quem está errado é a seleção, não a hora.
+export async function updateTimer(colaboradorId, { projetoId, campos, descricao }) {
+  const { data, error } = await supabase
+    .from('horas_timer_ativo')
+    .update({
+      projeto_id: projetoId || null,
+      campos: campos || [],
+      descricao: descricao || null,
+      atualizado_em: new Date().toISOString(),
+    })
+    .eq('colaborador_id', colaboradorId)
     .select()
     .single();
   if (error) throw error;

@@ -4,17 +4,18 @@ import {
   ListChecks,
   Settings,
   SlidersHorizontal,
+  FolderLock,
   Users,
   FilePlus2,
   FileClock,
   CheckSquare,
 } from 'lucide-react';
-import { isGestao, podeConfigurarApontamento } from '../../lib/roles';
+import { isGestao, podeConfigurarHoras } from '../../lib/roles';
 
 // Navegação por papel. A gestão (gestor/coordenador) aponta E administra/enxerga
 // a equipe; o usuário só aponta e vê o próprio tempo.
-// "Config. do Apontamento" foge do papel: é uma curadoria central, restrita a
-// uma lista nominal (daí o `user` além do `role`).
+// "Config. do Apontamento" e "Acesso a Projetos" fogem do papel: são curadoria
+// central, restrita a uma lista nominal (daí o `user` além do `role`).
 // A seção "Horas Extras" aqui é só a ponta do fluxo que o colaborador e o gestor
 // usam (pedir, acompanhar, aprovar). O tratamento do DP — painel, exceções de
 // prazo e auditoria — vive no módulo Gestão de Pessoas.
@@ -31,8 +32,12 @@ export function navSections(role, user) {
     extras.push({ label: 'Solicitações Pendentes', href: '/horas/extras/aprovacoes', Icon: CheckSquare });
   }
 
-  const configApontamento = podeConfigurarApontamento(user)
-    ? [{ label: 'Config. do Apontamento', href: '/horas/config/apontamento', Icon: SlidersHorizontal }]
+  // As duas telas de curadoria central do módulo, restritas à lista nominal.
+  const configHoras = podeConfigurarHoras(user)
+    ? [
+        { label: 'Config. do Apontamento', href: '/horas/config/apontamento', Icon: SlidersHorizontal },
+        { label: 'Acesso a Projetos', href: '/horas/config/projetos', Icon: FolderLock },
+      ]
     : [];
 
   if (isGestao(role)) {
@@ -43,7 +48,7 @@ export function navSections(role, user) {
         items: [
           { label: 'Dashboard da Equipe', href: '/horas/dashboard', Icon: BarChart3 },
           { label: 'Configuração', href: '/horas/config', Icon: Settings, exato: true },
-          ...configApontamento,
+          ...configHoras,
           { label: 'Equipe', href: '/horas/equipe', Icon: Users },
           { label: 'Registros', href: '/horas/registros', Icon: ListChecks },
         ],
@@ -60,7 +65,7 @@ export function navSections(role, user) {
         { label: 'Apontar', href: '/horas/apontar', Icon: Clock },
         { label: 'Meu Dashboard', href: '/horas/dashboard', Icon: BarChart3 },
         { label: 'Meus Registros', href: '/horas/registros', Icon: ListChecks },
-        ...configApontamento,
+        ...configHoras,
       ],
     },
     { label: 'Horas Extras', items: extras },

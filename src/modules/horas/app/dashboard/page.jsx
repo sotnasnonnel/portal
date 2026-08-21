@@ -270,7 +270,7 @@ export default function DashboardPage() {
             <label>Até</label>
             <input type="date" value={range.ate} onChange={(e) => setRange((r) => ({ ...r, ate: e.target.value }))} />
           </div>
-          <div className="horas-fld" style={{ maxWidth: 220 }}>
+          <div className="horas-fld" style={{ maxWidth: 340, flex: '1 1 260px' }}>
             <label>Projeto</label>
             <SearchableSelect
               value={filtro.projeto}

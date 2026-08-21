@@ -14,6 +14,8 @@ import {
   preenchimentoValido,
   paraPersistencia,
   lerPersistidos,
+  naoConfigurados,
+  paraPersistenciaNaEdicao,
   camposDoApontamento,
   labelsUsados,
   valorDoCampo,
@@ -86,6 +88,34 @@ test('valoresIniciais reidrata pelo id (cronômetro em andamento)', () => {
   // Campo que a equipe apagou depois some do formulário, mas segue no gravado.
   assert.deepEqual(valoresIniciais([campo({ id: 'c9', label: 'Novo' })], gravados), { c9: '' });
   assert.equal(lerPersistidos(null).length, 0);
+});
+
+test('editar registro antigo: casa pelo rótulo e não perde o que o form não mostra', () => {
+  const campos = [campo(), campo({ id: 'c2', label: 'Etiqueta', opcoes: ['ENG'] })];
+  // Apontamento do catálogo fixo: sem id de campo, mas com os mesmos rótulos.
+  const antigo = [
+    { id: null, label: 'Sigla', valor: 'PTA' },
+    { id: null, label: 'Tarefa 2', valor: 'REVISAR' }, // campo que a equipe não tem mais
+  ];
+  assert.deepEqual(valoresIniciais(campos, antigo), { c1: 'PTA', c2: '' });
+
+  // "Tarefa 2" não tem campo na configuração atual — o formulário não mostra...
+  assert.deepEqual(naoConfigurados(campos, antigo), [{ id: null, label: 'Tarefa 2', valor: 'REVISAR' }]);
+  // ...mas continua gravado depois de salvar a edição.
+  assert.deepEqual(paraPersistenciaNaEdicao(campos, { c1: 'POP', c2: 'ENG' }, antigo), [
+    { id: 'c1', label: 'Sigla', valor: 'POP' },
+    { id: 'c2', label: 'Etiqueta', valor: 'ENG' },
+    { id: null, label: 'Tarefa 2', valor: 'REVISAR' },
+  ]);
+});
+
+test('valoresIniciais: o id ganha do rótulo quando os dois existem', () => {
+  const campos = [campo()];
+  const gravados = [
+    { id: 'c1', label: 'Sigla', valor: 'PTA' },
+    { id: 'outro', label: 'sigla', valor: 'POP' },
+  ];
+  assert.equal(valoresIniciais(campos, gravados).c1, 'PTA');
 });
 
 test('camposDoApontamento cai nos legados quando o registro é antigo', () => {

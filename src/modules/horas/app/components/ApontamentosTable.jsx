@@ -1,17 +1,19 @@
-import { Trash2 } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { fmtData, fmtDur } from '../../lib/format';
 
 // Tabela de apontamentos reutilizada em Apontar, Registros e drill-down.
 //  - list: apontamentos já normalizados (ver lib/data)
 //  - projetoNome(projetoId) -> nome do projeto (+ cor opcional via projetoCor)
-//  - onDelete: se passado, mostra a coluna de excluir (chamada por linha permitida)
-//  - podeExcluir(apont) -> bool; sem ele, todas as linhas mostram o botão
+//  - onEdit/onDelete: se passados, mostram os botões da última coluna
+//  - podeAlterar(apont) -> bool; sem ele, todas as linhas mostram os botões.
+//    Vale para os dois: no banco, as policies de update e delete de
+//    horas_apontamentos são a mesma regra (o próprio, ou a subárvore da gestão).
 //  - nameOf: se passado, mostra a coluna Colaborador (colaboradorId -> nome)
 // Os campos preenchidos (os que a equipe configurou) aparecem como tags, com a
 // descrição abaixo. A lista pode misturar equipes com campos diferentes — e
 // registros do catálogo fixo antigo —, então o rótulo de cada valor vai no
 // title, que é o que dá sentido a uma tag solta como "PTA".
-export default function ApontamentosTable({ list, projetoNome, projetoCor, onDelete, podeExcluir, nameOf }) {
+export default function ApontamentosTable({ list, projetoNome, projetoCor, onEdit, onDelete, podeAlterar, nameOf }) {
   if (!list.length) {
     return <div className="horas-empty">Nenhum apontamento.</div>;
   }
@@ -28,7 +30,7 @@ export default function ApontamentosTable({ list, projetoNome, projetoCor, onDel
           <th>Início</th>
           <th>Fim</th>
           <th className="horas-right">Duração</th>
-          {onDelete ? <th></th> : null}
+          {onEdit || onDelete ? <th></th> : null}
         </tr>
       </thead>
       <tbody>
@@ -60,17 +62,31 @@ export default function ApontamentosTable({ list, projetoNome, projetoCor, onDel
             <td className="horas-right" data-label="Duração" style={{ fontVariantNumeric: 'tabular-nums' }}>
               {fmtDur(a.duracao)}
             </td>
-            {onDelete ? (
-              <td className="horas-right horas-td-acao">
-                {!podeExcluir || podeExcluir(a) ? (
-                  <button
-                    className="horas-btn-icon"
-                    title="Excluir"
-                    type="button"
-                    onClick={() => onDelete(a)}
-                  >
-                    <Trash2 size={15} />
-                  </button>
+            {onEdit || onDelete ? (
+              <td className="horas-right horas-td-acao" style={{ whiteSpace: 'nowrap' }}>
+                {!podeAlterar || podeAlterar(a) ? (
+                  <>
+                    {onEdit ? (
+                      <button
+                        className="horas-btn-icon"
+                        title="Editar"
+                        type="button"
+                        onClick={() => onEdit(a)}
+                      >
+                        <Pencil size={15} />
+                      </button>
+                    ) : null}
+                    {onDelete ? (
+                      <button
+                        className="horas-btn-icon"
+                        title="Excluir"
+                        type="button"
+                        onClick={() => onDelete(a)}
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    ) : null}
+                  </>
                 ) : null}
               </td>
             ) : null}

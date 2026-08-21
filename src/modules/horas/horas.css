@@ -475,12 +475,18 @@
   flex: 0 0 auto;
   color: var(--h-gray-700);
 }
+/* A lista NÃO fica presa à largura do botão: nomes de projeto ("ADMB-CT10-GRMS
+   — ADM DO BRASIL") e de tarefa não cabem num filtro estreito e vinham
+   cortados. Cresce com o conteúdo até um teto, e nunca encolhe abaixo do
+   gatilho. */
 .horas-ss-pop {
   position: absolute;
   z-index: 40;
   top: calc(100% + 4px);
   left: 0;
-  right: 0;
+  min-width: 100%;
+  width: max-content;
+  max-width: min(560px, 90vw);
   background: #fff;
   border: 1.5px solid var(--h-border);
   border-radius: var(--h-radius-md);
@@ -529,6 +535,10 @@
 }
 .horas-ss-opt:hover {
   background: var(--h-gray-100, #f3f4f6);
+}
+/* O check fica fixo à direita; quem quebra é o texto. */
+.horas-ss-opt > span {
+  overflow-wrap: anywhere;
 }
 .horas-ss-opt.is-sel {
   color: var(--h-primary);
@@ -1053,6 +1063,8 @@
     position: static;
     margin-top: 4px;
     box-shadow: none;
+    width: auto;
+    max-width: 100%;
   }
 }
 
@@ -1076,4 +1088,50 @@
   overflow-wrap: normal;
   overflow-x: auto;
   resize: vertical;
+}
+
+/* ---- acesso a projetos (quem vê cada projeto no seletor) ---- */
+/* Caixa de busca com a lupa dentro, no padrão do combobox pesquisável. */
+.horas-busca {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1.5px solid var(--h-border);
+  border-radius: var(--h-radius-md);
+  background: #fff;
+  color: var(--h-gray-600);
+}
+.horasRoot .horas-busca input[type='text'] {
+  border: none;
+  padding: 9px 0;
+  min-height: 38px;
+  background: transparent;
+}
+.horasRoot .horas-busca input[type='text']:focus {
+  box-shadow: none;
+}
+
+/* A caixa é o controle principal de cada linha: 22px dá alvo de toque. */
+.horasRoot .horas-check {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--h-brand, #c44a28);
+  cursor: pointer;
+}
+.horasRoot .horas-check:disabled {
+  cursor: progress;
+  opacity: 0.5;
+}
+
+/* Concedido / bloqueado: exceção decidida por gente, destacada do padrão. */
+.horas-tag.ok {
+  background: #e7f6ef;
+  border-color: #b6e3cd;
+  color: #10714f;
+}
+.horas-tag.no {
+  background: #fdecea;
+  border-color: #f7c7c1;
+  color: #a32b1c;
 }

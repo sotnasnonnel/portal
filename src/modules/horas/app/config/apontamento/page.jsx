@@ -11,7 +11,7 @@ import {
   reordenarCamposEquipe,
   criarCamposEmLote,
 } from '../../../lib/data';
-import { podeConfigurarApontamento } from '../../../lib/roles';
+import { podeConfigurarHoras } from '../../../lib/roles';
 import {
   TIPOS,
   campoNovo,
@@ -24,7 +24,7 @@ import ConfirmModal from '../../components/ConfirmModal';
 
 // Configuração do APONTAMENTO: os campos que cada equipe preenche antes de dar
 // play no cronômetro. Diferente da tela de projetos, esta é CENTRAL — a lista
-// nominal de podeConfigurarApontamento edita TODAS as equipes, escolhendo uma
+// nominal de podeConfigurarHoras edita TODAS as equipes, escolhendo uma
 // no seletor (a RLS repete a regra no banco).
 // Os projetos continuam em "Configuração" — aqui é só o formulário.
 export default function ConfigApontamentoPage() {
@@ -73,7 +73,7 @@ export default function ConfigApontamentoPage() {
   }, [carregar]);
 
   // Gate de UI (a RLS é quem protege as escritas de verdade).
-  if (!podeConfigurarApontamento(user)) return <Navigate to="/horas/apontar" replace />;
+  if (!podeConfigurarHoras(user)) return <Navigate to="/horas/apontar" replace />;
 
   async function adicionar() {
     const campo = deRascunho(novo);

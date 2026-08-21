@@ -119,11 +119,36 @@ export const deRascunho = (rascunho) => ({
 // ---- Preenchimento (tela de apontar / lançamento manual) ------------------
 
 // Valores por id do campo: { '<uuid>': 'PTA' }.
+// Casa pelo id e, na falta dele, pelo RÓTULO — é o que permite reabrir para
+// edição um apontamento gravado antes (o do catálogo fixo não tem id de campo,
+// mas tem "Sigla"/"Tarefa", que são os mesmos rótulos semeados nas equipes).
 export function valoresIniciais(campos = [], persistidos = []) {
-  const porId = new Map(lerPersistidos(persistidos).map((c) => [c.id, c.valor]));
+  const gravados = lerPersistidos(persistidos);
+  const porId = new Map(gravados.filter((c) => c.id).map((c) => [c.id, c.valor]));
+  const porLabel = new Map(gravados.map((c) => [chaveLabel(c.label), c.valor]));
   const out = {};
-  for (const c of campos) out[c.id] = porId.get(c.id) || '';
+  for (const c of campos) {
+    out[c.id] = porId.get(c.id) ?? porLabel.get(chaveLabel(c.label)) ?? '';
+  }
   return out;
+}
+
+// O que está gravado no apontamento mas NÃO tem campo correspondente na
+// configuração atual (campo apagado ou renomeado depois, registro de outra
+// equipe). O formulário de edição não consegue mostrar esses valores.
+export function naoConfigurados(campos = [], persistidos = []) {
+  const ids = new Set(campos.map((c) => c.id));
+  const labels = new Set(campos.map((c) => chaveLabel(c.label)));
+  return lerPersistidos(persistidos).filter(
+    (c) => !(c.id && ids.has(c.id)) && !labels.has(chaveLabel(c.label))
+  );
+}
+
+// O que gravar ao EDITAR: o que o formulário coletou, mais o que ele não tinha
+// como mostrar. Sem isso, editar a descrição de um apontamento antigo apagaria
+// calado os campos que a equipe não usa mais — e eles são fato histórico.
+export function paraPersistenciaNaEdicao(campos, valores, persistidosOriginais) {
+  return [...paraPersistencia(campos, valores), ...naoConfigurados(campos, persistidosOriginais)];
 }
 
 // Rótulos dos campos obrigatórios que ainda estão em branco.
