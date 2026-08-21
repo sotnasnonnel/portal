@@ -71,6 +71,7 @@ const ChamadoAdm = lazy(() => import('../modules/administrativo/app/chamado/page
 const FluxosAdm = lazy(() => import('../modules/administrativo/app/fluxos/page'));
 const KanbanAdm = lazy(() => import('../modules/administrativo/app/kanban/page'));
 const SatisfacaoAdm = lazy(() => import('../modules/administrativo/app/satisfacao/page'));
+const DashboardAdm = lazy(() => import('../modules/administrativo/app/dashboard/page'));
 
 function RouteFallback() {
   return <div style={{ padding: 'var(--space-3xl)', textAlign: 'center' }}>Carregando...</div>;
@@ -547,6 +548,7 @@ export default function AppRoutes() {
           <Route path="chamado/:id" element={<LazyPage><ChamadoAdm /></LazyPage>} />
           <Route path="config" element={<LazyPage><ConfigAdm /></LazyPage>} />
           <Route path="fluxos" element={<LazyPage><FluxosAdm /></LazyPage>} />
+          <Route path="dashboard" element={<LazyPage><DashboardAdm /></LazyPage>} />
           <Route path="satisfacao" element={<LazyPage><SatisfacaoAdm /></LazyPage>} />
         </Route>
 

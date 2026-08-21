@@ -949,3 +949,73 @@
   .adm-fx-seta { transform: rotate(90deg); align-self: center; }
   .adm-fx-num { position: static; margin: 0; }
 }
+
+/* ---- indicadores ----
+   Cor da barra validada contra a superfície e a banda de luminosidade; os tons
+   do SLA são os mesmos do semáforo do quadro, sempre com número ao lado — cor
+   nunca é o único encoding. */
+.adm-ind-tiles {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px; margin-bottom: 14px;
+}
+.adm-ind-tile { display: flex; flex-direction: column; gap: 3px; margin: 0; }
+.adm-ind-tile.is-destaque { border-color: var(--a-primary-line); background: var(--a-primary-soft); }
+.adm-ind-rot {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--a-muted);
+}
+.adm-ind-num {
+  font-size: 2.1rem; font-weight: 700; line-height: 1.1; color: var(--a-ink);
+  font-variant-numeric: tabular-nums;
+}
+.adm-ind-num.tom-alta  { color: #047857; }
+.adm-ind-num.tom-media { color: #b45309; }
+.adm-ind-num.tom-baixa { color: #b91c1c; }
+.adm-ind-num.tom-vazio { color: var(--a-muted); }
+.adm-ind-pe { font-size: 0.74rem; color: var(--a-muted); }
+
+.adm-ind-barras { margin: 10px 0 2px; }
+.adm-ind-linha {
+  display: grid; grid-template-columns: minmax(0, 190px) minmax(0, 1fr) 34px;
+  align-items: center; gap: 10px; padding: 3px 0;
+}
+.adm-ind-nome {
+  font-size: 0.82rem; color: var(--a-ink);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.adm-ind-trilho { height: 14px; background: var(--a-gray-100); border-radius: 4px; }
+/* Ponta arredondada só do lado que cresce: a base fica ancorada no zero. */
+.adm-ind-barra { display: block; height: 100%; background: #3b74b8; border-radius: 0 4px 4px 0; }
+.adm-ind-valor {
+  font-size: 0.82rem; font-weight: 600; color: var(--a-ink);
+  font-variant-numeric: tabular-nums; text-align: right;
+}
+
+/* 2px de folga entre as partes: sem isso as duas cores encostam e a divisão
+   some justamente onde ela é a informação. */
+.adm-ind-proporcao {
+  display: flex; gap: 2px; height: 18px; margin: 12px 0 8px;
+  border-radius: 5px; overflow: hidden; background: var(--a-gray-100);
+}
+.adm-ind-proporcao .parte { display: block; height: 100%; }
+.adm-ind-proporcao .parte.tom-alta  { background: #047857; }
+.adm-ind-proporcao .parte.tom-baixa { background: #b91c1c; }
+.adm-ind-legenda {
+  display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0;
+  font-size: 0.78rem; color: var(--a-gray-600);
+}
+.adm-ind-legenda span { display: inline-flex; align-items: center; gap: 6px; }
+.adm-ind-legenda i { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.adm-ind-legenda i.tom-alta  { background: #047857; }
+.adm-ind-legenda i.tom-baixa { background: #b91c1c; }
+
+@media (max-width: 760px) {
+  .adm-ind-linha { grid-template-columns: minmax(0, 1fr) 32px; }
+  .adm-ind-nome { grid-column: 1 / -1; font-weight: 600; }
+}
+
+/* Faixas de alçada dentro da ajuda: tabela enxuta, sem cabeçalho — são pares
+   "de tanto a tanto → quem entra", não uma grade de dados. */
+.adm-prazos-faixas { margin: 6px 0; font-size: 0.78rem; }
+.adm-prazos-faixas td { padding: 5px 8px; }
+.adm-prazos-faixas td:first-child { white-space: nowrap; font-weight: 600; color: var(--a-ink); }

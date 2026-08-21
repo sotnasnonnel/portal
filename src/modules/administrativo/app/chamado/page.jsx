@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { getClasse, getServico } from '../../../../config/administrativo';
+import { contextoDoChamado } from '../../lib/rotulos';
 import { rotuloDoCampo, formatarValorCampo, CAMPOS_OCULTOS } from '../novo/formularios/schemas';
 import {
   buscarChamado, listarInteracoes, listarEventos, listarEtapas, responder, marcarLidas,
@@ -117,6 +118,11 @@ export default function ChamadoAdm() {
 
   const cls = getClasse(chamado.classe);
   const srv = getServico(chamado.classe, chamado.servico);
+  // Em classe de serviço único os três textos são o mesmo, e a linha virava
+  // "Solicitação de compra · Solicitação de compra".
+  const contexto = contextoDoChamado({
+    classeLabel: cls?.label, servicoLabel: srv?.label, assunto: chamado.assunto,
+  });
   const souSolicitante = chamado.solicitante_id === user?.id;
   const campos = Object.entries(chamado.campos || {})
     .filter(([chave, v]) => !CAMPOS_OCULTOS.has(chave) && v !== '' && v !== null
@@ -139,7 +145,7 @@ export default function ChamadoAdm() {
         <span className="adm-cat-ico">{cls?.icon ? <cls.icon size={24} /> : null}</span>
         <div>
           <h1>#{chamado.numero} · {chamado.assunto}</h1>
-          <small>{cls?.label} · {srv?.label}</small>
+          {contexto && <small>{contexto}</small>}
         </div>
         <span className={`adm-badge tom-${chamado.status}`}>
           {ROTULO_STATUS[chamado.status] || chamado.status}

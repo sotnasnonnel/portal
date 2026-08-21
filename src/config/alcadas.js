@@ -132,16 +132,20 @@ export const TABELA_COMERCIAL_FARMER = [
 /**
  * Administrativo — decisão da diretoria (ago/2026), NÃO é o Documento Parte 3.
  *
- * O chamado do Adm é operacional: até R$ 20.000 quem aprova é o fluxo da própria
- * pessoa, sem papel de alçada nenhum. Acima disso entram COO e Gerente
- * Financeiro, depois do fluxo.
+ * O chamado do Adm é operacional: até R$ 5.000 quem aprova é o fluxo da própria
+ * pessoa, sem papel de alçada nenhum. De R$ 5.000 a R$ 20.000 entram COO e
+ * Gerente Financeiro em dupla, depois do fluxo. Acima de R$ 20.000 o CEO entra
+ * ao final — somando à dupla, não substituindo.
  *
  * Tabela separada de propósito: o Financeiro segue o documento, com as faixas de
  * 2 mil, 5 mil, 50 mil e Conselho. Mexer em TABELA_COMPRAS mudaria os dois.
  */
 export const TABELA_ADMINISTRATIVO = [
-  { nivel: 1, ate: 20000, papeis: [], rotulo: 'Somente o fluxo do solicitante' },
-  { nivel: 2, ate: Infinity, papeis: [P.COO, P.GERENTE_FINANCEIRO], rotulo: 'COO + Gerente Financeiro' },
+  { nivel: 1, ate: 5000, papeis: [], rotulo: 'Somente o fluxo do solicitante' },
+  { nivel: 2, ate: 20000, papeis: [P.COO, P.GERENTE_FINANCEIRO], rotulo: 'Dupla obrigatória: COO + Gerente Financeiro' },
+  // O CEO SOMA, não substitui: acima de 20 mil o pedido continua passando pela
+  // dupla e ganha o dono no fim da fila.
+  { nivel: 3, ate: Infinity, papeis: [P.COO, P.GERENTE_FINANCEIRO, P.CEO], rotulo: 'COO + Gerente Financeiro + CEO' },
 ];
 
 export const TABELAS = {

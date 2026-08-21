@@ -130,25 +130,36 @@ test('grupo com ao menos um da cadeia passa', () => {
 });
 
 // ---- faixas do Administrativo (decisão da diretoria, ago/2026) ----
-// Até 20 mil quem aprova é só o fluxo da pessoa; acima entram Morais e Daniela.
+// Até 5 mil só o fluxo da pessoa; de 5 a 20 mil a dupla Morais + Daniela;
+// acima de 20 mil o dono da empresa entra ao final, somando à dupla.
 
-test('até R$ 20.000 a faixa não exige papel nenhum', () => {
-  for (const v of [1, 1500, 4000, 12400, 20000]) {
+test('até R$ 5.000 a faixa não exige papel nenhum', () => {
+  for (const v of [1, 1500, 4000, 5000]) {
     assert.deepEqual(avaliarAlcada({ tabela: 'administrativo', valor: v }).papeis, [], `R$ ${v}`);
   }
 });
 
-test('acima de R$ 20.000 entram COO e Gerente Financeiro', () => {
-  for (const v of [20000.01, 45000, 90000]) {
+test('de R$ 5.000 a R$ 20.000 é a dupla COO + Gerente Financeiro', () => {
+  for (const v of [5000.01, 12400, 20000]) {
     assert.deepEqual(avaliarAlcada({ tabela: 'administrativo', valor: v }).papeis,
       ['COO', 'GERENTE_FINANCEIRO'], `R$ ${v}`);
   }
 });
 
-// O limite é inclusivo: 20 mil exatos ficam embaixo, não sobem.
-test('R$ 20.000 exatos ficam na faixa de baixo', () => {
-  assert.deepEqual(avaliarAlcada({ tabela: 'administrativo', valor: 20000 }).papeis, []);
-  assert.equal(avaliarAlcada({ tabela: 'administrativo', valor: 20001 }).papeis.length, 2);
+// "Entra o dono" é soma, não troca: acima de 20 mil a dupla continua na cadeia.
+test('acima de R$ 20.000 o CEO entra sem tirar a dupla', () => {
+  for (const v of [20000.01, 45000, 90000]) {
+    assert.deepEqual(avaliarAlcada({ tabela: 'administrativo', valor: v }).papeis,
+      ['COO', 'GERENTE_FINANCEIRO', 'CEO'], `R$ ${v}`);
+  }
+});
+
+// Os dois limites são inclusivos: o valor exato fica sempre na faixa de baixo.
+test('R$ 5.000 e R$ 20.000 exatos ficam na faixa de baixo', () => {
+  assert.deepEqual(avaliarAlcada({ tabela: 'administrativo', valor: 5000 }).papeis, []);
+  assert.equal(avaliarAlcada({ tabela: 'administrativo', valor: 5000.01 }).papeis.length, 2);
+  assert.equal(avaliarAlcada({ tabela: 'administrativo', valor: 20000 }).papeis.length, 2);
+  assert.equal(avaliarAlcada({ tabela: 'administrativo', valor: 20001 }).papeis.length, 3);
 });
 
 // O Financeiro segue o Documento Parte 3 e não pode ser arrastado por esta

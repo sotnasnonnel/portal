@@ -3,6 +3,7 @@ import { ClipboardCheck, Check, X, Loader2, AlertCircle, Paperclip } from 'lucid
 import { useAuth } from '../../../../contexts/AuthContext';
 import { getClasse, getServico } from '../../../../config/administrativo';
 import { rotuloDoCampo, formatarValorCampo } from '../novo/formularios/schemas';
+import { contextoDoChamado } from '../../lib/rotulos';
 import { listarAprovacoesPendentes, decidirChamado } from '../../lib/chamados';
 
 const dataHora = (iso) => (iso
@@ -79,7 +80,14 @@ export default function AprovacoesAdm() {
                 <div>
                   <h2>#{c.numero} · {srv?.label || c.assunto}</h2>
                   <small>
-                    {cls?.label || c.classe} · {c.solicitanteNome || 'Solicitante'} · aberto em {dataHora(c.criado_em)}
+                    {[
+                      contextoDoChamado({
+                        classeLabel: cls?.label || c.classe,
+                        assunto: srv?.label || c.assunto,
+                      }),
+                      c.solicitanteNome || 'Solicitante',
+                      `aberto em ${dataHora(c.criado_em)}`,
+                    ].filter(Boolean).join(' · ')}
                   </small>
                 </div>
               </div>

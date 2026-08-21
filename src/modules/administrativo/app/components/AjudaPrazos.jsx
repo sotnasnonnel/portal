@@ -4,16 +4,19 @@ import { CLASSES_ADM, getClasse, getServico } from '../../../../config/administr
 import { listarConfigs } from '../../lib/chamados';
 
 /**
- * Ajuda dedicada aos PRAZOS.
+ * Ajuda de PRAZOS e APROVAÇÃO — as duas perguntas que o solicitante faz sobre
+ * o próprio pedido: "quem precisa liberar" e "quanto tempo demora".
  *
  * Separada do guia geral de propósito: o guia é um passo a passo de "o que dá
- * para fazer aqui", e prazo é consulta — a pessoa abre para tirar uma dúvida
- * pontual e fechar. Empilhar isso como mais um passo do tour esconderia
- * justamente quem precisa da informação.
+ * para fazer aqui", e isto é consulta — a pessoa abre para tirar uma dúvida
+ * pontual e fechar. Empilhar como mais um passo do tour esconderia justamente
+ * quem precisa da informação.
  *
  * Os prazos NÃO são escritos aqui: vêm da configuração de cada serviço. Texto
  * fixo viraria mentira no dia em que o Adm mudasse um prazo na tela de
- * configuração — e ninguém lembraria de vir corrigir este arquivo.
+ * configuração — e ninguém lembraria de vir corrigir este arquivo. Já as faixas
+ * de alçada estão em texto porque são decisão de diretoria, não cadastro; se
+ * mudarem, muda aqui e em config/alcadas.js.
  */
 export default function AjudaPrazos() {
   const [aberto, setAberto] = useState(false);
@@ -45,8 +48,8 @@ export default function AjudaPrazos() {
         type="button"
         className="portal-header-help"
         onClick={() => setAberto(true)}
-        aria-label="Entender os prazos de atendimento"
-        title="Entender os prazos"
+        aria-label="Entender os prazos e as regras de aprovação"
+        title="Prazos e aprovações"
       >
         <Timer size={20} />
       </button>
@@ -61,14 +64,14 @@ export default function AjudaPrazos() {
             aria-labelledby="adm-prazos-tit"
           >
             <div className="guia-head">
-              <span className="guia-eyebrow">Prazos de atendimento</span>
+              <span className="guia-eyebrow">Prazos e aprovações</span>
               <button className="guia-close" onClick={() => setAberto(false)} aria-label="Fechar">
                 <X size={18} />
               </button>
             </div>
 
             <div className="adm-prazos-corpo">
-              <h3 id="adm-prazos-tit">Como o prazo do seu chamado é contado</h3>
+              <h3 id="adm-prazos-tit">Como seu chamado é aprovado e em quanto tempo é atendido</h3>
 
               <dl className="adm-prazos-regras">
                 <div>
@@ -106,6 +109,62 @@ export default function AjudaPrazos() {
                     O portal ainda não tem calendário de feriados, então um prazo que
                     atravesse um feriado fica mais curto do que deveria. É uma limitação
                     conhecida — se te afetar, avise no chamado.
+                  </dd>
+                </div>
+              </dl>
+
+              <h4>Quem aprova o seu pedido</h4>
+              <dl className="adm-prazos-regras">
+                <div>
+                  <dt>A cadeia sai do seu gestor</dt>
+                  <dd>
+                    O pedido vai primeiro para o seu gestor direto, lido do organograma. Se
+                    você tiver cadeia cadastrada no Gestão de Pessoas, ela vem em seguida.
+                    Ninguém aprova o mesmo chamado duas vezes: quem aparece nos dois lugares
+                    entra uma vez só.
+                  </dd>
+                </div>
+                <div>
+                  <dt>Nem todo serviço exige aprovação</dt>
+                  <dd>
+                    Depende do que o time do Administrativo configurou para cada serviço.
+                    Quando não exige, o chamado entra direto na fila de atendimento.
+                  </dd>
+                </div>
+                <div>
+                  <dt>Pedido com valor sobe mais</dt>
+                  <dd>
+                    Solicitação de compra, recarga Ticket Log e locação de imóvel são
+                    enquadrados pelo valor informado, sempre depois da sua cadeia:
+                  </dd>
+                  <dd>
+                    <table className="adm-tabela adm-prazos-faixas">
+                      <tbody>
+                        <tr><td>até R$ 5.000</td><td>ninguém além da sua cadeia</td></tr>
+                        <tr><td>R$ 5.000 a R$ 20.000</td><td>COO e Gerente Financeiro, em dupla</td></tr>
+                        <tr><td>acima de R$ 20.000</td><td>a dupla e, ao final, o dono da empresa</td></tr>
+                      </tbody>
+                    </table>
+                  </dd>
+                  <dd>
+                    Os limites são inclusivos: R$ 5.000 e R$ 20.000 exatos ficam sempre na
+                    faixa de baixo.
+                  </dd>
+                </div>
+                <div>
+                  <dt>Sem o valor, o pedido não abre</dt>
+                  <dd>
+                    Nesses três serviços o campo de valor é obrigatório. Deixá-lo em branco
+                    faria o pedido cair na faixa mais branda por omissão, que é justamente o
+                    que a regra existe para evitar.
+                  </dd>
+                </div>
+                <div>
+                  <dt>Um de cada vez</dt>
+                  <dd>
+                    O aviso por e-mail vai só para quem tem a vez. O próximo da cadeia só é
+                    acionado depois que o anterior decide. Reprovar exige escrever o motivo,
+                    e o pedido volta para você.
                   </dd>
                 </div>
               </dl>

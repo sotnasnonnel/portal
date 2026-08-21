@@ -13,7 +13,7 @@ import { venceEmISO } from './prazo';
 import { contarNaoLidas } from './painel';
 import { temAvaliacao } from './satisfacao';
 import { desdobrarMobilizacao } from './desdobramento';
-import { getServico } from '../../../config/administrativo';
+import { getClasse, getServico } from '../../../config/administrativo';
 import { notificarChamadoAdm } from '../../../services/notificarChamadoAdm';
 
 export const BUCKET_ADM = 'chamados-adm-anexos';
@@ -678,6 +678,25 @@ export async function buscarChamado(id) {
     atendenteNome: nomes.get(data.atendente_id) || '',
     avaliacao: avaliacao || null,
   };
+}
+
+/**
+ * Base dos indicadores: tudo que eu enxergo, sem filtro de status.
+ *
+ * O recorte é da RLS, não daqui — o time do Adm recebe a empresa inteira e
+ * quem só abre chamado recebe os próprios. Por isso a tela precisa dizer de
+ * quem são os números que está mostrando.
+ */
+export async function listarParaIndicadores() {
+  const { data, error } = await supabase
+    .from('chamados_adm')
+    .select('classe, servico, status, criado_em, analise_em, sla_vence_em, fechado_em');
+  if (error) throw new Error(`Não foi possível carregar os indicadores: ${error.message}`);
+  return (data || []).map((c) => ({
+    ...c,
+    classeLabel: getClasse(c.classe)?.label || c.classe,
+    servicoLabel: rotuloDoServico(c.classe, c.servico),
+  }));
 }
 
 /**

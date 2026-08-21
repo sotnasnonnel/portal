@@ -18,7 +18,8 @@ export default function AppShell() {
       <Sidebar aberto={aberto} onFechar={fechar} />
       <div className="admCol">
         {/* Dois botões na barra: o "?" abre o guia do módulo, o relógio explica
-            os prazos. Separados porque são dúvidas diferentes. */}
+            prazos e regras de aprovação. Separados porque o guia é um passo a
+            passo e este é consulta pontual. */}
         <PortalHeader userName={userName} onMenuToggle={alternar} acoes={<AjudaPrazos />} />
         <main className="admMain">
           <Outlet />
