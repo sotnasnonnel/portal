@@ -84,9 +84,9 @@ export default function AjudaPrazos() {
                 <div>
                   <dt>Quando o relógio começa</dt>
                   <dd>
-                    Na abertura, se o serviço não exige aprovação. Quando exige, só
-                    depois que o aprovador libera — o tempo que o pedido passa esperando
-                    decisão não é descontado do time do Administrativo.
+                    Só depois que a aprovação sai. O tempo que o pedido passa esperando
+                    decisão não conta contra o time do Administrativo — por isso o prazo
+                    aparece em branco enquanto o chamado está em aprovação.
                   </dd>
                 </div>
                 <div>
@@ -116,33 +116,26 @@ export default function AjudaPrazos() {
               <h4>Quem aprova o seu pedido</h4>
               <dl className="adm-prazos-regras">
                 <div>
-                  <dt>A cadeia sai do seu gestor</dt>
+                  <dt>Todo pedido passa por aprovação</dt>
                   <dd>
-                    O pedido vai primeiro para o seu gestor direto, lido do organograma. Se
-                    você tiver cadeia cadastrada no Gestão de Pessoas, ela vem em seguida.
-                    Ninguém aprova o mesmo chamado duas vezes: quem aparece nos dois lugares
-                    entra uma vez só.
-                  </dd>
-                </div>
-                <div>
-                  <dt>Nem todo serviço exige aprovação</dt>
-                  <dd>
-                    Depende do que o time do Administrativo configurou para cada serviço.
-                    Quando não exige, o chamado entra direto na fila de atendimento.
+                    Nenhum serviço do catálogo vai direto para a fila. O pedido segue primeiro
+                    para o seu líder imediato, lido do organograma, e depois pela cadeia
+                    cadastrada no Gestão de Pessoas, quando você tiver uma. Ninguém aprova o
+                    mesmo chamado duas vezes: quem aparece nos dois lugares entra uma vez só.
                   </dd>
                 </div>
                 <div>
                   <dt>Pedido com valor sobe mais</dt>
                   <dd>
                     Solicitação de compra, recarga Ticket Log e locação de imóvel são
-                    enquadrados pelo valor informado, sempre depois da sua cadeia:
+                    enquadrados pelo valor informado:
                   </dd>
                   <dd>
                     <table className="adm-tabela adm-prazos-faixas">
                       <tbody>
-                        <tr><td>até R$ 5.000</td><td>ninguém além da sua cadeia</td></tr>
-                        <tr><td>R$ 5.000 a R$ 20.000</td><td>COO e Gerente Financeiro, em dupla</td></tr>
-                        <tr><td>acima de R$ 20.000</td><td>a dupla e, ao final, o dono da empresa</td></tr>
+                        <tr><td>até R$ 5.000</td><td>líder imediato</td></tr>
+                        <tr><td>R$ 5.000 a R$ 20.000</td><td>Diretoria + Financeiro (aprovação dupla)</td></tr>
+                        <tr><td>acima de R$ 20.000</td><td>Diretoria + Financeiro + COO</td></tr>
                       </tbody>
                     </table>
                   </dd>

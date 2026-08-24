@@ -28,14 +28,13 @@ import {
  * Trava de lançamento. Enquanto `true`, o módulo aparece como "Em breve" para a
  * empresa: some do AppSwitcher e a rota /administrativo devolve para a Home.
  *
- * A exceção é a lista abaixo, que continua navegando normalmente para testar
- * com o módulo ainda fechado. É por e-mail, e não por papel, de propósito: o
- * papel de admin do Adm será dado a mais gente antes do lançamento, e isso não
- * pode destravar o módulo sem querer.
+ * ABERTO em 21/08/2026 — o módulo está liberado para toda a empresa. A lista
+ * abaixo fica só como registro de quem testou antes; ela não tem efeito
+ * enquanto ADM_EM_BREVE for false.
  *
- * Home, AppSwitcher e AppRoutes leem daqui; para abrir a todos, ADM_EM_BREVE = false.
+ * Home, AppSwitcher e AppRoutes leem daqui; para fechar de novo, volte a true.
  */
-export const ADM_EM_BREVE = true;
+export const ADM_EM_BREVE = false;
 
 export const ADM_LIBERADOS = [
   'marcus.guimaraes@phdengenharia.eng.br',
