@@ -3,7 +3,7 @@ import { Blocks, X, ArrowUpRight } from 'lucide-react';
 import { SOLUCOES_INTEGRADAS, SOLUCAO_DESTAQUE } from '../../config/solucoesIntegradas';
 import './SolucoesModal.css';
 
-/** "https://phdengenharia.milldesk.com/x" -> "phdengenharia.milldesk.com" */
+/** "https://brasil.clara.com/auth/login" -> "brasil.clara.com" */
 function dominio(url) {
   try {
     return new URL(url).hostname.replace(/^www\./, '');

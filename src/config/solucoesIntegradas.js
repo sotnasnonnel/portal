@@ -1,4 +1,4 @@
-import { GraduationCap, Activity, Headset, CreditCard, Handshake, BookOpen, Radar, Gauge } from 'lucide-react';
+import { GraduationCap, Activity, CreditCard, Handshake, BookOpen, Radar, Gauge } from 'lucide-react';
 
 /**
  * Item em destaque do popup "Soluções Integradas": aparece sozinho no topo,
@@ -32,12 +32,6 @@ export const SOLUCOES_INTEGRADAS = [
     desc: 'Clima e engajamento',
     url: 'https://www.pulses.com.br/app/aplicativo/#/',
     icon: Activity,
-  },
-  {
-    nome: 'Milldesk',
-    desc: 'Chamados de TI e suporte',
-    url: 'https://phdengenharia.milldesk.com',
-    icon: Headset,
   },
   {
     nome: 'Clara',
