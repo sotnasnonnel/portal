@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, BarChart3, Clock, CreditCard, Headset, ShieldCheck, LogOut, ArrowRight, Lock, Hourglass, Blocks } from 'lucide-react';
+import { Users, BarChart3, Clock, CreditCard, Headset, Sparkles, ShieldCheck, LogOut, ArrowRight, Lock, Hourglass, Blocks } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { isSuperAdmin } from '../../config/superAdmin';
 import { podeAcessarAdm } from '../../config/administrativo';
+import { podeAcessarProgramas } from '../../config/programas';
 import SolucoesModal from './SolucoesModal';
 import AvatarUsuario from '../../components/UI/AvatarUsuario';
 import './Home.css';
@@ -71,6 +72,18 @@ export default function Home() {
       desc: 'Chamados de frota, viagem, compras e manutenção',
       locked: !podeAcessarAdm(user),
       emBreve: !podeAcessarAdm(user),
+    },
+    {
+      // Aberto a todos, como o Controle de Horas — mas ainda não lançado:
+      // fica visível e travado, exceto para quem está testando
+      // (ver PROGRAMAS_LIBERADOS em config/programas.js).
+      to: '/programas/inicio',
+      icon: Sparkles,
+      tone: 'terracotta',
+      title: 'Programas',
+      desc: 'Campo de Ideias e indicações da Alavanca PHD',
+      locked: !podeAcessarProgramas(user),
+      emBreve: !podeAcessarProgramas(user),
     },
     {
       // Reembolsos deixou de ser card próprio: virou um grupo na sidebar do

@@ -173,6 +173,7 @@ export function AuthProvider({ children }) {
         horasRole: colab.horas_role || null,               // elevação só-do-Horas (ver horasRoleFromPerfil)
         financeiroRole: colab.financeiro_role || null,     // acesso ao módulo Financeiro
         administrativoRole: colab.administrativo_role || null, // time do Adm (atendente/admin)
+        programasRole: colab.programas_role || null,           // time comercial dos Programas
         authId: authUser.id,
       });
       setReembolsoProfile(reemRes.data ?? null);
@@ -285,6 +286,10 @@ export function AuthProvider({ children }) {
     // qualquer um abre chamado. 'atendente'/'admin' são o time do Adm, que
     // enxerga a fila; vêm de administrativo_role (Gerenciar acessos).
     administrativo: user ? (user.administrativoRole || 'user') : null,
+    // Programas: aberto a todos os logados — qualquer um registra ideia e
+    // indica oportunidade. 'comercial'/'admin' são quem avalia a Alavanca e
+    // enxerga o painel dela; vêm de programas_role (Gerenciar acessos).
+    programas: user ? (user.programasRole || 'user') : null,
   }), [user, reembolsoProfile, solicProfile]);
 
   const value = useMemo(() => ({

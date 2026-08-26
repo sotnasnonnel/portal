@@ -34,6 +34,11 @@ import {
   Headset,
   Search,
   Paperclip,
+  Lightbulb,
+  Rocket,
+  Sparkles,
+  Target,
+  Trophy,
 } from "lucide-react";
 
 export const GUIA_OPEN_EVENT = "abrir_guia";
@@ -551,6 +556,96 @@ export const ADMINISTRATIVO_GUIA = {
           "Os campos que aparecem em cada formulário seguem o levantamento feito com o setor. Se algum serviço precisar de um campo novo, fale com o time do portal — a mudança é feita num arquivo de configuração, sem refazer a tela.",
       },
       ...ADM_USAR_STEPS,
+      TROCAR_APP,
+    ],
+  },
+};
+
+// ============================ Programas ============================
+// Passos comuns aos dois papéis: todo mundo participa dos dois programas —
+// o que muda é quem AVALIA a Alavanca.
+const PROGRAMAS_USAR_STEPS = [
+  {
+    icon: Lightbulb,
+    titulo: "Campo de Ideias: ideia ou iniciativa",
+    texto:
+      'Em "Campo de Ideias" você registra duas coisas diferentes. IDEIA é o que ainda não existe e você acha que a PHD deveria ter. INICIATIVA é o que você já está construindo, para uso próprio ou em projeto, mesmo sem a equipe de Inovação. O painel é aberto: todo mundo vê o que todo mundo está inventando.',
+  },
+  {
+    icon: LayoutDashboard,
+    titulo: "O painel, o quadro e o mapa",
+    texto:
+      "O painel mostra quantas ideias e iniciativas existem, o volume por setor e um quadro organizado por tipo de uso (individual, coletivo ou venda de produto). No quadro, a cor da borda diz o setor e a borda tracejada diz que aquilo ainda é ideia. No mapa, você atualiza a situação dos registros que você mesmo criou.",
+  },
+  {
+    icon: Rocket,
+    titulo: "Alavanca PHD: indique e concorra à premiação",
+    texto:
+      'Em "Alavanca PHD" você indica uma oportunidade comercial. Antes do formulário é obrigatório ler e aceitar as regras do programa. Assim que você envia, o sistema confere a empresa e o contato contra a base do comercial e já responde se a indicação é elegível — e, quando não é, explica o motivo.',
+  },
+  {
+    icon: Trophy,
+    titulo: "Como a premiação funciona",
+    texto:
+      "Fechando contrato com o cliente indicado, a premiação é de 0,5% do valor, limitada a R$ 10.000,00, paga após o faturamento da primeira medição. Se o mesmo cliente for indicado por mais de uma pessoa, vale quem indicou primeiro. Você acompanha o andamento e o valor em \"Minhas indicações\".",
+  },
+];
+
+export const PROGRAMAS_GUIA = {
+  appName: "Programas",
+  fallbackRole: "user",
+  roleLabels: {
+    admin: "Administrador dos Programas",
+    comercial: "Time comercial",
+    user: "Participante",
+  },
+  contentByRole: {
+    user: [
+      {
+        icon: Sparkles,
+        titulo: "Bem-vindo aos Programas",
+        texto:
+          "Aqui ficam os programas internos da PHD: o Campo de Ideias, para registrar o que você inventou ou está inventando, e a Alavanca PHD, para indicar oportunidades comerciais e concorrer à premiação do programa.",
+      },
+      ...PROGRAMAS_USAR_STEPS,
+      TROCAR_APP,
+    ],
+    comercial: [
+      {
+        icon: Target,
+        titulo: "Seu papel: time comercial",
+        texto:
+          'Além de participar dos dois programas como todo mundo, você enxerga o "Painel da Alavanca" no menu lateral — a fila de indicações de toda a empresa, que só o time comercial acessa.',
+      },
+      {
+        icon: ListChecks,
+        titulo: "O que fazer no painel",
+        texto:
+          'No mapa de indicações você muda o status e deixa comentários; qualquer um dos dois já conta a indicação como "evoluída", e a mudança de status manda um e-mail de retorno para quem indicou. Fique de olho nas marcadas como "Depende do comercial": são empresas já cadastradas com contato novo, e só você sabe se a oportunidade já tinha sido mapeada.',
+      },
+      {
+        icon: Trophy,
+        titulo: "Concluir e premiar",
+        texto:
+          'Ao marcar uma indicação como "Concluída", o sistema pede o valor do contrato e calcula a premiação (0,5%, teto de R$ 10.000). O valor é obrigatório e continua editável, caso o efetivo seja diferente. A partir daí a indicação entra no Mapa de vencedores, com nome, valor e data de pagamento.',
+      },
+      ...PROGRAMAS_USAR_STEPS,
+      TROCAR_APP,
+    ],
+    admin: [
+      {
+        icon: ShieldCheck,
+        titulo: "Seu papel: administrador dos Programas",
+        texto:
+          "Você faz tudo o que o time comercial faz na Alavanca e, no Campo de Ideias, pode atualizar a situação de qualquer registro — não só dos seus. É o papel que destrava o mapa inteiro.",
+      },
+      {
+        icon: Target,
+        titulo: "O painel da Alavanca é seu também",
+        texto:
+          'O "Painel da Alavanca" no menu lateral traz a fila de indicações de toda a empresa: elegibilidade, status, comentários e a premiação de cada uma.',
+      },
+      ...PROGRAMAS_USAR_STEPS,
       TROCAR_APP,
     ],
   },

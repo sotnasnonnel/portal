@@ -11,6 +11,8 @@ import { isHorasExtrasDp } from '../config/horasExtras';
 import FinanceiroShell from '../modules/financeiro/app/components/AppShell';
 import AdministrativoShell from '../modules/administrativo/app/components/AppShell';
 import { podeAcessarAdm } from '../config/administrativo';
+import ProgramasShell from '../modules/programas/app/components/AppShell';
+import { podeAcessarProgramas } from '../config/programas';
 
 const Login = lazy(() => import('../pages/Login/Login'));
 const Home = lazy(() => import('../pages/Home/Home'));
@@ -73,6 +75,13 @@ const FluxosAdm = lazy(() => import('../modules/administrativo/app/fluxos/page')
 const KanbanAdm = lazy(() => import('../modules/administrativo/app/kanban/page'));
 const SatisfacaoAdm = lazy(() => import('../modules/administrativo/app/satisfacao/page'));
 const DashboardAdm = lazy(() => import('../modules/administrativo/app/dashboard/page'));
+const InicioProgramas = lazy(() => import('../modules/programas/app/inicio/page'));
+const DashboardIdeias = lazy(() => import('../modules/programas/app/dashboard/page'));
+const CampoDeIdeias = lazy(() => import('../modules/programas/app/ideias/nova/escolher'));
+const NovaIdeia = lazy(() => import('../modules/programas/app/ideias/nova/page'));
+const MinhasIndicacoes = lazy(() => import('../modules/programas/app/alavanca/page'));
+const NovaIndicacao = lazy(() => import('../modules/programas/app/alavanca/nova/page'));
+const PainelAlavanca = lazy(() => import('../modules/programas/app/painelAlavanca/page'));
 
 function RouteFallback() {
   return <div style={{ padding: 'var(--space-3xl)', textAlign: 'center' }}>Carregando...</div>;
@@ -122,6 +131,14 @@ export function ModuleRoute({ module, children }) {
 function AdmEmBreveRoute({ children }) {
   const { user } = useAuth();
   if (!podeAcessarAdm(user)) return <Navigate to="/home" replace />;
+  return children;
+}
+
+// Programas em construção: mesma trava do Administrativo. Gate de UI — as
+// tabelas do módulo seguem protegidas pela própria RLS.
+function ProgramasEmBreveRoute({ children }) {
+  const { user } = useAuth();
+  if (!podeAcessarProgramas(user)) return <Navigate to="/home" replace />;
   return children;
 }
 
@@ -553,6 +570,37 @@ export default function AppRoutes() {
           <Route path="fluxos" element={<LazyPage><FluxosAdm /></LazyPage>} />
           <Route path="dashboard" element={<LazyPage><DashboardAdm /></LazyPage>} />
           <Route path="satisfacao" element={<LazyPage><SatisfacaoAdm /></LazyPage>} />
+        </Route>
+
+        {/* Programas: os programas internos da PHD (Campo de Ideias e Alavanca).
+            Aberto a todos os logados, como o Controle de Horas — só o painel da
+            Alavanca tem dono (o time comercial), e o gate dele fica na própria
+            página. Enquanto está em construção, a rota inteira devolve para a
+            Home, exceto para quem está testando. */}
+        <Route
+          path="/programas"
+          element={
+            <ProtectedRoute>
+              <ProgramasEmBreveRoute>
+                <ProgramasShell />
+              </ProgramasEmBreveRoute>
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="/programas/inicio" replace />} />
+          <Route path="inicio" element={<LazyPage><InicioProgramas /></LazyPage>} />
+          {/* Campo de Ideias: os dois cards (item 1 da planilha) e os
+              formulários (itens 2 e 3). O painel é o item 4 e tem entrada
+              própria no menu — a rota /programas/dashboard. */}
+          <Route path="ideias" element={<LazyPage><CampoDeIdeias /></LazyPage>} />
+          <Route path="ideias/nova" element={<Navigate to="/programas/ideias" replace />} />
+          <Route path="ideias/nova/:tipo" element={<LazyPage><NovaIdeia /></LazyPage>} />
+          <Route path="dashboard" element={<LazyPage><DashboardIdeias /></LazyPage>} />
+          <Route path="alavanca" element={<LazyPage><MinhasIndicacoes /></LazyPage>} />
+          <Route path="alavanca/nova" element={<LazyPage><NovaIndicacao /></LazyPage>} />
+          {/* Irmão de /alavanca, e não filho: a sidebar marca o item ativo por
+              startsWith, e aninhado os dois links acenderiam juntos. */}
+          <Route path="painel-alavanca" element={<LazyPage><PainelAlavanca /></LazyPage>} />
         </Route>
 
         <Route path="*" element={<Navigate to="/home" replace />} />

@@ -1,0 +1,528 @@
+/* ==========================================================================
+   Módulo Programas — estilos escopados em .pgRoot. Não vazam para o resto do
+   portal. Mesma estrutura do Administrativo (shell + sidebar drawer); o acento
+   é o terracota da marca, que ainda não estava tomado por nenhum módulo (azul
+   = portal/Adm, teal = PMO/Horas, azul = Financeiro).
+   ========================================================================== */
+.pgRoot {
+  --p-primary: #b4522a;          /* terracota da marca, acento do módulo */
+  --p-primary-soft: #fdf1eb;
+  --p-primary-line: #f0c9b4;
+  --p-ink: #0f172a;
+  --p-muted: #64748b;
+  --p-border: #e2e8f0;
+  --p-bg: #f8fafc;
+  --p-gray-50: #f8fafc;
+  --p-gray-100: #f1f5f9;
+  --p-gray-600: #475569;
+  --p-red: #ef4444;
+  --p-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --p-shadow-md: 0 10px 28px rgba(15, 23, 42, 0.10);
+
+  display: flex;
+  min-height: 100vh;
+  background: var(--p-bg);
+  color: var(--p-ink);
+  font-size: 14px;
+}
+.pgRoot * { box-sizing: border-box; }
+
+.pgCol { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.pgMain { flex: 1; min-width: 0; padding: 26px 32px 60px; width: 100%; }
+
+/* ---- tipografia de página ---- */
+.pg-page { animation: pgFade 0.25s ease; max-width: 900px; }
+.pg-page-wide { max-width: 1180px; }
+.pg-page-full { max-width: 1600px; }
+@keyframes pgFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.pg-title {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 4px;
+}
+.pg-sub { font-size: 0.875rem; color: var(--p-muted); line-height: 1.5; margin: 0 0 20px; }
+.pg-back {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: none; border: none; color: var(--p-muted);
+  font-size: 0.85rem; cursor: pointer; padding: 4px 0; margin-bottom: 12px;
+}
+.pg-back:hover { color: var(--p-ink); }
+
+.pg-link {
+  background: none; border: none; padding: 0; font: inherit;
+  color: var(--p-primary); text-decoration: none; cursor: pointer; text-align: left;
+}
+.pg-link:hover { text-decoration: underline; }
+
+.pg-spin { animation: pgGira 1s linear infinite; }
+@keyframes pgGira { to { transform: rotate(360deg); } }
+
+/* ======================= catálogo de programas ======================= */
+.pg-prog-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px; align-items: stretch;
+}
+.pg-prog {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 22px; text-align: left; text-decoration: none;
+  background: #fff; border: 1px solid var(--p-border); border-radius: 16px;
+  box-shadow: var(--p-shadow-sm); color: inherit; font-family: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+.pg-prog:hover { border-color: var(--p-primary-line); transform: translateY(-2px); box-shadow: var(--p-shadow-md); }
+.pg-prog-ico {
+  display: flex; align-items: center; justify-content: center;
+  width: 46px; height: 46px; border-radius: 12px;
+  background: var(--p-primary-soft); color: var(--p-primary);
+}
+.pg-prog h2 { font-size: 1.05rem; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+.pg-prog p { margin: 0; font-size: 0.85rem; line-height: 1.55; color: var(--p-gray-600); }
+.pg-prog-cta {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: auto; padding-top: 10px;
+  font-size: 0.82rem; font-weight: 600; color: var(--p-primary);
+}
+
+/* Escolha ideia x iniciativa: duas opções lado a lado, com a explicação da
+   diferença visível antes do clique — é a dúvida mais provável da tela. */
+.pg-escolha { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.pg-escolha .pg-prog { min-height: 190px; }
+.pg-escolha small { font-size: 0.75rem; color: var(--p-muted); line-height: 1.5; }
+
+/* ======================= cartões e formulário ======================= */
+.pg-card { background: #fff; border: 1px solid var(--p-border); border-radius: 14px; padding: 18px 20px; margin-bottom: 14px; }
+.pg-card-tit {
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--p-primary); margin: 0 0 14px;
+}
+
+.pg-form-cab { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.pg-form-cab .pg-prog-ico { width: 46px; height: 46px; }
+.pg-form-cab h1 { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em; margin: 0; line-height: 1.25; }
+.pg-form-cab small { font-size: 0.78rem; color: var(--p-muted); }
+
+.pg-campo { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.pg-campo:last-child { margin-bottom: 0; }
+.pg-campo label { font-size: 0.8rem; font-weight: 600; color: var(--p-gray-600); }
+.pg-campo label .req { color: var(--p-red); margin-left: 2px; }
+.pg-campo label .opc { color: var(--p-muted); font-weight: 500; margin-left: 4px; }
+.pg-campo-dica { font-size: 0.75rem; color: var(--p-muted); line-height: 1.5; }
+
+.pg-input, .pg-select, .pg-textarea {
+  width: 100%; padding: 10px 12px; font-family: inherit; font-size: 0.875rem; color: var(--p-ink);
+  background: #fff; border: 1px solid var(--p-border); border-radius: 10px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.pg-input, .pg-select { height: 42px; }
+.pg-textarea { min-height: 110px; resize: vertical; line-height: 1.55; }
+.pg-input:focus, .pg-select:focus, .pg-textarea:focus {
+  outline: none; border-color: var(--p-primary); box-shadow: 0 0 0 3px rgba(180, 82, 42, 0.14);
+}
+.pg-select { appearance: none; background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 38px; }
+
+.pg-dupla { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+
+/* Campo com prefixo (R$): o símbolo dentro da caixa, para o rótulo não ter de
+   carregar a unidade. */
+.pg-prefixado { position: relative; display: block; }
+.pg-prefixado .pg-input { padding-left: 40px; }
+.pg-prefixo {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  font-size: 0.85rem; font-weight: 600; color: var(--p-muted); pointer-events: none;
+}
+
+/* ---- lista de ferramentas (a iniciativa pode usar mais de uma) ---- */
+.pg-lista-campo { display: flex; flex-direction: column; gap: 8px; }
+.pg-lista-linha { display: flex; align-items: center; gap: 8px; }
+.pg-lista-linha .pg-input { flex: 1; min-width: 0; }
+.pg-lista-x {
+  display: flex; padding: 9px; border: 1px solid var(--p-border); background: #fff;
+  color: var(--p-muted); border-radius: 9px; cursor: pointer; flex-shrink: 0;
+}
+.pg-lista-x:hover { background: #fef2f2; color: var(--p-red); border-color: #fecaca; }
+.pg-lista-add {
+  display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
+  min-height: 38px; padding: 6px 14px; border-radius: 9px;
+  border: 1px dashed var(--p-primary-line); background: var(--p-gray-50); color: var(--p-primary);
+  font-family: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer;
+}
+.pg-lista-add:hover { background: var(--p-primary-soft); border-color: var(--p-primary); }
+
+/* ---- chips de opção (categoria, situação) ---- */
+.pg-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.pg-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 38px; padding: 6px 14px; border-radius: 999px;
+  border: 1px solid var(--p-border); background: #fff;
+  font-family: inherit; font-size: 0.82rem; color: var(--p-gray-600);
+  cursor: pointer; transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.pg-chip:hover { border-color: var(--p-primary-line); color: var(--p-ink); }
+.pg-chip.is-on {
+  background: var(--p-primary-soft); border-color: var(--p-primary);
+  color: var(--p-primary); font-weight: 600;
+}
+
+/* ---- avisos e ações ---- */
+.pg-aviso {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 12px 14px; border-radius: 10px; font-size: 0.82rem; line-height: 1.5; margin-bottom: 14px;
+}
+.pg-aviso svg { flex-shrink: 0; margin-top: 1px; }
+.pg-aviso.tom-erro { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+.pg-aviso.tom-info { background: var(--p-primary-soft); color: #8a3d1f; border: 1px solid var(--p-primary-line); }
+.pg-aviso.tom-ok { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+.pg-aviso.tom-atencao { background: #fff9ed; color: #8a6300; border: 1px solid #f0d9a8; }
+/* O aviso recebe foco por código quando o envio falha (para rolar até ele e
+   fazer o leitor de tela anunciar). O anel só aparece para quem navega por
+   teclado — a :focus-visible distingue isso do foco programático no mouse. */
+.pg-aviso:focus { outline: none; }
+.pg-aviso:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+
+.pg-acoes { display: flex; align-items: center; gap: 10px; margin-top: 18px; }
+.pg-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 44px; padding: 0 20px; border-radius: 10px;
+  font-family: inherit; font-size: 0.875rem; font-weight: 600; cursor: pointer;
+  border: 1px solid transparent; transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.pg-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.pg-btn-primary { background: var(--p-primary); color: #fff; }
+.pg-btn-primary:hover:not(:disabled) { background: #8f4021; }
+.pg-btn-ghost { background: #fff; border-color: var(--p-border); color: var(--p-gray-600); }
+.pg-btn-ghost:hover:not(:disabled) { border-color: var(--p-primary-line); color: var(--p-ink); }
+.pg-btn-sm { min-height: 34px; padding: 0 12px; font-size: 0.8rem; border-radius: 8px; }
+
+.pg-vazio {
+  border: 1px dashed var(--p-border); border-radius: 14px;
+  padding: 44px 24px; text-align: center; color: var(--p-muted); background: #fff;
+}
+
+/* ---- confirmação de envio ---- */
+.pg-sucesso { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 40px 24px; }
+.pg-sucesso h2 { font-size: 1.2rem; font-weight: 700; margin: 14px 0 6px; }
+.pg-sucesso p { font-size: 0.875rem; color: var(--p-gray-600); line-height: 1.6; margin: 0; max-width: 46ch; }
+.pg-sucesso .pg-acoes { justify-content: center; }
+/* O ícone carrega o veredito da elegibilidade, mas nunca sozinho: o texto
+   abaixo dele diz a mesma coisa por escrito. */
+.pg-sucesso .tom-ok { color: #047857; }
+.pg-sucesso .tom-atencao { color: #b45309; }
+.pg-sucesso .tom-erro { color: #b91c1c; }
+
+/* ======================= termos de aceite ======================= */
+.pg-termos-box {
+  border: 1px solid var(--p-primary-line); background: var(--p-primary-soft);
+  border-radius: 12px; padding: 14px 16px; margin-bottom: 16px;
+}
+.pg-termos-box p { margin: 0 0 10px; font-size: 0.85rem; line-height: 1.55; color: #8a3d1f; }
+.pg-termos-ok {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  font-size: 0.82rem; color: #047857;
+}
+.pg-regras { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 10px; }
+.pg-regras li { font-size: 0.85rem; line-height: 1.55; color: var(--p-gray-600); }
+.pg-regras strong { color: var(--p-ink); }
+
+.pg-modal-overlay {
+  position: fixed; inset: 0; z-index: 200; background: rgba(15, 23, 42, 0.5);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.pg-modal {
+  width: 100%; max-width: 640px; max-height: 88vh; display: flex; flex-direction: column;
+  background: #fff; border-radius: 16px; box-shadow: var(--p-shadow-md); overflow: hidden;
+}
+.pg-modal-cab {
+  display: flex; align-items: center; gap: 10px;
+  padding: 18px 22px; border-bottom: 1px solid var(--p-gray-100);
+}
+.pg-modal-cab h2 { flex: 1; margin: 0; font-size: 1rem; font-weight: 700; }
+.pg-modal-x {
+  display: flex; padding: 6px; border: none; background: none;
+  color: var(--p-muted); border-radius: 8px; cursor: pointer;
+}
+.pg-modal-x:hover { background: var(--p-gray-100); color: var(--p-ink); }
+.pg-modal-corpo { padding: 18px 22px; overflow-y: auto; }
+.pg-modal-pe {
+  display: flex; justify-content: flex-end; gap: 10px;
+  padding: 14px 22px; border-top: 1px solid var(--p-gray-100); background: var(--p-gray-50);
+}
+.pg-check {
+  display: flex; align-items: flex-start; gap: 9px; margin-top: 18px;
+  font-size: 0.85rem; line-height: 1.5; color: var(--p-ink); cursor: pointer;
+}
+.pg-check input { width: 16px; height: 16px; margin-top: 2px; accent-color: var(--p-primary); cursor: pointer; }
+
+/* ======================= indicadores ======================= */
+.pg-tiles {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px; margin-bottom: 14px;
+}
+.pg-tile { display: flex; flex-direction: column; gap: 3px; margin: 0; }
+.pg-tile.is-destaque { border-color: var(--p-primary-line); background: var(--p-primary-soft); }
+.pg-tile-rot {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--p-muted);
+}
+.pg-tile-num {
+  font-size: 2.1rem; font-weight: 700; line-height: 1.1; color: var(--p-ink);
+  font-variant-numeric: tabular-nums;
+}
+.pg-tile-num.tom-alta { color: #047857; }
+.pg-tile-num.tom-media { color: #b45309; }
+.pg-tile-num.tom-baixa { color: #b91c1c; }
+.pg-tile-pe { font-size: 0.74rem; color: var(--p-muted); }
+
+/* Gráfico de barras por setor. Uma série só, escala categórica; a cor vem do
+   setor (mesma paleta da legenda do quadro) e o número fica sempre ao lado —
+   cor nunca é o único encoding. */
+.pg-barras { margin: 10px 0 2px; }
+.pg-barra-linha {
+  display: grid; grid-template-columns: minmax(0, 190px) minmax(0, 1fr) 34px;
+  align-items: center; gap: 10px; padding: 3px 0;
+}
+.pg-barra-nome {
+  font-size: 0.82rem; color: var(--p-ink);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pg-barra-trilho { height: 14px; background: var(--p-gray-100); border-radius: 4px; }
+/* Ponta arredondada só do lado que cresce: a base fica ancorada no zero. */
+.pg-barra { display: block; height: 100%; border-radius: 0 4px 4px 0; }
+.pg-barra-valor {
+  font-size: 0.82rem; font-weight: 600; color: var(--p-ink);
+  font-variant-numeric: tabular-nums; text-align: right;
+}
+
+@media (max-width: 760px) {
+  .pg-barra-linha { grid-template-columns: minmax(0, 1fr) 32px; }
+  .pg-barra-nome { grid-column: 1 / -1; font-weight: 600; }
+}
+
+/* ======================= quadro (Kanban) ======================= */
+/* Três colunas (as categorias). minmax(0, 1fr) para elas encolherem juntas em
+   vez de a última sair da página. */
+.pg-quadro {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px; align-items: start; max-width: 100%;
+}
+.pg-col {
+  min-width: 0;
+  background: var(--p-gray-50); border: 1px solid var(--p-border); border-radius: 14px;
+}
+.pg-col-cab {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 14px; border-bottom: 1px solid var(--p-border);
+}
+.pg-col-cab h2 {
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--p-gray-600); margin: 0;
+}
+.pg-col-cont {
+  margin-left: auto; min-width: 22px; padding: 1px 7px; border-radius: 999px;
+  background: #fff; border: 1px solid var(--p-border);
+  font-size: 0.7rem; font-weight: 700; color: var(--p-muted); text-align: center;
+}
+.pg-col-corpo { padding: 10px; display: flex; flex-direction: column; gap: 8px; min-height: 60px; }
+.pg-col-vazia { margin: 6px 0; text-align: center; color: #cbd5e1; font-size: 0.78rem; }
+
+/* Os dois códigos de cor que a planilha pede no kanban:
+   - FUNDO do cartão = setor (B35, "cards coloridos para identificar os setores")
+   - BORDA do cartão = ideia ou iniciativa (B36, "borda colorida")
+   O fundo entra diluído (color-mix, no JSX) para o texto continuar legível.
+   Nenhuma das duas cores decide sozinha: a forma vem escrita na etiqueta do
+   topo e o setor no rodapé, e as duas legendas ficam acima do quadro. */
+.pg-cartao {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 11px 12px; background: #fff;
+  border: 2px solid var(--p-border); border-radius: 11px;
+  box-shadow: var(--p-shadow-sm); transition: transform 0.15s, box-shadow 0.15s;
+}
+.pg-cartao:hover { transform: translateY(-1px); box-shadow: var(--p-shadow-md); }
+/* A etiqueta e o rodapé ficam sobre o fundo tingido: fundo branco próprio
+   devolve o contraste sem apagar a cor do setor. */
+.pg-cartao .pg-cartao-forma, .pg-cartao .pg-cartao-setor { background: #fff; }
+.pg-cartao-topo { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pg-cartao-forma {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 1px 8px; border: 1px solid currentColor; border-radius: 999px; background: #fff;
+  font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+}
+/* Título pode ter palavra longa (nome de arquivo, ferramenta): sem quebrar,
+   ela empurraria a coluna inteira. */
+.pg-cartao-tit {
+  font-size: 0.85rem; font-weight: 600; color: var(--p-ink); line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.pg-cartao-pe {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  font-size: 0.7rem; color: var(--p-muted);
+}
+/* Bolinha da cor do setor + o nome escrito ao lado. A bolinha amarra o cartão
+   à legenda; o nome é o que garante a leitura quando dois setores caem em tons
+   parecidos — com 11 setores isso acontece. */
+.pg-cartao-setor {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 1px 7px; border-radius: 5px; font-weight: 600; color: var(--p-gray-600);
+}
+.pg-cartao-setor i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+
+/* ---- as duas legendas do quadro ---- */
+.pg-legendas { display: flex; flex-wrap: wrap; gap: 14px 28px; margin: 0 0 14px; }
+.pg-legenda { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.pg-legenda-tit {
+  font-size: 0.66rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--p-muted);
+}
+/* O texto da legenda usa o tom de tinta da página, nunca a cor da série: cor de
+   texto em tom de gráfico perde contraste e some. */
+.pg-legenda span {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 0.75rem; color: var(--p-gray-600);
+}
+.pg-legenda i { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.pg-legenda i.borda {
+  background: #fff; border: 2px solid currentColor; width: 15px; height: 12px; border-radius: 4px;
+}
+
+@media (max-width: 1100px) {
+  .pg-quadro {
+    display: flex; overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: 8px;
+  }
+  .pg-col { flex: 0 0 280px; scroll-snap-align: start; }
+}
+@media (max-width: 620px) {
+  .pg-quadro { scroll-snap-type: x mandatory; }
+  .pg-col { flex: 0 0 82vw; }
+}
+
+/* ======================= tabelas (mapas) ======================= */
+.pg-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--p-border); margin-bottom: 16px; }
+.pg-tab {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 10px 14px; margin-bottom: -1px;
+  background: none; border: none; border-bottom: 2px solid transparent;
+  font-family: inherit; font-size: 0.85rem; font-weight: 600; color: var(--p-muted); cursor: pointer;
+}
+.pg-tab:hover { color: var(--p-ink); }
+.pg-tab.is-active { color: var(--p-primary); border-bottom-color: var(--p-primary); }
+
+/* Contém a rolagem lateral: sem isto a tabela empurra a página inteira. */
+.pg-tabela-scroll {
+  overflow-x: auto; background: #fff;
+  border: 1px solid var(--p-border); border-radius: 14px;
+}
+.pg-tabela { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+.pg-tabela th {
+  text-align: left; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--p-muted); font-weight: 700; padding: 11px 14px; white-space: nowrap;
+  border-bottom: 1px solid var(--p-gray-100);
+}
+.pg-tabela td { padding: 12px 14px; border-bottom: 1px solid var(--p-gray-100); color: var(--p-gray-600); vertical-align: top; }
+.pg-tabela tbody tr:last-child td { border-bottom: none; }
+.pg-tabela tbody tr:hover { background: var(--p-gray-50); }
+/* Datas e números alinham por figura, não por largura de glifo. */
+.pg-tabela .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pg-tabela .pg-select, .pg-tabela .pg-input { height: 36px; font-size: 0.8rem; min-width: 150px; }
+.pg-tabela-vazia { text-align: center; color: var(--p-muted); padding: 28px 14px; }
+
+.pg-badge {
+  display: inline-block; padding: 3px 9px; border-radius: 999px;
+  font-size: 0.7rem; font-weight: 700; white-space: nowrap;
+}
+.pg-badge.tom-idealizado { background: var(--p-gray-100); color: var(--p-gray-600); }
+.pg-badge.tom-iniciado { background: #fff3d6; color: #8a6300; }
+.pg-badge.tom-desenvolvimento { background: var(--p-primary-soft); color: var(--p-primary); }
+.pg-badge.tom-concluido { background: #ecfdf5; color: #047857; }
+.pg-badge.tom-em_analise { background: #fff3d6; color: #8a6300; }
+.pg-badge.tom-em_evolucao { background: var(--p-primary-soft); color: var(--p-primary); }
+.pg-badge.tom-concluida { background: #ecfdf5; color: #047857; }
+.pg-badge.tom-nao_elegivel { background: #fef2f2; color: #b91c1c; }
+.pg-badge.tom-elegivel { background: #ecfdf5; color: #047857; }
+.pg-badge.tom-pendente { background: var(--p-gray-100); color: var(--p-gray-600); }
+
+/* Célula do motivo da elegibilidade: texto longo, precisa quebrar e ficar
+   recessivo — é justificativa, não dado de coluna. */
+.pg-motivo { display: block; margin-top: 4px; font-size: 0.74rem; line-height: 1.45; color: var(--p-muted); max-width: 44ch; }
+
+.pg-filtros { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin-bottom: 14px; }
+.pg-filtro { display: flex; flex-direction: column; gap: 5px; min-width: 200px; }
+.pg-filtro label {
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--p-muted);
+}
+
+/* ======================= sidebar ======================= */
+.pgSb {
+  width: 256px; flex-shrink: 0; background: #fff;
+  border-right: 1px solid var(--p-border);
+  display: flex; flex-direction: column;
+  position: sticky; top: 0; height: 100vh;
+}
+.pgSb-brand {
+  display: flex; align-items: center; gap: 12px;
+  height: 64px; padding: 0 16px;
+  border-bottom: 1px solid var(--p-gray-100);
+  text-decoration: none; color: inherit; cursor: pointer; transition: background 0.15s;
+}
+.pgSb-brand:hover { background: var(--p-gray-50); }
+.pgSb-logo {
+  width: 34px; height: 34px; background: var(--p-primary); border-radius: 8px;
+  display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0;
+}
+.pgSb-brandtext { font-size: 0.95rem; font-weight: 700; color: var(--p-ink); white-space: nowrap; }
+.pgSb-nav { display: flex; flex-direction: column; gap: 2px; padding: 12px 8px; flex: 1; overflow-y: auto; }
+.pgSb-seclabel {
+  color: #94a3b8; font-size: 0.625rem; font-weight: 700; letter-spacing: 0.06em;
+  padding: 12px 12px 4px; text-transform: uppercase;
+}
+.pgSb-link {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  border-radius: 8px; color: var(--p-gray-600);
+  font-size: 0.875rem; font-weight: 500; padding: 9px 12px;
+  cursor: pointer; text-decoration: none; background: none; border: none; text-align: left;
+  transition: background 0.15s, color 0.15s;
+}
+.pgSb-link:hover { background: var(--p-gray-50); color: var(--p-ink); }
+.pgSb-link.is-active { background: var(--p-primary-soft); color: var(--p-primary); font-weight: 600; }
+.pgSb-footer {
+  display: flex; align-items: center; gap: 12px;
+  border-top: 1px solid var(--p-gray-100); padding: 12px;
+}
+.pgSb-avatar {
+  width: 36px; height: 36px; border-radius: 50%; background: var(--p-primary); color: #fff;
+  display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0;
+}
+.pgSb-userinfo { flex: 1; min-width: 0; }
+.pgSb-userinfo strong { display: block; font-size: 0.78rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pgSb-userinfo span { display: block; font-size: 0.7rem; color: var(--p-muted); }
+.pgSb-logout { background: none; border: none; color: var(--p-muted); cursor: pointer; padding: 6px; border-radius: 8px; display: flex; }
+.pgSb-logout:hover { background: var(--p-gray-100); color: var(--p-red); }
+
+.pgSb-overlay { display: none; }
+
+/* ======================= mobile ======================= */
+@media (max-width: 768px) {
+  /* Drawer: mesma mecânica do Administrativo — sai da tela e volta com
+     .is-open, acionado pelo botão de menu do PortalHeader. */
+  .pgSb {
+    position: fixed; top: 0; left: 0; height: 100vh;
+    width: min(86vw, 320px); z-index: 100;
+    transform: translateX(-100%); transition: transform 0.2s;
+    box-shadow: var(--p-shadow-sm);
+  }
+  .pgSb.is-open { transform: translateX(0); }
+  .pgSb-overlay {
+    display: block; position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.5); z-index: 99;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .pgSb-overlay.is-visible { opacity: 1; pointer-events: auto; }
+  .pgMain { padding: 20px 16px 48px; }
+}
+
+@media (max-width: 620px) {
+  .pg-title, .pg-form-cab h1 { font-size: 1.2rem; }
+  .pg-card { padding: 16px 14px; }
+  .pg-escolha { grid-template-columns: 1fr; }
+  .pg-dupla { grid-template-columns: 1fr; }
+  /* Ações empilhadas e de largura total — alvo de toque confortável. */
+  .pg-acoes { flex-direction: column-reverse; align-items: stretch; }
+  .pg-acoes .pg-btn { width: 100%; }
+}

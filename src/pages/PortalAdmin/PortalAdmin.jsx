@@ -35,6 +35,14 @@ const ADM_ROLES = [
   ["atendente", "Atendente"],
   ["admin", "Admin"],
 ];
+// Programas: mesma lógica do Administrativo — o módulo é aberto a todos
+// (qualquer um registra ideia e indica oportunidade), então aqui só se define
+// quem AVALIA a Alavanca. "Participante" é a ausência de papel.
+const PROGRAMAS_ROLES = [
+  ["", "Participante"],
+  ["comercial", "Time comercial"],
+  ["admin", "Admin"],
+];
 // Controle de Horas: o papel BASE deriva da hierarquia da Gestão de Pessoas
 // (perfil + superior_id) — gestor/coordenador enxergam a própria equipe, o
 // resto vê só o próprio tempo. O que se edita aqui é a ELEVAÇÃO (horas_role),
@@ -60,7 +68,7 @@ export default function PortalAdmin() {
     setLoading(true);
     setErr("");
     const [colab, reemb, solic] = await Promise.all([
-      supabase.from("colaboradores").select("id, nome, email, perfil, rh_dp, horas_role, financeiro_role, administrativo_role, auth_id, ativo").order("nome"),
+      supabase.from("colaboradores").select("id, nome, email, perfil, rh_dp, horas_role, financeiro_role, administrativo_role, programas_role, auth_id, ativo").order("nome"),
       supabase.from("reembolso_profiles").select("id, email, role"),
       supabase.from("solic_profiles").select("id, email, role"),
     ]);
@@ -88,6 +96,7 @@ export default function PortalAdmin() {
         horasRole: c.horas_role && c.horas_role !== "usuario" ? c.horas_role : "",
         finRole: c.financeiro_role ?? null,
         admRole: c.administrativo_role ?? null,
+        progRole: c.programas_role ?? null,
         reembId: r?.id ?? null,
         reembRole: r?.role ?? null,
         solicId: s?.id ?? null,
@@ -137,6 +146,12 @@ export default function PortalAdmin() {
       const stored = value === "" ? null : value;
       res = await supabase.from("colaboradores").update({ administrativo_role: stored }).eq("id", row.colabId);
       patch = { admRole: stored };
+    } else if (app === "programas") {
+      // "" (Participante) vira NULL — quem não é do comercial continua
+      // registrando ideia e indicando oportunidade.
+      const stored = value === "" ? null : value;
+      res = await supabase.from("colaboradores").update({ programas_role: stored }).eq("id", row.colabId);
+      patch = { progRole: stored };
     } else {
       res = await supabase.from("solic_profiles").update({ role: value }).eq("id", row.solicId);
       patch = { solicRole: value };
@@ -245,6 +260,7 @@ export default function PortalAdmin() {
                 <th>PMO</th>
                 <th>Financeiro</th>
                 <th>Administrativo</th>
+                <th>Programas</th>
               </tr>
             </thead>
             <tbody>
@@ -297,11 +313,14 @@ export default function PortalAdmin() {
                   <td>
                     <RoleSelect row={row} app="administrativo" value={row.admRole ?? ""} options={ADM_ROLES} hasAccess />
                   </td>
+                  <td>
+                    <RoleSelect row={row} app="programas" value={row.progRole ?? ""} options={PROGRAMAS_ROLES} hasAccess />
+                  </td>
                 </tr>
               ))}
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="pa-empty-cell">
+                  <td colSpan={9} className="pa-empty-cell">
                     Ninguém encontrado.
                   </td>
                 </tr>

@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Home, Users, BarChart3, Clock, CreditCard, Headset, ChevronDown } from "lucide-react";
+import { Home, Users, BarChart3, Clock, CreditCard, Headset, Sparkles, ChevronDown } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { podeAcessarAdm } from "../../config/administrativo";
+import { podeAcessarProgramas } from "../../config/programas";
 import "./AppSwitcher.css";
 
 // Seletor de app compartilhado pelas sidebars do portal.
@@ -10,7 +11,7 @@ import "./AppSwitcher.css";
 // que o usuário tem acesso, lido de `modules` no AuthContext unificado.
 //
 // Props:
-//  - currentKey: 'dp' | 'solic' | 'horas' | 'financeiro' | 'administrativo'  (qual app está aberto)
+//  - currentKey: 'dp' | 'solic' | 'horas' | 'financeiro' | 'administrativo' | 'programas'  (qual app está aberto)
 //  - onNavigate: callback opcional ao escolher um app (ex.: fechar drawer mobile)
 export default function AppSwitcher({ currentKey, onNavigate }) {
   const { modules, user } = useAuth();
@@ -35,6 +36,9 @@ export default function AppSwitcher({ currentKey, onNavigate }) {
     // Administrativo é aberto a todos os logados, como o Controle de Horas —
     // mas enquanto está em construção só aparece para quem está testando.
     { key: "administrativo", label: "Administrativo", to: "/administrativo/novo", Icon: Headset, show: podeAcessarAdm(user) },
+    // Programas é aberto a todos os logados, como o Controle de Horas —
+    // mas enquanto está em construção só aparece para quem está testando.
+    { key: "programas", label: "Programas", to: "/programas/inicio", Icon: Sparkles, show: podeAcessarProgramas(user) },
     { key: "home", label: "Portal (início)", to: "/home", Icon: Home, show: true },
   ].filter((a) => a.show);
 
