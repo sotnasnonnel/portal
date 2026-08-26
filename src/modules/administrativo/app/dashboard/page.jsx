@@ -63,11 +63,11 @@ export default function DashboardAdm() {
             </div>
             <div className="adm-card adm-ind-tile">
               <span className="adm-ind-rot">Fechados</span>
-              <strong className="adm-ind-num">{r.fechados}</strong>
+              <strong className="adm-ind-num">{r.encerrados}</strong>
               <span className="adm-ind-pe">
-                {r.encerrados - r.fechados > 0
-                  ? `+ ${r.encerrados - r.fechados} reprovados ou cancelados`
-                  : 'nenhum reprovado ou cancelado'}
+                {r.reprovados > 0
+                  ? `${r.atendidos} atendidos e ${r.reprovados} reprovados`
+                  : 'todos atendidos'}
               </span>
             </div>
             <div className="adm-card adm-ind-tile">
@@ -150,7 +150,7 @@ export default function DashboardAdm() {
                     <tr key={s.nome}>
                       <td>{s.nome}</td>
                       <td className="num">{s.abertos}</td>
-                      <td className="num">{s.fechados}</td>
+                      <td className="num">{s.encerrados}</td>
                       <td className="num">{s.total}</td>
                     </tr>
                   ))}

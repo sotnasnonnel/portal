@@ -8,7 +8,7 @@ import { avaliarAlcada, PAPEL_LABEL } from '../../../config/alcadas';
 import {
   decidirAprovacao, cadeiaDoFluxo, juntarCadeias, papeisForaDaCadeia,
 } from './alcadaAdm';
-import { proximoStatusAoResponder } from './statusChamado';
+import { proximoStatusAoResponder, STATUS_ENCERRADOS } from './statusChamado';
 import { venceEmISO } from './prazo';
 import { contarNaoLidas } from './painel';
 import { temAvaliacao } from './satisfacao';
@@ -508,9 +508,12 @@ export async function listarMeusChamados(solicitanteId, { fechados = false } = {
     .select('id, numero, classe, servico, assunto, status, criado_em, analise_em, sla_vence_em, fechado_em, atendente_id')
     .eq('solicitante_id', solicitanteId);
 
+  // Reprovado conta como encerrado: ordenar por `fechado_em` o jogaria para o
+  // fim, porque reprovação grava `analise_em` e deixa `fechado_em` nulo.
   const { data, error } = fechados
-    ? await query.eq('status', 'fechado').order('fechado_em', { ascending: false })
-    : await query.neq('status', 'fechado').order('criado_em', { ascending: false });
+    ? await query.in('status', STATUS_ENCERRADOS).order('updated_at', { ascending: false })
+    : await query.not('status', 'in', `(${STATUS_ENCERRADOS.join(',')})`)
+      .order('criado_em', { ascending: false });
   if (error) throw new Error(`Não foi possível carregar seus chamados: ${error.message}`);
 
   // Nome do técnico (coluna "Técnico" nas duas listas). Tem que sair pela RPC
@@ -708,8 +711,7 @@ export async function listarFila(colaboradorId, { apenasMeus = false } = {}) {
   let q = supabase
     .from('chamados_adm')
     .select('id, numero, classe, servico, assunto, status, criado_em, sla_vence_em, solicitante_id, atendente_id')
-    .neq('status', 'fechado')
-    .neq('status', 'cancelado')
+    .not('status', 'in', `(${STATUS_ENCERRADOS.join(',')})`)
     .order('criado_em', { ascending: true });
   if (apenasMeus) q = q.eq('atendente_id', colaboradorId);
 

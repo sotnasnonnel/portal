@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   COLUNAS_KANBAN, agruparEmColunas, semaforoPrazo, contarNaoLidas, iniciais,
   filtrarQuadro, opcoesDoQuadro,
+  filtrarFila, opcoesDaFila,
 } from './painel.js';
 
 const HORA = 3600 * 1000;
@@ -100,4 +101,74 @@ test('opções vêm do que está no quadro, sem repetir e em ordem', () => {
 test('quadro vazio não quebra os filtros', () => {
   assert.deepEqual(filtrarQuadro([], { cc: 'CC-1' }), []);
   assert.deepEqual(opcoesDoQuadro([]), { solicitantes: [], ccs: [] });
+});
+
+// ---- filtros da fila de atendimento ----
+
+const naFila = (extra = {}) => ({
+  assunto: 'Solicitação de viagem Uber', status: 'aberto',
+  solicitante_id: 's1', solicitanteNome: 'ANA',
+  atendente_id: 'a1', atendenteNome: 'EDIJANE',
+  criado_em: '2026-08-21T14:00:00Z',
+  ...extra,
+});
+
+test('sem filtro, a fila passa inteira', () => {
+  const fila = [naFila(), naFila({ assunto: 'Solicitação de EPI' })];
+  assert.equal(filtrarFila(fila, {}).length, 2);
+  assert.equal(filtrarFila(fila).length, 2);
+});
+
+// Quem digita "uber" não digita o acento nem a frase inteira.
+test('assunto busca por pedaço, sem acento e sem caixa', () => {
+  const fila = [naFila(), naFila({ assunto: 'Solicitação de EPI' })];
+  assert.equal(filtrarFila(fila, { assunto: 'uber' }).length, 1);
+  assert.equal(filtrarFila(fila, { assunto: 'SOLICITACAO' }).length, 2);
+  assert.equal(filtrarFila(fila, { assunto: 'nada disso' }).length, 0);
+});
+
+test('status, solicitante e responsável filtram por igualdade', () => {
+  const fila = [naFila(), naFila({ status: 'em_atendimento', solicitante_id: 's2', atendente_id: 'a2' })];
+  assert.equal(filtrarFila(fila, { status: 'aberto' }).length, 1);
+  assert.equal(filtrarFila(fila, { solicitanteId: 's2' }).length, 1);
+  assert.equal(filtrarFila(fila, { atendenteId: 'a1' }).length, 1);
+});
+
+// "Sem responsável" é o filtro que interessa ao time: é a fila que ninguém pegou.
+test('filtro "sem" acha só os que ninguém assumiu', () => {
+  const fila = [naFila(), naFila({ atendente_id: null, atendenteNome: '' })];
+  assert.equal(filtrarFila(fila, { atendenteId: 'sem' }).length, 1);
+});
+
+// Comparar por texto e não por Date: new Date('2026-08-21') é UTC e jogaria o
+// chamado da manhã para o dia anterior no nosso fuso.
+test('período usa o dia do ISO, sem escorregar de fuso', () => {
+  const fila = [
+    naFila({ criado_em: '2026-08-20T23:00:00Z' }),
+    naFila({ criado_em: '2026-08-21T02:00:00Z' }),
+    naFila({ criado_em: '2026-08-22T10:00:00Z' }),
+  ];
+  assert.equal(filtrarFila(fila, { criadoDe: '2026-08-21' }).length, 2);
+  assert.equal(filtrarFila(fila, { criadoAte: '2026-08-21' }).length, 2);
+  assert.equal(filtrarFila(fila, { criadoDe: '2026-08-21', criadoAte: '2026-08-21' }).length, 1);
+});
+
+test('filtros se somam', () => {
+  const fila = [naFila(), naFila({ assunto: 'Solicitação de EPI', atendente_id: 'a2' })];
+  assert.equal(filtrarFila(fila, { assunto: 'EPI', atendenteId: 'a1' }).length, 0);
+});
+
+test('opções saem do que está na fila, ordenadas por nome', () => {
+  const o = opcoesDaFila([
+    naFila({ solicitanteNome: 'ZORA', solicitante_id: 's9' }),
+    naFila({ status: 'em_atendimento' }),
+  ]);
+  assert.deepEqual(o.solicitantes.map((x) => x.label), ['ANA', 'ZORA']);
+  assert.deepEqual(o.responsaveis.map((x) => x.label), ['EDIJANE']);
+  assert.deepEqual(o.status, ['aberto', 'em_atendimento']);
+  assert.equal(o.temSemResponsavel, false);
+});
+
+test('"sem responsável" só é oferecido quando existe algum', () => {
+  assert.equal(opcoesDaFila([naFila({ atendente_id: null })]).temSemResponsavel, true);
 });

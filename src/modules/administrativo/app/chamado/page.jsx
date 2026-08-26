@@ -196,7 +196,7 @@ export default function ChamadoAdm() {
         <h2 className="adm-card-tit">Dados do chamado</h2>
         <dl className="adm-aprov-campos">
           <div><dt>Solicitante</dt><dd>{chamado.solicitanteNome || '—'}</dd></div>
-          <div><dt>Técnico</dt><dd>{chamado.atendenteNome || 'Sem responsável'}</dd></div>
+          <div><dt>Responsável</dt><dd>{chamado.atendenteNome || 'Sem responsável'}</dd></div>
           <div><dt>Criação</dt><dd>{dataHora(chamado.criado_em)}</dd></div>
           <div><dt>Análise</dt><dd>{dataHora(chamado.analise_em)}</dd></div>
           <div><dt>Vencimento SLA</dt><dd>{dataHora(chamado.sla_vence_em)}</dd></div>

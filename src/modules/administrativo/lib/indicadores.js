@@ -1,3 +1,5 @@
+import { ehEncerrado } from './statusChamado.js';
+
 /**
  * Indicadores do Administrativo.
  *
@@ -11,10 +13,9 @@
  */
 
 const ABERTOS = new Set(['aguardando_aprovacao', 'aberto', 'em_atendimento', 'aguardando_solicitante']);
-const ENCERRADOS = new Set(['fechado', 'reprovado', 'cancelado']);
 
 export const estaAberto = (c) => ABERTOS.has(c?.status);
-export const estaEncerrado = (c) => ENCERRADOS.has(c?.status);
+export const estaEncerrado = (c) => ehEncerrado(c?.status);
 
 /** Data em instante comparável, tolerando nulo. */
 const t = (iso) => (iso ? new Date(iso).getTime() : null);
@@ -63,24 +64,27 @@ function contarPor(chamados, chave) {
  *
  * @param chamados [{ status, classe, servico, criado_em, fechado_em, sla_vence_em }]
  * @returns {{
- *   total: number, abertos: number, encerrados: number, fechados: number,
- *   atrasados: number,
+ *   total, abertos, encerrados (fechado + reprovado + cancelado),
+ *   atendidos (só os de fato atendidos), reprovados, atrasados,
  *   sla: { medidos: number, noPrazo: number, fora: number, semPrazo: number, pct: number|null },
  *   abertosPorClasse: Array<{nome, total}>,
  *   abertosPorStatus: Array<{nome, total}>,
- *   porServico: Array<{nome, abertos, fechados, total}>
+ *   porServico: Array<{nome, abertos, encerrados, total}>
  * }}
  */
 export function resumoIndicadores(chamados = [], agora = Date.now()) {
   const abertos = chamados.filter(estaAberto);
-  const fechados = chamados.filter((c) => c.status === 'fechado');
+  const encerrados = chamados.filter(estaEncerrado);
+  // Só o que foi de fato atendido entra na conta de SLA: reprovado nunca teve
+  // atendimento, então julgá-lo por prazo não diria nada.
+  const atendidos = chamados.filter((c) => c.status === 'fechado');
 
   // SLA: só entram os que dá para julgar. `semPrazo` fica visível de propósito,
   // para a lacuna de configuração não sumir dentro de uma porcentagem bonita.
   let noPrazo = 0;
   let fora = 0;
   let semPrazo = 0;
-  for (const c of fechados) {
+  for (const c of atendidos) {
     const v = fechouNoPrazo(c);
     if (v === null) semPrazo += 1;
     else if (v) noPrazo += 1;
@@ -91,8 +95,10 @@ export function resumoIndicadores(chamados = [], agora = Date.now()) {
   return {
     total: chamados.length,
     abertos: abertos.length,
-    encerrados: chamados.filter(estaEncerrado).length,
-    fechados: fechados.length,
+    // "Fechados" para quem lê o painel = tudo que acabou, reprovado incluído.
+    encerrados: encerrados.length,
+    atendidos: atendidos.length,
+    reprovados: chamados.filter((c) => c.status === 'reprovado').length,
     atrasados: chamados.filter((c) => estaAtrasado(c, agora)).length,
     sla: {
       medidos,
@@ -113,11 +119,11 @@ function agruparPorServico(chamados) {
   const mapa = new Map();
   for (const c of chamados) {
     const nome = c.servicoLabel || `${c.classe}/${c.servico}`;
-    if (!mapa.has(nome)) mapa.set(nome, { nome, abertos: 0, fechados: 0, total: 0 });
+    if (!mapa.has(nome)) mapa.set(nome, { nome, abertos: 0, encerrados: 0, total: 0 });
     const linha = mapa.get(nome);
     linha.total += 1;
     if (estaAberto(c)) linha.abertos += 1;
-    if (c.status === 'fechado') linha.fechados += 1;
+    if (estaEncerrado(c)) linha.encerrados += 1;
   }
   return [...mapa.values()].sort((a, b) => (b.total - a.total)
     || a.nome.localeCompare(b.nome, 'pt-BR'));

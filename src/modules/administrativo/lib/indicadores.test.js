@@ -89,7 +89,9 @@ test('chamado sem prazo nunca está atrasado', () => {
 
 // ---- agregações ----
 
-test('conta abertos, fechados e encerrados sem se confundir', () => {
+// Reprovado conta como fechado no painel: para quem pediu, um pedido negado
+// está tão concluído quanto um atendido.
+test('conta abertos e encerrados sem se confundir', () => {
   const r = resumoIndicadores([
     ch(), ch({ status: 'em_atendimento' }),
     ch({ status: 'fechado', fechado_em: iso(AGORA) }),
@@ -97,8 +99,21 @@ test('conta abertos, fechados e encerrados sem se confundir', () => {
   ], AGORA);
   assert.equal(r.total, 5);
   assert.equal(r.abertos, 2);
-  assert.equal(r.fechados, 1);
   assert.equal(r.encerrados, 3);
+  assert.equal(r.atendidos, 1);
+  assert.equal(r.reprovados, 1);
+});
+
+// Reprovado nunca chegou ao atendimento: julgá-lo por prazo não diria nada, e
+// contá-lo como "fora do prazo" puniria o time por uma decisão do aprovador.
+test('reprovado não entra na conta de SLA', () => {
+  const r = resumoIndicadores([
+    ch({ status: 'reprovado', sla_vence_em: iso(AGORA - DIA) }),
+    ch({ status: 'fechado', fechado_em: iso(AGORA), sla_vence_em: iso(AGORA + DIA) }),
+  ], AGORA);
+  assert.equal(r.encerrados, 2);
+  assert.equal(r.sla.medidos, 1);
+  assert.equal(r.sla.pct, 100);
 });
 
 test('abertos por classe usa o rótulo quando existe e vem do maior', () => {
@@ -121,13 +136,13 @@ test('classe conta só o que está aberto', () => {
   assert.deepEqual(r.abertosPorClasse, [{ nome: 'TI', total: 1 }]);
 });
 
-test('por serviço soma abertos e fechados na mesma linha', () => {
+test('por serviço soma abertos e encerrados na mesma linha', () => {
   const r = resumoIndicadores([
     ch({ servicoLabel: 'Uber' }),
-    ch({ servicoLabel: 'Uber', status: 'fechado', fechado_em: iso(AGORA) }),
+    ch({ servicoLabel: 'Uber', status: 'reprovado' }),
     ch({ servicoLabel: 'EPI' }),
   ], AGORA);
-  assert.deepEqual(r.porServico[0], { nome: 'Uber', abertos: 1, fechados: 1, total: 2 });
+  assert.deepEqual(r.porServico[0], { nome: 'Uber', abertos: 1, encerrados: 1, total: 2 });
 });
 
 test('lista vazia não quebra nem inventa número', () => {

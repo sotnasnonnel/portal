@@ -1019,3 +1019,25 @@
 .adm-prazos-faixas { margin: 6px 0; font-size: 0.78rem; }
 .adm-prazos-faixas td { padding: 5px 8px; }
 .adm-prazos-faixas td:first-child { white-space: nowrap; font-weight: 600; color: var(--a-ink); }
+
+/* ---- filtros da fila de atendimento ---- */
+.adm-fila-filtros {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  margin: 0 0 10px;
+}
+.adm-fila-filtros .adm-input,
+.adm-fila-filtros .adm-select { height: 36px; font-size: 0.82rem; width: auto; min-width: 150px; }
+.adm-fila-filtros input[type="search"] { min-width: 200px; flex: 1 1 200px; }
+.adm-fila-filtros input[type="date"] { min-width: 130px; }
+.adm-fila-periodo { display: inline-flex; align-items: center; gap: 6px; }
+.adm-fila-periodo span { font-size: 0.78rem; color: var(--a-muted); white-space: nowrap; }
+.adm-btn-sm { height: 36px; padding: 0 12px; font-size: 0.8rem; }
+/* Botão que se comporta como link, dentro do estado vazio. */
+.adm-link-btn { background: none; border: none; padding: 0; cursor: pointer; font: inherit; }
+
+@media (max-width: 640px) {
+  .adm-fila-filtros .adm-input,
+  .adm-fila-filtros .adm-select { width: 100%; min-width: 0; }
+  .adm-fila-periodo { width: 100%; }
+  .adm-fila-periodo input { flex: 1; }
+}

@@ -84,7 +84,7 @@ export default function MeusChamadosAdm() {
       ) : linhas.length === 0 ? (
         <div className="adm-vazio">
           {fechados
-            ? 'Nenhum chamado fechado por aqui ainda.'
+            ? 'Nenhum chamado encerrado por aqui ainda.'
             : <>Você não tem chamados em andamento. <Link to="/administrativo/novo">Abrir um chamado</Link>.</>}
         </div>
       ) : (
@@ -94,8 +94,8 @@ export default function MeusChamadosAdm() {
               <tr>
                 <th>ID</th>
                 <th>Assunto</th>
-                {!fechados && <th>Status</th>}
-                <th>Técnico</th>
+                <th>Status</th>
+                <th>Responsável</th>
                 <th>Criação</th>
                 {fechados ? <th>Fechamento</th> : <><th>Análise</th><th>Vencimento SLA</th></>}
               </tr>
@@ -114,17 +114,17 @@ export default function MeusChamadosAdm() {
                       </span>
                     )}
                   </td>
-                  {!fechados && (
-                    <td>
-                      <span className={`adm-badge tom-${c.status}`}>
-                        {ROTULO_STATUS[c.status] || c.status}
-                      </span>
-                    </td>
-                  )}
+                  <td>
+                    <span className={`adm-badge tom-${c.status}`}>
+                      {ROTULO_STATUS[c.status] || c.status}
+                    </span>
+                  </td>
                   <td>{c.atendenteNome || '—'}</td>
                   <td className="num">{data(c.criado_em)}</td>
                   {fechados ? (
-                    <td className="num">{data(c.fechado_em)}</td>
+                    // Reprovado não tem `fechado_em`: a data que encerrou o
+                    // chamado foi a da decisão do aprovador.
+                    <td className="num">{data(c.fechado_em || c.analise_em)}</td>
                   ) : (
                     <>
                       <td className="num">{data(c.analise_em)}</td>

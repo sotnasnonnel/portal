@@ -17,6 +17,17 @@ export const STATUS_LABEL = {
   cancelado: 'Cancelado',
 };
 
+/**
+ * Estados de chamado ENCERRADO — acabou, não volta para a fila.
+ *
+ * Reprovado entra aqui junto com fechado: para quem pediu, um pedido negado
+ * está tão concluído quanto um atendido, e deixá-lo em "em andamento" fazia o
+ * chamado parecer vivo para sempre. Cancelado segue a mesma lógica.
+ */
+export const STATUS_ENCERRADOS = ['fechado', 'reprovado', 'cancelado'];
+
+export const ehEncerrado = (status) => STATUS_ENCERRADOS.includes(status);
+
 /** Estados em que o chamado ainda está em jogo. */
 const EM_ANDAMENTO = new Set(['aberto', 'em_atendimento', 'aguardando_solicitante']);
 
