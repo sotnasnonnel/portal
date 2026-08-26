@@ -7,28 +7,28 @@ import { CATEGORIAS, SETORES } from '../../../config/programas';
 
 // ============================ Campo de Ideias ============================
 
-const SEM_SETOR = 'Sem setor';
-
 /**
  * Resumo do Dashboard do Campo de Ideias.
  *
- * `porSetor` inclui a faixa "Sem setor" porque a IDEIA não tem setor (a planilha
- * só pede setor na iniciativa). Escondê-las faria o gráfico somar menos que o
- * card de total, e alguém ia passar a tarde procurando as que faltam.
+ * `porSetor` quebra cada setor em ideias e iniciativas: saber que o setor tem
+ * 8 registros não diz se são 8 coisas prontas ou 8 desejos.
  */
 export function resumoIdeias(linhas = []) {
-  const mapa = new Map([...SETORES, SEM_SETOR].map((s) => [s, 0]));
+  const mapa = new Map(SETORES.map((s) => [s, { nome: s, ideias: 0, iniciativas: 0, total: 0 }]));
   linhas.forEach((l) => {
-    const k = l.setor || SEM_SETOR;
-    mapa.set(k, (mapa.get(k) || 0) + 1);
+    // Setor fora da lista (herdado de carga antiga) ainda precisa aparecer —
+    // some do gráfico e o total do card deixa de bater com a soma das barras.
+    if (!mapa.has(l.setor)) mapa.set(l.setor, { nome: l.setor, ideias: 0, iniciativas: 0, total: 0 });
+    const b = mapa.get(l.setor);
+    b[l.tipo === 'ideia' ? 'ideias' : 'iniciativas'] += 1;
+    b.total += 1;
   });
 
   return {
     total: linhas.length,
     ideias: linhas.filter((l) => l.tipo === 'ideia').length,
     iniciativas: linhas.filter((l) => l.tipo === 'iniciativa').length,
-    porSetor: [...mapa.entries()]
-      .map(([nome, total]) => ({ nome, total }))
+    porSetor: [...mapa.values()]
       .filter((x) => x.total > 0)
       .sort((a, b) => b.total - a.total),
     // O kanban da planilha é por categoria ("Tipo"), com uma coluna por opção —
@@ -53,8 +53,41 @@ export const evoluiu = (i) =>
 
 export function resumoAlavanca(linhas = []) {
   const concluidas = linhas.filter((i) => i.status === 'concluida');
+  const elegiveis = linhas.filter((i) => i.elegibilidade === 'elegivel');
+  const evoluidas = linhas.filter(evoluiu);
+
+  // Quem indica. Sem cortar em top-N: cortar a cauda esconde justamente quem
+  // participou uma vez, que é o que o programa quer ver crescer.
+  const porPessoa = new Map();
+  linhas.forEach((i) => {
+    const nome = i.indicadorNome || 'Não identificado';
+    const p = porPessoa.get(nome) || { nome, total: 0, concluidas: 0 };
+    p.total += 1;
+    if (i.status === 'concluida') p.concluidas += 1;
+    porPessoa.set(nome, p);
+  });
 
   return {
+    /**
+     * Funil. Cada etapa é um SUBCONJUNTO da anterior, e é isso que autoriza
+     * desenhá-las como barras que encurtam. "Não elegível" não entra: é saída
+     * do funil, não etapa dele.
+     */
+    funil: [
+      { nome: 'Recebidas', total: linhas.length },
+      { nome: 'Elegíveis', total: elegiveis.length },
+      { nome: 'Evoluíram', total: evoluidas.length },
+      { nome: 'Concluídas', total: concluidas.length },
+    ],
+    porPessoa: [...porPessoa.values()].sort((a, b) => b.total - a.total),
+    premioPago: concluidas.filter((i) => i.pago_em)
+      .reduce((s, i) => s + Number(i.valor_premio || 0), 0),
+    // "A pagar" é pendência com dono, não saldo: a regra manda pagar depois do
+    // faturamento da 1ª medição, e é fácil deixar passar.
+    premioAPagar: concluidas.filter((i) => !i.pago_em)
+      .reduce((s, i) => s + Number(i.valor_premio || 0), 0),
+    contratoTotal: concluidas.reduce((s, i) => s + Number(i.valor_contrato || 0), 0),
+    pendentes: linhas.filter((i) => i.elegibilidade === 'pendente').length,
     total: linhas.length,
     elegiveis: linhas.filter((i) => i.elegibilidade === 'elegivel').length,
     // "Depende do comercial": empresa já na base com contato novo. Fica visível

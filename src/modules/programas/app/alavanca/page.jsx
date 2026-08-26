@@ -6,6 +6,7 @@ import {
   ELEGIBILIDADE_LABEL, STATUS_ALAVANCA_LABEL, ehComercial,
 } from '../../../../config/programas';
 import { listarIndicacoes } from '../../lib/alavanca';
+import { DetalheIndicacao } from '../components/Detalhe';
 
 /**
  * Minhas indicações da Alavanca.
@@ -25,6 +26,7 @@ export default function MinhasIndicacoes() {
   const [linhas, setLinhas] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
+  const [detalhe, setDetalhe] = useState(null);
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -62,6 +64,8 @@ export default function MinhasIndicacoes() {
 
       {erro && <div className="pg-aviso tom-erro"><AlertCircle size={16} /> {erro}</div>}
 
+      <h2 className="pg-secao">O que você indicou</h2>
+
       {carregando ? (
         <div className="pg-vazio"><Loader2 size={20} className="pg-spin" /> Carregando…</div>
       ) : linhas.length === 0 ? (
@@ -87,7 +91,11 @@ export default function MinhasIndicacoes() {
               {linhas.map((i) => (
                 <tr key={i.id}>
                   <td className="num">#{i.numero}</td>
-                  <td>{i.oportunidade}</td>
+                  <td>
+                    <button type="button" className="pg-link" onClick={() => setDetalhe(i)}>
+                      {i.oportunidade}
+                    </button>
+                  </td>
                   <td>{i.empresa}</td>
                   <td className="num">{data(i.criado_em)}</td>
                   <td>
@@ -114,6 +122,11 @@ export default function MinhasIndicacoes() {
           </table>
         </div>
       )}
+
+      {/* Só leitura: depois de enviada, a indicação é do comercial. Deixar quem
+          indicou editar abriria a porta para trocar a empresa depois de a
+          elegibilidade ter sido calculada — e a RLS barra isso de qualquer jeito. */}
+      <DetalheIndicacao indicacao={detalhe} onFechar={() => setDetalhe(null)} />
     </div>
   );
 }

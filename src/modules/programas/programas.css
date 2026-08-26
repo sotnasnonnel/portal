@@ -40,6 +40,12 @@
   font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 4px;
 }
 .pg-sub { font-size: 0.875rem; color: var(--p-muted); line-height: 1.5; margin: 0 0 20px; }
+/* Separa "o que eu faço aqui" (os botões) de "o que já é meu" (a lista) nas
+   telas de participação dos dois programas. */
+.pg-secao {
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--p-muted); margin: 0 0 10px;
+}
 .pg-back {
   display: inline-flex; align-items: center; gap: 6px;
   background: none; border: none; color: var(--p-muted);
@@ -344,11 +350,23 @@
   padding: 1px 8px; border: 1px solid currentColor; border-radius: 999px; background: #fff;
   font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
 }
-/* Título pode ter palavra longa (nome de arquivo, ferramenta): sem quebrar,
-   ela empurraria a coluna inteira. */
+/* Duas coisas acontecem com o título no cartão:
+   - palavra longa (nome de arquivo, ferramenta) precisa quebrar, senão empurra
+     a coluna inteira;
+   - "O que está criando?" às vezes vem respondido com um parágrafo de 400
+     caracteres. Cortar em 4 linhas mantém o quadro legível sem mexer no dado —
+     o texto inteiro está no popup de detalhe, a um clique. */
 .pg-cartao-tit {
   font-size: 0.85rem; font-weight: 600; color: var(--p-ink); line-height: 1.35;
   overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+/* Mesmo caso na tabela: o título é um botão que abre o detalhe e não pode
+   esticar a coluna a ponto de empurrar a situação para fora da tela. */
+.pg-tabela .pg-link {
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+  overflow: hidden; overflow-wrap: anywhere; max-width: 44ch; text-align: left;
 }
 .pg-cartao-pe {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
@@ -391,6 +409,99 @@
   .pg-quadro { scroll-snap-type: x mandatory; }
   .pg-col { flex: 0 0 82vw; }
 }
+
+/* ---- grade de gráficos: dois por linha; o largo ocupa a linha inteira ---- */
+.pg-graficos {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 0 14px; align-items: start;
+}
+.pg-card-largo { grid-column: 1 / -1; }
+
+/* ---- funil ---- */
+.pg-funil { margin: 12px 0 4px; }
+.pg-funil-linha {
+  display: grid; grid-template-columns: minmax(0, 110px) minmax(0, 1fr) 34px 44px;
+  align-items: center; gap: 10px; padding: 4px 0;
+}
+.pg-funil-pct {
+  font-size: 0.74rem; color: var(--p-muted);
+  font-variant-numeric: tabular-nums; text-align: right;
+}
+
+/* ---- lista de valores (premiação) ---- */
+.pg-valores { display: flex; flex-direction: column; gap: 12px; margin: 12px 0 0; }
+.pg-valores div { display: flex; flex-direction: column; gap: 2px; }
+.pg-valores dt {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--p-muted);
+}
+.pg-valores dd {
+  margin: 0; font-size: 1.3rem; font-weight: 700; color: var(--p-ink);
+  font-variant-numeric: tabular-nums;
+}
+.pg-valores dd.tom-alta { color: #047857; }
+.pg-valores dd.tom-atencao { color: #b45309; }
+
+/* ---- legenda de série (2 séries no gráfico por setor) ---- */
+.pg-legenda-serie {
+  display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0 0 10px;
+  font-size: 0.78rem; color: var(--p-gray-600);
+}
+.pg-legenda-serie span { display: inline-flex; align-items: center; gap: 6px; }
+.pg-legenda-serie i { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+
+/* ---- edição dentro do popup ---- */
+/* Os botões ficam no fim do formulário, e não no rodapé fixo: o corpo do popup
+   rola, e um rodapé com "Salvar" fora do <form> exigiria ligar os dois por
+   form="id" — funciona, mas quebra em quem usa o teclado para submeter. */
+.pg-editar-acoes {
+  display: flex; justify-content: flex-end; gap: 10px;
+  padding-top: 16px; margin-top: 4px; border-top: 1px solid var(--p-gray-100);
+}
+.pg-editar-dica { font-size: 0.76rem; color: var(--p-muted); }
+
+@media (max-width: 620px) {
+  .pg-editar-acoes { flex-direction: column-reverse; }
+  .pg-editar-acoes .pg-btn { width: 100%; }
+}
+
+/* ---- popup de detalhe ---- */
+.pg-det-etiquetas {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  padding-bottom: 14px; margin-bottom: 14px; border-bottom: 1px solid var(--p-gray-100);
+}
+.pg-det-campos {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px 18px; margin: 0 0 16px;
+}
+.pg-det-campos div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pg-det-campos dt {
+  font-size: 0.66rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--p-muted);
+}
+.pg-det-campos dd {
+  margin: 0; font-size: 0.85rem; color: var(--p-ink); overflow-wrap: anywhere;
+}
+.pg-det-bloco { margin-bottom: 16px; }
+.pg-det-bloco:last-child { margin-bottom: 0; }
+.pg-det-bloco h3 {
+  font-size: 0.66rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--p-muted); margin: 0 0 5px;
+}
+/* pre-wrap: o texto foi digitado num textarea e as quebras que a pessoa fez
+   fazem parte do conteúdo. */
+.pg-det-texto {
+  margin: 0; font-size: 0.875rem; line-height: 1.6; color: var(--p-gray-600);
+  white-space: pre-wrap;
+}
+
+/* O cartão do quadro virou <button> (abre o detalhe, e precisa de foco por
+   teclado): zera o visual de botão e devolve o alinhamento do conteúdo. */
+.pg-cartao {
+  width: 100%; text-align: left; font-family: inherit; font-size: inherit;
+  cursor: pointer; align-items: stretch;
+}
+.pg-cartao:focus-visible { outline: 2px solid var(--p-primary); outline-offset: 2px; }
 
 /* ======================= tabelas (mapas) ======================= */
 .pg-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--p-border); margin-bottom: 16px; }

@@ -16,3 +16,10 @@ export const COR_FORMA = {
   ideia: '#3b74b8',
   iniciativa: '#b4522a',
 };
+
+/**
+ * Tom único das barras de magnitude (funil, ranking de quem indica). Série
+ * única = um tom só: pintar cada barra de uma cor faria a cor codificar o
+ * RANKING, que muda a cada carga — e o rótulo ao lado já diz de quem é a barra.
+ */
+export const COR_BARRA = '#b6532a';

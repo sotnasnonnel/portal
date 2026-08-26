@@ -77,7 +77,7 @@ const SatisfacaoAdm = lazy(() => import('../modules/administrativo/app/satisfaca
 const DashboardAdm = lazy(() => import('../modules/administrativo/app/dashboard/page'));
 const InicioProgramas = lazy(() => import('../modules/programas/app/inicio/page'));
 const DashboardIdeias = lazy(() => import('../modules/programas/app/dashboard/page'));
-const CampoDeIdeias = lazy(() => import('../modules/programas/app/ideias/nova/escolher'));
+const CampoDeIdeias = lazy(() => import('../modules/programas/app/ideias/page'));
 const NovaIdeia = lazy(() => import('../modules/programas/app/ideias/nova/page'));
 const MinhasIndicacoes = lazy(() => import('../modules/programas/app/alavanca/page'));
 const NovaIndicacao = lazy(() => import('../modules/programas/app/alavanca/nova/page'));
@@ -589,13 +589,14 @@ export default function AppRoutes() {
         >
           <Route index element={<Navigate to="/programas/inicio" replace />} />
           <Route path="inicio" element={<LazyPage><InicioProgramas /></LazyPage>} />
-          {/* Campo de Ideias: os dois cards (item 1 da planilha) e os
-              formulários (itens 2 e 3). O painel é o item 4 e tem entrada
-              própria no menu — a rota /programas/dashboard. */}
+          {/* Mesma divisão dos dois programas: "ideias" é onde se participa
+              (botões + o que eu registrei) e "dashboard" é onde se lê. A rota
+              antiga de escolha entre as formas redireciona — link guardado não
+              pode cair em página morta. */}
+          <Route path="dashboard" element={<LazyPage><DashboardIdeias /></LazyPage>} />
           <Route path="ideias" element={<LazyPage><CampoDeIdeias /></LazyPage>} />
           <Route path="ideias/nova" element={<Navigate to="/programas/ideias" replace />} />
           <Route path="ideias/nova/:tipo" element={<LazyPage><NovaIdeia /></LazyPage>} />
-          <Route path="dashboard" element={<LazyPage><DashboardIdeias /></LazyPage>} />
           <Route path="alavanca" element={<LazyPage><MinhasIndicacoes /></LazyPage>} />
           <Route path="alavanca/nova" element={<LazyPage><NovaIndicacao /></LazyPage>} />
           {/* Irmão de /alavanca, e não filho: a sidebar marca o item ativo por

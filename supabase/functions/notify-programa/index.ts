@@ -1,17 +1,21 @@
 // Avisa por e-mail sobre os PROGRAMAS internos (Campo de Ideias e Alavanca PHD).
 //
-//   'ideia_nova'       -> toda a empresa: alguém registrou ideia ou iniciativa
-//   'ideia_status'     -> toda a empresa: a situação de uma iniciativa mudou
+//   'ideia_nova'       -> GERENTES e DIRETORIA: alguém registrou ideia/iniciativa
+//   'ideia_status'     -> GERENTES e DIRETORIA: a situação de uma iniciativa mudou
+//   'alavanca_nova'    -> DIRETORIA e TIME COMERCIAL: chegou uma indicação nova
 //   'alavanca_retorno' -> quem indicou: resultado da avaliação da indicação
 //
 // Mesmo padrão das outras notificações do portal (Microsoft Graph sendMail com
 // os secrets GRAPH_* já configurados no projeto).
 //
-// Os dois eventos do Campo de Ideias são DIVULGAÇÃO, e é por isso que a lista
-// de destinatários é montada aqui e não no navegador: mandá-la do cliente
-// exporia o quadro de colaboradores no bundle. Vão em Cco (bccRecipients) —
-// uma lista de 150 endereços no "Para" é vazamento de contatos e convite a
-// "responder a todos".
+// Os três primeiros eventos vão para uma LISTA, e é por isso que ela é montada
+// aqui e não no navegador: mandá-la do cliente exporia o quadro de
+// colaboradores no bundle. Vão em Cco (bccRecipients) — uma lista de dezenas de
+// endereços no "Para" é vazamento de contatos e convite a "responder a todos".
+//
+// Quem é "gerente"/"diretoria" sai da coluna `funcao` (o texto do cargo), e não
+// de `perfil`: no portal o perfil não reflete o cargo — diretores e gerentes
+// ficam todos como 'gestor'. Mesmo critério de config/financeiroAcesso.js.
 //
 // Body: { evento, ideia_id?, indicacao_id?, de?, para?, dry_run? }
 // dry_run responde quantos receberiam, sem enviar.
@@ -26,7 +30,7 @@ function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...CORS, "Content-Type": "application/json" } });
 }
 
-const EVENTOS = ["ideia_nova", "ideia_status", "alavanca_retorno"] as const;
+const EVENTOS = ["ideia_nova", "ideia_status", "alavanca_nova", "alavanca_retorno"] as const;
 type Evento = (typeof EVENTOS)[number];
 
 const escapeHtml = (s: string) =>
@@ -58,6 +62,15 @@ const ELEGIBILIDADE: Record<string, string> = {
 
 const dinheiro = (n: unknown) =>
   (n == null ? null : Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }));
+
+// Sem acento e em caixa alta: "Operação" e "OPERACAO" precisam casar.
+const semAcento = (s: string) =>
+  (s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
+
+const temCargo = (funcao: string | null, cargos: string[]) => {
+  const f = semAcento(funcao ?? "");
+  return cargos.some((c) => f.includes(c));
+};
 
 async function graphToken(tenant: string, clientId: string, secret: string): Promise<string> {
   const res = await fetch(`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`, {
@@ -106,6 +119,52 @@ function montarHtml(opts: {
   </div>`;
 }
 
+/**
+ * Envio pelo Graph. Virou função porque há dois caminhos que terminam em envio
+ * (a indicação nova sai mais cedo, com outra lista de destinatários) — duplicar
+ * o bloco garantiria que um dos dois ficasse para trás na primeira correção.
+ */
+async function enviar(opts: {
+  destinatarios: string[]; emCopiaOculta: boolean; subject: string; html: string;
+}) {
+  const { destinatarios, emCopiaOculta, subject, html } = opts;
+  const tenant = Deno.env.get("GRAPH_TENANT_ID");
+  const clientId = Deno.env.get("GRAPH_CLIENT_ID");
+  const secret = Deno.env.get("GRAPH_CLIENT_SECRET");
+  const sender = Deno.env.get("GRAPH_SENDER") ?? "sistema@phdengenharia.eng.br";
+  if (!tenant || !clientId || !secret) return json({ error: "graph_not_configured" }, 500);
+
+  try {
+    const token = await graphToken(tenant, clientId, secret);
+    const enderecos = destinatarios.map((address) => ({ emailAddress: { address } }));
+    const sendRes = await fetch(`https://graph.microsoft.com/v1.0/users/${encodeURIComponent(sender)}/sendMail`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: {
+          subject,
+          body: { contentType: "HTML", content: html },
+          // Na lista o remetente e o proprio "Para": sem ninguem no campo,
+          // alguns clientes marcam a mensagem como suspeita.
+          toRecipients: emCopiaOculta ? [{ emailAddress: { address: sender } }] : enderecos,
+          bccRecipients: emCopiaOculta ? enderecos : [],
+        },
+        saveToSentItems: true,
+      }),
+    });
+    if (sendRes.status !== 202) {
+      const t = await sendRes.text();
+      console.error("[notify-programa] graph sendMail:", sendRes.status, t);
+      return json({ error: `graph_send_failed: ${sendRes.status} ${t.slice(0, 400)}` }, 502);
+    }
+  } catch (e) {
+    console.error("[notify-programa] graph:", e);
+    return json({ error: `graph_error: ${(e as Error)?.message ?? String(e)}` }, 502);
+  }
+
+  return json({ sent: true, total: destinatarios.length });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
@@ -152,12 +211,18 @@ Deno.serve(async (req) => {
       const { data: autor } = await supabase
         .from("colaboradores").select("nome").eq("id", ideia.autor_id).maybeSingle();
 
-      // Toda a empresa: só quem está ativo e já tem e-mail. Ninguém é avisado
-      // por ter logado — o cadastro é o critério, como no resto do portal.
+      // Gerentes e diretoria. O filtro por cargo é feito aqui, e não no SQL,
+      // porque `funcao` é texto livre e acentuado: um ilike '%GERENTE%' deixaria
+      // "Gerente" e "GERÊNCIA" de fora conforme quem digitou.
       const { data: todos, error: eTodos } = await supabase
-        .from("colaboradores").select("email").eq("ativo", true).not("email", "is", null);
+        .from("colaboradores").select("email, funcao").eq("ativo", true).not("email", "is", null);
       if (eTodos) return json({ error: eTodos.message }, 500);
-      destinatarios = [...new Set((todos ?? []).map((c) => (c.email ?? "").trim()).filter(Boolean))];
+      destinatarios = [...new Set(
+        (todos ?? [])
+          .filter((c) => temCargo(c.funcao, ["DIRETOR", "GERENTE"]))
+          .map((c) => (c.email ?? "").trim())
+          .filter(Boolean),
+      )];
       emCopiaOculta = true;
 
       const forma = ideia.tipo === "ideia" ? "ideia" : "iniciativa";
@@ -178,9 +243,9 @@ Deno.serve(async (req) => {
             ["Descrição", ideia.descricao ?? ideia.finalidade],
             ["Retorno esperado", ideia.retorno],
           ],
-          aviso: "Tem uma ideia ou já está construindo algo? Registre no portal — o Campo de Ideias é aberto a todos.",
+          aviso: "Você está recebendo por ser gerente ou diretor. O Campo de Ideias é aberto a todos: qualquer pessoa registra e todo mundo enxerga o painel.",
           botao: "Ver no Portal PHD",
-          url: `${appUrl}/#/programas/ideias`,
+          url: `${appUrl}/#/programas/dashboard`,
           logo,
         });
       } else {
@@ -194,7 +259,7 @@ Deno.serve(async (req) => {
             ["Situação atual", SITUACAO[para ?? ideia.situacao] ?? (para ?? ideia.situacao)],
           ],
           botao: "Ver no Portal PHD",
-          url: `${appUrl}/#/programas/ideias`,
+          url: `${appUrl}/#/programas/dashboard`,
           logo,
         });
       }
@@ -210,6 +275,50 @@ Deno.serve(async (req) => {
 
       const { data: quem } = await supabase
         .from("colaboradores").select("nome, email").eq("id", ind.indicado_por).maybeSingle();
+
+      if (evento === "alavanca_nova") {
+        // Diretoria + time comercial. O comercial vem do papel do módulo
+        // (programas_role), não do cargo: quem avalia a Alavanca é quem tem o
+        // papel, e nem todo comercial tem "COMERCIAL" escrito na função.
+        const { data: todos, error: eTodos } = await supabase
+          .from("colaboradores")
+          .select("email, funcao, programas_role")
+          .eq("ativo", true).not("email", "is", null);
+        if (eTodos) return json({ error: eTodos.message }, 500);
+        destinatarios = [...new Set(
+          (todos ?? [])
+            .filter((c) => temCargo(c.funcao, ["DIRETOR"])
+              || c.programas_role === "comercial" || c.programas_role === "admin")
+            .map((c) => (c.email ?? "").trim())
+            .filter(Boolean),
+        )];
+        emCopiaOculta = true;
+
+        subject = `Alavanca PHD: nova indicação #${ind.numero} — ${ind.empresa}`;
+        html = montarHtml({
+          saudacao: "Olá!",
+          chamada: `<strong>${escapeHtml(quem?.nome ?? "Um colaborador")}</strong> indicou uma nova oportunidade no programa Alavanca PHD.`,
+          linhas: [
+            ["Indicação", `#${ind.numero} — ${ind.oportunidade}`],
+            ["Empresa", ind.empresa],
+            ["Indicado por", quem?.nome],
+            ["Elegibilidade", ELEGIBILIDADE[ind.elegibilidade] ?? ind.elegibilidade],
+          ],
+          // A checagem automática já respondeu; o que o comercial precisa saber
+          // é se sobrou decisão para ele.
+          aviso: ind.elegibilidade === "em_analise"
+            ? "A empresa já está na base do comercial, mas o contato é novo: alguém do time precisa confirmar se a oportunidade já tinha sido mapeada."
+            : "Você está recebendo por ser da diretoria ou do time comercial.",
+          botao: "Abrir o painel da Alavanca",
+          url: `${appUrl}/#/programas/painel-alavanca`,
+          logo,
+        });
+
+        if (!destinatarios.length) return json({ skipped: "sem_destinatarios" });
+        if (dry_run) return json({ would_send: true, total: destinatarios.length, subject });
+        return await enviar({ destinatarios, emCopiaOculta, subject, html });
+      }
+
       if (!quem?.email) return json({ skipped: "indicador_sem_email" });
       destinatarios = [quem.email];
 
@@ -247,42 +356,7 @@ Deno.serve(async (req) => {
 
     if (!destinatarios.length) return json({ skipped: "sem_destinatarios" });
     if (dry_run) return json({ would_send: true, total: destinatarios.length, subject });
-
-    const tenant = Deno.env.get("GRAPH_TENANT_ID");
-    const clientId = Deno.env.get("GRAPH_CLIENT_ID");
-    const secret = Deno.env.get("GRAPH_CLIENT_SECRET");
-    const sender = Deno.env.get("GRAPH_SENDER") ?? "sistema@phdengenharia.eng.br";
-    if (!tenant || !clientId || !secret) return json({ error: "graph_not_configured" }, 500);
-
-    try {
-      const token = await graphToken(tenant, clientId, secret);
-      const enderecos = destinatarios.map((address) => ({ emailAddress: { address } }));
-      const sendRes = await fetch(`https://graph.microsoft.com/v1.0/users/${encodeURIComponent(sender)}/sendMail`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: {
-            subject,
-            body: { contentType: "HTML", content: html },
-            // Na divulgação o remetente é o próprio "Para": sem ninguém no
-            // campo, alguns clientes marcam a mensagem como suspeita.
-            toRecipients: emCopiaOculta ? [{ emailAddress: { address: sender } }] : enderecos,
-            bccRecipients: emCopiaOculta ? enderecos : [],
-          },
-          saveToSentItems: true,
-        }),
-      });
-      if (sendRes.status !== 202) {
-        const t = await sendRes.text();
-        console.error("[notify-programa] graph sendMail:", sendRes.status, t);
-        return json({ error: `graph_send_failed: ${sendRes.status} ${t.slice(0, 400)}` }, 502);
-      }
-    } catch (e) {
-      console.error("[notify-programa] graph:", e);
-      return json({ error: `graph_error: ${(e as Error)?.message ?? String(e)}` }, 502);
-    }
-
-    return json({ sent: true, total: destinatarios.length });
+    return await enviar({ destinatarios, emCopiaOculta, subject, html });
   } catch (e) {
     console.error("[notify-programa]", e);
     return json({ error: (e as Error)?.message ?? String(e) }, 500);

@@ -79,17 +79,18 @@ create table if not exists public.programas_ideias (
   criado_em    timestamptz not null default now(),
   updated_at   timestamptz,
 
-  -- A ideia nasce sempre como ideia (sem data/setor/ferramenta); a iniciativa
-  -- já existe e por isso precisa dizer quando começou, de quem é e com o quê.
+  -- Setor vale para as DUAS formas: é a dimensão do gráfico do Dashboard, que
+  -- mostra quantas ideias e quantas iniciativas cada setor tem. A iniciativa
+  -- pede ainda quando começou e com o quê.
   --
   -- coalesce no array_length: array vazio devolve NULL, e CHECK que avalia NULL
   -- PASSA — sem ele, a iniciativa entrava sem nenhuma ferramenta. O ELSE false
   -- pelo mesmo motivo: CASE sem ramo devolve NULL.
   constraint programas_ideias_campos_por_tipo check (
-    case tipo
+    setor is not null
+    and case tipo
       when 'ideia' then descricao is not null and problema is not null and beneficios is not null
-      when 'iniciativa' then data_inicio is not null and setor is not null
-                            and finalidade is not null
+      when 'iniciativa' then data_inicio is not null and finalidade is not null
                             and coalesce(array_length(ferramentas, 1), 0) >= 1
       else false
     end

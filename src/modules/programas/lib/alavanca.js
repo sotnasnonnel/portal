@@ -108,6 +108,10 @@ export async function criarIndicacao(valores, autorId) {
   }]);
   if (eAceite) console.warn('[alavanca] log do aceite falhou:', eAceite.message);
 
+  // Dois avisos, com destinatários diferentes: a diretoria e o comercial
+  // precisam saber que chegou indicação nova, e quem indicou precisa do
+  // veredito de elegibilidade que a tela acabou de mostrar.
+  notificarPrograma('alavanca_nova', { indicacao_id: data.id });
   notificarPrograma('alavanca_retorno', { indicacao_id: data.id });
 
   return { ...data, veredito };

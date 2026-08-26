@@ -569,13 +569,13 @@ const PROGRAMAS_USAR_STEPS = [
     icon: Lightbulb,
     titulo: "Campo de Ideias: ideia ou iniciativa",
     texto:
-      'Em "Campo de Ideias" você registra duas coisas diferentes. IDEIA é o que ainda não existe e você acha que a PHD deveria ter. INICIATIVA é o que você já está construindo, para uso próprio ou em projeto, mesmo sem a equipe de Inovação. O painel é aberto: todo mundo vê o que todo mundo está inventando.',
+      'Em "Campo de Ideias" ficam os dois botões de registrar e a lista do que VOCÊ registrou. IDEIA é o que ainda não existe e você acha que a PHD deveria ter. INICIATIVA é o que você já está construindo, para uso próprio ou em projeto, mesmo sem a equipe de Inovação.',
   },
   {
     icon: LayoutDashboard,
     titulo: "O painel, o quadro e o mapa",
     texto:
-      "O painel mostra quantas ideias e iniciativas existem, o volume por setor e um quadro organizado por tipo de uso (individual, coletivo ou venda de produto). No quadro, a cor da borda diz o setor e a borda tracejada diz que aquilo ainda é ideia. No mapa, você atualiza a situação dos registros que você mesmo criou.",
+      'O "Dashboard" é a visão da empresa inteira, aberta a todos: filtros (setor, tipo e status), os números, o gráfico por setor — que separa ideias de iniciativas — e o quadro por tipo de uso. No quadro, a cor do cartão diz o setor e a cor da borda diz se é ideia ou iniciativa. Clicando em qualquer cartão ou linha você abre o registro completo, e quem cadastrou pode editar por ali mesmo. O mesmo par existe na Alavanca: "Alavanca PHD" é onde você indica, "Painel da Alavanca" é a leitura do comercial.',
   },
   {
     icon: Rocket,

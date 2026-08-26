@@ -59,7 +59,7 @@ export async function criarIdeia(valores, autorId) {
     problema: ehIniciativa ? null : (valores.problema || '').trim(),
     beneficios: ehIniciativa ? null : (valores.beneficios || '').trim(),
     data_inicio: ehIniciativa ? valores.data_inicio : null,
-    setor: ehIniciativa ? valores.setor : null,
+    setor: valores.setor,
     ferramentas: ehIniciativa ? (valores.ferramentas || []).map((f) => f.trim()).filter(Boolean) : [],
     finalidade: ehIniciativa ? (valores.finalidade || '').trim() : null,
     link: (valores.link || '').trim() || null,
@@ -110,6 +110,69 @@ export async function atualizarSituacao(ideia, novaSituacao, autorId) {
     ideia_id: ideia.id, tipo: 'status', autor_id: autorId, de: ideia.situacao, para: novaSituacao,
   }]);
   notificarPrograma('ideia_status', { ideia_id: ideia.id, de: ideia.situacao, para: novaSituacao });
+
+  return { ...data, autorNome: ideia.autorNome };
+}
+
+/**
+ * Edição pelo autor (ou pelo admin do módulo), a partir do popup de detalhe.
+ *
+ * Só os campos que o formulário coleta — `tipo` e `autor_id` ficam de fora de
+ * propósito: trocar a forma faria a linha violar o CHECK por tipo, e trocar o
+ * autor é o tipo de mudança que precisa de rastro, não de um <select>.
+ *
+ * A RLS deixa passar autor e admin. UPDATE barrado pela RLS não dá erro no
+ * PostgREST — ele simplesmente não afeta linha nenhuma —, então a ausência de
+ * retorno é tratada aqui como recusa, e não como sucesso silencioso.
+ */
+export async function atualizarIdeia(ideia, valores, autorId) {
+  const ehIniciativa = ideia.tipo === 'iniciativa';
+  const patch = {
+    titulo: (valores.titulo || '').trim(),
+    setor: valores.setor,
+    categoria: valores.categoria,
+    retorno: (valores.retorno || '').trim(),
+    situacao: valores.situacao,
+    link: (valores.link || '').trim() || null,
+    observacoes: (valores.observacoes || '').trim() || null,
+    updated_at: new Date().toISOString(),
+  };
+  if (ehIniciativa) {
+    patch.data_inicio = valores.data_inicio || null;
+    patch.finalidade = (valores.finalidade || '').trim();
+    patch.ferramentas = (valores.ferramentas || []).map((f) => f.trim()).filter(Boolean);
+  } else {
+    patch.descricao = (valores.descricao || '').trim();
+    patch.problema = (valores.problema || '').trim();
+    patch.beneficios = (valores.beneficios || '').trim();
+  }
+
+  const { data, error } = await supabase
+    .from('programas_ideias')
+    .update(patch)
+    .eq('id', ideia.id)
+    .select(COLUNAS)
+    .maybeSingle();
+  if (error) throw new Error(`Não foi possível salvar: ${error.message}`);
+  if (!data) {
+    throw new Error('Você não pode editar este registro. Só o autor e o administrador do módulo podem.');
+  }
+
+  await supabase.from('programas_ideias_eventos').insert([{
+    ideia_id: ideia.id, tipo: 'editada', autor_id: autorId,
+  }]);
+
+  // Mudou a situação junto? Então o aviso de status também vale — senão a
+  // edição vira uma porta lateral para mexer no status sem ninguém saber.
+  if (patch.situacao !== ideia.situacao) {
+    await supabase.from('programas_ideias_eventos').insert([{
+      ideia_id: ideia.id, tipo: 'status', autor_id: autorId,
+      de: ideia.situacao, para: patch.situacao,
+    }]);
+    notificarPrograma('ideia_status', {
+      ideia_id: ideia.id, de: ideia.situacao, para: patch.situacao,
+    });
+  }
 
   return { ...data, autorNome: ideia.autorNome };
 }

@@ -19,9 +19,9 @@ import { criarIdeia } from '../../../lib/ideias';
  */
 
 const VAZIO = {
-  titulo: '', categoria: '', retorno: '',
+  titulo: '', setor: '', categoria: '', retorno: '',
   descricao: '', problema: '', beneficios: '',
-  data_inicio: '', setor: '', finalidade: '', situacao: 'idealizado',
+  data_inicio: '', finalidade: '', situacao: 'idealizado',
   link: '', observacoes: '',
 };
 
@@ -70,6 +70,7 @@ export default function NovaIdeia() {
       ]
       : [
         ['titulo', 'o título da ideia'],
+        ['setor', 'o setor'],
         ['descricao', 'a descrição da ideia'],
         ['problema', 'o problema que ela resolve'],
         ['beneficios', 'os benefícios esperados'],
@@ -171,21 +172,12 @@ export default function NovaIdeia() {
         {ehIniciativa && (
           <div className="pg-card">
             <h2 className="pg-card-tit">Origem</h2>
-            <div className="pg-dupla">
-              <div className="pg-campo">
-                <label htmlFor="data_inicio">Data de início da criação<span className="req">*</span></label>
-                <input
-                  id="data_inicio" type="date" className="pg-input"
-                  value={v.data_inicio} onChange={set('data_inicio')}
-                />
-              </div>
-              <div className="pg-campo">
-                <label htmlFor="setor">Setor<span className="req">*</span></label>
-                <select id="setor" className="pg-select" value={v.setor} onChange={set('setor')}>
-                  <option value="">Selecione…</option>
-                  {SETORES.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
+            <div className="pg-campo">
+              <label htmlFor="data_inicio">Data de início da criação<span className="req">*</span></label>
+              <input
+                id="data_inicio" type="date" className="pg-input"
+                value={v.data_inicio} onChange={set('data_inicio')}
+              />
             </div>
           </div>
         )}
@@ -203,6 +195,21 @@ export default function NovaIdeia() {
                 ? 'Ex.: painel de acompanhamento de medições'
                 : 'Ex.: plataforma de aconselhamento virtual para empreendedores'}
             />
+          </div>
+
+          {/* Setor vale para as duas formas: é a dimensão do gráfico do
+              Dashboard, que separa ideias de iniciativas por setor. */}
+          <div className="pg-campo">
+            <label htmlFor="setor">Setor<span className="req">*</span></label>
+            <select id="setor" className="pg-select" value={v.setor} onChange={set('setor')}>
+              <option value="">Selecione…</option>
+              {SETORES.map((x) => <option key={x} value={x}>{x}</option>)}
+            </select>
+            {!ehIniciativa && (
+              <p className="pg-campo-dica">
+                A que área a ideia se aplica — não precisa ser a sua.
+              </p>
+            )}
           </div>
 
           {!ehIniciativa && (

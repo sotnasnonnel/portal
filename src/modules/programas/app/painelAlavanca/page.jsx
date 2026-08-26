@@ -6,6 +6,8 @@ import {
   ELEGIBILIDADE_LABEL, STATUS_ALAVANCA, STATUS_ALAVANCA_LABEL,
   calcularPremio, ehComercial,
 } from '../../../../config/programas';
+import { COR_BARRA } from '../../lib/paleta';
+import { DetalheIndicacao } from '../components/Detalhe';
 import { listarIndicacoes, atualizarIndicacao } from '../../lib/alavanca';
 import { resumoAlavanca } from '../../lib/indicadores';
 import ConcluirIndicacao from './ConcluirIndicacao';
@@ -29,7 +31,10 @@ export default function PainelAlavanca() {
   const [erro, setErro] = useState('');
   const [salvando, setSalvando] = useState('');
   const [concluindo, setConcluindo] = useState(null);
+  const [detalhe, setDetalhe] = useState(null);
   const [rascunhos, setRascunhos] = useState({});   // comentário em edição, por id
+  const [fStatus, setFStatus] = useState('');
+  const [fElegib, setFElegib] = useState('');
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -45,7 +50,15 @@ export default function PainelAlavanca() {
 
   useEffect(() => { carregar(); }, [carregar]);
 
-  const r = useMemo(() => resumoAlavanca(linhas), [linhas]);
+  // Os filtros valem para os cards, os gráficos e as duas tabelas ao mesmo
+  // tempo: filtro que muda a tabela mas não o card faz os dois se contradizerem.
+  const filtradas = useMemo(() => linhas.filter(
+    (i) => (!fStatus || i.status === fStatus) && (!fElegib || i.elegibilidade === fElegib)
+  ), [linhas, fStatus, fElegib]);
+
+  const r = useMemo(() => resumoAlavanca(filtradas), [filtradas]);
+  const filtrando = Boolean(fStatus || fElegib);
+  const maiorPessoa = Math.max(1, ...r.porPessoa.map((p) => p.total));
 
   // Gate de UI. Quem não é do comercial não perde nada: a RLS já esconderia as
   // indicações alheias, e a tela sem dados seria mais confusa que a Alavanca.
@@ -91,11 +104,40 @@ export default function PainelAlavanca() {
         <div className="pg-vazio"><Loader2 size={20} className="pg-spin" /> Carregando…</div>
       ) : (
         <>
+          <div className="pg-filtros">
+            <div className="pg-filtro">
+              <label htmlFor="f-status">Status</label>
+              <select id="f-status" className="pg-select" value={fStatus} onChange={(e) => setFStatus(e.target.value)}>
+                <option value="">Todos</option>
+                {STATUS_ALAVANCA.map((x) => <option key={x.valor} value={x.valor}>{x.label}</option>)}
+              </select>
+            </div>
+            <div className="pg-filtro">
+              <label htmlFor="f-elegib">Elegibilidade</label>
+              <select id="f-elegib" className="pg-select" value={fElegib} onChange={(e) => setFElegib(e.target.value)}>
+                <option value="">Todas</option>
+                {Object.entries(ELEGIBILIDADE_LABEL).map(([v, l]) => (
+                  <option key={v} value={v}>{l}</option>
+                ))}
+              </select>
+            </div>
+            {filtrando && (
+              <button
+                type="button" className="pg-btn pg-btn-ghost pg-filtro-limpa"
+                onClick={() => { setFStatus(''); setFElegib(''); }}
+              >
+                Limpar filtros
+              </button>
+            )}
+          </div>
+
           <div className="pg-tiles">
             <div className="pg-card pg-tile is-destaque">
               <span className="pg-tile-rot">Indicações</span>
               <strong className="pg-tile-num">{r.total}</strong>
-              <span className="pg-tile-pe">recebidas no total</span>
+              <span className="pg-tile-pe">
+                {filtrando ? `de ${linhas.length} recebidas no total` : 'recebidas no total'}
+              </span>
             </div>
             <div className="pg-card pg-tile">
               <span className="pg-tile-rot">Elegíveis</span>
@@ -131,6 +173,95 @@ export default function PainelAlavanca() {
             </div>
           )}
 
+          <div className="pg-graficos">
+            <div className="pg-card">
+              <h2 className="pg-card-tit">Funil das indicações</h2>
+              <p className="pg-campo-dica">
+                Cada etapa é um subconjunto da anterior, e a porcentagem é sempre sobre o total
+                recebido — “70% de 80% de 60%” não é conta que alguém faça de cabeça. Indicação
+                não elegível sai do funil: é a perda, não uma etapa.
+              </p>
+              <div
+                className="pg-funil"
+                role="img"
+                aria-label={`Funil. ${r.funil.map((e) => `${e.nome}: ${e.total}`).join('. ')}.`}
+              >
+                {r.funil.map((e, i) => (
+                  <div className="pg-funil-linha" key={e.nome} aria-hidden="true">
+                    <span className="pg-barra-nome">{e.nome}</span>
+                    <span className="pg-barra-trilho">
+                      <span
+                        className="pg-barra"
+                        style={{
+                          width: `${r.funil[0].total ? (e.total / r.funil[0].total) * 100 : 0}%`,
+                          background: COR_BARRA,
+                        }}
+                      />
+                    </span>
+                    <span className="pg-barra-valor">{e.total}</span>
+                    <span className="pg-funil-pct">
+                      {i === 0 || !r.funil[0].total
+                        ? '—'
+                        : `${Math.round((e.total / r.funil[0].total) * 100)}%`}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              {(r.naoElegiveis > 0 || r.pendentes > 0) && (
+                <p className="pg-campo-dica">
+                  {r.naoElegiveis} barrada(s) por não elegibilidade
+                  {r.pendentes > 0 ? ` · ${r.pendentes} sem verificação automática` : ''}.
+                </p>
+              )}
+            </div>
+
+            <div className="pg-card">
+              <h2 className="pg-card-tit">Premiação</h2>
+              <p className="pg-campo-dica">0,5% do contrato, teto de R$ 10.000 por indicação.</p>
+              <dl className="pg-valores">
+                <div>
+                  <dt>Contratos fechados pelo programa</dt>
+                  <dd>{dinheiro(r.contratoTotal)}</dd>
+                </div>
+                <div>
+                  <dt>Premiação já paga</dt>
+                  <dd className="tom-alta">{dinheiro(r.premioPago)}</dd>
+                </div>
+                <div>
+                  <dt>A pagar</dt>
+                  <dd className={r.premioAPagar > 0 ? 'tom-atencao' : ''}>{dinheiro(r.premioAPagar)}</dd>
+                </div>
+              </dl>
+            </div>
+
+            {r.porPessoa.length > 0 && (
+              <div className="pg-card pg-card-largo">
+                <h2 className="pg-card-tit">Quem está indicando</h2>
+                <p className="pg-campo-dica">
+                  Participação no programa — o mapa de vencedores, abaixo, é a premiação.
+                </p>
+                <div
+                  className="pg-barras"
+                  role="img"
+                  aria-label={`Indicações por colaborador. ${r.porPessoa.map((x) => `${x.nome}: ${x.total}`).join('. ')}.`}
+                >
+                  {r.porPessoa.map((x) => (
+                    <div className="pg-barra-linha" key={x.nome} aria-hidden="true">
+                      <span className="pg-barra-nome" title={x.nome}>{x.nome}</span>
+                      <span className="pg-barra-trilho">
+                        <span
+                          className="pg-barra"
+                          style={{ width: `${(x.total / maiorPessoa) * 100}%`, background: COR_BARRA }}
+                        />
+                      </span>
+                      <span className="pg-barra-valor">{x.total}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="pg-card">
             <h2 className="pg-card-tit">Mapa de indicações</h2>
             <p className="pg-campo-dica">
@@ -138,7 +269,7 @@ export default function PainelAlavanca() {
               o retorno por e-mail a cada mudança de status.
             </p>
 
-            {linhas.length === 0 ? (
+            {filtradas.length === 0 ? (
               <p className="pg-campo-dica">Nenhuma indicação recebida ainda.</p>
             ) : (
               <div className="pg-tabela-scroll">
@@ -156,14 +287,16 @@ export default function PainelAlavanca() {
                     </tr>
                   </thead>
                   <tbody>
-                    {linhas.map((i) => {
+                    {filtradas.map((i) => {
                       const rascunho = rascunhos[i.id];
                       const emEdicao = rascunho !== undefined;
                       return (
                         <tr key={i.id}>
                           <td className="num">#{i.numero}</td>
                           <td>
-                            {i.oportunidade}
+                            <button type="button" className="pg-link" onClick={() => setDetalhe(i)}>
+                              {i.oportunidade}
+                            </button>
                             <span className="pg-motivo">{i.descricao}</span>
                           </td>
                           <td>
@@ -282,6 +415,8 @@ export default function PainelAlavanca() {
           </div>
         </>
       )}
+
+      <DetalheIndicacao indicacao={detalhe} onFechar={() => setDetalhe(null)} />
 
       {concluindo && (
         <ConcluirIndicacao

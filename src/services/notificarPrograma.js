@@ -3,15 +3,15 @@ import { supabase } from './supabase';
 /**
  * Avisa por e-mail sobre os programas internos (Edge Function notify-programa).
  *
- *   'ideia_nova'        -> toda a empresa: alguém registrou ideia ou iniciativa
- *   'ideia_status'      -> toda a empresa: a situação de uma iniciativa mudou
+ *   'ideia_nova'        -> gerentes e diretoria: registraram ideia ou iniciativa
+ *   'ideia_status'      -> gerentes e diretoria: a situação de uma mudou
+ *   'alavanca_nova'     -> diretoria e time comercial: chegou indicação nova
  *   'alavanca_retorno'  -> quem indicou: resultado da avaliação da indicação
  *                          (elegível, não elegível, em evolução, concluída)
  *
- * Os dois primeiros são divulgação para a empresa inteira — é o que a planilha
- * pede, e é justamente por isso que a lista de destinatários é montada no
- * servidor: mandar a lista de e-mails daqui exporia o quadro de colaboradores
- * no bundle do navegador.
+ * Os três primeiros vão para uma lista, e é justamente por isso que ela é
+ * montada no servidor: mandar a lista de e-mails daqui exporia o quadro de
+ * colaboradores no bundle do navegador.
  *
  * Best-effort: o e-mail nunca derruba a ação que já foi gravada no banco. Se
  * falhar, a informação continua no portal — o e-mail é o aviso, não o registro.
