@@ -1,16 +1,24 @@
 import { AlertTriangle } from "lucide-react";
-import { evaluateFoodOverage } from "../lib/reimbursementPolicy.js";
+import { evaluatePolicyOverage } from "../lib/reimbursementPolicy.js";
 import { formatCurrency } from "../lib/format.js";
 import "./FoodOverageNotice.css";
 
-// Mostra um alerta quando itens de alimentação passam do limite por refeição,
-// com a conta do excedente e de quanto o total deveria ficar dentro do limite.
+// Mostra um alerta quando o pedido passa de algum teto da política — refeição
+// acima do limite, alimentação do dia acima de R$ 100 ou diária de hospedagem
+// acima de R$ 285 —, com a conta do excedente e de quanto o total deveria ficar.
 // Não renderiza nada quando está tudo dentro do limite. `total` é o total geral
 // do reembolso (para calcular o "dentro do limite"); se omitido, usa só a soma
-// dos itens de alimentação.
+// dos itens avaliados.
 export default function FoodOverageNotice({ items, total }) {
-  const check = evaluateFoodOverage(items);
+  const check = evaluatePolicyOverage(items);
   if (!check.hasOverage) return null;
+
+  // O título diz o que estourou: alimentação, hospedagem ou os dois.
+  const titulo = check.food.hasOverage && check.lodging.hasOverage
+    ? "Valores acima do limite"
+    : check.lodging.hasOverage
+      ? "Hospedagem acima do limite"
+      : "Alimentação acima do limite";
 
   const grand = total != null ? Number(total) : check.spent;
   const dentroDoLimite = grand - check.over;
@@ -19,7 +27,7 @@ export default function FoodOverageNotice({ items, total }) {
     <div className="food-overage" role="alert">
       <div className="food-overage-head">
         <AlertTriangle size={16} aria-hidden="true" />
-        <strong>Alimentação acima do limite</strong>
+        <strong>{titulo}</strong>
       </div>
 
       <ul className="food-overage-list">
@@ -27,7 +35,7 @@ export default function FoodOverageNotice({ items, total }) {
           <li key={`${e.description}-${i}`}>
             <span className="food-overage-item">
               {e.description}
-              {e.meals > 1 ? ` (×${e.meals} refeições)` : ""}
+              {e.meals > 1 ? ` (×${e.meals} ${e.kind === "hospedagem" ? "diárias" : "refeições"})` : ""}
             </span>
             <span className="food-overage-detail">
               {formatCurrency(e.value)}

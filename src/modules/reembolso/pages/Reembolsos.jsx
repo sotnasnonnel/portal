@@ -44,8 +44,9 @@ export default function Reembolsos({ kind = "reembolso" }) {
   const isAdiantamento = kind === "adiantamento";
   const role = profile?.role;
   const isGestor = role === "gestor";
-  const isAdmin = role === "admin";
-  const canCreate = !isAdmin; // solicitante e gestor abrem pedidos; admin não
+  // Admin do reembolso ou do Financeiro: mesma visão (todos os pedidos, a pagar, PDF).
+  const isAdmin = !!profile?.isAdmin;
+  const canCreate = role !== "admin"; // solicitante e gestor abrem pedidos; admin não
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   // null = ainda não escolhido: cada papel cai na sua fila de trabalho —

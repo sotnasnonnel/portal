@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { ClipboardCheck, Check, X, Loader2, ChevronDown, CheckCheck, AlertTriangle } from 'lucide-react';
+import { ClipboardCheck, Check, X, Loader2, ChevronDown, CheckCheck, AlertTriangle, Truck } from 'lucide-react';
 import { useAuth } from '../../../../../contexts/AuthContext';
 import { supabase } from '../../../../../services/supabase';
 import { formatarMoeda } from '../../../../../utils/formatters';
@@ -8,6 +8,7 @@ import {
   etapaAtualFin, acaoDisponivelFin, resumoAndamentoFin, TIPO_LABEL_FIN,
 } from '../../../../../config/aprovacaoFinanceiro';
 import { categoriaLabel } from '../../../../../config/alcadas';
+import { modalidadeCartaoLabel, PRAZO_CARTAO_FISICO } from '../../../../../config/financeiro';
 import { meusPapeisAlcada, registrarAuditoria } from '../../../../../services/alcadas';
 import { notificarAprovadorFin } from '../../../../../services/notificarAprovadorFin';
 import '../../../../../components/UI/Components.css';
@@ -21,6 +22,7 @@ const TOM_BADGE = {
 const SELECT = `
   id, numero, tipo, status, solicitante_id, nome_despesa, nome_completo, email, telefone,
   centro_custo, valor, periodo, vitalicio, periodo_inicio, periodo_fim, aplicacao, observacao, created_at,
+  modalidade_cartao, endereco_entrega,
   categoria, dentro_orcamento, alcada_nivel_base, alcada_nivel_final, alcada_excecoes,
   etapas:solicitacoes_financeiro_etapas ( id, ordem, aprovador_id, papel, papel_codigo, tipo_etapa, status, justificativa, decidido_em )
 `;
@@ -207,7 +209,7 @@ export default function AcompanharFin() {
                 <button type="button" className="fin-sol-head" onClick={() => toggleCard(s.id)} aria-expanded={aberto}>
                   <ChevronDown size={16} className={`fin-sol-chevron ${aberto ? 'is-open' : ''}`} />
                   <span className="fin-sol-headtext">
-                    <strong>{s.numero != null && `#${s.numero} · `}{TIPO_LABEL_FIN[s.tipo] || s.tipo} · {s.nome_despesa || `Solicitado por ${solic}`}</strong>
+                    <strong>{s.numero != null && `#${s.numero} · `}{s.tipo === 'aumento_limite' ? TIPO_LABEL_FIN[s.tipo] : modalidadeCartaoLabel(s.modalidade_cartao)} · {s.nome_despesa || `Solicitado por ${solic}`}</strong>
                     {!aberto && resumo.tom === 'pendente' && <span className="fin-sol-sub">{resumo.texto}</span>}
                   </span>
                   <span className={`badge ${tomB.badge}`}>{tomB.label}</span>
@@ -218,6 +220,15 @@ export default function AcompanharFin() {
                     <div className="fin-sol-grid">
                       <div><span>Solicitante</span><strong>{solic}</strong></div>
                       <div><span>{s.tipo === 'aumento_limite' ? 'Cartão' : 'Descrição do cartão'}</span><strong>{s.nome_despesa || '—'}</strong></div>
+                      {s.tipo !== 'aumento_limite' && (
+                        <div><span>Tipo de cartão</span><strong>{modalidadeCartaoLabel(s.modalidade_cartao)}</strong></div>
+                      )}
+                      {s.modalidade_cartao === 'fisico' && s.tipo !== 'aumento_limite' && (
+                        <div className="is-largo">
+                          <span>Endereço de entrega</span>
+                          <strong className="fin-endereco-valor">{s.endereco_entrega || '—'}</strong>
+                        </div>
+                      )}
                       {s.nome_completo && <div><span>Nome completo</span><strong>{s.nome_completo}</strong></div>}
                       {s.email && <div><span>E-mail</span><strong>{s.email}</strong></div>}
                       {s.telefone && <div><span>Telefone</span><strong>{s.telefone}</strong></div>}
@@ -225,11 +236,15 @@ export default function AcompanharFin() {
                       <div><span>{s.tipo === 'aumento_limite' ? 'Novo limite' : 'Valor'}</span><strong>{s.valor != null ? formatarMoeda(s.valor) : '—'}</strong></div>
                       <div><span>Vigência</span><strong>{vigencia(s)}</strong></div>
                       <div><span>Aplicação</span><strong>{Array.isArray(s.aplicacao) && s.aplicacao.length ? s.aplicacao.join(', ') : '—'}</strong></div>
-                      <div><span>Categoria</span><strong>{categoriaLabel(s.categoria)}</strong></div>
-                      <div>
-                        <span>Orçamento</span>
-                        <strong>{s.dentro_orcamento == null ? '—' : s.dentro_orcamento ? 'Dentro do orçamento' : 'FORA do orçamento'}</strong>
-                      </div>
+                      {/* Campo aposentado: fica visível só nas solicitações antigas. */}
+                      {s.categoria && <div><span>Categoria</span><strong>{categoriaLabel(s.categoria)}</strong></div>}
+                      {/* Campo aposentado junto com a Categoria: some nas novas. */}
+                      {s.dentro_orcamento != null && (
+                        <div>
+                          <span>Orçamento</span>
+                          <strong>{s.dentro_orcamento ? 'Dentro do orçamento' : 'FORA do orçamento'}</strong>
+                        </div>
+                      )}
                       <div>
                         <span>Nível de alçada</span>
                         <strong>
@@ -240,6 +255,13 @@ export default function AcompanharFin() {
                       </div>
                       <div><span>Aberta em</span><strong>{fmtData(s.created_at)}</strong></div>
                     </div>
+
+                    {s.modalidade_cartao === 'fisico' && s.tipo !== 'aumento_limite' && (
+                      <div className="alc-modificador" style={{ marginTop: 10 }}>
+                        <Truck size={13} />
+                        <span>{PRAZO_CARTAO_FISICO}</span>
+                      </div>
+                    )}
 
                     {/* §6, pilar 5 — exceção fica visível a quem decide, não só no log. */}
                     {Array.isArray(s.alcada_excecoes) && s.alcada_excecoes.length > 0 && (

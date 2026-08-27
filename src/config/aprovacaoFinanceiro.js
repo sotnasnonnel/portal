@@ -13,7 +13,9 @@ export const EXECUTORES_FIN = [
 ];
 
 export const TIPO_LABEL_FIN = {
-  cartao_virtual: 'Cartão Virtual',
+  // O tipo cobre as duas modalidades (virtual e físico) — a modalidade de cada
+  // solicitação está em modalidade_cartao (ver config/financeiro.js).
+  cartao_virtual: 'Cartão',
   aumento_limite: 'Aumento de Limite',
 };
 

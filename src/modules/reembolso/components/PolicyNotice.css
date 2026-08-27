@@ -65,6 +65,15 @@
   color: var(--ink);
 }
 
+/* Linha de fechamento do bloco (teto do dia / dia completo): separada do resto
+   para não parecer mais um item da lista. */
+.policy-block li.policy-total {
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border);
+  font-weight: 600;
+}
+
 .policy-block-forbidden p {
   margin: 0;
   font-size: 13px;

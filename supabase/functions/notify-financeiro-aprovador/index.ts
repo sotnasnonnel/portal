@@ -20,9 +20,13 @@ function json(body: unknown, status = 200) {
 
 // Espelha TIPO_LABEL_FIN de src/config/aprovacaoFinanceiro.js.
 const TIPO_LABEL: Record<string, string> = {
-  cartao_virtual: "Cartão Virtual",
+  cartao_virtual: "Cartão",
   aumento_limite: "Aumento de Limite",
 };
+
+// Espelha modalidadeCartaoLabel/PRAZO_CARTAO_FISICO de src/config/financeiro.js.
+const modalidadeLabel = (v: unknown) => (v === "fisico" ? "Cartão físico" : "Cartão virtual");
+const PRAZO_CARTAO_FISICO = "Estimativa de 10 dias úteis para entrega.";
 
 const brl = (v: unknown) =>
   v == null ? null : Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -83,6 +87,9 @@ function montarHtml(opts: {
         <table role="presentation" cellpadding="0" cellspacing="0" style="font-size:14px;margin-bottom:18px">
           ${linha("Solicitante", solicitante)}
           ${linha(ehAumento ? "Cartão" : "Descrição do cartão", sol.nome_despesa)}
+          ${ehAumento ? "" : linha("Tipo de cartão", modalidadeLabel(sol.modalidade_cartao))}
+          ${ehAumento || sol.modalidade_cartao !== "fisico" ? "" : linha("Endereço de entrega", String(sol.endereco_entrega ?? "").replace(/\n/g, "<br>"))}
+          ${ehAumento || sol.modalidade_cartao !== "fisico" ? "" : linha("Prazo de entrega", PRAZO_CARTAO_FISICO)}
           ${linha("Centro de custo", sol.centro_custo)}
           ${linha(ehAumento ? "Novo limite total" : "Valor", brl(sol.valor))}
           ${linha("Vigência", vigencia(sol))}
@@ -109,7 +116,7 @@ Deno.serve(async (req) => {
 
     const { data: sol, error: eSol } = await supabase
       .from("solicitacoes_financeiro")
-      .select("id, numero, tipo, status, solicitante_id, nome_despesa, centro_custo, valor, periodo, vitalicio, periodo_inicio, periodo_fim, aplicacao")
+      .select("id, numero, tipo, status, solicitante_id, nome_despesa, centro_custo, valor, periodo, vitalicio, periodo_inicio, periodo_fim, aplicacao, modalidade_cartao, endereco_entrega")
       .eq("id", solicitacao_id)
       .maybeSingle();
     if (eSol) return json({ error: eSol.message }, 500);

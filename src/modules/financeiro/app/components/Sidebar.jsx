@@ -31,10 +31,19 @@ export default function Sidebar({ aberto = false, onFechar }) {
     isAdmin,
     temFinanceiro: !!modules?.financeiro,
     temReembolso: !!modules?.reembolso,
+    // Solicitante não vê painel: 'gestor' aprova a equipe e 'admin' paga.
+    vePainelReembolso: modules?.reembolso === 'admin' || modules?.reembolso === 'gestor' || isAdmin,
   });
   const [openGroups, setOpenGroups] = useState({});
 
-  const childAtivo = (items) => items.some((i) => pathname.startsWith(i.href));
+  // Item ativo = o href mais LONGO que casa com a rota. Com "/reembolsos" e
+  // "/reembolsos/dashboard" no mesmo menu, o prefixo simples acendia os dois.
+  const hrefAtivo = secoes
+    .flatMap((sec) => sec.items)
+    .map((i) => i.href)
+    .filter((href) => pathname === href || pathname.startsWith(`${href}/`))
+    .sort((a, b) => b.length - a.length)[0] || null;
+
   const toggleGroup = (key, atual) => setOpenGroups((p) => ({ ...p, [key]: !atual }));
 
   // Esc fecha o drawer. Fechar ao navegar e feito no onClick de cada link (toda
@@ -54,7 +63,7 @@ export default function Sidebar({ aberto = false, onFechar }) {
       key={item.href}
       to={item.href}
       title={item.label}
-      className={`finSb-link ${isSub ? 'finSb-sublink' : ''} ${pathname.startsWith(item.href) ? 'is-active' : ''}`}
+      className={`finSb-link ${isSub ? 'finSb-sublink' : ''} ${item.href === hrefAtivo ? 'is-active' : ''}`}
       onClick={onFechar}
     >
       <item.Icon size={16} />
@@ -96,8 +105,10 @@ export default function Sidebar({ aberto = false, onFechar }) {
                 </div>
               );
             }
-            // Grupo colapsável (dropdown): auto-abre na rota ativa; toggle manual prevalece.
-            const expandido = openGroups[sec.key] ?? childAtivo(sec.items);
+            // Os grupos abrem por padrão e só fecham por clique no cabeçalho:
+            // com "auto-abre na rota ativa", navegar para Adiantamentos fechava
+            // o grupo de Cartões sozinho, e o menu parecia sumir.
+            const expandido = openGroups[sec.key] ?? true;
             return (
               <div key={sec.key} className="finSb-group">
                 <button

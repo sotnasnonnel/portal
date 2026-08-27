@@ -94,6 +94,18 @@
 
 /* ---- dashboard: card, barras e tabela ---- */
 .fin-card { background: #fff; border: 1px solid var(--f-border); border-radius: 12px; padding: 14px 16px; }
+
+/* Topo do card de "Meus Cartões": nome do cartão, modalidade e situação. */
+.fin-cartao-topo {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.fin-cartao-topo strong { font-size: 0.92rem; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.fin-cartao-tipo {
+  font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+  color: var(--f-brand-700); background: var(--f-brand-50);
+  border-radius: 999px; padding: 3px 9px; white-space: nowrap;
+}
+.fin-cartao-topo .fin-badge { margin-left: auto; }
 .fin-bars { display: flex; flex-direction: column; gap: 2px; }
 .fin-bar-row {
   display: grid; grid-template-columns: minmax(90px, 150px) 1fr auto; align-items: center;
@@ -179,6 +191,55 @@
 .fin-termos-ok { color: var(--f-primary); }
 .fin-termos-ok svg { flex-shrink: 0; }
 
+/* Popup dos termos: lista corrida + cláusulas em destaque (prestação de contas
+   e auditoria), que ganham caixa própria para não passarem batido. Mesmo tom de
+   atenção do .alc-modificador. */
+.fin-termos-lista {
+  margin: 0; padding-left: 18px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.fin-termos-lista li { font-size: 13px; line-height: 1.5; }
+.fin-termos-lista li.is-destaque {
+  list-style: none; display: flex; align-items: flex-start; gap: 8px;
+  margin-left: -18px; padding: 10px 12px;
+  background: #fffbeb; border: 1px solid #fde68a; border-left-width: 3px;
+  border-radius: 8px; color: #92400e;
+}
+.fin-termos-lista li.is-destaque strong { color: #92400e; }
+.fin-termos-lista li.is-destaque svg { flex-shrink: 0; margin-top: 2px; }
+
+/* Consulta dos termos (botão ao lado do "?" da barra superior): mesma moldura
+   do guia, com busca e os documentos completos. */
+.fin-termos-modal { max-width: 640px; }
+.fin-termos-corpo { padding: 4px 24px 20px; overflow-y: auto; max-height: min(66vh, 580px); }
+.fin-termos-corpo h3 { margin: 0 0 6px; font-size: 1.05rem; color: var(--f-ink); }
+.fin-termos-intro { margin: 0 0 14px; font-size: 0.82rem; line-height: 1.5; color: var(--f-muted); }
+.fin-termos-busca {
+  display: flex; align-items: center; gap: 8px;
+  border: 1px solid var(--f-border); border-radius: 10px; padding: 9px 12px;
+  background: #fff; color: var(--f-muted);
+  position: sticky; top: 0; z-index: 1;
+}
+.fin-termos-busca:focus-within { border-color: var(--f-primary); }
+.fin-termos-busca input {
+  flex: 1; min-width: 0; border: none; outline: none; background: none;
+  font-size: 0.85rem; color: var(--f-ink); font-family: inherit;
+}
+.fin-termos-doc { margin-top: 18px; }
+.fin-termos-doc h4 {
+  margin: 0 0 10px; font-size: 0.85rem; color: var(--f-ink);
+  padding-top: 14px; border-top: 1px solid var(--f-border);
+}
+.fin-termos-doc:first-of-type h4 { padding-top: 4px; border-top: none; }
+.fin-termos-vazio {
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 18px; font-size: 0.8rem; color: var(--f-muted);
+}
+
+@media (max-width: 560px) {
+  .fin-termos-corpo { padding: 4px 16px 16px; max-height: 70vh; }
+}
+
 /* ---- cards de acompanhamento ---- */
 .fin-sol-card { background: #fff; border: 1px solid var(--f-border); border-radius: 12px; overflow: hidden; }
 .fin-sol-card.is-acao { border-color: var(--f-primary); box-shadow: 0 0 0 1px var(--f-primary); }
@@ -190,16 +251,28 @@
 .fin-sol-chevron { flex-shrink: 0; color: var(--f-muted); transition: transform 0.15s; }
 .fin-sol-chevron.is-open { transform: rotate(180deg); }
 .fin-sol-headtext { display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 2px; }
-.fin-sol-headtext strong { font-size: 0.9rem; font-weight: 600; }
-.fin-sol-sub { font-size: 0.78rem; color: var(--f-muted); }
+.fin-sol-headtext strong { font-size: 0.9rem; font-weight: 600; overflow-wrap: anywhere; }
+.fin-sol-sub { font-size: 0.78rem; color: var(--f-muted); overflow-wrap: anywhere; }
+.fin-sol-head .badge { flex-shrink: 0; }
 .fin-sol-body { padding: 4px 16px 16px; border-top: 1px solid var(--f-gray-100); }
 .fin-sol-grid {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   gap: 10px 18px; margin: 14px 0;
 }
-.fin-sol-grid > div { display: flex; flex-direction: column; }
-.fin-sol-grid span { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--f-muted); }
-.fin-sol-grid strong { font-size: 0.86rem; font-weight: 600; }
+/* min-width: 0 é o que impede a célula de estourar a coluna — sem ele um
+   e-mail (uma "palavra" só, sem espaço) empurra o texto por cima do vizinho. */
+.fin-sol-grid > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fin-sol-grid span {
+  font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--f-muted); overflow-wrap: anywhere;
+}
+.fin-sol-grid strong {
+  font-size: 0.86rem; font-weight: 600; line-height: 1.35;
+  min-width: 0; overflow-wrap: anywhere;
+}
+/* Campo de texto longo (endereço de entrega): ocupa a linha inteira em vez de
+   ficar espremido numa coluna de 210px. */
+.fin-sol-grid .is-largo { grid-column: 1 / -1; }
 .fin-sol-obs {
   background: var(--f-gray-50); border-radius: 8px; padding: 10px 12px;
   font-size: 0.85rem; color: var(--f-gray-700, #334155); margin-bottom: 12px; white-space: pre-wrap;
@@ -281,6 +354,12 @@
   letter-spacing: 0.04em; color: var(--f-brand-700);
 }
 .fin-hint { display: block; margin-top: 4px; font-size: 0.74rem; color: var(--f-muted); }
+/* Ação em texto dentro de uma dica (ex.: voltar do CC digitado para a lista). */
+.fin-link {
+  background: none; border: none; padding: 0; font: inherit;
+  color: var(--f-primary); text-decoration: underline; cursor: pointer;
+}
+.fin-link:hover { color: var(--f-brand-700); }
 
 /* ---- chips ---- */
 .fin-chip {
@@ -494,6 +573,41 @@
 }
 .alc-modificador svg { flex-shrink: 0; }
 
+/* ---- endereço de entrega (cartão físico) ---- */
+.fin-endereco {
+  border: 1px solid var(--f-border); border-radius: 12px;
+  padding: 14px 16px 4px; margin: 0 0 var(--space-lg); background: var(--f-gray-50);
+}
+.fin-endereco legend {
+  padding: 0 6px; font-size: 0.72rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.04em; color: var(--f-brand-700);
+}
+.fin-endereco-grid {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px;
+}
+.fin-endereco-grid .form-group { margin-bottom: 10px; }
+.fin-endereco-grid .campo-cep { grid-column: span 2; }
+.fin-endereco-grid .campo-logradouro { grid-column: span 3; }
+.fin-endereco-grid .campo-numero { grid-column: span 1; }
+.fin-endereco-grid .campo-complemento { grid-column: span 3; }
+.fin-endereco-grid .campo-bairro { grid-column: span 3; }
+.fin-endereco-grid .campo-cidade { grid-column: span 4; }
+.fin-endereco-grid .campo-uf { grid-column: span 2; }
+
+@media (max-width: 720px) {
+  .fin-endereco-grid { grid-template-columns: repeat(2, 1fr); }
+  .fin-endereco-grid .campo-cep,
+  .fin-endereco-grid .campo-numero,
+  .fin-endereco-grid .campo-uf { grid-column: span 1; }
+  .fin-endereco-grid .campo-logradouro,
+  .fin-endereco-grid .campo-complemento,
+  .fin-endereco-grid .campo-bairro,
+  .fin-endereco-grid .campo-cidade { grid-column: span 2; }
+}
+
+/* Endereço guardado em 3 linhas: preserva as quebras onde ele é exibido. */
+.fin-endereco-valor { white-space: pre-line; overflow-wrap: anywhere; }
+
 /* ---- prévia da alçada ---- */
 .alc-previa {
   border: 1px solid #99f6e4; background: var(--f-brand-50);
@@ -529,3 +643,18 @@
   font-size: 0.7rem; font-weight: 700;
 }
 .alc-previa-nota { margin: 10px 0 0; font-size: 0.74rem; color: var(--f-muted); line-height: 1.4; }
+
+/* Régua das faixas de valor dentro da prévia: responde "e se eu pedir mais?"
+   antes de a pessoa digitar o valor. */
+.alc-faixas {
+  list-style: none; margin: 10px 0 0; padding: 10px 0 0;
+  border-top: 1px dashed #99f6e4; display: grid; gap: 4px;
+}
+.alc-faixas li {
+  display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline;
+  font-size: 0.76rem; color: var(--f-muted);
+}
+.alc-faixa-valor { font-weight: 600; color: var(--f-gray-600); font-variant-numeric: tabular-nums; }
+.alc-faixas li.is-atual { color: var(--f-brand-700); }
+.alc-faixas li.is-atual .alc-faixa-valor { color: var(--f-brand-700); }
+.alc-previa.is-bloqueado .alc-faixas { border-top-color: #fecaca; }

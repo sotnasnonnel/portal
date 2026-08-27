@@ -268,7 +268,9 @@ export function AuthProvider({ children }) {
     // DP liberado para gestor, coordenador e admin (RH); usuário comum fica bloqueado.
     dp: ['gestor', 'coordenador', 'admin', 'rh'].includes(user?.perfil) ? user.perfil : null,
     // Reembolso liberado: acesso pelo papel cadastrado em reembolso_profiles.
-    reembolso: reembolsoProfile?.role ?? null, // user | admin
+    // O time do Financeiro (financeiro_role = 'admin') entra como admin mesmo
+    // sem cadastro lá — enxerga todos os pedidos e gera o PDF com as notas.
+    reembolso: reembolsoProfile?.role ?? (user?.financeiroRole === 'admin' ? 'admin' : null), // user | admin
     solic: solicProfile?.role ?? null,         // user | admin
     // Controle de Horas: aberto a todos os logados. O papel DERIVA do perfil da
     // Gestão de Pessoas (mesma hierarquia); quem enxerga a equipe são os

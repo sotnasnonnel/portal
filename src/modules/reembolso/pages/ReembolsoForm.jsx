@@ -15,8 +15,12 @@ import { extractNfFromDataUrl } from "../services/nfExtraction.js";
 import { compressImageToDataUrl } from "../lib/image.js";
 import { formatCurrency, todayIso } from "../lib/format.js";
 import { makeKey, newItem, itemsFromExtraction } from "../lib/nfCapture.js";
-import { evaluateFoodOverage, detectForbiddenItems } from "../lib/reimbursementPolicy.js";
+import { evaluatePolicyOverage, detectForbiddenItems } from "../lib/reimbursementPolicy.js";
 import { kindMeta } from "../lib/kind.js";
+// Mesma fonte de Cliente/Obra do CC das solicitações do Financeiro: o
+// organograma (projeto backoffice). Uma lista só, para os dois módulos
+// chamarem a mesma obra pelo mesmo código.
+import { listarTodosContratos } from "../../financeiro/app/solicitacoes/contratos.js";
 import CameraCapture from "../components/CameraCapture.jsx";
 import ImageLightbox from "../components/ImageLightbox.jsx";
 import PolicyNotice from "../components/PolicyNotice.jsx";
@@ -34,6 +38,9 @@ const ITEM_SUGGESTIONS = [
   "HOSPEDAGEM",
   "ADIANTAMENTO",
 ];
+
+// Opção "Outro" do seletor de obra. Sentinela: nunca é gravado.
+const OBRA_OUTRA = "__outra__";
 
 export default function ReembolsoForm({ kind = "reembolso" }) {
   const navigate = useNavigate();
@@ -71,6 +78,17 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
   const [importError, setImportError] = useState("");
   const [showCamera, setShowCamera] = useState(false);
   const [lightbox, setLightbox] = useState(null);
+  // Cliente/Obra vindo do organograma. `obraOutro` é a escolha explícita de
+  // digitar — obra nova ou rateio que ainda não está no organograma.
+  const [obras, setObras] = useState([]);
+  const [loadingObras, setLoadingObras] = useState(true);
+  const [erroObras, setErroObras] = useState(false);
+  const [obraOutro, setObraOutro] = useState(false);
+
+  // Digita quando não há lista, quando a pessoa escolheu "Outro" ou quando o
+  // valor já gravado (edição de um pedido antigo) não está mais no organograma.
+  const temLista = !erroObras && obras.length > 0;
+  const obraDigitavel = !temLista || obraOutro || (!!clientObra && !obras.includes(clientObra));
 
   const total = useMemo(
     () => items.reduce((sum, it) => sum + Number(it.qty || 1) * Number(it.value || 0), 0),
@@ -83,6 +101,16 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
       const { data } = await listGestores();
       if (active) setGestores(data);
     })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    listarTodosContratos()
+      .then((lista) => { if (active) { setObras(lista); setLoadingObras(false); } })
+      .catch(() => { if (active) { setErroObras(true); setLoadingObras(false); } });
     return () => {
       active = false;
     };
@@ -226,12 +254,13 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
         return [...base, ...newItems].map((it, idx) => ({ ...it, sort_order: idx }));
       });
 
-      // Alerta imediato: se a IA leu uma refeição acima do limite, avisa quanto
-      // passou já no momento da importação da nota.
-      const food = evaluateFoodOverage(newItems);
+      // Alerta imediato: se a IA leu uma refeição (ou diária) acima do limite,
+      // avisa quanto passou já no momento da importação da nota.
+      const food = evaluatePolicyOverage(newItems);
       if (food.hasOverage) {
         showToast(
-          `Alimentação acima do limite nesta nota: ${formatCurrency(food.spent)} gastos, ` +
+          `${food.lodging.hasOverage && !food.food.hasOverage ? "Hospedagem" : "Alimentação"} acima do limite nesta nota: ` +
+            `${formatCurrency(food.spent)} gastos, ` +
             `${formatCurrency(food.allowed)} dentro do limite — excede ${formatCurrency(food.over)}.`,
           "warning",
           7000
@@ -459,12 +488,52 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
             )}
             <label className="field">
               <span>Cliente / Obra</span>
-              <input
-                value={clientObra}
-                onChange={(e) => setClientObra(e.target.value)}
-                placeholder="Ex.: APER-CT01-CONS"
-                required
-              />
+              {loadingObras ? (
+                <input value="" placeholder="Carregando obras do organograma…" disabled readOnly />
+              ) : obraDigitavel ? (
+                <>
+                  <input
+                    value={clientObra}
+                    onChange={(e) => setClientObra(e.target.value)}
+                    placeholder="Ex.: APER-CT01-CONS"
+                    required
+                  />
+                  <small className="field-hint">
+                    {erroObras
+                      ? "Não foi possível carregar o organograma — informe a obra manualmente."
+                      : obras.length === 0
+                        ? "Nenhuma obra encontrada no organograma deste mês — informe manualmente."
+                        : "Obra digitada à mão."}
+                    {temLista && (
+                      <>
+                        {" "}
+                        <button
+                          type="button"
+                          className="field-link"
+                          onClick={() => { setObraOutro(false); setClientObra(""); }}
+                        >
+                          Escolher da lista
+                        </button>
+                      </>
+                    )}
+                  </small>
+                </>
+              ) : (
+                <select
+                  value={clientObra}
+                  onChange={(e) => {
+                    if (e.target.value === OBRA_OUTRA) { setObraOutro(true); setClientObra(""); return; }
+                    setClientObra(e.target.value);
+                  }}
+                  required
+                >
+                  <option value="">Selecione a obra…</option>
+                  {obras.map((o) => (
+                    <option key={o} value={o}>{o}</option>
+                  ))}
+                  <option value={OBRA_OUTRA}>Outro (digitar)</option>
+                </select>
+              )}
             </label>
             {selfApprove ? (
               <label className="field">

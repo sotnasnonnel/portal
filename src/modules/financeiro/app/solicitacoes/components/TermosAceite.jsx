@@ -1,4 +1,4 @@
-import { FileText, Check, X, ShieldCheck } from 'lucide-react';
+import { FileText, Check, X, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { getTermos } from '../../../../../config/financeiroTermos';
 
 /**
@@ -36,9 +36,14 @@ export default function TermosAceite({ sol, user, aceite, termosOpen, setTermosO
             </div>
             <div className="modal-body" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
               <p style={{ marginBottom: 'var(--space-md)', fontSize: 13, color: 'var(--color-text-secondary)' }}>{termos.intro}</p>
-              <ul style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {termos.itens.map(([t, txt]) => (
-                  <li key={t} style={{ fontSize: 13, lineHeight: 1.5 }}><strong>{t}:</strong> {txt}</li>
+              {/* Cláusulas marcadas com destaque saem da lista corrida: são as que
+                  o solicitante mais precisa ver antes de aceitar. */}
+              <ul className="fin-termos-lista">
+                {termos.itens.map(([t, txt, destaque]) => (
+                  <li key={t} className={destaque ? 'is-destaque' : ''}>
+                    {destaque && <AlertTriangle size={13} aria-hidden="true" />}
+                    <span><strong>{t}:</strong> {txt}</span>
+                  </li>
                 ))}
               </ul>
               <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 'var(--space-lg)', fontSize: 13, cursor: 'pointer' }}>

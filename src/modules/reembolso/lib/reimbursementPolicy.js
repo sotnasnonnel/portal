@@ -10,8 +10,20 @@ export const POLICY = {
     { label: "Jantar", value: 40 },
     { label: "Café da manhã", value: 20 },
   ],
-  // Diária cheia = alimentação + hospedagem (R$)
-  diaria: 285,
+  // Teto de alimentação por DIA: as três refeições somadas (40 + 40 + 20).
+  // Sem ele, três almoços no mesmo dia passavam, porque cada um cabia no teto
+  // da refeição.
+  get alimentacaoDia() {
+    return this.alimentacao.reduce((s, it) => s + it.value, 0);
+  },
+  // Hospedagem: teto POR DIÁRIA (R$). É um limite separado do da alimentação.
+  hospedagem: 285,
+  // Diária cheia = o que um dia de viagem completo pode custar: a alimentação
+  // do dia MAIS a hospedagem. Só de exibição — quem trava são os dois tetos
+  // acima, cada um no seu grupo de itens.
+  get diariaMaxima() {
+    return this.alimentacaoDia + this.hospedagem;
+  },
   // Itens que não podem ser reembolsados
   naoPermitido: [
     "Bebidas alcoólicas",
@@ -117,6 +129,32 @@ function mealOfGroup(group) {
   return meal;
 }
 
+// Palavras que identificam HOSPEDAGEM, pela categoria que a IA atribuiu à nota
+// ou pela descrição do item.
+const LODGING_KEYS = ["HOSPEDAGEM", "HOTEL", "POUSADA", "AIRBNB", "HOSTEL", "DIARIA"];
+
+export function isLodging(text) {
+  const d = normalize(text);
+  return !!d && LODGING_KEYS.some((k) => d.includes(k));
+}
+
+// Agrupa itens por NOTA. Item sem nota vira um grupo próprio (uma linha = um
+// gasto). Compartilhado pelas duas avaliações (alimentação e hospedagem).
+function groupByNote(items) {
+  const groups = new Map();
+  let soloId = 0;
+  for (const it of items ?? []) {
+    const noteKey = it.nf_ref ?? it.nf_image_id ?? null;
+    const key = noteKey ?? `__solo-${soloId++}`;
+    if (!groups.has(key)) groups.set(key, { isNote: noteKey != null, items: [] });
+    groups.get(key).items.push(it);
+  }
+  return [...groups.values()];
+}
+
+const somaGrupo = (grupo) =>
+  grupo.reduce((s, it) => s + Number(it.value || 0) * (Number(it.qty || 1) || 1), 0);
+
 // Avalia uma lista de itens e calcula o quanto a alimentação passou do limite.
 // O limite (almoço/jantar R$40, café R$20) é POR REFEIÇÃO, não por linha do
 // cupom: itens da mesma nota são somados e comparados ao limite uma única vez.
@@ -127,20 +165,17 @@ function mealOfGroup(group) {
 export function evaluateFoodOverage(items) {
   // Agrupa itens da mesma nota (mesma refeição). Itens sem nota viram grupos
   // individuais (uma linha = uma refeição).
-  const groups = new Map();
-  let soloId = 0;
-  for (const it of items ?? []) {
-    const noteKey = it.nf_ref ?? it.nf_image_id ?? null;
-    const key = noteKey ?? `__solo-${soloId++}`;
-    if (!groups.has(key)) groups.set(key, { isNote: noteKey != null, items: [] });
-    groups.get(key).items.push(it);
-  }
+  const groups = groupByNote(items);
 
   let spent = 0;
   let allowed = 0;
   const exceeded = [];
+  // Alimentação liberada por dia, para aplicar o teto diário depois dos tetos
+  // por refeição. Sem data (item digitado sem preencher), fica de fora: não dá
+  // para atribuir a um dia.
+  const porDia = new Map();
 
-  for (const group of groups.values()) {
+  for (const group of groups) {
     const meal = mealOfGroup(group.items);
     if (!meal) continue; // grupo não é refeição (ex.: estacionamento, hospedagem)
 
@@ -153,8 +188,13 @@ export function evaluateFoodOverage(items) {
     const meals = group.isNote ? 1 : Number(group.items[0].qty || 1) || 1;
     const limit = meal.limit * meals;
 
+    const liberado = Math.min(total, limit);
     spent += total;
-    allowed += Math.min(total, limit);
+    allowed += liberado;
+
+    const dia = group.items.find((it) => it.item_date)?.item_date || null;
+    if (dia) porDia.set(dia, (porDia.get(dia) || 0) + liberado);
+
     if (total > limit) {
       const count = group.items.length;
       exceeded.push({
@@ -171,8 +211,98 @@ export function evaluateFoodOverage(items) {
     }
   }
 
+  // Teto do DIA: o que sobreviveu aos tetos por refeição ainda precisa caber
+  // nos R$ 100 diários (almoço + jantar + café).
+  for (const [dia, liberadoNoDia] of porDia) {
+    if (liberadoNoDia <= POLICY.alimentacaoDia + 0.001) continue;
+    const excedeDia = liberadoNoDia - POLICY.alimentacaoDia;
+    allowed -= excedeDia;
+    exceeded.push({
+      kind: "alimentacao",
+      label: "Alimentação do dia",
+      description: `Alimentação em ${formatarDia(dia)}`,
+      meals: 1,
+      value: liberadoNoDia,
+      limit: POLICY.alimentacaoDia,
+      over: excedeDia,
+    });
+  }
+
   const over = spent - allowed;
   return { hasOverage: over > 0.001, spent, allowed, over, exceeded };
+}
+
+// dd/mm — só para o texto do aviso; a data já vem como "YYYY-MM-DD".
+function formatarDia(iso) {
+  const [, m, d] = String(iso).slice(0, 10).split("-");
+  return m && d ? `${d}/${m}` : String(iso);
+}
+
+/**
+ * Hospedagem acima do teto por diária (POLICY.hospedagem).
+ *
+ * Contado por NOTA, não por dia: a nota do hotel cobre várias diárias e traz a
+ * quantidade — o limite é R$ 285 × diárias. Fosse por dia, uma nota de 3 noites
+ * lançada num dia só apareceria como excedente que não existe.
+ */
+export function evaluateLodgingOverage(items) {
+  let spent = 0;
+  let allowed = 0;
+  const exceeded = [];
+
+  for (const group of groupByNote(items)) {
+    const ehHospedagem = group.items.some(
+      (it) => isLodging(it.meal_category) || isLodging(it.description)
+    );
+    if (!ehHospedagem) continue;
+
+    const total = somaGrupo(group.items);
+    const diarias = Math.max(
+      1,
+      group.items.reduce((s, it) => s + (Number(it.qty || 1) || 1), 0)
+    );
+    const limit = POLICY.hospedagem * diarias;
+
+    spent += total;
+    allowed += Math.min(total, limit);
+    if (total > limit) {
+      exceeded.push({
+        kind: "hospedagem",
+        label: "Hospedagem",
+        description: group.items[0].description || "Hospedagem",
+        meals: diarias,
+        value: total,
+        limit,
+        over: total - limit,
+      });
+    }
+  }
+
+  const over = spent - allowed;
+  return { hasOverage: over > 0.001, spent, allowed, over, exceeded };
+}
+
+/**
+ * Alimentação + hospedagem numa conta só — é o que o formulário mostra e o que
+ * o gestor desconta ao aprovar. Os dois tetos são independentes: um dia inteiro
+ * de viagem pode chegar a R$ 100 de alimentação MAIS R$ 285 de hospedagem.
+ */
+export function evaluatePolicyOverage(items) {
+  const food = evaluateFoodOverage(items);
+  const lodging = evaluateLodgingOverage(items);
+  const over = food.over + lodging.over;
+  return {
+    hasOverage: over > 0.001,
+    spent: food.spent + lodging.spent,
+    allowed: food.allowed + lodging.allowed,
+    over,
+    exceeded: [
+      ...food.exceeded.map((e) => ({ kind: "alimentacao", ...e })),
+      ...lodging.exceeded,
+    ],
+    food,
+    lodging,
+  };
 }
 
 // Data de pagamento calculada a partir da data de APROVAÇÃO:

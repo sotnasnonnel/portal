@@ -9,9 +9,24 @@ import { CreditCard, TrendingUp } from 'lucide-react';
  * - tipoDb: valor da coluna `tipo` em solicitacoes_financeiro (definido na Parte 2)
  */
 export const SOLICITACOES_FIN = [
-  { slug: 'cartao-virtual', label: 'Solicitação de Criação de Cartão Virtual', curto: 'Cartão Virtual', icon: CreditCard, status: 'pronto', tipoDb: 'cartao_virtual' },
+  { slug: 'cartao-virtual', label: 'Solicitação de Criação de Cartão', curto: 'Solicitação', icon: CreditCard, status: 'pronto', tipoDb: 'cartao_virtual' },
   { slug: 'aumento-limite', label: 'Solicitação de Aumento de Limite', curto: 'Aumento de Limite', icon: TrendingUp, status: 'pronto', tipoDb: 'aumento_limite' },
 ];
+
+/**
+ * Modalidades do cartão. O tipo da solicitação continua sendo 'cartao_virtual'
+ * (fluxos, alçadas e aumento de limite não mudam) — o que muda é a modalidade:
+ * o FÍSICO exige endereço de entrega e leva a estimativa de prazo abaixo.
+ */
+export const MODALIDADES_CARTAO = [
+  { value: 'virtual', label: 'Cartão virtual', hint: 'Emitido no sistema, sem entrega física.' },
+  { value: 'fisico', label: 'Cartão físico', hint: 'Enviado para o endereço informado.' },
+];
+
+export const modalidadeCartaoLabel = (v) => (v === 'fisico' ? 'Cartão físico' : 'Cartão virtual');
+
+/** Aviso de prazo mostrado (e repetido ao aprovador) quando o cartão é físico. */
+export const PRAZO_CARTAO_FISICO = 'Estimativa de 10 dias úteis para entrega.';
 
 export const getSolicitacaoFin = (slug) => SOLICITACOES_FIN.find((s) => s.slug === slug);
 export const getSolicitacaoFinPorTipo = (tipoDb) => SOLICITACOES_FIN.find((s) => s.tipoDb === tipoDb);

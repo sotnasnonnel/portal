@@ -339,6 +339,16 @@ export async function notifyApprover(id) {
   }
 }
 
+// Avisa o SOLICITANTE por e-mail o desfecho (aprovado/reprovado) — no
+// reembolso aprovado, com a data de pagamento. Best-effort, como o aviso de ida.
+export async function notifyRequesterDecision(id) {
+  try {
+    await supabase.functions.invoke("notify-reembolso-decisao", { body: { id } });
+  } catch (err) {
+    console.warn("[notify-reembolso-decisao] falhou:", err?.message);
+  }
+}
+
 // Lista de gestores (id + nome) para o solicitante escolher o gestor imediato.
 // Catálogo que muda pouco -> TTL longo.
 export async function listGestores() {

@@ -9,12 +9,13 @@ import {
   deleteReimbursement,
   getReimbursement,
   markSettlement,
+  notifyRequesterDecision,
   STATUS,
   updateReimbursementStatus,
 } from "../services/reimbursements.js";
 import { reconcileAdvance } from "../lib/advanceAccountability.js";
 import { formatCurrency, formatDate } from "../lib/format.js";
-import { evaluateFoodOverage } from "../lib/reimbursementPolicy.js";
+import { evaluatePolicyOverage } from "../lib/reimbursementPolicy.js";
 import { kindMeta } from "../lib/kind.js";
 import StatusBadge from "../components/StatusBadge.jsx";
 import ImageLightbox from "../components/ImageLightbox.jsx";
@@ -36,6 +37,15 @@ export default function ReembolsoDetail() {
   const [rejecting, setRejecting] = useState(false);
   const [rejectNote, setRejectNote] = useState("");
   const [lightbox, setLightbox] = useState(null);
+
+  // Esc fecha o modal de reprovação, como nos outros diálogos do app.
+  useEffect(() => {
+    if (!rejecting) return undefined;
+    const onKey = (e) => { if (e.key === "Escape") setRejecting(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [rejecting]);
+
   const [accReturning, setAccReturning] = useState(false);
   const [accReturnNote, setAccReturnNote] = useState("");
 
@@ -85,19 +95,20 @@ export default function ReembolsoDetail() {
 
   const canCancel =
     reembolso.status === STATUS.EM_ANALISE &&
-    (profile?.role === "admin" || reembolso.requester_id === profile?.id);
+    (profile?.isAdmin || reembolso.requester_id === profile?.id);
 
-  const canDelete = profile?.role === "admin";
-  const isAdmin = profile?.role === "admin";
+  const canDelete = !!profile?.isAdmin;
+  // Admin do reembolso ou do Financeiro: mesma visão (pagamento + PDF das notas).
+  const isAdmin = !!profile?.isAdmin;
   const canIssuePdf = isAdmin && reembolso.status === STATUS.APROVADO;
   // Reprovado: o próprio solicitante pode ajustar e reenviar para aprovação.
   const canEdit =
     reembolso.status === STATUS.REPROVADO && reembolso.requester_id === profile?.id;
   const meta = kindMeta(reembolso.kind);
 
-  // Excedente de alimentação -> permite aprovar com desconto.
+  // Excedente de alimentação ou de hospedagem -> permite aprovar com desconto.
   const total = Number(reembolso.total || 0);
-  const foodCheck = evaluateFoodOverage(reembolso.items);
+  const foodCheck = evaluatePolicyOverage(reembolso.items);
   const discountedTotal = Math.max(0, total - foodCheck.over);
   // Valor efetivamente aprovado/pago. Registros antigos (sem approved_amount)
   // foram aprovados pelo total cheio.
@@ -119,7 +130,13 @@ export default function ReembolsoDetail() {
     isAdiantamento && profile?.role === "gestor" && reembolso.manager_id === profile?.id && accStatus === "em_analise";
   const canMarkSettlement =
     isAdiantamento && accStatus === "acertado" && accRec.outcome !== "exato" && !reembolso.settlement &&
-    (profile?.role === "admin" || (profile?.role === "gestor" && reembolso.manager_id === profile?.id));
+    (profile?.isAdmin || (profile?.role === "gestor" && reembolso.manager_id === profile?.id));
+
+  const fecharReprovacao = () => {
+    if (actionLoading) return;
+    setRejecting(false);
+    setRejectNote("");
+  };
 
   async function handleDecision(next, note, approvedAmount = null) {
     if (actionLoading) return;
@@ -140,6 +157,9 @@ export default function ReembolsoDetail() {
       showToast(`Não foi possível concluir: ${error.message}`, "error");
       return;
     }
+    // Retorno para quem pediu: e-mail com o desfecho (e, no reembolso aprovado,
+    // a data em que o pagamento cai). Não bloqueia o fluxo se falhar.
+    notifyRequesterDecision(reembolso.id);
     const cap = `${meta.singular[0].toUpperCase()}${meta.singular.slice(1)}`;
     showToast(
       next === STATUS.APROVADO
@@ -311,7 +331,7 @@ export default function ReembolsoDetail() {
                     className="btn btn-primary"
                     onClick={() => handleApprove(discountedTotal)}
                     disabled={actionLoading}
-                    title={`Desconta o excedente de alimentação (${formatCurrency(foodCheck.over)})`}
+                    title={`Desconta o excedente acima da política (${formatCurrency(foodCheck.over)})`}
                   >
                     <Check size={16} /> Aprovar com desconto ({formatCurrency(discountedTotal)})
                   </button>
@@ -398,37 +418,45 @@ export default function ReembolsoDetail() {
         </>
       )}
 
+      {/* Reprovação em MODAL: antes era um card no fim da página, fora do campo
+          de visão de quem acabou de clicar em "Reprovar" no topo — dava a
+          impressão de que o botão não tinha feito nada. */}
       {rejecting && canDecide && (
-        <section className="detail-card reject-card">
-          <h3>Justificativa da reprovação</h3>
-          <textarea
-            rows={3}
-            value={rejectNote}
-            onChange={(e) => setRejectNote(e.target.value)}
-            placeholder="Explique o motivo da reprovação (será mostrado ao solicitante)."
-          />
-          <div className="reject-actions">
-            <button
-              type="button"
-              className="btn btn-ghost"
-              onClick={() => {
-                setRejecting(false);
-                setRejectNote("");
-              }}
-              disabled={actionLoading}
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              className="btn btn-ghost btn-danger"
-              onClick={() => handleDecision(STATUS.REPROVADO, rejectNote)}
-              disabled={actionLoading || !rejectNote.trim()}
-            >
-              <X size={16} /> {actionLoading ? "Reprovando…" : "Confirmar reprovação"}
-            </button>
+        <div className="modal-overlay" onClick={fecharReprovacao}>
+          <div
+            className="modal-box reject-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reject-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="modal-title" id="reject-title">Reprovar {meta.singular}</h3>
+            <p className="modal-message">
+              {reembolso.requester_name} · {formatCurrency(total)}. A justificativa vai para o
+              solicitante, no app e no e-mail de retorno.
+            </p>
+            <textarea
+              rows={4}
+              autoFocus
+              value={rejectNote}
+              onChange={(e) => setRejectNote(e.target.value)}
+              placeholder="Explique o motivo da reprovação."
+            />
+            <div className="modal-actions">
+              <button type="button" className="btn btn-ghost" onClick={fecharReprovacao} disabled={actionLoading}>
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="btn btn-danger-solid"
+                onClick={() => handleDecision(STATUS.REPROVADO, rejectNote)}
+                disabled={actionLoading || !rejectNote.trim()}
+              >
+                <X size={16} /> {actionLoading ? "Reprovando…" : "Confirmar reprovação"}
+              </button>
+            </div>
           </div>
-        </section>
+        </div>
       )}
 
       <section className="detail-grid">
