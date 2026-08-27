@@ -3,7 +3,7 @@ import './AvatarUsuario.css';
 
 // Bolinha do usuário LOGADO: foto do Microsoft 365 quando existe, iniciais como
 // fallback (sem foto no perfil, sem token do Graph ou primeira carga offline).
-// O visual é da classe de cada módulo (.home-avatar, .horasSb-avatar, ...) —
+// O visual é da classe de quem usa (.home-avatar, .modSb-avatar, ...) —
 // aqui só entra a <img> que preenche o círculo.
 export default function AvatarUsuario({ className = '', iniciais, ...rest }) {
   const { fotoUrl } = useAuth();

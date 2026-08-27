@@ -1,0 +1,277 @@
+/* ==========================================================================
+   Sidebar única dos módulos (ver ModuleSidebar.jsx).
+   Métricas vêm de src/styles/ui.css; a cor de acento vem do módulo, por
+   --mod-accent / --mod-accent-soft / --mod-accent-ink, definidos na raiz de
+   cada módulo (.horasRoot, .admRoot, .finRoot, .pgRoot, .solicRoot).
+   ========================================================================== */
+/* Os --mod-accent* vêm da RAIZ do módulo (.horasRoot, .finRoot, ...). Não são
+   declarados aqui de propósito: uma declaração na própria .modSb venceria o
+   valor herdado do módulo e pintaria tudo de terracota. O fallback vai em cada
+   uso, com var(--mod-accent, <terracota do portal>). */
+.modSb {
+  width: var(--shell-sidebar-w);
+  flex-shrink: 0;
+  background: #fff;
+  border-right: 1px solid var(--border, #e2e8f0);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  transition: width 0.2s ease;
+}
+
+/* ---- marca ---- */
+.modSb-head {
+  display: flex;
+  align-items: center;
+  height: var(--shell-topbar-h);
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  flex-shrink: 0;
+}
+.modSb-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0 16px;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.modSb-brand:hover { background: var(--bg-soft, #f8fafc); }
+.modSb-logo {
+  width: 34px;
+  height: 34px;
+  background: var(--mod-accent, #c35e1e);
+  border-radius: var(--ctl-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.modSb-logo img { width: 100%; height: 100%; object-fit: contain; }
+/* Logo em imagem (Gestão de Pessoas): a marca já tem cor própria, o tile de
+   acento atrás dela só sujaria. */
+.modSb-logo.is-img { background: none; }
+.modSb-brandtext {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  color: var(--ink, #0f172a);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.modSb-collapse {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin-right: 10px;
+  border: none;
+  background: none;
+  border-radius: var(--ctl-radius-sm);
+  color: var(--muted, #64748b);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.modSb-collapse:hover { background: var(--bg-soft, #f1f5f9); color: var(--ink, #0f172a); }
+
+/* ---- navegação ---- */
+.modSb-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 8px;
+  flex: 1;
+  overflow-y: auto;
+}
+.modSb-sec { display: flex; flex-direction: column; gap: 2px; }
+.modSb-seclabel {
+  color: #94a3b8;
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 12px 12px 4px;
+  text-transform: uppercase;
+}
+/* Seletor composto de propósito: o PMO tem resets antigos do app Next
+   (`.solicRoot button { font: inherit }` e `.solicRoot a { color: inherit }`)
+   que venciam `.modSb-link` e deixavam o menu com peso e cor diferentes dos
+   outros módulos. Qualificar pelo elemento (0,2,1) garante o padrão. */
+.modSb a.modSb-link,
+.modSb button.modSb-link,
+.modSb div.modSb-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  border-radius: var(--ctl-radius-sm);
+  color: var(--muted, #475569);
+  font-size: var(--font-size-md);
+  font-weight: 500;
+  padding: 9px 12px;
+  cursor: pointer;
+  text-decoration: none;
+  background: none;
+  border: none;
+  text-align: left;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+}
+.modSb a.modSb-link:hover,
+.modSb button.modSb-link:hover {
+  background: var(--bg-soft, #f8fafc);
+  color: var(--ink, #0f172a);
+  text-decoration: none;
+}
+.modSb a.modSb-link.is-active,
+.modSb button.modSb-link.is-active {
+  background: var(--mod-accent-soft, #fdf3ec);
+  color: var(--mod-accent-ink, #9c4a17);
+  font-weight: 600;
+}
+.modSb-link svg { flex-shrink: 0; }
+/* :not(.modSb-badge) — sem isso o contador também esticava (flex:1) e comia o
+   rótulo do item ("Acompa..."). */
+.modSb-link > span:not(.modSb-badge) {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.modSb-link.is-locked { opacity: 0.55; cursor: default; }
+.modSb-lock { flex-shrink: 0; }
+.modSb-badge {
+  flex: 0 0 auto;
+  min-width: 18px;
+  text-align: center;
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--mod-accent, #c35e1e);
+  color: #fff;
+  line-height: 1.4;
+}
+
+/* ---- grupo colapsável (o "dividido" do padrão Financeiro) ---- */
+.modSb-group { display: flex; flex-direction: column; }
+.modSb-group-header .modSb-chevron { flex: 0 0 auto; margin-left: auto; transition: transform 0.15s; }
+.modSb-group-header.expanded .modSb-chevron { transform: rotate(180deg); }
+/* Filhos recuados com fio-guia: deixa claro onde o grupo começa e termina
+   (mesmo tratamento da sidebar de Gestão de Pessoas). */
+.modSb-group-children {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-left: 19px;
+  padding-left: 10px;
+  border-left: 1px solid var(--border, #e2e8f0);
+}
+.modSb a.modSb-sublink,
+.modSb button.modSb-sublink { font-size: var(--font-size-sm); }
+.modSb-sublink svg { width: 14px; height: 14px; }
+.modSb-group-header .modSb-badge { margin-left: auto; }
+.modSb-group-header .modSb-badge + .modSb-chevron { margin-left: 6px; }
+
+/* ---- rodapé ---- */
+.modSb-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid var(--border, #e2e8f0);
+  padding: 12px;
+}
+.modSb-avatar {
+  width: var(--ctl-h-icon);
+  height: var(--ctl-h-icon);
+  border-radius: 50%;
+  background: var(--mod-accent, #c35e1e);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.modSb-userinfo { flex: 1; min-width: 0; }
+.modSb-userinfo strong {
+  display: block;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--ink, #0f172a);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.modSb-userinfo span { display: block; font-size: var(--font-size-2xs); color: var(--muted, #64748b); }
+.modSb-logout {
+  background: none;
+  border: none;
+  color: var(--muted, #64748b);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: var(--ctl-radius-sm);
+  display: flex;
+}
+.modSb-logout:hover { background: var(--bg-soft, #f1f5f9); color: #ef4444; }
+
+/* ---- recolhida (desktop): só ícones ---- */
+@media (min-width: 769px) {
+  .modSb.isCollapsed { width: var(--shell-sidebar-collapsed-w); }
+  .modSb.isCollapsed .modSb-brandtext,
+  .modSb.isCollapsed .modSb-seclabel,
+  .modSb.isCollapsed .modSb-userinfo,
+  .modSb.isCollapsed .modSb-chevron,
+  .modSb.isCollapsed .modSb-badge,
+  .modSb.isCollapsed .modSb-link > span { display: none; }
+  .modSb.isCollapsed .modSb-brand,
+  .modSb.isCollapsed .modSb-link,
+  .modSb.isCollapsed .modSb-footer { justify-content: center; padding-left: 0; padding-right: 0; gap: 0; }
+  .modSb.isCollapsed .modSb-collapse { margin: 0 auto; }
+  .modSb.isCollapsed .modSb-sublink { padding-left: 0; }
+  /* Recolhida não tem hierarquia visível: o fio-guia só deslocaria os ícones. */
+  .modSb.isCollapsed .modSb-group-children {
+    margin-left: 0;
+    padding-left: 0;
+    border-left: none;
+  }
+}
+
+/* ---- mobile: vira drawer, acionado pelo ☰ do PortalHeader ---- */
+.modSb-overlay { display: none; }
+@media (max-width: 768px) {
+  .modSb {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: min(86vw, 320px);
+    z-index: 100;
+    transform: translateX(-100%);
+    transition: transform 0.2s;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
+  }
+  .modSb.is-open { transform: translateX(0); }
+  /* z-index entre a sidebar (100) e o PortalHeader (50). */
+  .modSb-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    z-index: 90;
+  }
+  .modSb-overlay.is-visible { opacity: 1; pointer-events: auto; }
+}

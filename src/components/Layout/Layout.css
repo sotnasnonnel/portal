@@ -7,7 +7,6 @@
 .layout-content {
   flex: 1;
   min-width: 0;
-  margin-left: var(--sidebar-w);
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -17,19 +16,12 @@
 
 .layout-main {
   flex: 1;
-  padding: 24px 32px 32px;
+  padding: var(--shell-main-pad-y) var(--shell-main-pad-x) var(--shell-main-pad-bottom);
   animation: fadeIn 0.3s ease;
 }
 
-/* Sidebar recolhida (desktop): vira um trilho estreito só de ícones. */
-@media (min-width: 769px) {
-  .layout-collapsed .layout-content {
-    margin-left: var(--sidebar-collapsed-w, 64px);
-  }
-}
-
 .page-title {
-  font-size: var(--font-size-2xl);
+  font-size: var(--font-size-3xl);
   font-weight: 700;
   color: var(--color-text-primary);
   margin-bottom: var(--space-lg);
@@ -43,19 +35,15 @@
 }
 
 .page-subtitle {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-md);
   color: var(--color-text-secondary);
   margin-top: -12px;
   margin-bottom: var(--space-xl);
 }
 
 @media (max-width: 768px) {
-  .layout-content {
-    margin-left: 0;
-  }
-
   .layout-main {
-    padding: var(--space-md);
+    padding: var(--shell-main-pad-mobile);
   }
 
   .page-title {
