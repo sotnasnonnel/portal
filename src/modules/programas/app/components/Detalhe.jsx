@@ -104,11 +104,15 @@ function BotaoExcluir({ rotulo, excluindo, onExcluir }) {
 /**
  * Detalhe de uma ideia ou iniciativa.
  *
- * `podeEditar` vem de fora (autor ou admin do módulo) e só controla a UI — quem
- * de fato barra a edição é a RLS, e lib/ideias.js trata o UPDATE sem retorno
- * como recusa. O botão some para quem não pode, em vez de aparecer e falhar.
+ * `podeEditar` e `podeExcluir` são SEPARADOS de propósito: editar é só de quem
+ * escreveu — ninguém reescreve o texto alheio —, enquanto excluir também cabe
+ * ao admin do módulo, que de outro modo não teria como remover o registro de
+ * alguém que saiu da empresa. Ambos só controlam a UI: quem barra de verdade é
+ * a RLS, e lib/ideias.js trata o UPDATE/DELETE sem retorno como recusa.
  */
-export function DetalheIdeia({ registro, podeEditar = false, onFechar, onSalvar, onExcluir }) {
+export function DetalheIdeia({
+  registro, podeEditar = false, podeExcluir = false, onFechar, onSalvar, onExcluir,
+}) {
   const [editando, setEditando] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
@@ -172,7 +176,7 @@ export function DetalheIdeia({ registro, podeEditar = false, onFechar, onSalvar,
       onFechar={fechar}
       acoes={(
         <>
-          {podeEditar && onExcluir && (
+          {podeExcluir && onExcluir && (
             <BotaoExcluir rotulo="Excluir para sempre?" excluindo={excluindo} onExcluir={excluir} />
           )}
           <span className="pg-modal-pe-espaco" />

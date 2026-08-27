@@ -90,9 +90,9 @@ export default function MinhasIndicacoes() {
             <thead>
               <tr>
                 <th>ID</th>
-                <th>Oportunidade</th>
+                <th className="col-titulo">Oportunidade</th>
                 <th>Empresa</th>
-                <th>Enviada</th>
+                <th className="col-curta">Enviada</th>
                 <th>Elegibilidade</th>
                 <th>Situação</th>
                 <th>Premiação</th>
@@ -102,7 +102,7 @@ export default function MinhasIndicacoes() {
               {linhas.map((i) => (
                 <tr key={i.id}>
                   <td className="num">#{i.numero}</td>
-                  <td>
+                  <td className="col-titulo">
                     <button type="button" className="pg-link" onClick={() => setDetalhe(i)}>
                       {i.oportunidade}
                     </button>

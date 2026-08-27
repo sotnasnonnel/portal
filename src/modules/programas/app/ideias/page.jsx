@@ -126,11 +126,11 @@ export default function CampoDeIdeias() {
             <thead>
               <tr>
                 <th>ID</th>
-                <th>Título</th>
-                <th>Forma</th>
-                <th>Setor</th>
+                <th className="col-titulo">Título</th>
+                <th className="col-curta">Forma</th>
+                <th className="col-curta">Setor</th>
                 <th>Tipo</th>
-                <th>Registro</th>
+                <th className="col-curta">Registro</th>
                 <th>Situação</th>
               </tr>
             </thead>
@@ -138,7 +138,7 @@ export default function CampoDeIdeias() {
               {minhas.map((l) => (
                 <tr key={l.id}>
                   <td className="num">#{l.numero}</td>
-                  <td>
+                  <td className="col-titulo">
                     <button type="button" className="pg-link" onClick={() => setDetalhe(l)}>
                       {l.titulo}
                     </button>
@@ -148,8 +148,8 @@ export default function CampoDeIdeias() {
                       <span className="pg-motivo">Falta o retorno esperado — clique para preencher.</span>
                     )}
                   </td>
-                  <td>{l.tipo === 'ideia' ? 'Ideia' : 'Iniciativa'}</td>
-                  <td>{l.setor}</td>
+                  <td className="col-curta">{l.tipo === 'ideia' ? 'Ideia' : 'Iniciativa'}</td>
+                  <td className="col-curta">{l.setor}</td>
                   <td>{CATEGORIA_LABEL[l.categoria] || l.categoria}</td>
                   <td className="num">{data(l.criado_em)}</td>
                   <td>
@@ -172,12 +172,12 @@ export default function CampoDeIdeias() {
         </div>
       )}
 
-      {/* Aqui só aparece o que é meu, então editar é sempre permitido — o
-          `souAdmin` cobre o caso do admin que abre um registro alheio pelo
-          Dashboard e volta com ele aberto. */}
+      {/* A lista já é só a minha, mas a condição fica explícita: é a mesma da
+          RLS, e some se um dia a tela passar a mostrar registro de terceiro. */}
       <DetalheIdeia
         registro={detalhe}
-        podeEditar={Boolean(detalhe) && (souAdmin || detalhe.autor_id === user?.id)}
+        podeEditar={Boolean(detalhe) && detalhe.autor_id === user?.id}
+        podeExcluir={Boolean(detalhe) && (souAdmin || detalhe.autor_id === user?.id)}
         onFechar={() => setDetalhe(null)}
         onSalvar={salvarEdicao}
         onExcluir={apagar}

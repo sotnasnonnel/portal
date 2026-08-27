@@ -534,7 +534,11 @@
   overflow-x: auto; background: #fff;
   border: 1px solid var(--p-border); border-radius: 14px;
 }
-.pg-tabela { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+/* min-width é o que faz a rolagem do container funcionar. Só com width:100%,
+   a tabela ENCOLHE até caber no celular: as colunas se espremem, o título quebra
+   quase letra a letra e a linha fica com metros de altura. Com o piso, ela
+   mantém a largura legível e o container rola de lado. */
+.pg-tabela { width: 100%; min-width: 880px; border-collapse: collapse; font-size: 0.84rem; }
 .pg-tabela th {
   text-align: left; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.04em;
   color: var(--p-muted); font-weight: 700; padding: 11px 14px; white-space: nowrap;
@@ -547,6 +551,29 @@
 .pg-tabela .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .pg-tabela .pg-select, .pg-tabela .pg-input { height: 36px; font-size: 0.8rem; min-width: 150px; }
 .pg-tabela-vazia { text-align: center; color: var(--p-muted); padding: 28px 14px; }
+/* O título é a coluna que carrega texto de verdade — as outras são rótulo curto.
+   Sem um piso próprio, o navegador reparte a largura por igual e sobra pouco
+   justamente para ela. */
+.pg-tabela .col-titulo { min-width: 280px; }
+/* Colunas de rótulo curto não têm por que quebrar em duas linhas. */
+.pg-tabela .col-curta { white-space: nowrap; }
+
+/* A rolagem lateral precisa se anunciar: no toque não há barra visível, e a
+   tabela cortada parece truncada em vez de rolável. */
+@media (max-width: 900px) {
+  .pg-tabela-scroll {
+    -webkit-overflow-scrolling: touch;
+    background:
+      linear-gradient(to right, #fff 30%, rgba(255, 255, 255, 0)) left / 40px 100% no-repeat,
+      linear-gradient(to left, #fff 30%, rgba(255, 255, 255, 0)) right / 40px 100% no-repeat,
+      radial-gradient(farthest-side at 0 50%, rgba(15, 23, 42, 0.12), transparent) left / 14px 100% no-repeat,
+      radial-gradient(farthest-side at 100% 50%, rgba(15, 23, 42, 0.12), transparent) right / 14px 100% no-repeat;
+    background-attachment: local, local, scroll, scroll;
+    /* O shorthand acima zera a cor de fundo; sem esta linha o miolo da tabela
+       fica transparente e o cinza da página aparece por trás das linhas. */
+    background-color: #fff;
+  }
+}
 
 .pg-badge {
   display: inline-block; padding: 3px 9px; border-radius: 999px;
