@@ -223,7 +223,7 @@ export default function ConfigProjetosPage() {
                   <td data-label="Pessoa">
                     <b>{p.nome}</b>
                     {p.funcao ? (
-                      <div className="horas-muted" style={{ fontSize: '.72rem' }}>
+                      <div className="horas-muted" style={{ fontSize: 'var(--font-size-2xs)' }}>
                         {p.funcao}
                       </div>
                     ) : null}

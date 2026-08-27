@@ -44,13 +44,13 @@
 }
 
 .portal-header-greeting .hello {
-  font-size: 12px;
+  font-size: var(--font-size-xs);
   color: var(--muted);
   font-weight: 400;
 }
 
 .portal-header-greeting .name {
-  font-size: 16px;
+  font-size: var(--font-size-lg);
   font-weight: 600;
   color: var(--ink);
   white-space: nowrap;
@@ -88,7 +88,7 @@
 }
 
 .portal-header-date {
-  font-size: 13px;
+  font-size: var(--font-size-sm);
   color: var(--muted);
   display: flex;
   align-items: center;
@@ -118,6 +118,6 @@
   }
 
   .portal-header-greeting .name {
-    font-size: 15px;
+    font-size: var(--font-size-md);
   }
 }

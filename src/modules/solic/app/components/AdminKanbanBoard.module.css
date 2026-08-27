@@ -25,8 +25,8 @@
 }
 
 .colTitle{
-  font-weight: 800;
-  font-size: 14px;
+  font-weight: 600;
+  font-size: var(--font-size-md);
   letter-spacing: -0.01em;
   color: var(--text);
 }
@@ -36,12 +36,12 @@
   height: 24px;
   padding: 0 9px;
   border-radius: 999px;
-  background: rgba(255,255,255,0.8);
-  font-weight: 800;
+  background: var(--surface);
+  font-weight: 700;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: var(--font-size-xs);
 }
 
 .drop{
@@ -106,8 +106,8 @@
 }
 
 .code{
-  font-weight: 700;
-  color: #26405d;
+  font-weight: 600;
+  color: var(--text);
   line-height: 1.05;
   min-width: 0;
 
@@ -134,19 +134,19 @@
 
 
 .pill{
-  border: 1px solid rgba(38,64,93,0.14);
+  border: 1px solid var(--border);
   border-radius: 999px;
   padding: 3px 10px;
-  font-weight: 700;
-  font-size: 12px;
-  background: rgba(255,255,255,0.7);
+  font-weight: 600;
+  font-size: var(--font-size-xs);
+  background: var(--surface);
 }
 
 .name{
   font-weight: 600;
-  color: rgba(38,64,93,0.85);
+  color: var(--text);
   margin-bottom: 8px;
-  font-size: 13px;
+  font-size: var(--font-size-sm);
   /* e-mails e nomes compostos não têm onde quebrar sozinhos e seriam cortados */
   overflow-wrap: anywhere;
 }
@@ -154,8 +154,8 @@
 .meta{
   display: grid;
   gap: 4px;
-  font-size: 12px;
-  color: rgba(38,64,93,0.72);
+  font-size: var(--font-size-xs);
+  color: var(--muted);
   line-height: 1.35;
   overflow-wrap: anywhere;
 }
@@ -168,11 +168,11 @@
 
 .empty{
   padding: 18px 10px;
-  color: rgba(38,64,93,0.50);
-  font-weight: 700;
-  font-size: 13px;
+  color: var(--muted);
+  font-weight: 400;
+  font-size: var(--font-size-sm);
   text-align: center;
-  border: 1px dashed rgba(38,64,93,0.20);
+  border: 1px dashed var(--border-strong);
   border-radius: var(--radius-sm);
   background: var(--blue-tint);
 }

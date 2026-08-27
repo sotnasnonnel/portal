@@ -14,15 +14,15 @@
   --green-dark: #008078;
   --green-soft: #cdebe8;
 
-  --ice: #f2f2f2;
-  --bg: #ffffff;
+  --ice: var(--neutral-bg, #f8fafc);
+  --bg: var(--neutral-surface, #ffffff);
   --bg-soft: var(--ice);
-  --border: #e3e3e3;
-  --border-strong: #cfcfcf;
+  --border: var(--neutral-border, #e2e8f0);
+  --border-strong: var(--neutral-border-strong, #cbd5e1);
 
-  --ink: #1b2735;
-  --ink-soft: #3a4654;
-  --muted: #6b7280;
+  --ink: var(--neutral-ink, #0f172a);
+  --ink-soft: #334155;
+  --muted: var(--neutral-muted, #64748b);
 
   --status-analise-bg: #fff3d6;
   --status-analise-fg: #8a6300;
@@ -49,10 +49,10 @@
   --space-6: 32px;
   --space-7: 48px;
 
-  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-sans: var(--font-family, "Inter", "Segoe UI", system-ui, -apple-system, sans-serif);
 
-  --sidebar-w: 240px;
-  --topbar-h: 64px;
+  --sidebar-w: var(--shell-sidebar-w, 256px);
+  --topbar-h: var(--shell-topbar-h, 64px);
 
   /* Foco visível acessível e transições padronizadas */
   --focus-ring: 0 0 0 3px rgba(195, 94, 30, 0.35);

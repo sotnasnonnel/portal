@@ -14,10 +14,10 @@ type Row = {
 
 // Grupos de status (mesmos rótulos e cores do StatusBadge / dashboard) p/ os cards-filtro.
 const GROUPS: { key: string; label: string; statuses: string[]; color: string }[] = [
-  { key: "aberta", label: "Aberta", statuses: ["SUBMITTED", "URGENT_REVIEW"], color: "#26405d" },
-  { key: "andamento", label: "Em andamento", statuses: ["SCHEDULING", "SCHEDULED", "IN_PROGRESS"], color: "#c35e1e" },
-  { key: "concluida", label: "Concluída", statuses: ["COMPLETED"], color: "#00a49a" },
-  { key: "cancelada", label: "Cancelada", statuses: ["CANCELLED"], color: "#b85236" },
+  { key: "aberta", label: "Aberta", statuses: ["SUBMITTED", "URGENT_REVIEW"], color: "var(--tone-aberto-fg)" },
+  { key: "andamento", label: "Em andamento", statuses: ["SCHEDULING", "SCHEDULED", "IN_PROGRESS"], color: "var(--tone-andamento-fg)" },
+  { key: "concluida", label: "Concluída", statuses: ["COMPLETED"], color: "var(--tone-ok-fg)" },
+  { key: "cancelada", label: "Cancelada", statuses: ["CANCELLED"], color: "var(--tone-erro-fg)" },
 ];
 
 const groupOf = (status: string) => GROUPS.find((g) => g.statuses.includes(status))?.key ?? null;
@@ -95,7 +95,7 @@ function Inner() {
 
       {err ? (
         <div className="card">
-          <div className="small" style={{ color: "var(--danger)", fontWeight: 800 }}>
+          <div className="small" style={{ color: "var(--danger)", fontWeight: 600 }}>
             {err}
           </div>
         </div>

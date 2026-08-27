@@ -193,7 +193,7 @@ export default function EditarReenviarModal({ sol, funcoes = [], modo = 'respond
       return (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
           {(c.opcoes || []).map((opt) => (
-            <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+            <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--font-size-sm)' }}>
               <input type="checkbox" checked={arr.includes(opt)} onChange={() => toggle(opt)} /> {opt}
             </label>
           ))}
@@ -204,7 +204,7 @@ export default function EditarReenviarModal({ sol, funcoes = [], modo = 'respond
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {(c.opcoes || []).map((opt) => (
-            <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+            <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--font-size-sm)' }}>
               <input type="radio" name={c.id} checked={v === opt} onChange={() => set(c.id, opt)} /> {opt}
             </label>
           ))}
@@ -248,7 +248,7 @@ export default function EditarReenviarModal({ sol, funcoes = [], modo = 'respond
               <span>{m.aviso}</span>
             </div>
           ) : (
-            <p style={{ margin: '0 0 var(--space-md)', color: 'var(--color-text-secondary)', fontSize: 13 }}>
+            <p style={{ margin: '0 0 var(--space-md)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
               {m.aviso}
             </p>
           )}
@@ -281,7 +281,7 @@ export default function EditarReenviarModal({ sol, funcoes = [], modo = 'respond
                   {existentes.length > 0 && (
                     <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 var(--space-sm)' }}>
                       {existentes.map((a) => (
-                        <li key={a.path} style={{ fontSize: 13, color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                        <li key={a.path} style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                           <Paperclip size={14} /> <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.nome || 'Anexo'}</span>
                           <button type="button" className="btn btn-ghost btn-sm" title="Remover anexo" onClick={() => removerExistente(a.path)}><X size={14} /></button>
                         </li>
@@ -293,7 +293,7 @@ export default function EditarReenviarModal({ sol, funcoes = [], modo = 'respond
                   {anexos.arquivos.length > 0 && (
                     <ul style={{ listStyle: 'none', padding: 0, margin: 'var(--space-sm) 0 0' }}>
                       {anexos.arquivos.map((f, i) => (
-                        <li key={`${f.name}-${i}`} style={{ fontSize: 13, color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                        <li key={`${f.name}-${i}`} style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                           <Paperclip size={14} /> <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.name}</span>
                           <button type="button" className="btn btn-ghost btn-sm" title="Remover" onClick={() => anexos.remover(i)}><X size={14} /></button>
                         </li>
@@ -301,7 +301,7 @@ export default function EditarReenviarModal({ sol, funcoes = [], modo = 'respond
                     </ul>
                   )}
                   {anexos.erro && <span className="contratacao-erro">{anexos.erro}</span>}
-                  <span style={{ fontSize: 12, color: 'var(--color-text-muted)', display: 'block', marginTop: 4 }}>
+                  <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', display: 'block', marginTop: 4 }}>
                     Os anexos atuais são mantidos; remova os que não quiser e/ou adicione novos.
                   </span>
                 </div>

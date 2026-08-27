@@ -35,7 +35,7 @@ export default function TermosAceite({ sol, user, aceite, termosOpen, setTermosO
               <button className="modal-close" onClick={() => setTermosOpen(false)}><X size={18} /></button>
             </div>
             <div className="modal-body" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
-              <p style={{ marginBottom: 'var(--space-md)', fontSize: 13, color: 'var(--color-text-secondary)' }}>{termos.intro}</p>
+              <p style={{ marginBottom: 'var(--space-md)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>{termos.intro}</p>
               {/* Cláusulas marcadas com destaque saem da lista corrida: são as que
                   o solicitante mais precisa ver antes de aceitar. */}
               <ul className="fin-termos-lista">
@@ -46,11 +46,11 @@ export default function TermosAceite({ sol, user, aceite, termosOpen, setTermosO
                   </li>
                 ))}
               </ul>
-              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 'var(--space-lg)', fontSize: 13, cursor: 'pointer' }}>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 'var(--space-lg)', fontSize: 'var(--font-size-sm)', cursor: 'pointer' }}>
                 <input type="checkbox" checked={aceiteCheck} onChange={(e) => setAceiteCheck(e.target.checked)} style={{ marginTop: 2 }} />
                 <span>Li e estou de acordo com os termos acima.</span>
               </label>
-              <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 6 }}>
+              <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: 6 }}>
                 Aceite registrado em: {user?.nome} — {new Date().toLocaleDateString('pt-BR')}
               </div>
             </div>

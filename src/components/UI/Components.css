@@ -83,7 +83,7 @@
 }
 
 .stat-card-label {
-  font-size: 13px;
+  font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   margin-top: 2px;
   font-weight: 500;
@@ -97,7 +97,7 @@
   gap: 6px;
   padding: 4px 10px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: var(--font-size-xs);
   font-weight: 600;
   text-transform: capitalize;
   white-space: nowrap;
@@ -145,11 +145,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 10px 18px;
-  border-radius: 10px;
+  gap: var(--ctl-gap);
+  min-height: var(--ctl-h);
+  padding: 0 16px;
+  border-radius: var(--ctl-radius);
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--font-size-md);
   line-height: 1.2;
   transition: background-color var(--ease), color var(--ease), box-shadow var(--ease),
     transform 0.05s ease;
@@ -238,20 +239,23 @@
 }
 
 .btn-sm {
-  padding: 6px 14px;
+  min-height: var(--ctl-h-sm);
+  padding: 0 12px;
   font-size: var(--font-size-xs);
 }
 
 .btn-lg {
-  padding: 14px 28px;
-  font-size: var(--font-size-base);
+  min-height: var(--ctl-h-lg);
+  padding: 0 24px;
+  font-size: var(--font-size-md);
 }
 
 .btn-icon {
-  width: 36px;
-  height: 36px;
+  width: var(--ctl-h-icon);
+  height: var(--ctl-h-icon);
+  min-height: var(--ctl-h-icon);
   padding: 0;
-  border-radius: var(--radius-sm);
+  border-radius: var(--ctl-radius-sm);
 }
 
 /* ===== TABLE ===== */
@@ -314,7 +318,7 @@
 
 .data-table {
   width: 100%;
-  font-size: var(--font-size-sm);
+  font-size: var(--table-fs);
 }
 
 .data-table thead {
@@ -322,18 +326,18 @@
 }
 
 .data-table th {
-  padding: var(--space-md) var(--space-lg);
+  padding: var(--table-cell-pad);
   text-align: left;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--color-text-secondary);
-  font-size: var(--font-size-xs);
+  font-size: var(--table-head-fs);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   white-space: nowrap;
 }
 
 .data-table td {
-  padding: var(--space-md) var(--space-lg);
+  padding: var(--table-cell-pad);
   border-top: 1px solid var(--color-border-light);
   color: var(--color-text-primary);
   vertical-align: middle;
@@ -367,7 +371,7 @@
 }
 
 .form-label {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   font-weight: 600;
   color: var(--color-text-primary);
 }
@@ -378,12 +382,13 @@
 }
 
 .form-input {
-  padding: 10px 14px;
-  border-radius: var(--radius-md);
-  border: 1.5px solid var(--color-border);
+  min-height: var(--ctl-h);
+  padding: var(--ctl-pad-y) var(--ctl-pad-x);
+  border-radius: var(--ctl-radius);
+  border: var(--ctl-border) solid var(--color-border);
   background: var(--color-bg-white);
   color: var(--color-text-primary);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-md);
   transition: all var(--transition-fast);
 }
 
@@ -411,12 +416,13 @@
 }
 
 .form-select {
-  padding: 10px 14px;
-  border-radius: var(--radius-md);
-  border: 1.5px solid var(--color-border);
+  min-height: var(--ctl-h);
+  padding: var(--ctl-pad-y) var(--ctl-pad-x);
+  border-radius: var(--ctl-radius);
+  border: var(--ctl-border) solid var(--color-border);
   background: var(--color-bg-white);
   color: var(--color-text-primary);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-md);
   transition: all var(--transition-fast);
   cursor: pointer;
   appearance: none;
@@ -554,7 +560,7 @@
   }
 
   .stat-card-label {
-    font-size: 11px;
+    font-size: var(--font-size-2xs);
   }
 
   /* sem margin: o .modal-overlay já tem padding e, com width:100%, a margem
@@ -597,7 +603,7 @@
   border-radius: 999px;
   background: var(--color-danger, #e74c3c);
   color: #fff;
-  font-size: 11px;
+  font-size: var(--font-size-2xs);
   font-weight: 700;
 }
 

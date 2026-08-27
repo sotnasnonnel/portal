@@ -101,7 +101,7 @@ export default function AdminRequestsPage() {
 
       {err && (
         <div className="card">
-          <div className="small" style={{ color: "var(--danger)", fontWeight: 800 }}>{err}</div>
+          <div className="small" style={{ color: "var(--danger)", fontWeight: 600 }}>{err}</div>
         </div>
       )}
 
@@ -140,7 +140,7 @@ export default function AdminRequestsPage() {
                       className="primary"
                       disabled={savingId === r.id}
                       onClick={() => saveDeadline(r.id)}
-                      style={{ height: 36, padding: "0 14px", width: "100%", fontSize: 13 }}
+                      style={{ height: 36, padding: "0 14px", width: "100%", fontSize: 'var(--font-size-sm)' }}
                     >
                       {savingId === r.id ? "Salvando..." : "Salvar prazo"}
                     </button>

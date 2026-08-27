@@ -43,7 +43,7 @@
 }
 
 .guia-eyebrow {
-  font-size: 11px;
+  font-size: var(--font-size-2xs);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -88,7 +88,7 @@
 }
 
 .guia-body h3 {
-  font-size: 20px;
+  font-size: var(--font-size-xl);
   font-weight: 700;
   color: var(--ink);
   margin: 0 0 8px;
@@ -96,7 +96,7 @@
 
 .guia-body p {
   color: var(--muted);
-  font-size: 14px;
+  font-size: var(--font-size-md);
   line-height: 1.65;
   max-width: 42ch;
   margin: 0;
@@ -133,7 +133,7 @@
   background: none;
   border: none;
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--font-size-sm);
   font-weight: 600;
   padding: 8px 6px;
   cursor: pointer;
@@ -159,7 +159,7 @@
   border: none;
   border-radius: 10px;
   font-weight: 600;
-  font-size: 13px;
+  font-size: var(--font-size-sm);
   cursor: pointer;
   transition: background-color 0.15s ease;
 }

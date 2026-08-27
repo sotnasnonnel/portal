@@ -51,7 +51,7 @@ export function AssetPicker({
     <div className="modalOverlay" onMouseDown={onClose}>
       <div className="modal" onMouseDown={(e) => e.stopPropagation()}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-          <div style={{ fontWeight: 800 }}>Selecionar Contrato</div>
+          <div style={{ fontWeight: 700 }}>Selecionar Contrato</div>
           <button onClick={onClose}>Fechar</button>
         </div>
 

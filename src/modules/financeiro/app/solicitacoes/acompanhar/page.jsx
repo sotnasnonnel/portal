@@ -333,7 +333,7 @@ export default function AcompanharFin() {
                 <button className="modal-close" onClick={() => setDecisao(null)}><X size={18} /></button>
               </div>
               <div className="modal-body">
-                <p style={{ marginBottom: 'var(--space-md)', color: 'var(--color-text-secondary)', fontSize: 13 }}>
+                <p style={{ marginBottom: 'var(--space-md)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
                   {aprovando
                     ? 'A solicitação seguirá para a próxima etapa do fluxo.'
                     : 'A solicitação será encerrada como Reprovada. Todos da cadeia verão o comentário.'}

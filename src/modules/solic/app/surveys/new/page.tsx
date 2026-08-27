@@ -102,7 +102,7 @@ export default function NewSurveyPage() {
       <div className="cardSubtitle">Preencha os dados abaixo para registrar uma nova solicitação.</div>
 
       {err ? (
-        <div className="small" style={{ color: "var(--danger)", fontWeight: 800, marginTop: 12 }}>
+        <div className="small" style={{ color: "var(--danger)", fontWeight: 600, marginTop: 12 }}>
           {err}
         </div>
       ) : null}

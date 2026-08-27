@@ -5,13 +5,17 @@
    = portal/Adm, teal = PMO/Horas, azul = Financeiro).
    ========================================================================== */
 .pgRoot {
+  /* acento consumido pela sidebar compartilhada (ModuleSidebar) */
+  --mod-accent: #b4522a;
+  --mod-accent-soft: #fdf1eb;
+  --mod-accent-ink: #b4522a;
   --p-primary: #b4522a;          /* terracota da marca, acento do módulo */
   --p-primary-soft: #fdf1eb;
   --p-primary-line: #f0c9b4;
-  --p-ink: #0f172a;
-  --p-muted: #64748b;
-  --p-border: #e2e8f0;
-  --p-bg: #f8fafc;
+  --p-ink: var(--neutral-ink);
+  --p-muted: var(--neutral-muted);
+  --p-border: var(--neutral-border);
+  --p-bg: var(--neutral-bg);
   --p-gray-50: #f8fafc;
   --p-gray-100: #f1f5f9;
   --p-gray-600: #475569;
@@ -23,12 +27,12 @@
   min-height: 100vh;
   background: var(--p-bg);
   color: var(--p-ink);
-  font-size: 14px;
+  font-size: var(--font-size-md);
 }
 .pgRoot * { box-sizing: border-box; }
 
 .pgCol { display: flex; flex-direction: column; min-width: 0; flex: 1; }
-.pgMain { flex: 1; min-width: 0; padding: 26px 32px 60px; width: 100%; }
+.pgMain { flex: 1; min-width: 0; padding: var(--shell-main-pad-y) var(--shell-main-pad-x) var(--shell-main-pad-bottom); width: 100%; }
 
 /* ---- tipografia de página ---- */
 .pg-page { animation: pgFade 0.25s ease; max-width: 900px; }
@@ -37,19 +41,19 @@
 @keyframes pgFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .pg-title {
   display: flex; align-items: center; gap: 10px;
-  font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 4px;
+  font-size: var(--font-size-3xl); font-weight: 700; letter-spacing: -0.02em; margin: 0 0 4px;
 }
-.pg-sub { font-size: 0.875rem; color: var(--p-muted); line-height: 1.5; margin: 0 0 20px; }
+.pg-sub { font-size: var(--font-size-md); color: var(--p-muted); line-height: 1.5; margin: 0 0 20px; }
 /* Separa "o que eu faço aqui" (os botões) de "o que já é meu" (a lista) nas
    telas de participação dos dois programas. */
 .pg-secao {
-  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  font-size: var(--font-size-2xs); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
   color: var(--p-muted); margin: 0 0 10px;
 }
 .pg-back {
   display: inline-flex; align-items: center; gap: 6px;
   background: none; border: none; color: var(--p-muted);
-  font-size: 0.85rem; cursor: pointer; padding: 4px 0; margin-bottom: 12px;
+  font-size: var(--font-size-sm); cursor: pointer; padding: 4px 0; margin-bottom: 12px;
 }
 .pg-back:hover { color: var(--p-ink); }
 
@@ -80,44 +84,45 @@
   width: 46px; height: 46px; border-radius: 12px;
   background: var(--p-primary-soft); color: var(--p-primary);
 }
-.pg-prog h2 { font-size: 1.05rem; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
-.pg-prog p { margin: 0; font-size: 0.85rem; line-height: 1.55; color: var(--p-gray-600); }
+.pg-prog h2 { font-size: var(--font-size-lg); font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+.pg-prog p { margin: 0; font-size: var(--font-size-sm); line-height: 1.55; color: var(--p-gray-600); }
 .pg-prog-cta {
   display: inline-flex; align-items: center; gap: 6px; margin-top: auto; padding-top: 10px;
-  font-size: 0.82rem; font-weight: 600; color: var(--p-primary);
+  font-size: var(--font-size-sm); font-weight: 600; color: var(--p-primary);
 }
 
 /* Escolha ideia x iniciativa: duas opções lado a lado, com a explicação da
    diferença visível antes do clique — é a dúvida mais provável da tela. */
 .pg-escolha { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .pg-escolha .pg-prog { min-height: 190px; }
-.pg-escolha small { font-size: 0.75rem; color: var(--p-muted); line-height: 1.5; }
+.pg-escolha small { font-size: var(--font-size-xs); color: var(--p-muted); line-height: 1.5; }
 
 /* ======================= cartões e formulário ======================= */
-.pg-card { background: #fff; border: 1px solid var(--p-border); border-radius: 14px; padding: 18px 20px; margin-bottom: 14px; }
+.pg-card { background: #fff; border: 1px solid var(--p-border); border-radius: var(--card-radius); padding: var(--card-pad); margin-bottom: 14px; }
 .pg-card-tit {
-  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  font-size: var(--font-size-2xs); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
   color: var(--p-primary); margin: 0 0 14px;
 }
 
 .pg-form-cab { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
 .pg-form-cab .pg-prog-ico { width: 46px; height: 46px; }
-.pg-form-cab h1 { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em; margin: 0; line-height: 1.25; }
-.pg-form-cab small { font-size: 0.78rem; color: var(--p-muted); }
+.pg-form-cab h1 { font-size: var(--font-size-2xl); font-weight: 700; letter-spacing: -0.02em; margin: 0; line-height: 1.25; }
+.pg-form-cab small { font-size: var(--font-size-xs); color: var(--p-muted); }
 
 .pg-campo { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
 .pg-campo:last-child { margin-bottom: 0; }
-.pg-campo label { font-size: 0.8rem; font-weight: 600; color: var(--p-gray-600); }
+.pg-campo label { font-size: var(--font-size-xs); font-weight: 600; color: var(--p-gray-600); }
 .pg-campo label .req { color: var(--p-red); margin-left: 2px; }
 .pg-campo label .opc { color: var(--p-muted); font-weight: 500; margin-left: 4px; }
-.pg-campo-dica { font-size: 0.75rem; color: var(--p-muted); line-height: 1.5; }
+.pg-campo-dica { font-size: var(--font-size-xs); color: var(--p-muted); line-height: 1.5; }
 
 .pg-input, .pg-select, .pg-textarea {
-  width: 100%; padding: 10px 12px; font-family: inherit; font-size: 0.875rem; color: var(--p-ink);
-  background: #fff; border: 1px solid var(--p-border); border-radius: 10px;
+  width: 100%; padding: var(--ctl-pad-y) var(--ctl-pad-x); font-family: inherit;
+  font-size: var(--font-size-md); color: var(--p-ink);
+  background: #fff; border: var(--ctl-border) solid var(--p-border); border-radius: var(--ctl-radius);
   transition: border-color 0.15s, box-shadow 0.15s;
 }
-.pg-input, .pg-select { height: 42px; }
+.pg-input, .pg-select { height: var(--ctl-h); }
 .pg-textarea { min-height: 110px; resize: vertical; line-height: 1.55; }
 .pg-input:focus, .pg-select:focus, .pg-textarea:focus {
   outline: none; border-color: var(--p-primary); box-shadow: 0 0 0 3px rgba(180, 82, 42, 0.14);
@@ -132,7 +137,7 @@
 .pg-prefixado .pg-input { padding-left: 40px; }
 .pg-prefixo {
   position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
-  font-size: 0.85rem; font-weight: 600; color: var(--p-muted); pointer-events: none;
+  font-size: var(--font-size-sm); font-weight: 600; color: var(--p-muted); pointer-events: none;
 }
 
 /* ---- lista de ferramentas (a iniciativa pode usar mais de uma) ---- */
@@ -148,7 +153,7 @@
   display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
   min-height: 38px; padding: 6px 14px; border-radius: 9px;
   border: 1px dashed var(--p-primary-line); background: var(--p-gray-50); color: var(--p-primary);
-  font-family: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer;
+  font-family: inherit; font-size: var(--font-size-sm); font-weight: 600; cursor: pointer;
 }
 .pg-lista-add:hover { background: var(--p-primary-soft); border-color: var(--p-primary); }
 
@@ -156,9 +161,9 @@
 .pg-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .pg-chip {
   display: inline-flex; align-items: center; gap: 6px;
-  min-height: 38px; padding: 6px 14px; border-radius: 999px;
+  min-height: var(--ctl-h-sm); padding: 0 14px; border-radius: 999px;
   border: 1px solid var(--p-border); background: #fff;
-  font-family: inherit; font-size: 0.82rem; color: var(--p-gray-600);
+  font-family: inherit; font-size: var(--font-size-xs); font-weight: 600; color: var(--p-gray-600);
   cursor: pointer; transition: background 0.12s, border-color 0.12s, color 0.12s;
 }
 .pg-chip:hover { border-color: var(--p-primary-line); color: var(--p-ink); }
@@ -170,7 +175,7 @@
 /* ---- avisos e ações ---- */
 .pg-aviso {
   display: flex; align-items: flex-start; gap: 10px;
-  padding: 12px 14px; border-radius: 10px; font-size: 0.82rem; line-height: 1.5; margin-bottom: 14px;
+  padding: 12px 14px; border-radius: 10px; font-size: var(--font-size-sm); line-height: 1.5; margin-bottom: 14px;
 }
 .pg-aviso svg { flex-shrink: 0; margin-top: 1px; }
 .pg-aviso.tom-erro { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
@@ -186,8 +191,8 @@
 .pg-acoes { display: flex; align-items: center; gap: 10px; margin-top: 18px; }
 .pg-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  min-height: 44px; padding: 0 20px; border-radius: 10px;
-  font-family: inherit; font-size: 0.875rem; font-weight: 600; cursor: pointer;
+  min-height: var(--ctl-h); padding: 0 16px; border-radius: var(--ctl-radius);
+  font-family: inherit; font-size: var(--font-size-md); font-weight: 600; cursor: pointer;
   border: 1px solid transparent; transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 .pg-btn:disabled { opacity: 0.55; cursor: not-allowed; }
@@ -195,7 +200,7 @@
 .pg-btn-primary:hover:not(:disabled) { background: #8f4021; }
 .pg-btn-ghost { background: #fff; border-color: var(--p-border); color: var(--p-gray-600); }
 .pg-btn-ghost:hover:not(:disabled) { border-color: var(--p-primary-line); color: var(--p-ink); }
-.pg-btn-sm { min-height: 34px; padding: 0 12px; font-size: 0.8rem; border-radius: 8px; }
+.pg-btn-sm { min-height: var(--ctl-h-sm); padding: 0 12px; font-size: var(--font-size-xs); border-radius: var(--ctl-radius-sm); }
 
 .pg-vazio {
   border: 1px dashed var(--p-border); border-radius: 14px;
@@ -204,8 +209,8 @@
 
 /* ---- confirmação de envio ---- */
 .pg-sucesso { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 40px 24px; }
-.pg-sucesso h2 { font-size: 1.2rem; font-weight: 700; margin: 14px 0 6px; }
-.pg-sucesso p { font-size: 0.875rem; color: var(--p-gray-600); line-height: 1.6; margin: 0; max-width: 46ch; }
+.pg-sucesso h2 { font-size: var(--font-size-xl); font-weight: 700; margin: 14px 0 6px; }
+.pg-sucesso p { font-size: var(--font-size-md); color: var(--p-gray-600); line-height: 1.6; margin: 0; max-width: 46ch; }
 .pg-sucesso .pg-acoes { justify-content: center; }
 /* O ícone carrega o veredito da elegibilidade, mas nunca sozinho: o texto
    abaixo dele diz a mesma coisa por escrito. */
@@ -218,13 +223,13 @@
   border: 1px solid var(--p-primary-line); background: var(--p-primary-soft);
   border-radius: 12px; padding: 14px 16px; margin-bottom: 16px;
 }
-.pg-termos-box p { margin: 0 0 10px; font-size: 0.85rem; line-height: 1.55; color: #8a3d1f; }
+.pg-termos-box p { margin: 0 0 10px; font-size: var(--font-size-sm); line-height: 1.55; color: #8a3d1f; }
 .pg-termos-ok {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-  font-size: 0.82rem; color: #047857;
+  font-size: var(--font-size-sm); color: #047857;
 }
 .pg-regras { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 10px; }
-.pg-regras li { font-size: 0.85rem; line-height: 1.55; color: var(--p-gray-600); }
+.pg-regras li { font-size: var(--font-size-sm); line-height: 1.55; color: var(--p-gray-600); }
 .pg-regras strong { color: var(--p-ink); }
 
 .pg-modal-overlay {
@@ -239,7 +244,7 @@
   display: flex; align-items: center; gap: 10px;
   padding: 18px 22px; border-bottom: 1px solid var(--p-gray-100);
 }
-.pg-modal-cab h2 { flex: 1; margin: 0; font-size: 1rem; font-weight: 700; }
+.pg-modal-cab h2 { flex: 1; margin: 0; font-size: var(--font-size-lg); font-weight: 700; }
 .pg-modal-x {
   display: flex; padding: 6px; border: none; background: none;
   color: var(--p-muted); border-radius: 8px; cursor: pointer;
@@ -252,7 +257,7 @@
 }
 .pg-check {
   display: flex; align-items: flex-start; gap: 9px; margin-top: 18px;
-  font-size: 0.85rem; line-height: 1.5; color: var(--p-ink); cursor: pointer;
+  font-size: var(--font-size-sm); line-height: 1.5; color: var(--p-ink); cursor: pointer;
 }
 .pg-check input { width: 16px; height: 16px; margin-top: 2px; accent-color: var(--p-primary); cursor: pointer; }
 
@@ -264,17 +269,17 @@
 .pg-tile { display: flex; flex-direction: column; gap: 3px; margin: 0; }
 .pg-tile.is-destaque { border-color: var(--p-primary-line); background: var(--p-primary-soft); }
 .pg-tile-rot {
-  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em;
+  font-size: var(--font-size-2xs); font-weight: 700; letter-spacing: 0.06em;
   text-transform: uppercase; color: var(--p-muted);
 }
 .pg-tile-num {
-  font-size: 2.1rem; font-weight: 700; line-height: 1.1; color: var(--p-ink);
+  font-size: var(--font-size-4xl); font-weight: 700; line-height: 1.1; color: var(--p-ink);
   font-variant-numeric: tabular-nums;
 }
 .pg-tile-num.tom-alta { color: #047857; }
 .pg-tile-num.tom-media { color: #b45309; }
 .pg-tile-num.tom-baixa { color: #b91c1c; }
-.pg-tile-pe { font-size: 0.74rem; color: var(--p-muted); }
+.pg-tile-pe { font-size: var(--font-size-2xs); color: var(--p-muted); }
 
 /* Gráfico de barras por setor. Uma série só, escala categórica; a cor vem do
    setor (mesma paleta da legenda do quadro) e o número fica sempre ao lado —
@@ -285,14 +290,14 @@
   align-items: center; gap: 10px; padding: 3px 0;
 }
 .pg-barra-nome {
-  font-size: 0.82rem; color: var(--p-ink);
+  font-size: var(--font-size-sm); color: var(--p-ink);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .pg-barra-trilho { height: 14px; background: var(--p-gray-100); border-radius: 4px; }
 /* Ponta arredondada só do lado que cresce: a base fica ancorada no zero. */
 .pg-barra { display: block; height: 100%; border-radius: 0 4px 4px 0; }
 .pg-barra-valor {
-  font-size: 0.82rem; font-weight: 600; color: var(--p-ink);
+  font-size: var(--font-size-sm); font-weight: 600; color: var(--p-ink);
   font-variant-numeric: tabular-nums; text-align: right;
 }
 
@@ -317,16 +322,16 @@
   padding: 12px 14px; border-bottom: 1px solid var(--p-border);
 }
 .pg-col-cab h2 {
-  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  font-size: var(--font-size-2xs); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
   color: var(--p-gray-600); margin: 0;
 }
 .pg-col-cont {
   margin-left: auto; min-width: 22px; padding: 1px 7px; border-radius: 999px;
   background: #fff; border: 1px solid var(--p-border);
-  font-size: 0.7rem; font-weight: 700; color: var(--p-muted); text-align: center;
+  font-size: var(--font-size-2xs); font-weight: 700; color: var(--p-muted); text-align: center;
 }
 .pg-col-corpo { padding: 10px; display: flex; flex-direction: column; gap: 8px; min-height: 60px; }
-.pg-col-vazia { margin: 6px 0; text-align: center; color: #cbd5e1; font-size: 0.78rem; }
+.pg-col-vazia { margin: 6px 0; text-align: center; color: #cbd5e1; font-size: var(--font-size-xs); }
 
 /* Os dois códigos de cor que a planilha pede no kanban:
    - FUNDO do cartão = setor (B35, "cards coloridos para identificar os setores")
@@ -348,7 +353,7 @@
 .pg-cartao-forma {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 1px 8px; border: 1px solid currentColor; border-radius: 999px; background: #fff;
-  font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+  font-size: var(--font-size-2xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
 }
 /* Duas coisas acontecem com o título no cartão:
    - palavra longa (nome de arquivo, ferramenta) precisa quebrar, senão empurra
@@ -357,7 +362,7 @@
      caracteres. Cortar em 4 linhas mantém o quadro legível sem mexer no dado —
      o texto inteiro está no popup de detalhe, a um clique. */
 .pg-cartao-tit {
-  font-size: 0.85rem; font-weight: 600; color: var(--p-ink); line-height: 1.35;
+  font-size: var(--font-size-sm); font-weight: 600; color: var(--p-ink); line-height: 1.35;
   overflow-wrap: anywhere;
   display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
 }
@@ -370,7 +375,7 @@
 }
 .pg-cartao-pe {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-  font-size: 0.7rem; color: var(--p-muted);
+  font-size: var(--font-size-2xs); color: var(--p-muted);
 }
 /* Bolinha da cor do setor + o nome escrito ao lado. A bolinha amarra o cartão
    à legenda; o nome é o que garante a leitura quando dois setores caem em tons
@@ -385,14 +390,14 @@
 .pg-legendas { display: flex; flex-wrap: wrap; gap: 14px 28px; margin: 0 0 14px; }
 .pg-legenda { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
 .pg-legenda-tit {
-  font-size: 0.66rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+  font-size: var(--font-size-2xs); font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
   color: var(--p-muted);
 }
 /* O texto da legenda usa o tom de tinta da página, nunca a cor da série: cor de
    texto em tom de gráfico perde contraste e some. */
 .pg-legenda span {
   display: inline-flex; align-items: center; gap: 5px;
-  font-size: 0.75rem; color: var(--p-gray-600);
+  font-size: var(--font-size-xs); color: var(--p-gray-600);
 }
 .pg-legenda i { width: 10px; height: 10px; border-radius: 3px; flex: none; }
 .pg-legenda i.borda {
@@ -424,7 +429,7 @@
   align-items: center; gap: 10px; padding: 4px 0;
 }
 .pg-funil-pct {
-  font-size: 0.74rem; color: var(--p-muted);
+  font-size: var(--font-size-2xs); color: var(--p-muted);
   font-variant-numeric: tabular-nums; text-align: right;
 }
 
@@ -432,11 +437,11 @@
 .pg-valores { display: flex; flex-direction: column; gap: 12px; margin: 12px 0 0; }
 .pg-valores div { display: flex; flex-direction: column; gap: 2px; }
 .pg-valores dt {
-  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+  font-size: var(--font-size-2xs); font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
   color: var(--p-muted);
 }
 .pg-valores dd {
-  margin: 0; font-size: 1.3rem; font-weight: 700; color: var(--p-ink);
+  margin: 0; font-size: var(--font-size-2xl); font-weight: 700; color: var(--p-ink);
   font-variant-numeric: tabular-nums;
 }
 .pg-valores dd.tom-alta { color: #047857; }
@@ -445,7 +450,7 @@
 /* ---- legenda de série (2 séries no gráfico por setor) ---- */
 .pg-legenda-serie {
   display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0 0 10px;
-  font-size: 0.78rem; color: var(--p-gray-600);
+  font-size: var(--font-size-xs); color: var(--p-gray-600);
 }
 .pg-legenda-serie span { display: inline-flex; align-items: center; gap: 6px; }
 .pg-legenda-serie i { width: 10px; height: 10px; border-radius: 3px; flex: none; }
@@ -473,7 +478,7 @@
   display: flex; justify-content: flex-end; gap: 10px;
   padding-top: 16px; margin-top: 4px; border-top: 1px solid var(--p-gray-100);
 }
-.pg-editar-dica { font-size: 0.76rem; color: var(--p-muted); }
+.pg-editar-dica { font-size: var(--font-size-xs); color: var(--p-muted); }
 
 @media (max-width: 620px) {
   .pg-editar-acoes { flex-direction: column-reverse; }
@@ -491,22 +496,22 @@
 }
 .pg-det-campos div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .pg-det-campos dt {
-  font-size: 0.66rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  font-size: var(--font-size-2xs); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
   color: var(--p-muted);
 }
 .pg-det-campos dd {
-  margin: 0; font-size: 0.85rem; color: var(--p-ink); overflow-wrap: anywhere;
+  margin: 0; font-size: var(--font-size-sm); color: var(--p-ink); overflow-wrap: anywhere;
 }
 .pg-det-bloco { margin-bottom: 16px; }
 .pg-det-bloco:last-child { margin-bottom: 0; }
 .pg-det-bloco h3 {
-  font-size: 0.66rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  font-size: var(--font-size-2xs); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
   color: var(--p-muted); margin: 0 0 5px;
 }
 /* pre-wrap: o texto foi digitado num textarea e as quebras que a pessoa fez
    fazem parte do conteúdo. */
 .pg-det-texto {
-  margin: 0; font-size: 0.875rem; line-height: 1.6; color: var(--p-gray-600);
+  margin: 0; font-size: var(--font-size-md); line-height: 1.6; color: var(--p-gray-600);
   white-space: pre-wrap;
 }
 
@@ -524,7 +529,7 @@
   display: inline-flex; align-items: center; gap: 7px;
   padding: 10px 14px; margin-bottom: -1px;
   background: none; border: none; border-bottom: 2px solid transparent;
-  font-family: inherit; font-size: 0.85rem; font-weight: 600; color: var(--p-muted); cursor: pointer;
+  font-family: inherit; font-size: var(--font-size-sm); font-weight: 600; color: var(--p-muted); cursor: pointer;
 }
 .pg-tab:hover { color: var(--p-ink); }
 .pg-tab.is-active { color: var(--p-primary); border-bottom-color: var(--p-primary); }
@@ -538,18 +543,18 @@
    a tabela ENCOLHE até caber no celular: as colunas se espremem, o título quebra
    quase letra a letra e a linha fica com metros de altura. Com o piso, ela
    mantém a largura legível e o container rola de lado. */
-.pg-tabela { width: 100%; min-width: 880px; border-collapse: collapse; font-size: 0.84rem; }
+.pg-tabela { width: 100%; min-width: 880px; border-collapse: collapse; font-size: var(--table-fs); }
 .pg-tabela th {
-  text-align: left; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.04em;
-  color: var(--p-muted); font-weight: 700; padding: 11px 14px; white-space: nowrap;
+  text-align: left; font-size: var(--table-head-fs); text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--p-muted); font-weight: 700; padding: var(--table-cell-pad); white-space: nowrap;
   border-bottom: 1px solid var(--p-gray-100);
 }
-.pg-tabela td { padding: 12px 14px; border-bottom: 1px solid var(--p-gray-100); color: var(--p-gray-600); vertical-align: top; }
+.pg-tabela td { padding: var(--table-cell-pad); border-bottom: 1px solid var(--p-gray-100); color: var(--p-gray-600); vertical-align: top; }
 .pg-tabela tbody tr:last-child td { border-bottom: none; }
 .pg-tabela tbody tr:hover { background: var(--p-gray-50); }
 /* Datas e números alinham por figura, não por largura de glifo. */
 .pg-tabela .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
-.pg-tabela .pg-select, .pg-tabela .pg-input { height: 36px; font-size: 0.8rem; min-width: 150px; }
+.pg-tabela .pg-select, .pg-tabela .pg-input { height: 36px; font-size: var(--font-size-xs); min-width: 150px; }
 .pg-tabela-vazia { text-align: center; color: var(--p-muted); padding: 28px 14px; }
 /* O título é a coluna que carrega texto de verdade — as outras são rótulo curto.
    Sem um piso próprio, o navegador reparte a largura por igual e sobra pouco
@@ -577,7 +582,7 @@
 
 .pg-badge {
   display: inline-block; padding: 3px 9px; border-radius: 999px;
-  font-size: 0.7rem; font-weight: 700; white-space: nowrap;
+  font-size: var(--font-size-2xs); font-weight: 700; white-space: nowrap;
 }
 .pg-badge.tom-idealizado { background: var(--p-gray-100); color: var(--p-gray-600); }
 .pg-badge.tom-iniciado { background: #fff3d6; color: #8a6300; }
@@ -592,89 +597,26 @@
 
 /* Célula do motivo da elegibilidade: texto longo, precisa quebrar e ficar
    recessivo — é justificativa, não dado de coluna. */
-.pg-motivo { display: block; margin-top: 4px; font-size: 0.74rem; line-height: 1.45; color: var(--p-muted); max-width: 44ch; }
+.pg-motivo { display: block; margin-top: 4px; font-size: var(--font-size-2xs); line-height: 1.45; color: var(--p-muted); max-width: 44ch; }
 
 .pg-filtros { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin-bottom: 14px; }
 .pg-filtro { display: flex; flex-direction: column; gap: 5px; min-width: 200px; }
 .pg-filtro label {
-  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  font-size: var(--font-size-2xs); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
   color: var(--p-muted);
 }
 /* Alinha o "Limpar filtros" pela base dos selects: sem isto ele flutua no meio
    da linha, porque os outros filtros têm rótulo em cima e ele não. */
 .pg-filtro-limpa { min-height: 42px; align-self: flex-end; }
 
-/* ======================= sidebar ======================= */
-.pgSb {
-  width: 256px; flex-shrink: 0; background: #fff;
-  border-right: 1px solid var(--p-border);
-  display: flex; flex-direction: column;
-  position: sticky; top: 0; height: 100vh;
-}
-.pgSb-brand {
-  display: flex; align-items: center; gap: 12px;
-  height: 64px; padding: 0 16px;
-  border-bottom: 1px solid var(--p-gray-100);
-  text-decoration: none; color: inherit; cursor: pointer; transition: background 0.15s;
-}
-.pgSb-brand:hover { background: var(--p-gray-50); }
-.pgSb-logo {
-  width: 34px; height: 34px; background: var(--p-primary); border-radius: 8px;
-  display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0;
-}
-.pgSb-brandtext { font-size: 0.95rem; font-weight: 700; color: var(--p-ink); white-space: nowrap; }
-.pgSb-nav { display: flex; flex-direction: column; gap: 2px; padding: 12px 8px; flex: 1; overflow-y: auto; }
-.pgSb-seclabel {
-  color: #94a3b8; font-size: 0.625rem; font-weight: 700; letter-spacing: 0.06em;
-  padding: 12px 12px 4px; text-transform: uppercase;
-}
-.pgSb-link {
-  display: flex; align-items: center; gap: 12px; width: 100%;
-  border-radius: 8px; color: var(--p-gray-600);
-  font-size: 0.875rem; font-weight: 500; padding: 9px 12px;
-  cursor: pointer; text-decoration: none; background: none; border: none; text-align: left;
-  transition: background 0.15s, color 0.15s;
-}
-.pgSb-link:hover { background: var(--p-gray-50); color: var(--p-ink); }
-.pgSb-link.is-active { background: var(--p-primary-soft); color: var(--p-primary); font-weight: 600; }
-.pgSb-footer {
-  display: flex; align-items: center; gap: 12px;
-  border-top: 1px solid var(--p-gray-100); padding: 12px;
-}
-.pgSb-avatar {
-  width: 36px; height: 36px; border-radius: 50%; background: var(--p-primary); color: #fff;
-  display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0;
-}
-.pgSb-userinfo { flex: 1; min-width: 0; }
-.pgSb-userinfo strong { display: block; font-size: 0.78rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pgSb-userinfo span { display: block; font-size: 0.7rem; color: var(--p-muted); }
-.pgSb-logout { background: none; border: none; color: var(--p-muted); cursor: pointer; padding: 6px; border-radius: 8px; display: flex; }
-.pgSb-logout:hover { background: var(--p-gray-100); color: var(--p-red); }
-
-.pgSb-overlay { display: none; }
-
 /* ======================= mobile ======================= */
 @media (max-width: 768px) {
-  /* Drawer: mesma mecânica do Administrativo — sai da tela e volta com
-     .is-open, acionado pelo botão de menu do PortalHeader. */
-  .pgSb {
-    position: fixed; top: 0; left: 0; height: 100vh;
-    width: min(86vw, 320px); z-index: 100;
-    transform: translateX(-100%); transition: transform 0.2s;
-    box-shadow: var(--p-shadow-sm);
-  }
-  .pgSb.is-open { transform: translateX(0); }
-  .pgSb-overlay {
-    display: block; position: fixed; inset: 0;
-    background: rgba(0, 0, 0, 0.5); z-index: 99;
-    opacity: 0; pointer-events: none; transition: opacity 0.2s;
-  }
-  .pgSb-overlay.is-visible { opacity: 1; pointer-events: auto; }
-  .pgMain { padding: 20px 16px 48px; }
+
+.pgMain { padding: var(--shell-main-pad-mobile); }
 }
 
 @media (max-width: 620px) {
-  .pg-title, .pg-form-cab h1 { font-size: 1.2rem; }
+  .pg-title, .pg-form-cab h1 { font-size: var(--font-size-xl); }
   .pg-card { padding: 16px 14px; }
   .pg-escolha { grid-template-columns: 1fr; }
   .pg-dupla { grid-template-columns: 1fr; }

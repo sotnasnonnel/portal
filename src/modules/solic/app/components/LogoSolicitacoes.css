@@ -24,14 +24,14 @@
 }
 
 .logo-solicitacoes-word strong {
-  font-size: 27px;
-  font-weight: 800;
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
   letter-spacing: 0.01em;
   color: var(--logo-ink, var(--ink, #1b2735));
 }
 
 .logo-solicitacoes-word > span {
-  font-size: 14px;
+  font-size: var(--font-size-md);
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -51,10 +51,10 @@
 }
 
 .logo-solicitacoes--sm .logo-solicitacoes-word strong {
-  font-size: 19px;
+  font-size: var(--font-size-xl);
 }
 
 .logo-solicitacoes--sm .logo-solicitacoes-word > span {
-  font-size: 10px;
+  font-size: var(--font-size-2xs);
   letter-spacing: 0.13em;
 }

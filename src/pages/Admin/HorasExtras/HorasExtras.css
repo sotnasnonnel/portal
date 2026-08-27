@@ -8,7 +8,7 @@
 /* Linha secundária dentro da célula (matrícula, equipe, período previsto). */
 .he-sub {
   color: var(--color-text-muted, #64748b);
-  font-size: 0.72rem;
+  font-size: var(--font-size-2xs);
   margin-top: 2px;
 }
 
@@ -33,7 +33,7 @@
 /* Prazo de compensação do banco de horas (180 dias da hora extra). */
 .he-prazo {
   display: inline-block;
-  font-size: 0.74rem;
+  font-size: var(--font-size-2xs);
   font-weight: 600;
   white-space: nowrap;
   padding: 3px 8px;
@@ -59,7 +59,7 @@
   gap: 8px;
   padding: 10px 14px;
   border-radius: var(--radius-md, 8px);
-  font-size: 0.84rem;
+  font-size: var(--font-size-sm);
   font-weight: 500;
   margin-bottom: var(--space-md, 12px);
   border-left: 3px solid transparent;
@@ -82,7 +82,7 @@
 
 .he-modal-sub {
   color: var(--color-text-muted, #64748b);
-  font-size: 0.84rem;
+  font-size: var(--font-size-sm);
   margin: 0 0 var(--space-md, 12px);
 }
 

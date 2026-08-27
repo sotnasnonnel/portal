@@ -9,15 +9,19 @@
 ===================================================================== */
 
 .solicRoot{
+  /* acento consumido pela sidebar compartilhada (ModuleSidebar) */
+  --mod-accent: #c35e1e;
+  --mod-accent-soft: #fdf3ec;
+  --mod-accent-ink: #9c4a17;
   /* Paleta — alinhada ao tema compartilhado do portal (src/styles/theme.css).
      Os NOMES dos tokens são os consumidos pelos *.module.css do módulo;
      apenas os VALORES foram realinhados ao padrão do Reembolso. */
-  --bg: #f2f2f2;            /* branco gelo (= --bg-soft/--ice do tema) */
-  --surface: #ffffff;       /* cartões (= --bg do tema) */
-  --text: #1b2735;          /* = --ink do tema */
-  --muted: #6b7280;         /* = --muted do tema */
-  --border: #e3e3e3;        /* = --border do tema */
-  --border-strong: #cfcfcf; /* = --border-strong do tema */
+  --bg: var(--neutral-bg);              /* fundo de página, igual aos demais */
+  --surface: var(--neutral-surface);    /* cartões */
+  --text: var(--neutral-ink);
+  --muted: var(--neutral-muted);
+  --border: var(--neutral-border);
+  --border-strong: var(--neutral-border-strong);
 
   --primary: #c35e1e;       /* terracotta (= --terracotta) */
   --primary-hover: #9c4a17; /* = --terracotta-dark */
@@ -28,11 +32,11 @@
   --primary-tint: #fdf3ec;  /* = --terracotta-light (bg de item ativo) */
   --teal-tint: rgba(0,164,154,0.10);
   --danger-tint: rgba(184,82,54,0.10);
-  --blue-tint: #f2f2f2;     /* hover neutro (= --bg-soft do tema) */
+  --blue-tint: var(--neutral-bg);  /* hover neutro de linha de tabela */
 
   /* raios — escala do tema (sm 6 / md 10 / lg 16) */
-  --radius: 16px;          /* = --radius-lg — cards principais / modais */
-  --radius-sm: 10px;       /* = --radius-md — inputs, botões, cards secundários */
+  --radius: var(--card-radius);   /* cartões/modais — mesma escala do portal */
+  --radius-sm: var(--ctl-radius);  /* inputs, botões, cards secundários */
   --radius-pill: 9999px;
   --radius-xs: 6px;
   --radius-md: 10px;
@@ -66,13 +70,20 @@
 }
 
 .solicRoot a:hover{
+  text-decoration: none;
+}
+
+/* Sublinhado só onde é link de texto de verdade (.link/.textLink abaixo),
+   como no resto do portal — o hover geral sublinhava até item de menu. */
+.solicRoot .link:hover,
+.solicRoot .textLink:hover{
   text-decoration: underline;
 }
 
 /* link de texto padrão (terracotta) */
 .solicRoot .link, .solicRoot .textLink{
   color: var(--primary);
-  font-weight: 800;
+  font-weight: 600;
   transition: color 0.15s ease;
 }
 .solicRoot .textLink:hover{ color: var(--primary-hover); }
@@ -128,8 +139,8 @@
   border: none;
   background: transparent;
   color: var(--muted);
-  font-weight: 800;
-  font-size: 14px;
+  font-weight: 600;
+  font-size: var(--font-size-md);
   padding: 8px 20px;
   border-radius: 9px;
   cursor: pointer;
@@ -153,8 +164,8 @@
 }
 
 .solicRoot .pageTitle{
-  font-size: 23px;
-  font-weight: 800;
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
   line-height: 1.2;
   letter-spacing: -0.02em;
   color: var(--text);
@@ -163,7 +174,7 @@
 
 .solicRoot .pageSubtitle{
   margin-top: 6px;
-  font-size: 14px;
+  font-size: var(--font-size-md);
   line-height: 1.5;
   color: var(--muted);
 }
@@ -175,37 +186,39 @@
 .solicRoot .card{
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 22px 24px;
-  box-shadow: var(--shadow-md);
+  border-radius: var(--card-radius);
+  padding: var(--card-pad);
+  box-shadow: var(--shadow-sm);
 }
 
 .solicRoot .cardTitle{
-  font-weight: 800;
-  font-size: 16.5px;
-  letter-spacing: -0.01em;
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   line-height: 1.25;
-  color: var(--text);
+  color: var(--primary);
+  margin: 0 0 14px;
 }
 
 .solicRoot .cardSubtitle{
   margin-top: 4px;
-  font-size: 13px;
+  font-size: var(--font-size-sm);
   color: var(--muted);
   line-height: 1.5;
 }
 
 .solicRoot .small{
-  font-size: 13px;
+  font-size: var(--font-size-sm);
   color: var(--muted);
   line-height: 1.5;
 }
 
 .solicRoot .label{
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.01em;
-  color: rgba(38,64,93,0.72);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--text);
   margin: 0 0 8px;
 }
 
@@ -224,16 +237,16 @@
   position: relative;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 18px 18px 18px 20px;
+  border-radius: var(--card-radius);
+  padding: var(--card-pad);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
-  transition: box-shadow 0.15s ease, transform 0.12s ease;
+  transition: box-shadow 0.15s ease;
 }
 
+/* Sem "levantar" no hover: nenhum outro módulo do portal faz isso. */
 .solicRoot .statCard:hover{
   box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
 }
 
 .solicRoot .statCard::before{
@@ -248,20 +261,21 @@
 }
 
 .solicRoot .statLabel{
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.03em;
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--muted);
 }
 
 .solicRoot .statValue{
   margin-top: 6px;
-  font-size: 30px;
-  font-weight: 800;
-  line-height: 1;
+  font-size: var(--font-size-4xl);
+  font-weight: 700;
+  line-height: 1.1;
   letter-spacing: -0.02em;
-  color: var(--accent, var(--text));
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
 
 @media (max-width: 1100px){
@@ -277,12 +291,13 @@
 
 .solicRoot input, .solicRoot textarea, .solicRoot select{
   width: 100%;
-  height: 44px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-strong);
+  min-height: var(--ctl-h);
+  height: var(--ctl-h);
+  border-radius: var(--ctl-radius);
+  border: var(--ctl-border) solid var(--border);
   background: var(--surface);
   color: var(--text);
-  padding: 0 14px;
+  padding: 0 var(--ctl-pad-x);
   outline: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
@@ -297,7 +312,7 @@
 }
 
 .solicRoot input::placeholder, .solicRoot textarea::placeholder{
-  color: rgba(38,64,93,0.42);
+  color: #94a3b8;
 }
 
 .solicRoot input:focus, .solicRoot textarea:focus, .solicRoot select:focus{
@@ -315,15 +330,15 @@
 }
 
 .solicRoot .primary{
-  height: 44px;
-  border-radius: var(--radius-sm);
+  min-height: var(--ctl-h);
+  border-radius: var(--ctl-radius);
   border: 1px solid transparent;
   background: var(--primary);
   color: #fff;
-  font-weight: 800;
-  font-size: 14px;
+  font-weight: 600;
+  font-size: var(--font-size-md);
   cursor: pointer;
-  padding: 0 18px;
+  padding: 0 16px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -350,13 +365,13 @@
 
 /* Botão de ação destrutiva */
 .solicRoot .danger{
-  height: 44px;
-  border-radius: var(--radius-sm);
+  min-height: var(--ctl-h);
+  border-radius: var(--ctl-radius);
   border: 1px solid transparent;
   background: var(--danger);
   color: #fff;
-  font-weight: 800;
-  font-size: 14px;
+  font-weight: 600;
+  font-size: var(--font-size-md);
   cursor: pointer;
   padding: 0 18px;
   display: inline-flex;
@@ -382,13 +397,13 @@
 
 /* Ação secundária / positiva (teal) */
 .solicRoot .secondary{
-  height: 44px;
-  border-radius: var(--radius-sm);
+  min-height: var(--ctl-h);
+  border-radius: var(--ctl-radius);
   border: 1px solid transparent;
   background: var(--teal);
   color: #fff;
-  font-weight: 800;
-  font-size: 14px;
+  font-weight: 600;
+  font-size: var(--font-size-md);
   cursor: pointer;
   padding: 0 18px;
   display: inline-flex;
@@ -414,13 +429,13 @@
 
 /* Botão neutro com contorno */
 .solicRoot .ghost{
-  height: 44px;
-  border-radius: var(--radius-sm);
+  min-height: var(--ctl-h);
+  border-radius: var(--ctl-radius);
   border: 1px solid var(--border-strong);
   background: var(--surface);
   color: var(--text);
-  font-weight: 800;
-  font-size: 14px;
+  font-weight: 600;
+  font-size: var(--font-size-md);
   cursor: pointer;
   padding: 0 18px;
   display: inline-flex;
@@ -450,22 +465,22 @@
 }
 
 .solicRoot th, .solicRoot td{
-  padding: 12px 12px;
+  padding: var(--table-cell-pad);
   border-bottom: 1px solid var(--border);
   text-align: left;
 }
 
 .solicRoot th{
-  font-size: 11px;
+  font-size: var(--table-head-fs);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: rgba(38,64,93,0.55);
-  font-weight: 800;
+  color: var(--muted);
+  font-weight: 700;
 }
 
 .solicRoot td{
-  font-size: 14px;
-  color: var(--text);
+  font-size: var(--table-fs);
+  color: var(--neutral-muted);
 }
 
 .solicRoot tbody tr{
@@ -482,20 +497,20 @@
 
 /* ===== Tabela estilizada (.table) ===== */
 .solicRoot .table thead th{
-  font-size: 11px;
+  font-size: var(--table-head-fs);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-weight: 800;
-  color: rgba(38,64,93,0.55);
-  padding: 12px 14px;
-  border-bottom: 1px solid var(--border-strong);
+  font-weight: 700;
+  color: var(--muted);
+  padding: var(--table-cell-pad);
+  border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
 
 .solicRoot .table tbody td{
-  padding: 14px 14px;
-  font-size: 14px;
-  color: var(--text);
+  padding: var(--table-cell-pad);
+  font-size: var(--table-fs);
+  color: var(--neutral-muted);
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
 }
@@ -533,8 +548,8 @@
   align-items: center;
   gap: 10px;
   color: var(--muted);
-  font-size: 14px;
-  font-weight: 700;
+  font-size: var(--font-size-md);
+  font-weight: 400;
 }
 
 .solicRoot .emptyState{
@@ -544,8 +559,8 @@
   padding: 32px 16px;
   text-align: center;
   color: var(--muted);
-  font-weight: 700;
-  font-size: 14px;
+  font-weight: 400;
+  font-size: var(--font-size-md);
 }
 
 /* =========================
@@ -612,8 +627,8 @@
   padding: 4px 10px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--border);
-  font-size: 12px;
-  font-weight: 800;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
   background: rgba(255,255,255,0.7);
 }
 
@@ -672,7 +687,7 @@
 }
 
 .solicRoot .urgentText {
-  font-weight: 800;
+  font-weight: 700;
   color: var(--text);
 }
 
@@ -681,13 +696,13 @@
   width: auto;
   min-width: 180px;
   max-width: 100%;
-  height: 44px;
-  padding: 0 18px;
-  border-radius: var(--radius-sm);
+  min-height: var(--ctl-h);
+  padding: 0 16px;
+  border-radius: var(--ctl-radius);
   border: 1px solid transparent;
   cursor: pointer;
-  font-weight: 800;
-  font-size: 14px;
+  font-weight: 600;
+  font-size: var(--font-size-md);
   color: #fff;
   background: var(--primary);
   display: inline-flex;
@@ -717,9 +732,9 @@
 .solicRoot textarea {
   width: 100%;
   height: auto;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-strong);
-  padding: 12px 14px;
+  border-radius: var(--ctl-radius);
+  border: var(--ctl-border) solid var(--border);
+  padding: var(--ctl-pad-y) var(--ctl-pad-x);
   outline: none;
   background: var(--surface);
   color: var(--text);
@@ -735,19 +750,13 @@
 
 /* ===== Shell do módulo (grid sidebar + conteúdo) ===== */
 .solicRoot.solicShell {
-  display: grid;
-  grid-template-columns: var(--sidebar-w) 1fr;
+  display: flex;
   min-height: 100vh;
   background: var(--bg-soft);
-  transition: grid-template-columns 200ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.solicRoot.solicShell.isCollapsed {
-  grid-template-columns: 64px 1fr;
 }
 
 .solicRoot .solicMain {
-  padding: 24px 24px 56px;
+  padding: var(--shell-main-pad-y) var(--shell-main-pad-x) var(--shell-main-pad-bottom);
   background: var(--bg-soft);
   min-width: 0;
   flex: 1;
@@ -757,13 +766,8 @@
    coluna única — senão sobraria uma faixa vazia de 240px. O breakpoint tem de
    ser o MESMO do drawer em Sidebar.module.css (768px, onde o ☰ aparece). */
 @media (max-width: 768px) {
-  .solicRoot.solicShell,
-  .solicRoot.solicShell.isCollapsed {
-    grid-template-columns: 1fr;
-  }
-
   .solicRoot .solicMain {
-    padding: 14px 14px 40px;
+    padding: var(--shell-main-pad-mobile);
   }
 }
 
@@ -822,8 +826,8 @@
   .solicRoot .table td[data-label]::before {
     content: attr(data-label);
     flex: 0 0 auto;
-    font-size: 11px;
-    font-weight: 800;
+    font-size: var(--font-size-2xs);
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--muted);
@@ -847,7 +851,7 @@
   }
 
   .solicRoot .pageTitle {
-    font-size: 20px;
+    font-size: var(--font-size-xl);
   }
 }
 

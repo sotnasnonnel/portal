@@ -51,7 +51,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: var(--font-size-sm);
   font-weight: 700;
   color: #26405d;
   background: rgba(38, 64, 93, 0.10);
@@ -68,7 +68,7 @@
   border: 1px solid rgba(38, 64, 93, 0.20);
   background: #ffffff;
   color: #26405d;
-  font-size: 13px;
+  font-size: var(--font-size-sm);
   font-weight: 600;
   cursor: pointer;
   transition: background 150ms ease;
@@ -101,7 +101,7 @@
 .home-sub {
   margin: 0 0 40px;
   color: rgba(38, 64, 93, 0.65);
-  font-size: 16px;
+  font-size: var(--font-size-lg);
 }
 
 .home-cards {
@@ -157,13 +157,13 @@
 
 .home-card h2 {
   margin: 0 0 6px;
-  font-size: 18px;
+  font-size: var(--font-size-xl);
   font-weight: 700;
 }
 
 .home-card p {
   margin: 0 0 18px;
-  font-size: 13.5px;
+  font-size: var(--font-size-sm);
   line-height: 1.5;
   color: rgba(38, 64, 93, 0.68);
 }
@@ -173,7 +173,7 @@
   align-items: center;
   gap: 6px;
   margin-top: auto;
-  font-size: 13.5px;
+  font-size: var(--font-size-sm);
   font-weight: 700;
   color: #c35e1e;
   transition: gap 150ms ease;
@@ -237,13 +237,13 @@
 
 .home-solucoes-toggle h2 {
   margin: 0 0 6px;
-  font-size: 18px;
+  font-size: var(--font-size-xl);
   font-weight: 700;
 }
 
 .home-solucoes-toggle p {
   margin: 0 0 18px;
-  font-size: 13.5px;
+  font-size: var(--font-size-sm);
   line-height: 1.5;
   color: rgba(38, 64, 93, 0.68);
 }
@@ -254,7 +254,7 @@
   padding: 18px;
   text-align: center;
   color: rgba(38, 64, 93, 0.5);
-  font-size: 12.5px;
+  font-size: var(--font-size-xs);
   letter-spacing: 0.04em;
 }
 

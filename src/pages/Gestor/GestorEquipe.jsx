@@ -139,7 +139,7 @@ export default function GestorEquipe() {
                 <tr key={u.id}>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
-                      <div className="approval-card-avatar" style={{ width: 34, height: 34, fontSize: '12px' }}>
+                      <div className="approval-card-avatar" style={{ width: 34, height: 34, fontSize: 'var(--font-size-xs)' }}>
                         {u.nome.split(' ').map((n) => n[0]).slice(0, 2).join('')}
                       </div>
                       <span style={{ fontWeight: 600 }}>{u.nome}</span>
@@ -170,7 +170,7 @@ export default function GestorEquipe() {
             <div key={u.id} className="team-mobile-card">
               <div className="team-mobile-top">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
-                  <div className="approval-card-avatar" style={{ width: 38, height: 38, fontSize: '12px' }}>
+                  <div className="approval-card-avatar" style={{ width: 38, height: 38, fontSize: 'var(--font-size-xs)' }}>
                     {u.nome.split(' ').map((n) => n[0]).slice(0, 2).join('')}
                   </div>
                   <div>

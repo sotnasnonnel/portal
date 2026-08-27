@@ -18,14 +18,14 @@
   --color-accent-dark: #008a82;
   --color-accent-bg: rgba(0, 164, 154, 0.08);
 
-  --color-bg: #f2f2f2;
-  --color-bg-white: #ffffff;
-  --color-bg-card: #ffffff;
+  --color-bg: var(--neutral-bg, #f8fafc);
+  --color-bg-white: var(--neutral-surface, #ffffff);
+  --color-bg-card: var(--neutral-surface, #ffffff);
   --color-bg-sidebar: #1a2e42;
 
   /* Textos */
-  --color-text-primary: #1a1a2e;
-  --color-text-secondary: #64748b;
+  --color-text-primary: var(--neutral-ink, #0f172a);
+  --color-text-secondary: var(--neutral-muted, #64748b);
   --color-text-muted: #94a3b8;
   --color-text-white: #ffffff;
   --color-text-inverse: #f8fafc;
@@ -41,7 +41,7 @@
   --color-info-bg: rgba(59, 130, 246, 0.1);
 
   /* Bordas */
-  --color-border: #e2e8f0;
+  --color-border: var(--neutral-border, #e2e8f0);
   --color-border-light: #f1f5f9;
 
   /* Sombras */
@@ -69,9 +69,9 @@
   --space-3xl: 64px;
 
   /* Sidebar */
-  --sidebar-width: 260px;
-  --sidebar-collapsed: 72px;
-  --header-height: 70px;
+  --sidebar-width: var(--shell-sidebar-w, 256px);
+  --sidebar-collapsed: var(--shell-sidebar-collapsed-w, 64px);
+  --header-height: var(--shell-topbar-h, 64px);
 
   /* Transitions */
   --transition-fast: 150ms ease;

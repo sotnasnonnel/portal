@@ -136,7 +136,7 @@ export default function FormNovaVaga() {
             <div style={{ marginTop: 'var(--space-sm)' }}>
               <input className="form-input" type="text" placeholder="Ex: ANALISTA DE PROJETOS"
                 value={funcaoOutro} onChange={(e) => setFuncaoOutro(e.target.value)} />
-              <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+              <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
                 A função informada será adicionada à lista oficial.
               </span>
             </div>
@@ -236,7 +236,7 @@ export default function FormNovaVaga() {
       {anexos.arquivos.length > 0 && (
         <ul style={{ listStyle: 'none', padding: 0, margin: 'var(--space-sm) 0 0' }}>
           {anexos.arquivos.map((f, i) => (
-            <li key={`${f.name}-${i}`} style={{ fontSize: '13px', color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+            <li key={`${f.name}-${i}`} style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
               <Paperclip size={14} /> <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.name}</span>
               <button type="button" className="btn btn-ghost btn-sm" onClick={() => anexos.remover(i)} title="Remover anexo"><X size={14} /></button>
             </li>
@@ -244,7 +244,7 @@ export default function FormNovaVaga() {
         </ul>
       )}
       {anexos.erro && <span className="contratacao-erro">{anexos.erro}</span>}
-      <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', display: 'block', marginTop: '4px' }}>
+      <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', display: 'block', marginTop: '4px' }}>
         Você pode anexar vários arquivos. Documentos legíveis, imagem .PNG/.JPEG/.JPG ou .PDF de até {ANEXO_MAX_MB} MB cada.
       </span>
     </div>
@@ -281,7 +281,7 @@ export default function FormNovaVaga() {
 
           {SECOES_NOVA_VAGA.map((secao) => (
             <div key={secao}>
-              <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 'var(--space-xl) 0 var(--space-md)' }}>
+              <h3 style={{ fontSize: 'var(--font-size-md)', fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 'var(--space-xl) 0 var(--space-md)' }}>
                 {secao}
               </h3>
               {CAMPOS_NOVA_VAGA.filter((c) => c.secao === secao).map((c) => (

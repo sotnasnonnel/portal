@@ -21,7 +21,7 @@
   border-radius: 999px;
   background: var(--terracotta);
   color: #fff;
-  font-size: 10px;
+  font-size: var(--font-size-2xs);
   font-weight: 700;
   line-height: 16px;
   text-align: center;
@@ -50,7 +50,7 @@
   border-bottom: 1px solid var(--border);
 }
 
-.notif-head strong { font-size: 14px; color: var(--ink); margin-right: auto; }
+.notif-head strong { font-size: var(--font-size-md); color: var(--ink); margin-right: auto; }
 
 .notif-lertodas,
 .notif-fechar {
@@ -61,7 +61,7 @@
   border: none;
   padding: 4px 6px;
   border-radius: 8px;
-  font-size: 12px;
+  font-size: var(--font-size-xs);
   color: var(--muted);
   cursor: pointer;
 }
@@ -118,9 +118,9 @@
   flex: 1;
 }
 
-.notif-corpo strong { font-size: 13px; font-weight: 600; color: var(--ink); line-height: 1.35; overflow-wrap: anywhere; }
-.notif-desc { font-size: 12px; color: var(--ink-soft); line-height: 1.35; overflow-wrap: anywhere; }
-.notif-meta { font-size: 11px; color: var(--muted); }
+.notif-corpo strong { font-size: var(--font-size-sm); font-weight: 600; color: var(--ink); line-height: 1.35; overflow-wrap: anywhere; }
+.notif-desc { font-size: var(--font-size-xs); color: var(--ink-soft); line-height: 1.35; overflow-wrap: anywhere; }
+.notif-meta { font-size: var(--font-size-2xs); color: var(--muted); }
 
 .notif-ponto {
   flex-shrink: 0;
@@ -141,8 +141,8 @@
   color: var(--muted);
 }
 
-.notif-vazio span { font-size: 13px; color: var(--ink); }
-.notif-vazio small { font-size: 12px; max-width: 30ch; line-height: 1.4; }
+.notif-vazio span { font-size: var(--font-size-sm); color: var(--ink); }
+.notif-vazio small { font-size: var(--font-size-xs); max-width: 30ch; line-height: 1.4; }
 
 @media (max-width: 480px) {
   .notif-pop { width: calc(100vw - 24px); right: -8px; }

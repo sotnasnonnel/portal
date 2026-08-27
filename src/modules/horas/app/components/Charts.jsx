@@ -24,6 +24,8 @@ const GRID = '#e2e8f0';
 const TICK = '#64748b';
 const PRIMARY = '#C44A28';
 
+// 11px = --font-size-2xs. Aqui vai o número cru porque o tick vira atributo
+// SVG (font-size="..."), e atributo de apresentação não resolve var().
 const tickStyle = { fill: TICK, fontSize: 11, fontFamily: 'Inter' };
 
 // Tooltip mostra a duração real (10s / 45min / 1,5h), não as horas arredondadas.
@@ -123,7 +125,7 @@ export function BrandPieChart({ data, onSelect }) {
           layout={estreito ? 'horizontal' : 'vertical'}
           align={estreito ? 'center' : 'right'}
           verticalAlign={estreito ? 'bottom' : 'middle'}
-          wrapperStyle={{ fontSize: 12, color: TICK, lineHeight: '20px' }}
+          wrapperStyle={{ fontSize: 'var(--font-size-xs)', color: TICK, lineHeight: '20px' }}
         />
         <Pie
           data={data}

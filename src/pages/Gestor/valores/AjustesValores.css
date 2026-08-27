@@ -34,14 +34,14 @@
 }
 
 .av-card-head h2 {
-  font-size: 15px;
+  font-size: var(--font-size-md);
   font-weight: 700;
   margin: 0;
   color: var(--color-text-primary);
 }
 
 .av-origem {
-  font-size: 11px;
+  font-size: var(--font-size-2xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -71,7 +71,7 @@
 }
 
 .av-item-nome {
-  font-size: 14px;
+  font-size: var(--font-size-md);
   color: var(--color-text-primary);
   flex: 1;
   min-width: 0;
@@ -84,7 +84,7 @@
 }
 
 .av-prefix {
-  font-size: 13px;
+  font-size: var(--font-size-sm);
   color: var(--color-text-muted);
   font-weight: 600;
 }
