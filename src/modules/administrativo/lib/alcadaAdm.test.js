@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   SERVICOS_COM_ALCADA, alcadaDoServico, valorParaAlcada, decidirAprovacao, cadeiaDoFluxo,
-  juntarCadeias, papeisForaDaCadeia,
+  juntarCadeias, papeisForaDaCadeia, escadaDoOrganograma, ehGerente, ehAcimaDeGerente, ehGerencia,
 } from './alcadaAdm.js';
 import { avaliarAlcada } from '../../../config/alcadas.js';
 
@@ -167,4 +167,87 @@ test('R$ 5.000 e R$ 20.000 exatos ficam na faixa de baixo', () => {
 test('a tabela do Financeiro continua intacta', () => {
   assert.deepEqual(avaliarAlcada({ tabela: 'compras', valor: 3200 }).papeis, ['GERENTE_EXECUTIVO']);
   assert.deepEqual(avaliarAlcada({ tabela: 'compras', valor: 45000 }).papeis, ['CEO']);
+});
+
+// ---------------------------------------------------------------------------
+// Escada do organograma — Coordenador → Gerente
+// Os casos abaixo são cadeias REAIS do organograma da empresa (out/2026).
+// ---------------------------------------------------------------------------
+
+const escada = (cadeia) => escadaDoOrganograma(cadeia).map((p) => `${p.papel}:${p.nome}`);
+
+test('caso mais comum: coordenador da pessoa e o gerente executivo acima dele', () => {
+  assert.deepEqual(escada([
+    { nivel: 1, id: 'c', nome: 'Coord', funcao: 'COORDENADOR DE PLANEJAMENTO' },
+    { nivel: 2, id: 'g', nome: 'GerEx', funcao: 'GERENTE EXECUTIVO' },
+    { nivel: 3, id: 'd', nome: 'Diretor', funcao: 'DIRETOR DE OPERAÇÕES' },
+  ]), ['Gestor direto:Coord', 'Gerente:GerEx']);
+});
+
+// Sem isto, quem responde a um gerente teria o pedido subindo para a diretoria,
+// e quem responde a um diretor iria ao CEO — por menor que fosse o chamado.
+test('superior direto que já é gerência encerra a escada nele', () => {
+  for (const funcao of ['GERENTE DE PLANEJAMENTO', 'GERENTE EXECUTIVO', 'DIRETOR DE OPERAÇÕES', 'CEO']) {
+    assert.deepEqual(escada([
+      { nivel: 1, id: 'a', nome: 'Chefe', funcao },
+      { nivel: 2, id: 'b', nome: 'Acima', funcao: 'CEO' },
+    ]), ['Gestor direto:Chefe'], funcao);
+  }
+});
+
+// Comercial: o coordenador responde direto à diretoria, não há gerente na
+// cadeia. O degrau existe, só está mais acima — cair fora dele deixaria o
+// pedido com um aprovador só.
+test('sem gerente na cadeia, o degrau vira o primeiro diretor', () => {
+  assert.deepEqual(escada([
+    { nivel: 1, id: 'c', nome: 'Coord', funcao: 'COORDENADOR COMERCIAL' },
+    { nivel: 2, id: 'd', nome: 'Morais', funcao: 'DIRETOR DE OPERAÇÕES' },
+    { nivel: 3, id: 'e', nome: 'Nery', funcao: 'CEO' },
+  ]), ['Gestor direto:Coord', 'Gerente:Morais']);
+});
+
+test('gerente é preferido ao diretor, mesmo com o diretor mais perto', () => {
+  assert.deepEqual(escada([
+    { nivel: 1, id: 'h', nome: 'Head', funcao: 'HEAD DE QUALIDADE' },
+    { nivel: 2, id: 'd', nome: 'Diretor', funcao: 'DIRETOR DE OPERAÇÕES' },
+    { nivel: 3, id: 'g', nome: 'GerEx', funcao: 'GERENTE EXECUTIVO' },
+  ]), ['Gestor direto:Head', 'Gerente:GerEx']);
+});
+
+// 12 pessoas hoje respondem a um consultor sênior, que não é liderança: sem
+// subir, elas ficariam com um aprovador que não responde por orçamento nenhum.
+test('superior direto sem cargo de liderança ainda leva ao gerente', () => {
+  assert.deepEqual(escada([
+    { nivel: 1, id: 's', nome: 'Sênior', funcao: 'CONSULTOR PLANEJAMENTO SR' },
+    { nivel: 2, id: 'g', nome: 'Gerente', funcao: 'GERENTE DE PLANEJAMENTO' },
+  ]), ['Gestor direto:Sênior', 'Gerente:Gerente']);
+});
+
+test('quem não tem ninguém acima fica sem escada — o chamado é barrado depois', () => {
+  assert.deepEqual(escadaDoOrganograma([]), []);
+  assert.deepEqual(escadaDoOrganograma(undefined), []);
+});
+
+test('a escada respeita o nível, não a ordem em que a RPC devolveu', () => {
+  assert.deepEqual(escada([
+    { nivel: 2, id: 'g', nome: 'GerEx', funcao: 'GERENTE EXECUTIVO' },
+    { nivel: 1, id: 'c', nome: 'Coord', funcao: 'COORDENADOR DE PLANEJAMENTO' },
+  ]), ['Gestor direto:Coord', 'Gerente:GerEx']);
+});
+
+// A RPC corta inativos da cadeia, então o primeiro da lista pode ser um avô —
+// e é ele quem responde pela pessoa hoje.
+test('coordenador inativo some da cadeia e o gerente vira o gestor direto', () => {
+  assert.deepEqual(escada([
+    { nivel: 2, id: 'g', nome: 'GerEx', funcao: 'GERENTE EXECUTIVO' },
+    { nivel: 3, id: 'd', nome: 'Diretor', funcao: 'DIRETOR DE OPERAÇÕES' },
+  ]), ['Gestor direto:GerEx']);
+});
+
+test('acento e caixa do cadastro não mudam a classificação do cargo', () => {
+  assert.equal(ehAcimaDeGerente('Diretor Comercial'), true);
+  assert.equal(ehAcimaDeGerente('DIRETOR DE OPERAÇÕES'), true);
+  assert.equal(ehGerente('  gerente de pmo  '), true);
+  assert.equal(ehGerencia('COORDENADORA DE MARKETING '), false);
+  assert.equal(ehGerencia('ESPECIALISTA DE PMO'), false);
 });

@@ -50,7 +50,7 @@ export default function NovoChamadoAdm() {
   const [config, setConfig] = useState(null);     // null = ainda carregando
   const [pessoas, setPessoas] = useState([]);
   const [pendente, setPendente] = useState(null); // avaliação que trava a abertura
-  // Centro de custo do organograma. '' = pessoa sem gerência; null = carregando.
+  // Centro de custo do aprovador. '' = ninguém acima com gerência; null = carregando.
   const [centroCusto, setCentroCusto] = useState(null);
   const avisoErro = useRef(null);
   // Contador de tentativas, não o texto do erro: errar DUAS vezes no mesmo campo
@@ -126,14 +126,21 @@ export default function NovoChamadoAdm() {
   }, [tentativa]);
 
   // Centro de custo vem do organograma, não do teclado: digitado à mão, cada
-  // pessoa escrevia de um jeito e nenhum relatório por CC fechava depois.
+  // pessoa escrevia de um jeito e nenhum relatório por CC fechava depois. E é o
+  // do APROVADOR — o gasto corre por conta de quem avaliza, não de quem pede.
+  // Depende da classe porque a cadeia cadastrada pode mudar por classe.
   useEffect(() => {
     let cancelado = false;
-    buscarCentroDeCusto(user?.horasGerenciaId)
+    // Volta a "carregando" antes de buscar: sem isso, trocar de serviço deixaria
+    // o CC anterior preenchido caso o novo venha vazio.
+    setCentroCusto(null);
+    buscarCentroDeCusto({
+      solicitanteId: user?.id, classe, gerenciaPropriaId: user?.horasGerenciaId,
+    })
       .then((n) => { if (!cancelado) setCentroCusto(n); })
       .catch(() => { if (!cancelado) setCentroCusto(''); });
     return () => { cancelado = true; };
-  }, [user?.horasGerenciaId]);
+  }, [user?.id, user?.horasGerenciaId, classe]);
 
   // Preenche o campo assim que o nome chega, sem pisar no que a pessoa digitou
   // (nos casos em que ela pôde digitar, por não ter gerência).

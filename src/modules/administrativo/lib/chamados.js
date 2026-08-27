@@ -6,7 +6,7 @@ import { enviarArquivo } from '../../../pages/Gestor/requisicoes/uploadAnexo';
 import { resolverPapeis, PapelNaoAtribuidoError } from '../../../services/alcadas';
 import { avaliarAlcada, PAPEL_LABEL } from '../../../config/alcadas';
 import {
-  decidirAprovacao, cadeiaDoFluxo, juntarCadeias, papeisForaDaCadeia,
+  decidirAprovacao, cadeiaDoFluxo, juntarCadeias, papeisForaDaCadeia, escadaDoOrganograma,
 } from './alcadaAdm';
 import { proximoStatusAoResponder, STATUS_ENCERRADOS } from './statusChamado';
 import { venceEmISO } from './prazo';
@@ -67,45 +67,8 @@ export async function salvarConfigServico(classe, servico, dados) {
   if (error) throw new Error(`Não foi possível salvar: ${error.message}`);
 }
 
-/**
- * Tipo do Gestão de Pessoas usado como cadeia base do Administrativo.
- *
- * Lá o fluxo é por DOCUMENTO, não por pessoa: cada um tem uma cadeia por tipo.
- * `ajuda_custo` é o análogo mais próximo de um pedido de despesa, então é ele
- * que serve de base aqui. Uma constante para a troca ser de uma linha.
- */
-export const TIPO_RH_BASE = 'ajuda_custo';
-
-/**
- * Cadeia do solicitante no Gestão de Pessoas.
- *
- * Decisão da diretoria: o Adm não mantém cadeia própria, usa a que já existe
- * lá — assim quem muda de gestor não precisa ser recadastrado em dois lugares.
- * Quem não tem fluxo no RH cai no superior direto (105 das 134 pessoas hoje).
- */
-export async function buscarFluxoRh(solicitanteId) {
-  const { data, error } = await supabase
-    .from('solicitacoes_rh_fluxos')
-    .select('aprovadores')
-    .eq('solicitante_id', solicitanteId)
-    .eq('tipo', TIPO_RH_BASE)
-    .maybeSingle();
-  if (error) return [];               // silencioso: o superior direto cobre
-  const lista = data?.aprovadores;
-  return Array.isArray(lista) ? lista.filter(Boolean) : [];
-}
-
-/**
- * Nome da gerência do solicitante — o centro de custo do chamado.
- *
- * Vem do organograma (colaboradores.horas_gerencia_id), não do teclado: a
- * pessoa digitava o CC à mão em quase todo formulário e cada um escrevia de um
- * jeito, o que inviabiliza qualquer relatório por centro de custo depois.
- *
- * Devolve '' quando a pessoa não tem gerência (6 dos 134 hoje) — nesse caso o
- * campo volta a ser editável, em vez de travar num valor vazio.
- */
-export async function buscarCentroDeCusto(gerenciaId) {
+/** Nome da gerência de horas, que é como o centro de custo se chama aqui. */
+async function nomeDaGerencia(gerenciaId) {
   if (!gerenciaId) return '';
   const { data, error } = await supabase
     .from('horas_gerencias')
@@ -114,6 +77,44 @@ export async function buscarCentroDeCusto(gerenciaId) {
     .maybeSingle();
   if (error) return '';
   return data?.nome || '';
+}
+
+/**
+ * Centro de custo do APROVADOR — o que vai gravado no chamado.
+ *
+ * Vem do organograma (colaboradores.horas_gerencia_id), não do teclado: a
+ * pessoa digitava o CC à mão em quase todo formulário e cada um escrevia de um
+ * jeito, o que inviabiliza qualquer relatório por centro de custo depois.
+ *
+ * É o do aprovador, e não o de quem pede: o gasto corre por conta de quem
+ * avaliza. Quem aprova é a mesma `cabecaDaCadeia` da criação do chamado —
+ * exceção cadastrada no Adm ou, na falta dela, a escada do organograma.
+ *
+ * A gerência dele só é legível pela RPC: a RLS de colaboradores libera a
+ * própria linha e a subárvore abaixo, nunca o superior.
+ *
+ * Cai na gerência da própria pessoa quando não há a quem subir (topo da
+ * hierarquia) ou quando a consulta falha, e devolve '' quando nem isso existe
+ * — aí o campo volta a ser editável, em vez de travar num valor vazio.
+ */
+export async function buscarCentroDeCusto({ solicitanteId, classe, gerenciaPropriaId } = {}) {
+  const aprovador = await primeiroAprovador(solicitanteId, classe);
+  if (aprovador) {
+    const { data, error } = await supabase.rpc('chamados_adm_centro_custo', { p_pessoa: aprovador });
+    if (!error && data) return data;
+  }
+  return nomeDaGerencia(gerenciaPropriaId);
+}
+
+/** Cabeça da cadeia, tolerante a falha: aqui ela só preenche um campo. */
+async function primeiroAprovador(solicitanteId, classe) {
+  if (!solicitanteId) return '';
+  try {
+    const { ids } = await cabecaDaCadeia(solicitanteId, classe);
+    return ids[0] || '';
+  } catch {
+    return '';
+  }
 }
 
 /** Cadeias cadastradas do solicitante (a geral e as por classe). */
@@ -156,42 +157,43 @@ export class PapelForaDaCadeiaError extends Error {
 }
 
 /**
- * Superior direto, tirado do organograma pela mesma RPC que a alçada usa.
+ * A escada do organograma: coordenador da pessoa e o gerente acima dele.
+ *
+ * Lê a cadeia crua pela RPC (a policy de colaboradores não deixa ninguém ver o
+ * superior do próprio superior) e aplica a regra em `escadaDoOrganograma`.
  * Acompanha troca de gestor sozinho — cadastro pessoa a pessoa ficaria
  * desatualizado no primeiro remanejamento.
  */
-async function superiorDireto(solicitanteId) {
-  const { etapas } = await resolverPapeis(solicitanteId, ['GERENTE']);
-  return etapas.map((e) => e.aprovadorId || e.candidatos?.[0]?.id).filter(Boolean);
+async function escadaDoSolicitante(solicitanteId) {
+  const { data, error } = await supabase.rpc('chamados_adm_cadeia', { p_solicitante: solicitanteId });
+  if (error) throw new Error(`Não foi possível ler o organograma: ${error.message}`);
+  return escadaDoOrganograma(data || []);
 }
 
 /**
- * Quem aprova ANTES de qualquer papel de alçada, em três degraus:
+ * Quem aprova ANTES de qualquer papel de alçada, em dois degraus:
  *
  *   1. cadeia própria do Adm, quando alguém cadastrou uma exceção;
- *   2. cadeia do Gestão de Pessoas — a decisão é usar a que já existe lá, para
- *      ninguém manter a mesma informação em dois lugares;
- *   3. superior direto do organograma, que cobre quem não tem nenhuma das duas
- *      (hoje 105 das 134 pessoas não têm fluxo no RH).
+ *   2. a escada do organograma — COORDENADOR da pessoa e, acima dele, o
+ *      GERENTE. É o mesmo caminho do Gestão de Pessoas, agora deduzido do
+ *      organograma em vez de cadastrado pessoa a pessoa.
+ *
+ * A cadeia do Gestão de Pessoas (`solicitacoes_rh_fluxos`) NÃO é mais somada:
+ * ela carrega conferentes do DP, que não têm o que dizer sobre compra, frota ou
+ * viagem — e só 23 das 134 pessoas tinham uma, o que fazia duas pessoas do
+ * mesmo time passarem por cadeias de tamanhos diferentes.
+ *
+ * Devolve também as pessoas com nome e papel, para a tela de fluxos desenhar a
+ * escada sem uma segunda ida ao banco.
  */
 async function cabecaDaCadeia(solicitanteId, classe) {
   // Exceção cadastrada no próprio Adm manda em tudo: alguém a criou de
   // propósito para esta pessoa.
   const doAdm = cadeiaDoFluxo(await buscarFluxos(solicitanteId), classe);
-  if (doAdm.length) return { ids: doAdm, origem: 'adm' };
+  if (doAdm.length) return { ids: doAdm, origem: 'adm', pessoas: [] };
 
-  const [gerente, doRh] = await Promise.all([
-    superiorDireto(solicitanteId),
-    buscarFluxoRh(solicitanteId),
-  ]);
-
-  // O gerente entra SEMPRE na frente, mesmo quando a cadeia do RH existe.
-  // Em 9 das 23 pessoas com fluxo de ajuda de custo a cadeia do RH começa por
-  // outra pessoa, e sem isto o gestor direto deixaria de ver o pedido do
-  // próprio time. Quando os dois coincidem, a dedução resolve.
-  if (doRh.length) return { ids: juntarCadeias(gerente, doRh), origem: 'rh' };
-
-  return { ids: gerente, origem: 'superior' };
+  const escada = await escadaDoSolicitante(solicitanteId);
+  return { ids: escada.map((p) => p.id), origem: 'organograma', pessoas: escada };
 }
 
 /**
@@ -216,8 +218,11 @@ async function ehTopoDaHierarquia(solicitanteId) {
  * lógicas divergissem, a tela viraria documentação errada de si mesma.
  */
 export async function previewCadeiaEfetiva(solicitanteId, classe) {
-  const { ids, origem } = await cabecaDaCadeia(solicitanteId, classe);
+  const { ids, origem, pessoas } = await cabecaDaCadeia(solicitanteId, classe);
   if (!ids.length) return { origem, pessoas: [] };
+  // A escada já vem nomeada da RPC do organograma; só a exceção cadastrada
+  // chega como ids soltos e precisa de uma segunda consulta.
+  if (pessoas.length) return { origem, pessoas };
 
   const { data } = await supabase.rpc('nomes_colaboradores', { p_ids: ids });
   const nomes = new Map((data || []).map((p) => [p.id, p.nome]));
@@ -225,9 +230,9 @@ export async function previewCadeiaEfetiva(solicitanteId, classe) {
 }
 
 /**
- * Resolve QUEM aprova, nas duas dinâmicas do portal:
- * serviço com gasto → alçada por valor; os demais → fluxo cadastrado, e na
- * falta dele o superior direto.
+ * Resolve QUEM aprova. A escada do organograma (coordenador → gerente) vale nos
+ * dois casos; no serviço com gasto ela vem PRIMEIRO e a faixa de valor entra
+ * depois, somando.
  *
  * Devolve a lista ordenada de ids. Lança com mensagem pronta quando a alçada
  * exige um papel que não tem ninguém atrás — deixar passar seria pior do que
@@ -268,9 +273,9 @@ export async function resolverAprovadores({ classe, servico, campos, exigeAprova
   // etapas do Adm exige um aprovador nomeado.
   const daAlcada = etapas.map((e) => e.aprovadorId || e.candidatos?.[0]?.id).filter(Boolean);
 
-  // O fluxo da pessoa decide ANTES da faixa: quem responde por ela avaliza o
+  // A escada da pessoa decide ANTES da faixa: coordenador e gerente avalizam o
   // pedido, e só então ele sobe para quem responde pelo valor. Abaixo de
-  // R$ 20.000 a faixa não pede ninguém, então a cadeia é só o fluxo.
+  // R$ 20.000 a faixa não pede ninguém, então a cadeia é só a escada.
   //
   // Ausência de cabeça NÃO bloqueia aqui — diferente do fluxo comum: acima de
   // R$ 20.000 a faixa já garante aprovador, e exigir gestor travaria justamente
@@ -327,10 +332,10 @@ export async function criarChamado({
   // evita uma segunda ida ao banco no momento do envio.
   const cfg = config || await buscarConfigServico(classe, servico);
 
-  // Cadeia de aprovação: alçada por valor nos serviços de gasto, fluxo
-  // cadastrado (ou o superior direto) nos demais. Serviço que exige aprovação e
-  // não tem ninguém atrás lança — a lista só chega aqui vazia quando o serviço
-  // realmente dispensa aprovação.
+  // Cadeia de aprovação: a escada do organograma (coordenador → gerente) e,
+  // nos serviços de gasto, a faixa de valor somada a ela. Serviço que exige
+  // aprovação e não tem ninguém atrás lança — a lista só chega aqui vazia
+  // quando o serviço realmente dispensa aprovação.
   //
   // Resolvido ANTES do upload de propósito: barrar depois de subir os arquivos
   // deixaria anexo órfão no bucket e teria feito quem está em link de obra
@@ -412,7 +417,10 @@ export async function criarChamado({
   const aprovadoresNomes = aprovadores.map((id) => nomes.get(id)).filter(Boolean);
 
   // Aviso ao aprovador da vez: sem e-mail, ele só descobriria se abrisse a tela.
+  // Sem aprovação o chamado já nasce na fila, e quem precisa saber é o técnico —
+  // o solicitante não tem nada a fazer e não é avisado de nada aqui.
   if (exigeAprovacao) notificarChamadoAdm(chamado.id, 'aprovacao');
+  else notificarChamadoAdm(chamado.id, 'atendimento');
 
   return { chamado, atendenteNome, aprovadoresNomes };
 }
@@ -652,7 +660,11 @@ export async function decidirChamado({ chamadoId, etapaId, aprovar, justificativ
     .select('id');
   if (error) throw new Error(`Não foi possível liberar o chamado: ${error.message}`);
   if (!data?.length) throw new Error('A aprovação não foi gravada no chamado.');
+  // Dois avisos, para dois lados: o solicitante soube que o pedido passou, e o
+  // técnico soube que tem trabalho. Só o primeiro existia, e por isso o chamado
+  // chegava calado na fila de quem ia executar.
   notificarChamadoAdm(chamadoId, 'decidido');
+  notificarChamadoAdm(chamadoId, 'atendimento');
   return { status: 'aberto' };
 }
 

@@ -913,8 +913,9 @@
 }
 .adm-fx-no-inicio { border-color: var(--a-primary-line); }
 .adm-fx-no-fim { border-color: var(--a-primary-line); background: var(--a-primary-soft); }
-/* Tracejado: é o que vale hoje, mas não está cadastrado — a diferença precisa
-   ser visível, senão o padrão parece uma etapa salva. */
+/* Tracejado: a etapa é editável, mas ainda é o padrão do organograma — nada
+   cadastrado. Sem a diferença visual, a escada automática parece uma cadeia
+   salva, e quem olha não percebe que ela se ajusta sozinha. */
 .adm-fx-no-padrao { border-style: dashed; background: var(--a-gray-50); }
 
 .adm-fx-num {

@@ -288,7 +288,13 @@ export default function ChamadoAdm() {
         </div>
       )}
 
-      <FluxoAprovacao etapas={etapas} nomes={nomesEtapas} />
+      <FluxoAprovacao
+        etapas={etapas}
+        nomes={nomesEtapas}
+        atendenteNome={chamado.atendenteNome}
+        status={chamado.status}
+        fechadoEm={chamado.fechado_em}
+      />
 
       {/* Mensagens e eventos numa lista só: é o que mostra ao solicitante que o
           pedido andou, mesmo quando ninguém escreveu nada. */}
