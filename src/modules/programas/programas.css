@@ -467,7 +467,7 @@
 .pg-modal-pe-espaco { flex: 1; }
 .pg-excluir-confirma {
   display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap;
-  font-size: 0.8rem; color: #b91c1c;
+  font-size: var(--font-size-xs); color: var(--tone-erro-fg);
 }
 
 /* ---- edição dentro do popup ---- */
