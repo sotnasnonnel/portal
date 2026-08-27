@@ -7,17 +7,20 @@ import {
   corDoSetor, ehAdminProgramas,
 } from '../../../../config/programas';
 import { COR_FORMA } from '../../lib/paleta';
-import { listarIdeias, atualizarSituacao, atualizarIdeia } from '../../lib/ideias';
+import {
+  listarIdeias, atualizarSituacao, atualizarIdeia, excluirIdeia,
+} from '../../lib/ideias';
 import { resumoIdeias } from '../../lib/indicadores';
 import { DetalheIdeia } from '../components/Detalhe';
 
 /**
- * Dashboard do Campo de Ideias — item 4 da planilha, "Liberado para todos".
+ * Painel da Inovação — o Dashboard do Campo de Ideias (item 4 da planilha,
+ * "Liberado para todos").
  *
  * Tela de LEITURA: os números do programa inteiro, de todo mundo. Quem quer
  * registrar vai em "Campo de Ideias", que é a tela de participação — mesma
  * divisão do outro programa ("Alavanca PHD" x "Painel da Alavanca"). Misturar
- * as duas faz "Dashboard" virar ao mesmo tempo onde se olha e onde se cadastra.
+ * as duas faz o painel virar ao mesmo tempo onde se olha e onde se cadastra.
  *
  * Os quatro blocos da planilha, na ordem dela: card, gráfico por setor, kanban
  * por tipo (com as duas legendas) e o mapa com atualizar status.
@@ -73,6 +76,11 @@ export default function DashboardIdeias() {
     setDetalhe(atualizado);
   };
 
+  const apagar = async (registro) => {
+    await excluirIdeia(registro.id);
+    setLinhas((atual) => atual.filter((l) => l.id !== registro.id));
+  };
+
   const trocarSituacao = async (registro, nova) => {
     setSalvando(registro.id);
     setErro('');
@@ -88,7 +96,7 @@ export default function DashboardIdeias() {
 
   return (
     <div className="pg-page pg-page-full">
-      <h1 className="pg-title"><LayoutDashboard size={24} /> Dashboard</h1>
+      <h1 className="pg-title"><LayoutDashboard size={24} /> Painel da Inovação</h1>
       <p className="pg-sub">Campo de Ideias — o que a PHD está inventando.</p>
 
 
@@ -345,6 +353,7 @@ export default function DashboardIdeias() {
         podeEditar={Boolean(detalhe) && (souAdmin || detalhe.autor_id === user?.id)}
         onFechar={() => setDetalhe(null)}
         onSalvar={salvarEdicao}
+        onExcluir={apagar}
       />
     </div>
   );

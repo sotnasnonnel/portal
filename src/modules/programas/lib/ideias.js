@@ -176,3 +176,22 @@ export async function atualizarIdeia(ideia, valores, autorId) {
 
   return { ...data, autorNome: ideia.autorNome };
 }
+
+/**
+ * Exclusão pelo autor (ou pelo admin do módulo). Os eventos saem por cascade.
+ *
+ * Confere o retorno em vez de confiar no "sem erro": DELETE barrado pela RLS
+ * não levanta erro no PostgREST, apenas não afeta linha — e a tela mostraria
+ * "excluído" com o registro ainda lá.
+ */
+export async function excluirIdeia(id) {
+  const { data, error } = await supabase
+    .from('programas_ideias')
+    .delete()
+    .eq('id', id)
+    .select('id');
+  if (error) throw new Error(`Não foi possível excluir: ${error.message}`);
+  if (!data?.length) {
+    throw new Error('Você não pode excluir este registro. Só o autor e o administrador do módulo podem.');
+  }
+}

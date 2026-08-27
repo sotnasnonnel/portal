@@ -5,7 +5,7 @@ import { useAuth } from '../../../../contexts/AuthContext';
 import {
   ELEGIBILIDADE_LABEL, STATUS_ALAVANCA_LABEL, ehComercial,
 } from '../../../../config/programas';
-import { listarIndicacoes } from '../../lib/alavanca';
+import { listarIndicacoes, editarIndicacao, excluirIndicacao } from '../../lib/alavanca';
 import { DetalheIndicacao } from '../components/Detalhe';
 
 /**
@@ -42,6 +42,17 @@ export default function MinhasIndicacoes() {
   }, [user?.id]);
 
   useEffect(() => { carregar(); }, [carregar]);
+
+  const salvarEdicao = async (indicacao, valores) => {
+    const nova = await editarIndicacao(indicacao, valores, user.id);
+    setLinhas((atual) => atual.map((l) => (l.id === indicacao.id ? nova : l)));
+    setDetalhe(nova);
+  };
+
+  const apagar = async (indicacao) => {
+    await excluirIndicacao(indicacao.id);
+    setLinhas((atual) => atual.filter((l) => l.id !== indicacao.id));
+  };
 
   return (
     <div className="pg-page pg-page-wide">
@@ -123,10 +134,15 @@ export default function MinhasIndicacoes() {
         </div>
       )}
 
-      {/* Só leitura: depois de enviada, a indicação é do comercial. Deixar quem
-          indicou editar abriria a porta para trocar a empresa depois de a
-          elegibilidade ter sido calculada — e a RLS barra isso de qualquer jeito. */}
-      <DetalheIndicacao indicacao={detalhe} onFechar={() => setDetalhe(null)} />
+      {/* Editar e excluir só enquanto a indicação segue em análise — depois que
+          o comercial encostou nela, os fatos travam. Quem decide é a RLS; o
+          Detalhe repete a regra para o botão não aparecer e falhar. */}
+      <DetalheIndicacao
+        indicacao={detalhe}
+        onFechar={() => setDetalhe(null)}
+        onSalvar={salvarEdicao}
+        onExcluir={apagar}
+      />
     </div>
   );
 }

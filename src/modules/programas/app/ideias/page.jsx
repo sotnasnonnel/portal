@@ -7,20 +7,22 @@ import { useAuth } from '../../../../contexts/AuthContext';
 import {
   CATEGORIA_LABEL, SITUACOES, ehAdminProgramas,
 } from '../../../../config/programas';
-import { listarIdeias, atualizarSituacao, atualizarIdeia } from '../../lib/ideias';
+import {
+  listarIdeias, atualizarSituacao, atualizarIdeia, excluirIdeia,
+} from '../../lib/ideias';
 import { DetalheIdeia } from '../components/Detalhe';
 
 /**
  * Campo de Ideias — a tela de QUEM PARTICIPA, gêmea de "Alavanca PHD":
  * os botões de registrar no topo e, abaixo, o que essa pessoa registrou.
  *
- * A separação entre esta tela e o Dashboard é a mesma do outro programa:
- *   aqui        -> eu registro e acompanho o MEU
- *   Dashboard   -> os números do programa inteiro, de todo mundo
+ * A separação entre esta tela e o Painel da Inovação é a mesma do outro programa:
+ *   aqui   -> eu registro e acompanho o MEU
+ *   painel -> os números do programa inteiro, de todo mundo
  * Juntar as duas faz a tela de leitura virar também a de escrita, e aí ninguém
- * sabe se "Dashboard" é onde se olha ou onde se cadastra.
+ * sabe se o painel é onde se olha ou onde se cadastra.
  *
- * A consulta é a mesma do Dashboard — o Campo de Ideias é aberto, e a RLS
+ * A consulta é a mesma do painel — o Campo de Ideias é aberto, e a RLS
  * devolve tudo. O recorte "meus" é feito aqui, porque a pergunta desta tela é
  * "o que EU registrei".
  */
@@ -61,6 +63,11 @@ export default function CampoDeIdeias() {
     setDetalhe(atualizado);
   };
 
+  const apagar = async (registro) => {
+    await excluirIdeia(registro.id);
+    setLinhas((atual) => atual.filter((l) => l.id !== registro.id));
+  };
+
   const trocarSituacao = async (registro, nova) => {
     setSalvando(registro.id);
     setErro('');
@@ -79,7 +86,7 @@ export default function CampoDeIdeias() {
       <h1 className="pg-title"><Lightbulb size={24} /> Campo de Ideias</h1>
       <p className="pg-sub">
         Registre uma ideia nova ou cadastre o que você já está construindo. Tudo o que a
-        empresa registrou fica no Dashboard, aberto a todos.
+        empresa registrou fica no Painel da Inovação, aberto a todos.
       </p>
 
       {/* Dois botões, e não um com escolha depois: ideia e iniciativa são
@@ -93,7 +100,7 @@ export default function CampoDeIdeias() {
           <Wrench size={16} /> Registrar iniciativa
         </Link>
         <Link to="/programas/dashboard" className="pg-btn pg-btn-ghost">
-          <LayoutDashboard size={16} /> Abrir o Dashboard
+          <LayoutDashboard size={16} /> Abrir o Painel da Inovação
         </Link>
       </div>
       <p className="pg-campo-dica" style={{ marginBottom: 22 }}>
@@ -111,7 +118,7 @@ export default function CampoDeIdeias() {
         <div className="pg-vazio">
           Você ainda não registrou nada. Use os botões acima — e veja o que o resto da
           empresa está inventando no{' '}
-          <Link className="pg-link" to="/programas/dashboard">Dashboard</Link>.
+          <Link className="pg-link" to="/programas/dashboard">Painel da Inovação</Link>.
         </div>
       ) : (
         <div className="pg-tabela-scroll">
@@ -173,6 +180,7 @@ export default function CampoDeIdeias() {
         podeEditar={Boolean(detalhe) && (souAdmin || detalhe.autor_id === user?.id)}
         onFechar={() => setDetalhe(null)}
         onSalvar={salvarEdicao}
+        onExcluir={apagar}
       />
     </div>
   );

@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { ExternalLink, Pencil, X } from 'lucide-react';
+import { ExternalLink, Pencil, Trash2, X } from 'lucide-react';
 import {
   CATEGORIA_LABEL, ELEGIBILIDADE_LABEL, SITUACAO_LABEL, STATUS_ALAVANCA_LABEL, corDoSetor,
 } from '../../../../config/programas';
 import { COR_FORMA } from '../../lib/paleta';
 import EditarIdeia from './EditarIdeia';
+import EditarIndicacao from './EditarIndicacao';
 
 /**
  * Popup de detalhe, aberto ao clicar num cartão ou numa linha do mapa.
@@ -71,15 +72,46 @@ function Casca({ titulo, etiquetas, children, onFechar, acoes }) {
 }
 
 /**
+ * Botão de excluir com confirmação em DOIS passos, no próprio botão.
+ *
+ * Sem window.confirm de propósito: o diálogo nativo aparece fora do popup, com
+ * texto que não dá para escrever, e alguns navegadores o suprimem. Aqui o
+ * primeiro clique arma e o segundo apaga — e "Cancelar" desarma.
+ */
+function BotaoExcluir({ rotulo, excluindo, onExcluir }) {
+  const [armado, setArmado] = useState(false);
+
+  if (!armado) {
+    return (
+      <button type="button" className="pg-btn pg-btn-perigo" onClick={() => setArmado(true)}>
+        <Trash2 size={15} /> Excluir
+      </button>
+    );
+  }
+  return (
+    <span className="pg-excluir-confirma">
+      <strong>{rotulo}</strong>
+      <button type="button" className="pg-btn pg-btn-ghost pg-btn-sm" onClick={() => setArmado(false)} disabled={excluindo}>
+        Cancelar
+      </button>
+      <button type="button" className="pg-btn pg-btn-perigo pg-btn-sm" onClick={onExcluir} disabled={excluindo}>
+        {excluindo ? 'Excluindo…' : 'Confirmar'}
+      </button>
+    </span>
+  );
+}
+
+/**
  * Detalhe de uma ideia ou iniciativa.
  *
  * `podeEditar` vem de fora (autor ou admin do módulo) e só controla a UI — quem
  * de fato barra a edição é a RLS, e lib/ideias.js trata o UPDATE sem retorno
  * como recusa. O botão some para quem não pode, em vez de aparecer e falhar.
  */
-export function DetalheIdeia({ registro, podeEditar = false, onFechar, onSalvar }) {
+export function DetalheIdeia({ registro, podeEditar = false, onFechar, onSalvar, onExcluir }) {
   const [editando, setEditando] = useState(false);
   const [salvando, setSalvando] = useState(false);
+  const [excluindo, setExcluindo] = useState(false);
   const [erro, setErro] = useState('');
 
   if (!registro) return null;
@@ -101,6 +133,18 @@ export function DetalheIdeia({ registro, podeEditar = false, onFechar, onSalvar 
       setErro(e.message);
     } finally {
       setSalvando(false);
+    }
+  };
+
+  const excluir = async () => {
+    setExcluindo(true);
+    setErro('');
+    try {
+      await onExcluir(registro);
+      fechar();
+    } catch (e) {
+      setErro(e.message);
+      setExcluindo(false);
     }
   };
 
@@ -128,6 +172,10 @@ export function DetalheIdeia({ registro, podeEditar = false, onFechar, onSalvar 
       onFechar={fechar}
       acoes={(
         <>
+          {podeEditar && onExcluir && (
+            <BotaoExcluir rotulo="Excluir para sempre?" excluindo={excluindo} onExcluir={excluir} />
+          )}
+          <span className="pg-modal-pe-espaco" />
           {podeEditar && (
             <button type="button" className="pg-btn pg-btn-primary" onClick={() => setEditando(true)}>
               <Pencil size={15} /> Editar
@@ -154,6 +202,8 @@ export function DetalheIdeia({ registro, podeEditar = false, onFechar, onSalvar 
         </>
       )}
     >
+      {erro && <div className="pg-aviso tom-erro"><X size={16} /> {erro}</div>}
+
       <Campos itens={[
         ['Tipo', CATEGORIA_LABEL[registro.categoria]],
         ['Autor', registro.autorNome],
@@ -194,14 +244,93 @@ export function DetalheIdeia({ registro, podeEditar = false, onFechar, onSalvar 
   );
 }
 
-/** Detalhe de uma indicação da Alavanca. */
-export function DetalheIndicacao({ indicacao, onFechar }) {
+/**
+ * Detalhe de uma indicação da Alavanca.
+ *
+ * `podeEditar` é do AUTOR, e só enquanto a indicação segue em análise: depois
+ * que o comercial encostou nela, mudar a empresa por baixo dele invalidaria a
+ * avaliação já feita. Quem decide de verdade é a RLS; aqui a regra é repetida
+ * para o botão não aparecer e falhar.
+ */
+export function DetalheIndicacao({ indicacao, onFechar, onSalvar, onExcluir }) {
+  const [editando, setEditando] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const [excluindo, setExcluindo] = useState(false);
+  const [erro, setErro] = useState('');
+
   if (!indicacao) return null;
+
+  const emAnalise = indicacao.status === 'em_analise';
+  const podeEditar = Boolean(onSalvar) && emAnalise;
+  const podeExcluir = Boolean(onExcluir) && indicacao.status !== 'concluida';
+
+  const fechar = () => {
+    setEditando(false);
+    setErro('');
+    onFechar();
+  };
+
+  const salvar = async (valores) => {
+    setSalvando(true);
+    setErro('');
+    try {
+      await onSalvar(indicacao, valores);
+      setEditando(false);
+    } catch (e) {
+      setErro(e.message);
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  const excluir = async () => {
+    setExcluindo(true);
+    setErro('');
+    try {
+      await onExcluir(indicacao);
+      fechar();
+    } catch (e) {
+      setErro(e.message);
+      setExcluindo(false);
+    }
+  };
+
+  if (editando) {
+    return (
+      <Casca
+        titulo={`Editar #${indicacao.numero}`}
+        onFechar={fechar}
+        acoes={<span className="pg-editar-dica">Use os botões no fim do formulário.</span>}
+      >
+        <EditarIndicacao
+          indicacao={indicacao}
+          salvando={salvando}
+          erro={erro}
+          onCancelar={() => { setEditando(false); setErro(''); }}
+          onSalvar={salvar}
+        />
+      </Casca>
+    );
+  }
 
   return (
     <Casca
       titulo={`#${indicacao.numero} — ${indicacao.oportunidade}`}
-      onFechar={onFechar}
+      onFechar={fechar}
+      acoes={(
+        <>
+          {podeExcluir && (
+            <BotaoExcluir rotulo="Excluir para sempre?" excluindo={excluindo} onExcluir={excluir} />
+          )}
+          <span className="pg-modal-pe-espaco" />
+          {podeEditar && (
+            <button type="button" className="pg-btn pg-btn-primary" onClick={() => setEditando(true)}>
+              <Pencil size={15} /> Editar
+            </button>
+          )}
+          <button type="button" className="pg-btn pg-btn-ghost" onClick={fechar}>Fechar</button>
+        </>
+      )}
       etiquetas={(
         <>
           <span className={`pg-badge tom-${indicacao.status}`}>
@@ -213,6 +342,19 @@ export function DetalheIndicacao({ indicacao, onFechar }) {
         </>
       )}
     >
+      {erro && <div className="pg-aviso tom-erro"><X size={16} /> {erro}</div>}
+
+      {/* Quem indicou tenta editar e não acha o botão: dizer o motivo evita o
+          chamado "sumiu o editar". Só para quem teria o botão. */}
+      {onSalvar && !emAnalise && (
+        <div className="pg-aviso tom-info">
+          <span>
+            O time comercial já começou a trabalhar esta indicação, então os dados não
+            podem mais ser alterados.
+          </span>
+        </div>
+      )}
+
       <Campos itens={[
         ['Empresa', indicacao.empresa],
         ['Indicado por', indicacao.indicadorNome],

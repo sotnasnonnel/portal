@@ -247,7 +247,7 @@
 .pg-modal-x:hover { background: var(--p-gray-100); color: var(--p-ink); }
 .pg-modal-corpo { padding: 18px 22px; overflow-y: auto; }
 .pg-modal-pe {
-  display: flex; justify-content: flex-end; gap: 10px;
+  display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap;
   padding: 14px 22px; border-top: 1px solid var(--p-gray-100); background: var(--p-gray-50);
 }
 .pg-check {
@@ -450,6 +450,21 @@
 .pg-legenda-serie span { display: inline-flex; align-items: center; gap: 6px; }
 .pg-legenda-serie i { width: 10px; height: 10px; border-radius: 3px; flex: none; }
 
+/* ---- excluir ----
+   Vermelho vazado, e não sólido: o botão fica no mesmo rodapé do "Salvar", e
+   dois botões cheios competindo fazem a mão errar o alvo. */
+.pg-btn-perigo {
+  background: #fff; border-color: #fecaca; color: #b91c1c;
+}
+.pg-btn-perigo:hover:not(:disabled) { background: #fef2f2; border-color: #b91c1c; }
+/* Empurra "Editar/Fechar" para a direita, deixando o excluir sozinho na
+   esquerda — longe do gesto de confirmar. */
+.pg-modal-pe-espaco { flex: 1; }
+.pg-excluir-confirma {
+  display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  font-size: 0.8rem; color: #b91c1c;
+}
+
 /* ---- edição dentro do popup ---- */
 /* Os botões ficam no fim do formulário, e não no rodapé fixo: o corpo do popup
    rola, e um rodapé com "Salvar" fora do <form> exigiria ligar os dois por
@@ -558,6 +573,9 @@
   font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
   color: var(--p-muted);
 }
+/* Alinha o "Limpar filtros" pela base dos selects: sem isto ele flutua no meio
+   da linha, porque os outros filtros têm rótulo em cima e ele não. */
+.pg-filtro-limpa { min-height: 42px; align-self: flex-end; }
 
 /* ======================= sidebar ======================= */
 .pgSb {

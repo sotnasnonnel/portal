@@ -176,11 +176,6 @@ export default function PainelAlavanca() {
           <div className="pg-graficos">
             <div className="pg-card">
               <h2 className="pg-card-tit">Funil das indicações</h2>
-              <p className="pg-campo-dica">
-                Cada etapa é um subconjunto da anterior, e a porcentagem é sempre sobre o total
-                recebido — “70% de 80% de 60%” não é conta que alguém faça de cabeça. Indicação
-                não elegível sai do funil: é a perda, não uma etapa.
-              </p>
               <div
                 className="pg-funil"
                 role="img"

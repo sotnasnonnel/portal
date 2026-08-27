@@ -575,7 +575,7 @@ const PROGRAMAS_USAR_STEPS = [
     icon: LayoutDashboard,
     titulo: "O painel, o quadro e o mapa",
     texto:
-      'O "Dashboard" é a visão da empresa inteira, aberta a todos: filtros (setor, tipo e status), os números, o gráfico por setor — que separa ideias de iniciativas — e o quadro por tipo de uso. No quadro, a cor do cartão diz o setor e a cor da borda diz se é ideia ou iniciativa. Clicando em qualquer cartão ou linha você abre o registro completo, e quem cadastrou pode editar por ali mesmo. O mesmo par existe na Alavanca: "Alavanca PHD" é onde você indica, "Painel da Alavanca" é a leitura do comercial.',
+      'O "Painel da Inovação" é a visão da empresa inteira, aberta a todos: filtros (setor, tipo e status), os números, o gráfico por setor — que separa ideias de iniciativas — e o quadro por tipo de uso. No quadro, a cor do cartão diz o setor e a cor da borda diz se é ideia ou iniciativa. Clicando em qualquer cartão ou linha você abre o registro completo, e quem cadastrou pode editar por ali mesmo. O menu separa as duas coisas: em "Menu" você participa, na seção "Dashboard" você lê os números — Painel da Inovação e, para o comercial, Painel da Alavanca.',
   },
   {
     icon: Rocket,

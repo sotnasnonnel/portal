@@ -173,3 +173,86 @@ export async function atualizarIndicacao(indicacao, mudancas, autorId) {
 
   return { ...data, indicadorNome: indicacao.indicadorNome };
 }
+
+/**
+ * Edição pelo autor, a partir do popup de detalhe.
+ *
+ * Só os campos do formulário: status, comentário e premiação são do comercial,
+ * e um trigger no banco (alavanca_protege_avaliacao) rejeita a escrita neles —
+ * a tela não é a única guarda. A RLS ainda limita a edição a indicações que
+ * seguem `em_analise`; depois que o comercial mexeu, os fatos travam.
+ *
+ * Mudou empresa, contato ou e-mail, a elegibilidade é RECALCULADA. Sem isso a
+ * pessoa poderia trocar a empresa recusada por outra e manter o veredito de
+ * "elegível" que a primeira tinha recebido.
+ */
+export async function editarIndicacao(indicacao, valores, autorId) {
+  const empresa = (valores.empresa || '').trim();
+  const contato = (valores.contato_nome || '').trim();
+  const email = (valores.contato_email || '').trim();
+
+  const mudouAlvo = empresa !== indicacao.empresa
+    || contato !== indicacao.contato_nome
+    || email !== indicacao.contato_email;
+
+  const patch = {
+    oportunidade: (valores.oportunidade || '').trim(),
+    descricao: (valores.descricao || '').trim(),
+    empresa,
+    contato_nome: contato,
+    contato_cargo: (valores.contato_cargo || '').trim(),
+    contato_telefone: (valores.contato_telefone || '').trim(),
+    contato_email: email,
+    tratativas: (valores.tratativas || '').trim(),
+    updated_at: new Date().toISOString(),
+  };
+
+  let veredito = null;
+  if (mudouAlvo) {
+    veredito = await avaliarElegibilidade({ empresa, contato, email });
+    patch.elegibilidade = veredito.elegibilidade;
+    patch.elegibilidade_motivo = veredito.motivo;
+    patch.elegibilidade_em = new Date().toISOString();
+  }
+
+  const { data, error } = await supabase
+    .from('programas_alavanca')
+    .update(patch)
+    .eq('id', indicacao.id)
+    .select(COLUNAS)
+    .maybeSingle();
+  if (error) throw new Error(`Não foi possível salvar: ${error.message}`);
+  if (!data) {
+    throw new Error(
+      'Não é mais possível editar esta indicação: o time comercial já começou a trabalhá-la.'
+    );
+  }
+
+  if (veredito) {
+    await supabase.from('programas_alavanca_eventos').insert([{
+      indicacao_id: indicacao.id, tipo: 'elegibilidade', autor_id: autorId,
+      para: veredito.elegibilidade, texto: `Reavaliada após edição. ${veredito.motivo}`,
+    }]);
+  }
+
+  return { ...data, indicadorNome: indicacao.indicadorNome };
+}
+
+/**
+ * Exclusão. A RLS libera para o autor enquanto a indicação não estiver
+ * concluída — concluída tem prêmio calculado e às vezes já pago, e apagá-la
+ * sumiria com a linha do mapa de vencedores. Nessas, só o admin do módulo.
+ */
+export async function excluirIndicacao(id) {
+  const { data, error } = await supabase
+    .from('programas_alavanca')
+    .delete()
+    .eq('id', id)
+    .select('id');
+  if (error) throw new Error(`Não foi possível excluir: ${error.message}`);
+  if (!data?.length) {
+    throw new Error(
+      'Você não pode excluir esta indicação. Indicação concluída só o administrador do módulo apaga.'
+    );
+  }
+}

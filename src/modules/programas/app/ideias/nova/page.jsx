@@ -123,11 +123,11 @@ export default function NovaIdeia() {
           <h2>{forma.label} registrada!</h2>
           <p>
             Sua {forma.label.toLowerCase()} <strong>#{pronto.numero} — {pronto.titulo}</strong> entrou
-            no Campo de Ideias e já aparece no Dashboard para toda a empresa.
+            no Campo de Ideias e já aparece no Painel da Inovação para toda a empresa.
           </p>
           <div className="pg-acoes">
             <button type="button" className="pg-btn pg-btn-ghost" onClick={() => navigate('/programas/dashboard')}>
-              Ver no Dashboard
+              Ver no Painel da Inovação
             </button>
             <button
               type="button"
