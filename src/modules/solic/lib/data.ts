@@ -38,7 +38,7 @@ export function fetchSurveysDashboard(): Promise<QueryResult<any[]>> {
       const r = await supabase
         .from("solic_surveys")
         .select(
-          "id,status,created_by,requester,needed_date,admin_deadline,completed_at,assets:solic_assets(code,title),urgent"
+          "id,status,created_by,requester,needed_date,admin_deadline,completed_at,updated_at,created_at,assets:solic_assets(code,title),urgent"
         )
         .order("needed_date", { ascending: true, nullsFirst: false })
         .order("created_at", { ascending: false });

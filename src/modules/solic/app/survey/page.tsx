@@ -70,7 +70,17 @@ function Inner() {
     setMsg(null);
 
     setLoading(true);
-    const { error } = await supabase.from("solic_surveys").update({ status }).eq("id", survey.id);
+    // Carimba QUANDO virou concluída — é essa data que tira a solicitação da
+    // lista uma semana depois (a de entrega nem sempre existe). Saindo de
+    // CONCLUÍDO, o carimbo volta a ser nulo para a contagem não valer mais.
+    const { error } = await supabase
+      .from("solic_surveys")
+      .update({
+        status,
+        completed_at: status === "COMPLETED" ? new Date().toISOString() : null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", survey.id);
     setLoading(false);
     if (error) return setErr(error.message);
 
@@ -79,7 +89,7 @@ function Inner() {
     load();
   };
 
-  const miniBtn = { height: 36, padding: "0 14px", fontSize: 13, minWidth: 0 } as const;
+  const miniBtn = { height: 36, padding: "0 14px", fontSize: 'var(--font-size-sm)', minWidth: 0 } as const;
 
   if (!Number.isFinite(surveyId)) {
     return (
@@ -94,7 +104,7 @@ function Inner() {
       <div className="card">
         <div className="loadingRow"><span className="spinner" /> Carregando...</div>
         {err && (
-          <div className="small" style={{ color: "var(--danger)", fontWeight: 800, marginTop: 8 }}>{err}</div>
+          <div className="small" style={{ color: "var(--danger)", fontWeight: 600, marginTop: 8 }}>{err}</div>
         )}
       </div>
     );
@@ -148,7 +158,7 @@ function Inner() {
 
       {(survey.status === "SCHEDULING" || survey.status === "URGENT_REVIEW") && (
         <div className="card" style={{ background: "var(--primary-tint)", borderColor: "rgba(195,94,30,0.25)", boxShadow: "none" }}>
-          <div style={{ fontWeight: 800, marginBottom: 6, color: "var(--text)" }}>
+          <div style={{ fontWeight: 700, marginBottom: 6, color: "var(--text)" }}>
             {survey.status === "URGENT_REVIEW" ? "Urgente: falar com gerente/coordenador" : "Programar (normal)"}
           </div>
           <div className="small" style={{ marginBottom: 10 }}>
@@ -174,8 +184,8 @@ function Inner() {
         <button className="danger" style={miniBtn} onClick={() => setStatus("CANCELLED")} disabled={loading}>Cancelar</button>
       </div>
 
-      {err && <div className="small" style={{ color: "var(--danger)", fontWeight: 900, marginTop: 10 }}>{err}</div>}
-      {msg && <div className="small" style={{ color: "var(--teal)", fontWeight: 900, marginTop: 10 }}>{msg}</div>}
+      {err && <div className="small" style={{ color: "var(--danger)", fontWeight: 600, marginTop: 10 }}>{err}</div>}
+      {msg && <div className="small" style={{ color: "var(--teal)", fontWeight: 600, marginTop: 10 }}>{msg}</div>}
     </div>
   );
 }

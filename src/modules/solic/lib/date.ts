@@ -46,10 +46,25 @@ export function isOlderThanDays(dateStr?: string | null, days = 7) {
   return diffMs > days * 24 * 60 * 60 * 1000;
 }
 
-/** True se a solicitação está CONCLUÍDA há mais de N dias (esconder do frontend). */
-export function isOldCompleted(status?: string | null, completedAt?: string | null, days = 7) {
-  if (status !== "COMPLETED" || !completedAt) return false;
-  const t = new Date(completedAt).getTime();
+/**
+ * True se a solicitação está CONCLUÍDA há mais de N dias (esconder do frontend).
+ *
+ * A contagem é a partir de QUANDO O STATUS virou concluído (`completed_at`), e
+ * não da data de entrega: nem toda solicitação tem entrega marcada, e as que
+ * não tinham ficavam na lista para sempre.
+ *
+ * `fallback` (updated_at/created_at) cobre as linhas antigas, gravadas antes de
+ * o `completed_at` passar a ser carimbado: sem ele, uma concluída sem carimbo
+ * nunca sairia da lista.
+ */
+export function isOldCompleted(
+  status?: string | null,
+  completedAt?: string | null,
+  days = 7,
+  fallback?: string | null
+) {
+  if (status !== "COMPLETED") return false;
+  const t = new Date(completedAt || fallback || "").getTime();
   if (Number.isNaN(t)) return false;
   return Date.now() - t > days * 24 * 60 * 60 * 1000;
 }
