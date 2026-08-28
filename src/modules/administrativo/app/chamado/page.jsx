@@ -97,9 +97,29 @@ export default function ChamadoAdm() {
   useEffect(() => { carregar(); }, [carregar]);
 
   /**
-   * Carrega o estoque só quando o chamado é de EPI/uniforme E quem está olhando
-   * pode fechá-lo. A guarda é o ponto: para os outros ~24 serviços do catálogo
-   * não sai nem uma query a mais, e a tela deles fica idêntica à de sempre.
+   * SALDO, para o time do Adm — em QUALQUER status do chamado.
+   *
+   * É o "saber quantos tem" na hora de decidir se fornece, e essa hora costuma
+   * ser ANTES de o chamado entrar em andamento (num pedido aguardando
+   * aprovação, por exemplo). Por isso a carga do saldo não fica presa à janela
+   * de fechamento — só ao serviço ser de EPI/uniforme, o que mantém a promessa
+   * de nenhuma query a mais nos outros ~24 serviços do catálogo.
+   *
+   * Falta de saldo NÃO bloqueia nada: o pedido é aberto do mesmo jeito e o
+   * número aqui é informação para quem vai atender.
+   */
+  useEffect(() => {
+    if (!chamado || !chamadoUsaEstoque(chamado) || !souAdm) return undefined;
+    let cancelado = false;
+    listarPosicao()
+      .then((pos) => { if (!cancelado) setPosicaoEst(pos); })
+      .catch((e) => { if (!cancelado) setErro(`Estoque indisponível: ${e.message}`); });
+    return () => { cancelado = true; };
+  }, [chamado, souAdm]);
+
+  /**
+   * BAIXA: só na janela em que o chamado pode ser fechado, e só para quem pode
+   * fechá-lo. É o que alimenta o card de baixa.
    *
    * `movimentosDoChamado` é o que alimenta a coluna "já entregue" — sem ela,
    * fechar de novo depois de uma reabertura baixaria o material em dobro.
@@ -282,25 +302,40 @@ export default function ChamadoAdm() {
                   <tr>
                     <th className="num">Qtd.</th>
                     <th>Item</th>
-                    {souAdm && <th className="num">Em estoque</th>}
+                    {souAdm && (
+                      <th className="num" title="Saldo atual, comparado com o que foi pedido">
+                        Em estoque
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
                   {itensPedidos.map((it, i) => {
-                    // O saldo só chega quando o card de baixa carregou o estoque
-                    // (atendente, chamado em andamento); fora disso mostra "—".
                     const v = posicaoEst.find((pp) => pp.id === it.variante_id);
+                    const pedido = Number(it.quantidade) || 0;
+                    // A pergunta do Adm não é "quanto tem", é "dá para atender".
+                    // Por isso a coluna compara o saldo com o que foi pedido.
+                    const falta = v ? Math.max(0, pedido - v.saldo) : 0;
                     return (
                       <tr key={`${it.variante_id}-${i}`}>
-                        <td className="num">{it.quantidade}</td>
+                        <td className="num">{pedido}</td>
                         <td>
                           {it.descricao}
                           {[it.tamanho, it.ca ? `CA ${it.ca}` : ''].filter(Boolean).length > 0
                             && ` · ${[it.tamanho, it.ca ? `CA ${it.ca}` : ''].filter(Boolean).join(' · ')}`}
                         </td>
                         {souAdm && (
-                          <td className={`num ${v && v.saldo === 0 ? 'is-vencido' : ''}`}>
-                            {v ? v.saldo : '—'}
+                          <td className={`num ${falta ? 'is-vencido' : ''}`}>
+                            {!v ? (
+                              // Item que saiu do catálogo (ou nunca esteve nele).
+                              <span title="Item não está no catálogo do estoque">—</span>
+                            ) : falta ? (
+                              <span title={`Faltam ${falta} para atender o pedido`}>
+                                {v.saldo} · faltam {falta}
+                              </span>
+                            ) : (
+                              v.saldo
+                            )}
                           </td>
                         )}
                       </tr>
