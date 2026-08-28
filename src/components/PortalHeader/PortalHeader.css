@@ -36,17 +36,12 @@
   background: var(--bg-soft);
 }
 
+/* Uma linha só: o nome do módulo. */
 .portal-header-greeting {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   line-height: 1.25;
   min-width: 0;
-}
-
-.portal-header-greeting .hello {
-  font-size: var(--font-size-xs);
-  color: var(--muted);
-  font-weight: 400;
 }
 
 .portal-header-greeting .name {

@@ -17,7 +17,7 @@ export default function AppShell() {
     <div className="finRoot">
       <Sidebar aberto={aberto} onFechar={fechar} />
       <div className="finCol">
-        <PortalHeader userName={userName} onMenuToggle={alternar} acoes={<ConsultaTermos />} />
+        <PortalHeader modulo="Financeiro" onMenuToggle={alternar} acoes={<ConsultaTermos />} />
         <main className="finMain">
           <Outlet />
         </main>

@@ -3,26 +3,27 @@ import { GUIA_OPEN_EVENT } from "../Guia/guides";
 import SinoNotificacoes from "../Notificacoes/SinoNotificacoes";
 import "./PortalHeader.css";
 
-// Barra superior compartilhada pelos 3 apps (padrão do Gestão de Pessoas):
-// saudação + botão "?" que abre o guia do app + data.
-//  - userName: nome do usuário logado
+// Barra superior compartilhada pelos módulos: nome do MÓDULO em que se está +
+// botão "?" que abre o guia do app + data.
+//
+// Antes trazia "Bem-vindo(a) de volta, Olá, Fulano!". A saudação era a mesma em
+// todos os módulos e repetia um dado que o rodapé da sidebar já mostra; o que
+// falta ali é saber ONDE se está — sobretudo agora que o topo da sidebar é a
+// marca da PHD, e não mais o nome do módulo.
+//  - modulo: nome do módulo (o que aparece na barra)
 //  - onMenuToggle: opcional; quando passado, mostra o botão de menu (drawer mobile)
 //  - acoes: opcional; botões do app entram à esquerda do "?". Fica vazio nos
 //    apps que não passam nada, então a barra continua idêntica nos outros dois.
 //
 // O sino de notificações mora aqui (e não em cada app) porque a central é uma
 // só: quem tem pedido em qualquer módulo vê o aviso de onde estiver.
-export default function PortalHeader({ userName, onMenuToggle, upper = false, acoes = null }) {
+export default function PortalHeader({ modulo = '', onMenuToggle, acoes = null }) {
   const hoje = new Date().toLocaleDateString("pt-BR", {
     weekday: "long",
     day: "2-digit",
     month: "long",
     year: "numeric",
   });
-  // Padrão nos 3 apps: só o primeiro nome. `upper` deixa em CAIXA ALTA (Solicitações).
-  const primeiroNome = (userName || "").split(" ")[0];
-  const displayName = upper ? primeiroNome.toUpperCase() : primeiroNome;
-
   return (
     <header className="portal-header">
       <div className="portal-header-left">
@@ -32,8 +33,7 @@ export default function PortalHeader({ userName, onMenuToggle, upper = false, ac
           </button>
         ) : null}
         <div className="portal-header-greeting">
-          <span className="hello">Bem-vindo(a) de volta,</span>
-          <span className="name">Olá, {displayName}! 🚀</span>
+          <span className="name">{modulo}</span>
         </div>
       </div>
 

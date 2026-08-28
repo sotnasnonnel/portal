@@ -16,7 +16,7 @@ export default function AppShell() {
     <div className="pgRoot">
       <Sidebar aberto={aberto} onFechar={fechar} />
       <div className="pgCol">
-        <PortalHeader userName={userName} onMenuToggle={alternar} />
+        <PortalHeader modulo="Programas" onMenuToggle={alternar} />
         <main className="pgMain">
           <Outlet />
         </main>

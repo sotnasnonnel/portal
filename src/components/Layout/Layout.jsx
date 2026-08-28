@@ -134,7 +134,7 @@ export default function Layout() {
         solicitacaoCount={solicitacaoCount}
       />
       <div className="layout-content">
-        <PortalHeader userName={user?.nome} onMenuToggle={handleMenuToggle} />
+        <PortalHeader modulo="Gestão de Pessoas" onMenuToggle={handleMenuToggle} />
         <main className="layout-main">
           <Outlet />
         </main>

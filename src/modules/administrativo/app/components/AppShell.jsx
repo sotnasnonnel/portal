@@ -20,7 +20,7 @@ export default function AppShell() {
         {/* Dois botões na barra: o "?" abre o guia do módulo, o relógio explica
             prazos e regras de aprovação. Separados porque o guia é um passo a
             passo e este é consulta pontual. */}
-        <PortalHeader userName={userName} onMenuToggle={alternar} acoes={<AjudaPrazos />} />
+        <PortalHeader modulo="Administrativo" onMenuToggle={alternar} acoes={<AjudaPrazos />} />
         <main className="admMain">
           <Outlet />
         </main>

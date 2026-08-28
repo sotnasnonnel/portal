@@ -31,7 +31,7 @@ export default function AppLayout() {
     <div className="finRoot">
       <Sidebar aberto={aberto} onFechar={fechar} />
       <div className="finCol">
-        <PortalHeader userName={userName} onMenuToggle={alternar} />
+        <PortalHeader modulo="Reembolso" onMenuToggle={alternar} />
         <main className="app-content reembolso-root">
           <Outlet />
         </main>
