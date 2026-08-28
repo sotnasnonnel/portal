@@ -51,7 +51,7 @@ export default function ApontamentosTable({ list, projetoNome, projetoCor, onEdi
                 </span>
               ))}
               {a.descricao ? (
-                <div className="horas-muted" style={{ fontSize: '.72rem', marginTop: 3 }}>
+                <div className="horas-muted" style={{ fontSize: 'var(--font-size-2xs)', marginTop: 3 }}>
                   {a.descricao}
                 </div>
               ) : null}

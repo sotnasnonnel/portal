@@ -8,28 +8,37 @@ type SurveyStatus =
   | "COMPLETED"
   | "CANCELLED";
 
+// Tons de status compartilhados com o resto do portal (src/styles/ui.css).
+// Antes o badge daqui era pintado com a cor da MARCA e ganhava borda, enquanto
+// Administrativo/Financeiro/Programas usam pastel sem borda — era uma das
+// coisas que faziam o PMO parecer outro sistema.
+const tom = (nome: string, label: string) => ({
+  label,
+  bg: `var(--tone-${nome}-bg)`,
+  color: `var(--tone-${nome}-fg)`,
+});
+
 function statusMeta(status: SurveyStatus) {
   switch (status) {
     case "DRAFT":
-      return { label: "Rascunho", bg: "rgba(38,64,93,0.10)", border: "rgba(38,64,93,0.35)", color: "#26405d" };
+      return tom("neutro", "Rascunho");
     case "SUBMITTED":
-      return { label: "Aberta", bg: "rgba(38,64,93,0.10)", border: "rgba(38,64,93,0.35)", color: "#26405d" };
     case "URGENT_REVIEW":
-      return { label: "Aberta", bg: "rgba(38,64,93,0.10)", border: "rgba(38,64,93,0.35)", color: "#26405d" };
+      return tom("aberto", "Aberta");
 
     case "SCHEDULING":
     case "SCHEDULED":
     case "IN_PROGRESS":
-      return { label: "Em andamento", bg: "rgba(195,94,30,0.10)", border: "rgba(195,94,30,0.35)", color: "#c35e1e" };
+      return tom("andamento", "Em andamento");
 
     case "COMPLETED":
-      return { label: "Concluída", bg: "rgba(0,164,154,0.10)", border: "rgba(0,164,154,0.35)", color: "#00a49a" };
+      return tom("ok", "Concluída");
 
     case "CANCELLED":
-      return { label: "Cancelada", bg: "rgba(184,82,54,0.10)", border: "rgba(184,82,54,0.35)", color: "#b85236" };
+      return tom("erro", "Cancelada");
 
     default:
-      return { label: status, bg: "rgba(38,64,93,0.10)", border: "rgba(38,64,93,0.35)", color: "#26405d" };
+      return tom("neutro", status);
   }
 }
 
@@ -51,13 +60,12 @@ export function StatusBadge({
         display: "inline-flex",
         alignItems: "center",
         gap: 7,
-        padding: "5px 11px",
+        padding: "3px 9px",
         borderRadius: 999,
-        border: `1px solid ${m.border}`,
         background: m.bg,
         color: m.color,
-        fontWeight: 800,
-        fontSize: 12,
+        fontWeight: 700,
+        fontSize: 'var(--font-size-2xs)',
         letterSpacing: "0.01em",
         whiteSpace: "nowrap",
         maxWidth: "100%",
@@ -85,11 +93,10 @@ export function StatusBadge({
           {showUrgentText ? (
             <span
               style={{
-                fontSize: 11,
-                fontWeight: 950,
-                color: "#b85236",
-                border: "1px solid rgba(184,82,54,0.25)",
-                background: "rgba(184,82,54,0.08)",
+                fontSize: 'var(--font-size-2xs)',
+                fontWeight: 700,
+                color: "var(--tone-erro-fg)",
+                background: "var(--tone-erro-bg)",
                 padding: "2px 8px",
                 borderRadius: 999,
                 letterSpacing: "0.03em",

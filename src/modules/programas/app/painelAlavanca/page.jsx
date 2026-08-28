@@ -327,7 +327,7 @@ export default function PainelAlavanca() {
                           <td>
                             <textarea
                               className="pg-textarea"
-                              style={{ minHeight: 64, minWidth: 200, fontSize: '0.8rem' }}
+                              style={{ minHeight: 64, minWidth: 200, fontSize: 'var(--font-size-xs)' }}
                               value={emEdicao ? rascunho : (i.comentario || '')}
                               onChange={(e) => setRascunhos((a) => ({ ...a, [i.id]: e.target.value }))}
                               placeholder="Anote o andamento…"

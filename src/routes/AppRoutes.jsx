@@ -38,6 +38,7 @@ const Reembolsos = lazy(() => import('../modules/reembolso/pages/Reembolsos'));
 const ReembolsoForm = lazy(() => import('../modules/reembolso/pages/ReembolsoForm'));
 const ReembolsoDetail = lazy(() => import('../modules/reembolso/pages/ReembolsoDetail'));
 const PrestacaoContas = lazy(() => import('../modules/reembolso/pages/PrestacaoContas'));
+const DashboardReembolso = lazy(() => import('../modules/reembolso/pages/DashboardReembolso'));
 const SolicDashboard = lazy(() => import('../modules/solic/app/dashboard/page'));
 const SolicSurvey = lazy(() => import('../modules/solic/app/survey/page'));
 const SolicSurveyNew = lazy(() => import('../modules/solic/app/surveys/new/page'));
@@ -61,6 +62,7 @@ const HorasExtrasAprovacoes = lazy(() => import('../modules/horas/app/extras/apr
 const PainelHorasExtras = lazy(() => import('../pages/Admin/HorasExtras/PainelHorasExtras'));
 const ExcecoesPrazoHE = lazy(() => import('../pages/Admin/HorasExtras/ExcecoesPrazo'));
 const AuditoriaHE = lazy(() => import('../pages/Admin/HorasExtras/AuditoriaHorasExtras'));
+const FinanceiroCartoes = lazy(() => import('../modules/financeiro/app/cartoes/page'));
 const FinanceiroDashboard = lazy(() => import('../modules/financeiro/app/dashboard/page'));
 const FinanceiroHub = lazy(() => import('../modules/financeiro/app/solicitacoes/hub/page'));
 const NovaSolicitacaoFin = lazy(() => import('../modules/financeiro/app/solicitacoes/nova/page'));
@@ -475,6 +477,8 @@ export default function AppRoutes() {
           }
         >
           <Route path="/reembolsos" element={<LazyPage><Reembolsos kind="reembolso" /></LazyPage>} />
+          {/* Antes de /reembolsos/:id, senão "dashboard" cairia no detalhe. */}
+          <Route path="/reembolsos/dashboard" element={<LazyPage><DashboardReembolso /></LazyPage>} />
           <Route path="/reembolsos/novo" element={<LazyPage><ReembolsoForm kind="reembolso" /></LazyPage>} />
           <Route path="/reembolsos/:id/editar" element={<LazyPage><ReembolsoForm kind="reembolso" /></LazyPage>} />
           <Route path="/reembolsos/:id" element={<LazyPage><ReembolsoDetail /></LazyPage>} />
@@ -551,6 +555,7 @@ export default function AppRoutes() {
         >
           <Route index element={<Navigate to="/financeiro/dashboard" replace />} />
           <Route path="dashboard" element={<LazyPage><FinanceiroDashboard /></LazyPage>} />
+          <Route path="cartoes" element={<LazyPage><FinanceiroCartoes /></LazyPage>} />
           <Route path="solicitacoes" element={<Navigate to="/financeiro/solicitacoes/nova" replace />} />
           {/* Acesso ao módulo já é gateado por cargo (ModuleRoute financeiro); quem
               está aqui pode abrir. Sem restrição extra por perfil (que não reflete cargo). */}

@@ -14,7 +14,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 12px;
+  font-size: var(--font-size-xs);
   font-weight: 600;
   color: var(--color-text-muted);
 }
@@ -25,7 +25,7 @@
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   background: var(--color-bg-white);
-  font-size: 13px;
+  font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   min-width: 160px;
 }
@@ -48,13 +48,13 @@
 }
 
 .org-contador {
-  font-size: 13px;
+  font-size: var(--font-size-sm);
   color: var(--color-text-muted);
   margin-bottom: var(--space-sm);
 }
 
 .org-status {
-  font-size: 14px;
+  font-size: var(--font-size-md);
   color: var(--color-text-muted);
   padding: var(--space-md) 0;
 }
@@ -70,7 +70,7 @@
 .org-tabela {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: var(--font-size-sm);
 }
 
 .org-tabela th,
@@ -84,7 +84,7 @@
   font-weight: 600;
   color: var(--color-text-muted);
   text-transform: uppercase;
-  font-size: 11px;
+  font-size: var(--font-size-2xs);
   letter-spacing: 0.03em;
 }
 

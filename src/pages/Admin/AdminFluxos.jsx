@@ -159,7 +159,7 @@ export default function AdminFluxos() {
                     <option key={g.id} value={g.id}>{configuradoTipo(g.id, FLUXO_GERAL.tipo) ? '✅' : '⚠️'} {g.nome}</option>
                   ))}
                 </select>
-                <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: 'var(--space-xs)' }}>
+                <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: 'var(--space-xs)' }}>
                   ✅ fluxo configurado · ⚠️ sem fluxo
                 </p>
               </div>

@@ -1,7 +1,7 @@
 // Gera o PDF do reembolso aprovado: cabecalho + tabela de itens + uma pagina
 // por imagem de NF anexada. Nome do arquivo no padrao definido pelo cliente:
-//   ano.mes(competencia)_ano.mes.dia(pagamento)_PHDA_NomeCompleto_REEMBSN_R$valor
-//   ex: 2026.04_2026.05.08_PHDA_LennonSantos_REEMBSN_R$2000,00.pdf
+//   ano.mes(competencia)_ano.mes.dia(pagamento)_PHDA_Nome Completo_REEMB_SN_R$valor
+//   ex: 2026.08_2026.09.15_PHDA_DANIELA SEBRIAN_REEMB_SN_R$153,98.pdf
 
 import { jsPDF } from "jspdf";
 import { autoTable } from "jspdf-autotable";
@@ -11,7 +11,7 @@ import { STATUS_LABEL } from "./reimbursements.js";
 import { refToDataUrl } from "./nfStorage.js";
 
 const FIXO_EMPRESA = "PHDA";
-const FIXO_TIPO = "REEMBSN";
+const FIXO_TIPO = "REEMB_SN";
 
 // Data de pagamento efetiva: usa a salva no banco e, para registros antigos
 // (aprovados antes da regra automática), recalcula a partir da aprovação.
@@ -45,8 +45,7 @@ function nomeArquivoColaborador(name) {
     .replace(/[^a-zA-Z0-9 ]/g, "") // remove caracteres especiais
     .split(/\s+/)
     .filter(Boolean)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(""); // "Lennon Santos" -> "LennonSantos"
+    .join(" "); // preserva o espaco entre os nomes: "DANIELA SEBRIAN"
 }
 
 function valorToken(total) {
@@ -55,7 +54,7 @@ function valorToken(total) {
 }
 
 export function buildReembolsoFileName(r) {
-  const tipo = r.kind === "adiantamento" ? "ADIANTSN" : FIXO_TIPO;
+  const tipo = r.kind === "adiantamento" ? "ADIANT_SN" : FIXO_TIPO;
   return [
     competencia(r.request_date),
     dataPagamentoToken(effectivePaymentDate(r)),

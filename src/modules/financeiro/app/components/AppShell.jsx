@@ -4,6 +4,7 @@ import PortalHeader from '../../../../components/PortalHeader/PortalHeader';
 import GuiaModal from '../../../../components/Guia/GuiaModal';
 import { FINANCEIRO_GUIA } from '../../../../components/Guia/guides';
 import Sidebar from './Sidebar';
+import ConsultaTermos from './ConsultaTermos';
 import { useDrawerMobile } from '../../../../hooks/useDrawerMobile';
 import '../../financeiro.css';
 
@@ -16,7 +17,7 @@ export default function AppShell() {
     <div className="finRoot">
       <Sidebar aberto={aberto} onFechar={fechar} />
       <div className="finCol">
-        <PortalHeader userName={userName} onMenuToggle={alternar} />
+        <PortalHeader userName={userName} onMenuToggle={alternar} acoes={<ConsultaTermos />} />
         <main className="finMain">
           <Outlet />
         </main>

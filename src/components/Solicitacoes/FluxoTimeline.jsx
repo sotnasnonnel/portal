@@ -27,15 +27,30 @@ export default function FluxoTimeline({ etapas = [] }) {
   const atual = etapaAtual(etapas);
   const ordenadas = [...etapas].sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
 
+  // Reprovação/cancelamento param o fluxo: as etapas seguintes continuam
+  // 'pendente' no banco, mas ninguém vai decidi-las enquanto isso não mudar.
+  // Chamá-las de "A seguir" fazia parecer que o pedido seguia andando.
+  const interrompido = ordenadas.some(
+    (e) => e.status === 'reprovada' || e.status === 'devolvida' || e.status === 'cancelada'
+  );
+
   return (
     <div className="fluxo-timeline">
       {ordenadas.map((e) => {
         const isAtual = atual && e.id === atual.id;
         let v = VISUAL[e.status];
         if (e.status === 'pendente') {
-          v = isAtual
-            ? { Icon: Clock, cor: '#f39c12', label: 'Aguardando' }
-            : { Icon: CircleDashed, cor: '#b0b0b0', label: 'A seguir' };
+          if (interrompido) {
+            v = {
+              Icon: Ban,
+              cor: '#b0b0b0',
+              label: e.tipo_etapa === 'execucao' ? 'Não executado' : 'Fluxo interrompido',
+            };
+          } else {
+            v = isAtual
+              ? { Icon: Clock, cor: '#f39c12', label: 'Aguardando' }
+              : { Icon: CircleDashed, cor: '#b0b0b0', label: 'A seguir' };
+          }
         }
         const { Icon, cor, label } = v || { Icon: CircleDashed, cor: '#b0b0b0', label: e.status };
         return (

@@ -67,9 +67,11 @@ export default function DashboardPage() {
         return;
       }
 
-      // ✅ esconde concluídas há mais de 7 dias (continuam no banco)
+      // ✅ esconde concluídas há mais de 7 dias (continuam no banco). A conta
+      // é sobre a data em que o status virou CONCLUÍDO, não sobre a entrega —
+      // nem toda solicitação tem entrega marcada.
       const visiveis = ((data as any[]) || []).filter(
-        (s) => !isOldCompleted(s.status, s.completed_at)
+        (s) => !isOldCompleted(s.status, s.completed_at, 7, s.updated_at || s.created_at)
       );
       setSurveys(visiveis as SurveyLite[]);
       setLoading(false);
@@ -107,7 +109,7 @@ export default function DashboardPage() {
             : "Você pode acompanhar todas as solicitações. A sua fica destacada."}
         </div>
         {err ? (
-          <div className="small" style={{ color: "var(--danger)", fontWeight: 800, marginTop: 8 }}>
+          <div className="small" style={{ color: "var(--danger)", fontWeight: 600, marginTop: 8 }}>
             {err}
           </div>
         ) : null}
@@ -115,24 +117,24 @@ export default function DashboardPage() {
 
       {/* contadores */}
       <div className="statGrid">
-        <div className="statCard" style={{ ["--accent" as any]: "#26405d" }}>
+        <div className="statCard" style={{ ["--accent" as any]: "var(--tone-aberto-fg)" }}>
           <div className="statLabel">Abertas</div>
           <div className="statValue">{counts.abertas}</div>
         </div>
-        <div className="statCard" style={{ ["--accent" as any]: "#c35e1e" }}>
+        <div className="statCard" style={{ ["--accent" as any]: "var(--tone-andamento-fg)" }}>
           <div className="statLabel">Em andamento</div>
           <div className="statValue">{counts.andamento}</div>
         </div>
-        <div className="statCard" style={{ ["--accent" as any]: "#00a49a" }}>
+        <div className="statCard" style={{ ["--accent" as any]: "var(--tone-ok-fg)" }}>
           <div className="statLabel">Concluídas</div>
           <div className="statValue">{counts.concluidas}</div>
         </div>
-        <div className="statCard" style={{ ["--accent" as any]: "#b85236" }}>
+        <div className="statCard" style={{ ["--accent" as any]: "var(--tone-erro-fg)" }}>
           <div className="statLabel">Canceladas</div>
           <div className="statValue">{counts.canceladas}</div>
         </div>
         {!isAdmin ? (
-          <div className="statCard" style={{ ["--accent" as any]: "#00a49a" }}>
+          <div className="statCard" style={{ ["--accent" as any]: "var(--tone-ok-fg)" }}>
             <div className="statLabel">Minhas</div>
             <div className="statValue">{myCount}</div>
           </div>

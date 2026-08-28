@@ -1,0 +1,149 @@
+/* Sino de notificações da barra superior. Usa os tokens do tema (theme.css),
+   como o resto dos componentes compartilhados — cada módulo tem a sua paleta,
+   mas a barra é a mesma em todos. */
+
+.notif {
+  position: relative;
+  display: inline-flex;
+}
+
+.notif-btn {
+  position: relative;
+}
+
+.notif-contador {
+  position: absolute;
+  top: 2px;
+  right: 0;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--terracotta);
+  color: #fff;
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.notif-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 360px;
+  max-width: calc(100vw - 24px);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, .18);
+  z-index: 320;
+  overflow: hidden;
+}
+
+.notif-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.notif-head strong { font-size: var(--font-size-md); color: var(--ink); margin-right: auto; }
+
+.notif-lertodas,
+.notif-fechar {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 4px 6px;
+  border-radius: 8px;
+  font-size: var(--font-size-xs);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.notif-lertodas:hover,
+.notif-fechar:hover { background: var(--bg-soft); color: var(--ink); }
+
+.notif-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: min(62vh, 460px);
+  overflow-y: auto;
+}
+
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 14px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--bg-soft);
+  text-align: left;
+  cursor: pointer;
+}
+
+.notif-item:hover { background: var(--bg-soft); }
+.notif-item.is-nova { background: #fdfaf6; }
+.notif-item.is-nova:hover { background: var(--terracotta-light); }
+
+.notif-ico {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--bg-soft);
+  color: var(--muted);
+}
+
+.notif-item.tom-vez .notif-ico { background: #fff3d6; color: #8a6300; }
+.notif-item.tom-andamento .notif-ico { background: var(--blue-soft); color: var(--blue); }
+.notif-item.tom-ok .notif-ico { background: var(--green-soft); color: var(--green-dark); }
+.notif-item.tom-nao .notif-ico { background: var(--status-reprovado-bg); color: var(--status-reprovado-fg); }
+
+.notif-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.notif-corpo strong { font-size: var(--font-size-sm); font-weight: 600; color: var(--ink); line-height: 1.35; overflow-wrap: anywhere; }
+.notif-desc { font-size: var(--font-size-xs); color: var(--ink-soft); line-height: 1.35; overflow-wrap: anywhere; }
+.notif-meta { font-size: var(--font-size-2xs); color: var(--muted); }
+
+.notif-ponto {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 999px;
+  background: var(--terracotta);
+}
+
+.notif-vazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 28px 20px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.notif-vazio span { font-size: var(--font-size-sm); color: var(--ink); }
+.notif-vazio small { font-size: var(--font-size-xs); max-width: 30ch; line-height: 1.4; }
+
+@media (max-width: 480px) {
+  .notif-pop { width: calc(100vw - 24px); right: -8px; }
+}

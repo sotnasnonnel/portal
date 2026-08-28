@@ -194,13 +194,13 @@ export default function FormAjudaCusto() {
             <label className="form-label">Anexar arquivo</label>
             <input ref={fileRef} className="form-input" type="file" accept={ANEXO_ACCEPT} onChange={onArquivo} />
             {anexo && (
-              <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)', display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: 'var(--space-sm)' }}>
+              <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: 'var(--space-sm)' }}>
                 <Paperclip size={14} /> {anexo.name}
                 <button type="button" className="btn btn-ghost btn-sm" onClick={limparAnexo} title="Remover anexo"><X size={14} /></button>
               </span>
             )}
             {erroAnexo && <span className="contratacao-erro">{erroAnexo}</span>}
-            <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', display: 'block', marginTop: '4px' }}>
+            <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', display: 'block', marginTop: '4px' }}>
               PDF, Word, Excel ou imagem — até {ANEXO_MAX_MB} MB.
             </span>
           </div>

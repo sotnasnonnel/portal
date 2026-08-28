@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../../../../../contexts/AuthContext';
-import { buscarFluxoFin } from '../../../../../config/aprovacaoFinanceiro';
 import { criarSolicitacaoFin } from '../criarSolicitacao';
 
 /**
- * Encanamento comum aos formulários do Financeiro: pré-checagem do fluxo,
- * aceite dos termos e envio. Os campos ficam por conta de cada formulário
- * (Cartão Virtual e Aumento de Limite são diferentes).
+ * Encanamento comum aos formulários do Financeiro: aceite dos termos e envio.
+ * Os campos ficam por conta de cada formulário (Cartão e Aumento de Limite são
+ * diferentes), e quem checa a cadeia de aprovação é a prévia (PreviaAprovacao),
+ * pelo mesmo caminho que a criação usa.
  */
 export function useSolicitacaoFin(sol) {
   const { user } = useAuth();
@@ -15,20 +15,6 @@ export function useSolicitacaoFin(sol) {
   const [aceiteCheck, setAceiteCheck] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [sucesso, setSucesso] = useState(null);    // { numero }
-  const [fluxoOk, setFluxoOk] = useState(null);    // null = checando
-
-  // Pré-checa se há cadeia de aprovação configurada p/ este solicitante+tipo.
-  useEffect(() => {
-    if (!user?.id) return undefined;
-    let vivo = true;
-    (async () => {
-      const { fluxo, erro } = await buscarFluxoFin(user.id, sol.tipoDb);
-      if (vivo) setFluxoOk(erro ? true : !!fluxo); // erro de rede não bloqueia
-    })();
-    return () => { vivo = false; };
-  }, [user, sol.tipoDb]);
-
-  const semFluxo = fluxoOk === false;
 
   const confirmarTermos = () => {
     if (!aceiteCheck) return;
@@ -52,12 +38,7 @@ export function useSolicitacaoFin(sol) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       console.error(err);
-      if (err.message === 'SEM_FLUXO') {
-        setFluxoOk(false);
-        alert('Ainda não há um fluxo de aprovação configurado para você neste tipo. Solicite ao Financeiro.');
-      } else {
-        alert(err.message || 'Erro ao enviar a solicitação. Tente novamente.');
-      }
+      alert(err.message || 'Erro ao enviar a solicitação. Tente novamente.');
     } finally {
       setSubmitting(false);
     }
@@ -65,6 +46,6 @@ export function useSolicitacaoFin(sol) {
 
   return {
     user, aceite, termosOpen, setTermosOpen, aceiteCheck, setAceiteCheck,
-    confirmarTermos, submitting, sucesso, setSucesso, semFluxo, enviar,
+    confirmarTermos, submitting, sucesso, setSucesso, enviar,
   };
 }

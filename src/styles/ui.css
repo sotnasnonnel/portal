@@ -1,0 +1,125 @@
+/* ==========================================================================
+   UI kit do portal — escala tipográfica, controles e métricas de layout
+   compartilhadas por TODOS os módulos (Gestão de Pessoas, PMO/Controle de
+   Horas, Administrativo, Financeiro, Programas, Solicitações, Reembolso).
+
+   Regra de ouro: nenhum CSS de módulo declara font-size/altura de controle em
+   valor solto. Sempre um token daqui. Trocar a escala = trocar este arquivo.
+
+   Carregado em main.jsx DEPOIS de theme.css e index.css, portanto redefine os
+   --font-size-* legados para a escala canônica.
+   ========================================================================== */
+:root {
+  /* ---- Neutros (uma rampa só no portal inteiro) ----------------------
+     Os módulos usavam duas rampas diferentes: slate (#f8fafc/#0f172a/#64748b)
+     nos módulos novos e cinza quente (#f2f2f2/#1b2735/#6b7280) no portal/PMO.
+     Lado a lado, um parecia "mais frio" que o outro. Ficou a slate. */
+  --neutral-bg: #f8fafc;
+  --neutral-surface: #ffffff;
+  --neutral-border: #e2e8f0;
+  --neutral-border-strong: #cbd5e1;
+  --neutral-ink: #0f172a;
+  --neutral-muted: #64748b;
+
+  /* ---- Família ---- */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-sans: var(--font-family);
+
+  /* ---- Escala tipográfica (base = 14px; raiz do html = 16px) -------------
+     2xs 11 · xs 12 · sm 13 · md/base 14 · lg 16 · xl 18 · 2xl 22 · 3xl 24 · 4xl 28 · display 40
+     11px é o piso: nada abaixo disso, por legibilidade.                     */
+  --font-size-2xs: 0.6875rem;  /* 11px — badges, micro-rótulos, legendas    */
+  --font-size-xs: 0.75rem;     /* 12px — rótulos de campo, chips, meta      */
+  --font-size-sm: 0.8125rem;   /* 13px — tabelas, texto de apoio            */
+  --font-size-md: 0.875rem;    /* 14px — corpo padrão                       */
+  --font-size-base: 0.875rem;  /* 14px — alias de corpo                     */
+  --font-size-lg: 1rem;        /* 16px — subtítulo / card title             */
+  --font-size-xl: 1.125rem;    /* 18px — seção                              */
+  --font-size-2xl: 1.375rem;   /* 22px — título de bloco grande             */
+  --font-size-3xl: 1.5rem;     /* 24px — título de página                   */
+  --font-size-4xl: 1.75rem;    /* 28px — número de destaque (KPI/tiles)     */
+  --font-size-display: 2.5rem; /* 40px — cronômetro / hero numérico         */
+
+  /* ---- Pesos / alturas de linha / tracking ---- */
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  --lh-tight: 1.25;
+  --lh-normal: 1.5;
+  --lh-relaxed: 1.65;
+
+  --ls-tight: -0.02em;
+  --ls-normal: 0;
+  --ls-wide: 0.06em;
+
+  /* ---- Controles (usabilidade: alvo de toque e alinhamento entre módulos) */
+  --ctl-h: 40px;          /* input, select, botão padrão                    */
+  --ctl-h-sm: 32px;       /* botão/chip compacto de barra de filtros        */
+  --ctl-h-lg: 44px;       /* ação principal / alvo de toque no mobile       */
+  --ctl-h-icon: 36px;     /* botão só-ícone (tabelas, barras de ação)        */
+  --ctl-pad-x: 12px;
+  --ctl-pad-y: 9px;
+  --ctl-border: 1.5px;
+  --ctl-radius: 10px;
+  --ctl-radius-sm: 8px;
+  --ctl-gap: 8px;
+
+  /* ---- Métricas do shell (idênticas em todos os módulos) ---- */
+  --shell-sidebar-w: 256px;
+  --shell-sidebar-collapsed-w: 64px;
+  --shell-topbar-h: 64px;
+  --shell-main-pad-y: 26px;
+  --shell-main-pad-x: 32px;
+  --shell-main-pad-bottom: 60px;
+  --shell-main-pad-mobile: 20px 16px 48px;
+  --shell-page-max: 1180px;      /* largura de leitura padrão               */
+  --shell-page-max-narrow: 900px;
+  --shell-page-max-wide: 1600px;
+
+  /* ---- Tabelas (densidade única no portal) ---- */
+  --table-fs: var(--font-size-sm);
+  --table-head-fs: var(--font-size-2xs);
+  --table-cell-pad: 10px 12px;
+  --card-radius: 14px;
+  --card-pad: 18px 20px;
+
+  /* ---- Tons de status (badges, tiles, colunas de quadro) ---------------
+     Um jogo só de cores para "o que é o estado disso" em todo o portal.
+     Antes cada módulo tinha o seu: o PMO pintava badge com a cor da marca e
+     borda, os outros usavam pastel sem borda — e o PMO parecia outro app. */
+  --tone-neutro-bg: #f1f5f9;   --tone-neutro-fg: #475569;
+  --tone-aberto-bg: #eef2f7;   --tone-aberto-fg: #26405d;
+  --tone-andamento-bg: #fff3d6; --tone-andamento-fg: #8a6300;
+  --tone-ok-bg: #ecfdf5;       --tone-ok-fg: #047857;
+  --tone-erro-bg: #fef2f2;     --tone-erro-fg: #b91c1c;
+
+  /* ---- Foco acessível ---- */
+  --focus-ring: 0 0 0 3px rgba(195, 94, 30, 0.35);
+  --touch-min: 44px;
+}
+
+/* Foco visível padronizado em todo o portal. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-primary, #c35e1e);
+  outline-offset: 2px;
+  border-radius: var(--ctl-radius-sm);
+}
+
+/* Um único corpo tipográfico para o portal inteiro. */
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  line-height: var(--lh-normal);
+}
+
+/* No mobile, todo controle interativo respeita o alvo mínimo de toque. */
+@media (max-width: 768px) {
+  :where(button, [role='button'], select, input[type='checkbox'], input[type='radio']) {
+    min-height: var(--touch-min);
+  }
+  :where(input[type='checkbox'], input[type='radio']) {
+    min-height: 0;
+  }
+}

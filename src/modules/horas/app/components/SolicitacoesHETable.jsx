@@ -38,14 +38,14 @@ export default function SolicitacoesHETable({ list, mostraColaborador = false, a
             {mostraColaborador ? (
               <td data-label="Colaborador">
                 {s.colaborador_nome}
-                <div className="horas-muted" style={{ fontSize: '.72rem' }}>
+                <div className="horas-muted" style={{ fontSize: 'var(--font-size-2xs)' }}>
                   {[s.matricula, s.cargo].filter(Boolean).join(' · ') || '—'}
                 </div>
               </td>
             ) : null}
             <td data-label="Projeto/Equipe">
               {s.projeto_nome || '—'}
-              <div className="horas-muted" style={{ fontSize: '.72rem' }}>
+              <div className="horas-muted" style={{ fontSize: 'var(--font-size-2xs)' }}>
                 {[s.gerencia_nome, s.centro_custo].filter(Boolean).join(' | ') || '—'}
               </div>
             </td>
@@ -59,7 +59,7 @@ export default function SolicitacoesHETable({ list, mostraColaborador = false, a
             <td data-label="Destino">
               {s.destino ? DESTINO_LABEL[s.destino] : '—'}
               {/* O percentual nunca vem do gestor: é aplicado pelo DP/RM conforme a CCT. */}
-              <div className="horas-muted" style={{ fontSize: '.68rem' }}>
+              <div className="horas-muted" style={{ fontSize: 'var(--font-size-2xs)' }}>
                 Percentual conforme CCT/DP
               </div>
             </td>
@@ -69,33 +69,33 @@ export default function SolicitacoesHETable({ list, mostraColaborador = false, a
               </span>
             </td>
             <td data-label="Justificativa/Compensação" style={{ maxWidth: 300 }}>
-              <div style={{ fontSize: '.78rem' }}>
+              <div style={{ fontSize: 'var(--font-size-xs)' }}>
                 <b>{s.motivo}</b> — {s.justificativa}
               </div>
               {s.compensacao_data ? (
-                <div className="horas-muted" style={{ fontSize: '.72rem', marginTop: 3 }}>
+                <div className="horas-muted" style={{ fontSize: 'var(--font-size-2xs)', marginTop: 3 }}>
                   <b>Compensação:</b> {fmtDataBr(s.compensacao_data)} ·{' '}
                   {PERIODO_LABEL[s.compensacao_periodo] || s.compensacao_periodo} ·{' '}
                   {fmtMin(s.compensacao_minutos)}
                 </div>
               ) : null}
               {s.observacao_destino ? (
-                <div className="horas-muted" style={{ fontSize: '.72rem', marginTop: 3 }}>
+                <div className="horas-muted" style={{ fontSize: 'var(--font-size-2xs)', marginTop: 3 }}>
                   <b>Obs. do gestor:</b> {s.observacao_destino}
                 </div>
               ) : null}
               {s.motivo_reprovacao ? (
-                <div className="horas-muted" style={{ fontSize: '.72rem', marginTop: 3 }}>
+                <div className="horas-muted" style={{ fontSize: 'var(--font-size-2xs)', marginTop: 3 }}>
                   <b>Reprovação:</b> {s.motivo_reprovacao}
                 </div>
               ) : null}
               {s.motivo_alteracao ? (
-                <div className="horas-muted" style={{ fontSize: '.72rem', marginTop: 3 }}>
+                <div className="horas-muted" style={{ fontSize: 'var(--font-size-2xs)', marginTop: 3 }}>
                   <b>Alteração do DP:</b> {s.motivo_alteracao}
                 </div>
               ) : null}
               {s.excecao_id ? (
-                <div className="horas-muted" style={{ fontSize: '.7rem', marginTop: 3 }}>
+                <div className="horas-muted" style={{ fontSize: 'var(--font-size-2xs)', marginTop: 3 }}>
                   Aberta por exceção de prazo (limite {fmtHora(s.limite_horario)})
                 </div>
               ) : null}

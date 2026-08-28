@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { LayoutDashboard, ArrowRight, Inbox } from 'lucide-react';
+import { Link, Navigate } from 'react-router-dom';
+import { LayoutDashboard, ArrowRight, Inbox, CreditCard, Truck } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { supabase } from '../../../../services/supabase';
 import { formatarMoeda } from '../../../../utils/formatters';
@@ -9,7 +9,7 @@ import { acaoDisponivelFin, TIPO_LABEL_FIN } from '../../../../config/aprovacaoF
 import { meusPapeisAlcada } from '../../../../services/alcadas';
 
 const SELECT = `
-  id, numero, tipo, status, valor, aplicacao, nome_despesa, created_at, solicitante_id,
+  id, numero, tipo, status, valor, aplicacao, nome_despesa, created_at, solicitante_id, modalidade_cartao,
   etapas:solicitacoes_financeiro_etapas ( id, ordem, aprovador_id, papel_codigo, tipo_etapa, status )
 `;
 
@@ -21,8 +21,6 @@ const BADGE = {
 
 const fmtData = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : '—');
 const soma = (arr) => arr.reduce((t, s) => t + (Number(s.valor) || 0), 0);
-const TOP_APLIC = 8;
-const listaAplic = (s) => (Array.isArray(s.aplicacao) && s.aplicacao.length ? s.aplicacao : ['Não informado']);
 
 export default function FinanceiroDashboard() {
   const { user } = useAuth();
@@ -65,36 +63,23 @@ export default function FinanceiroDashboard() {
     };
   }, [user]);
 
+  // Painel é ferramenta do time do Financeiro. Quem só abre solicitação cai em
+  // "Meus Cartões", que responde o que ele precisa saber. O redirecionamento
+  // fica aqui (e não só no menu) porque a rota pode ser digitada ou vir de um
+  // link antigo.
+  if (!isFinAdmin) return <Navigate to="/financeiro/cartoes" replace />;
+
   const porStatus = (st) => lista.filter((s) => s.status === st);
   const emAndamento = porStatus('pendente');
   const concluidas = porStatus('concluida');
   const reprovadas = porStatus('reprovada');
   const aguardandoVoce = lista.filter((s) => acaoDisponivelFin(user?.id, s.etapas, isFinAdmin, meusPapeis) !== null);
 
-  // Solicitações por Aplicação: CONTAGEM, não valor — a aplicação é múltipla, e
-  // somar o valor cheio em cada uma infla o total. Série única, cauda em "Outros".
-  const porAplicTodas = Object.values(
-    lista.reduce((acc, s) => {
-      for (const k of listaAplic(s)) {
-        acc[k] = acc[k] || { aplicacao: k, qtd: 0 };
-        acc[k].qtd += 1;
-      }
-      return acc;
-    }, {}),
-  ).sort((a, b) => b.qtd - a.qtd);
-
-  const porAplic = porAplicTodas.length > TOP_APLIC
-    ? [
-        ...porAplicTodas.slice(0, TOP_APLIC),
-        porAplicTodas.slice(TOP_APLIC).reduce(
-          (t, c) => ({ aplicacao: 'Outros', qtd: t.qtd + c.qtd }),
-          { aplicacao: 'Outros', qtd: 0 },
-        ),
-      ]
-    : porAplicTodas;
-  const maxAplic = Math.max(1, ...porAplic.map((c) => c.qtd));
-  // Uma solicitação pode citar várias aplicações: a soma das barras passa o total.
-  const somaBarras = porAplicTodas.reduce((t, c) => t + c.qtd, 0);
+  // Cartões por modalidade: só as solicitações de cartão (o aumento de limite
+  // herda a modalidade do cartão original e contaria a mesma coisa duas vezes).
+  const cartoes = lista.filter((s) => s.tipo === 'cartao_virtual');
+  const fisicos = cartoes.filter((s) => s.modalidade_cartao === 'fisico');
+  const virtuais = cartoes.filter((s) => s.modalidade_cartao !== 'fisico');
 
   const recentes = lista.slice(0, 8);
 
@@ -108,11 +93,11 @@ export default function FinanceiroDashboard() {
 
   return (
     <div className="fin-page">
-      <h1 className="fin-title"><LayoutDashboard size={26} /> Dashboard Financeiro</h1>
+      <h1 className="fin-title"><LayoutDashboard size={26} /> Dashboard de Cartões</h1>
       <p className="fin-sub">
         {isFinAdmin
-          ? 'Visão geral de todas as solicitações do Financeiro.'
-          : 'Visão das solicitações que você abriu ou nas quais participa da aprovação.'}
+          ? 'Solicitações de cartão e de aumento de limite da empresa. Os reembolsos têm dashboard próprio.'
+          : 'Suas solicitações de cartão e aquelas em que você participa da aprovação.'}
       </p>
 
       {loading ? (
@@ -171,32 +156,22 @@ export default function FinanceiroDashboard() {
             })}
           </div>
 
-          {/* Solicitações por Aplicação — série única, contagem rotulada direto */}
-          <h2 className="fin-sec">Solicitações por Aplicação</h2>
-          <div className="fin-card">
-            {porAplic.length === 0 ? (
-              <div className="fin-empty" style={{ border: 'none', padding: 20 }}>Sem dados de aplicação.</div>
-            ) : (
-              <>
-                <div className="fin-bars">
-                  {porAplic.map((c) => (
-                    <div key={c.aplicacao} className="fin-bar-row" title={`${c.aplicacao}: ${c.qtd} solicitação(ões)`}>
-                      <span className="fin-bar-label">{c.aplicacao}</span>
-                      <span className="fin-bar-track">
-                        <span className="fin-bar-fill" style={{ width: `${Math.max(2, (c.qtd / maxAplic) * 100)}%` }} />
-                      </span>
-                      <span className="fin-bar-value">{c.qtd}</span>
-                    </div>
-                  ))}
-                </div>
-                {somaBarras > lista.length && (
-                  <p className="fin-bars-nota">
-                    Uma solicitação pode ter mais de uma aplicação — por isso a soma das barras ({somaBarras})
-                    passa o total de solicitações ({lista.length}).
-                  </p>
-                )}
-              </>
-            )}
+          {/* Físico x virtual — a pergunta do Financeiro na hora de emitir:
+              quantos cartões precisam ser produzidos e entregues. */}
+          <h2 className="fin-sec">Cartões por modalidade</h2>
+          <div className="fin-tiles">
+            <div className="fin-tile">
+              <span className="fin-tile-ico"><CreditCard size={16} /></span>
+              <span className="fin-tile-label">Cartão virtual</span>
+              <span className="fin-tile-value">{virtuais.length}</span>
+              <span className="fin-tile-foot">{formatarMoeda(soma(virtuais))}</span>
+            </div>
+            <div className="fin-tile">
+              <span className="fin-tile-ico"><Truck size={16} /></span>
+              <span className="fin-tile-label">Cartão físico</span>
+              <span className="fin-tile-value">{fisicos.length}</span>
+              <span className="fin-tile-foot">{formatarMoeda(soma(fisicos))}</span>
+            </div>
           </div>
 
           {/* Últimas solicitações — também serve de table view */}

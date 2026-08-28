@@ -8,6 +8,7 @@ import { useAuth } from '../../../../contexts/AuthContext';
 import { supabase } from '../../../../services/supabase';
 import { TIPO_LABEL_FIN, EXECUTORES_FIN } from '../../../../config/aprovacaoFinanceiro';
 import SearchSelect from '../components/SearchSelect';
+import { cabecaDaCadeiaFin } from '../solicitacoes/cadeiaFin';
 import '../../../../components/UI/Components.css';
 
 const TIPOS = ['cartao_virtual', 'aumento_limite'];
@@ -15,8 +16,13 @@ const iniciais = (nome) => (nome || '?').split(' ').filter(Boolean).slice(0, 2).
 const nomesExecutoras = EXECUTORES_FIN.map((e) => e.nome.split(' ')[0]).join(' / ');
 
 // Tela de configuração das cadeias de aprovação do Financeiro (só admin do
-// Financeiro). Cada solicitante (coordenador/gestor) tem uma cadeia por tipo,
-// que termina sempre na execução do Financeiro (Daniela / Alessandra).
+// Financeiro).
+//
+// Desde o alinhamento com o módulo Administrativo, a cadeia PADRÃO é deduzida
+// do organograma (superior direto → gerente acima) e não precisa ser cadastrada.
+// O que se cadastra aqui é EXCEÇÃO: quem tem cadeia salva usa a dela, e ela
+// entra no lugar da escada. Depois dela vêm os aprovadores da faixa de valor e,
+// por último, sempre a execução do Financeiro (Daniela / Alessandra).
 export default function FinanceiroFluxos() {
   const { modules } = useAuth();
   const [pool, setPool] = useState([]);
@@ -27,6 +33,9 @@ export default function FinanceiroFluxos() {
   const [cadeia, setCadeia] = useState([]);
   const [salvando, setSalvando] = useState(false);
   const [sucesso, setSucesso] = useState('');
+  // Cadeia que vale HOJE para o solicitante escolhido — para o admin ver o que
+  // o organograma já resolve antes de cadastrar exceção.
+  const [efetiva, setEfetiva] = useState(null);
 
   const nomePorId = Object.fromEntries(pool.map((c) => [c.id, c.nome]));
   const idsAtivos = new Set(pool.map((c) => c.id));
@@ -58,6 +67,18 @@ export default function FinanceiroFluxos() {
     setCadeia(cadeiaInicial(solicitanteId, tipoSel));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [solicitanteId, tipoSel, fluxos]);
+
+  // Quem aprova hoje para esta pessoa — o mesmo caminho da criação, para a tela
+  // não prometer uma coisa e o envio fazer outra.
+  useEffect(() => {
+    if (!solicitanteId) { setEfetiva(null); return undefined; }
+    let vivo = true;
+    setEfetiva(null);
+    cabecaDaCadeiaFin(solicitanteId, tipoSel)
+      .then((r) => { if (vivo) setEfetiva(r); })
+      .catch(() => { if (vivo) setEfetiva({ origem: 'erro', pessoas: [] }); });
+    return () => { vivo = false; };
+  }, [solicitanteId, tipoSel]);
 
   const setEtapa = (idx, valor) => setCadeia((prev) => prev.map((v, i) => (i === idx ? valor : v)));
   const addEtapa = () => setCadeia((prev) => [...prev, '']);
@@ -102,8 +123,10 @@ export default function FinanceiroFluxos() {
     <div className="fin-page">
       <h1 className="fin-title"><Workflow size={26} /> Fluxos de Aprovação</h1>
       <p className="fin-sub">
-        Monte a cadeia de aprovação de cada solicitante por tipo. Parte do solicitante, passa por
-        cada aprovador na ordem e termina sempre na execução do Financeiro ({nomesExecutoras}).
+        Por padrão a cadeia vem do organograma (superior direto e o gerente acima dele) e depois
+        sobe para a faixa de valor — não é preciso cadastrar ninguém. Use esta tela só para
+        EXCEÇÕES: o que for salvo aqui entra no lugar da escada do organograma. A execução do
+        Financeiro ({nomesExecutoras}) fecha o fluxo nos dois casos.
       </p>
 
       {sucesso && <div className="fin-success" style={{ marginBottom: 16 }}><Check size={16} /> {sucesso}</div>}
@@ -120,7 +143,7 @@ export default function FinanceiroFluxos() {
               placeholder="Selecione o solicitante..."
               options={solicitantes.map((g) => ({
                 value: g.id,
-                label: `${configurado(g.id, tipoSel) ? '✅' : '⚠️'} ${g.nome}`,
+                label: `${g.nome}${configurado(g.id, tipoSel) ? ' · exceção cadastrada' : ''}`,
               }))}
             />
           </div>
@@ -130,10 +153,21 @@ export default function FinanceiroFluxos() {
               <div style={{ display: 'flex', gap: 8, margin: '16px 0' }}>
                 {TIPOS.map((t) => (
                   <button key={t} type="button" className={`fin-chip ${tipoSel === t ? 'active' : ''}`} onClick={() => setTipoSel(t)}>
-                    {configurado(solicitanteId, t) ? '✅' : '⚠️'} {TIPO_LABEL_FIN[t]}
+                    {configurado(solicitanteId, t) ? '✅ ' : ''}{TIPO_LABEL_FIN[t]}
                   </button>
                 ))}
               </div>
+
+              {efetiva && (
+                <div className="fin-hint" style={{ marginBottom: 10 }}>
+                  {efetiva.origem === 'erro'
+                    ? 'Não foi possível ler o organograma agora.'
+                    : efetiva.pessoas.length === 0
+                      ? 'Ninguém acima desta pessoa no organograma — sem exceção cadastrada, só a faixa de valor aprova.'
+                      : `Hoje aprovam, ${efetiva.origem === 'cadastro' ? 'pela exceção cadastrada' : 'pelo organograma'}: `
+                        + efetiva.pessoas.map((x) => `${x.nome}${x.papel ? ` (${x.papel})` : ''}`).join(' → ')}
+                </div>
+              )}
 
               <div className="fin-fluxo-card">
                 <div className="fin-fluxo-canvas">
@@ -181,8 +215,8 @@ export default function FinanceiroFluxos() {
                 <div className="fin-fluxo-foot">
                   <span className="fin-fluxo-hint">
                     {cadeia.filter(Boolean).length === 0
-                      ? 'Sem aprovadores — vai direto para a execução do Financeiro.'
-                      : `${cadeia.filter(Boolean).length} etapa(s) de aprovação antes da execução.`}
+                      ? 'Sem exceção: vale a escada do organograma acima.'
+                      : `${cadeia.filter(Boolean).length} etapa(s) de aprovação antes da faixa de valor e da execução.`}
                   </span>
                   <button type="button" className="btn btn-primary btn-sm" disabled={salvando} onClick={salvar}>
                     {salvando ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Salvar fluxo

@@ -61,18 +61,18 @@ export default function ModalRespostas({ respostas, onClose, sol, nomeColaborado
         <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
           {respostas.campos.map((c) => (
             <div key={c.id} style={{ marginBottom: 'var(--space-md)' }}>
-              <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{c.n}. {c.label}</div>
-              <div style={{ fontSize: 14, color: 'var(--color-text-primary, var(--color-text-secondary))' }}>{fmtResposta(c, respostas.dados[c.id])}</div>
+              <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>{c.n}. {c.label}</div>
+              <div style={{ fontSize: 'var(--font-size-md)', color: 'var(--color-text-primary, var(--color-text-secondary))' }}>{fmtResposta(c, respostas.dados[c.id])}</div>
             </div>
           ))}
           {respostas.anexos?.length > 0 && (
             <div style={{ marginBottom: 'var(--space-md)' }}>
-              <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
+              <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
                 {respostas.anexos.length > 1 ? `Anexos (${respostas.anexos.length})` : 'Anexo'}
               </div>
               {respostas.anexos.map((a, i) => (
                 <div key={i}>
-                  <a href={a.url} target="_blank" rel="noreferrer" style={{ fontSize: 14 }}>{a.nome}</a>
+                  <a href={a.url} target="_blank" rel="noreferrer" style={{ fontSize: 'var(--font-size-md)' }}>{a.nome}</a>
                 </div>
               ))}
             </div>

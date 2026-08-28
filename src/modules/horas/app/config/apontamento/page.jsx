@@ -357,7 +357,7 @@ function CampoForm({ campo, onChange }) {
             value={campo.opcoesTxt}
             onChange={(e) => set({ opcoesTxt: e.target.value })}
           />
-          <div className="horas-muted" style={{ fontSize: '.72rem', marginTop: 4 }}>
+          <div className="horas-muted" style={{ fontSize: 'var(--font-size-2xs)', marginTop: 4 }}>
             {deRascunho(campo).opcoes.length} opção(ões). Linhas em branco e repetidas são
             ignoradas.
           </div>

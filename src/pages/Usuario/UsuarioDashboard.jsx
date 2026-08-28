@@ -638,7 +638,7 @@ export default function UsuarioDashboard() {
                 />
               </div>
 
-              <p style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+              <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
                 A remarcação volta para aprovação do seu gestor. As datas atuais ficam mantidas até a aprovação.
               </p>
             </div>

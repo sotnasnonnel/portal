@@ -196,7 +196,7 @@ export default function GestorAprovacoes() {
                 </div>
               )}
               {s.statusNota && (
-                <div className="status-note" style={{ color: s.statusCor, backgroundColor: s.statusCor + '15', marginTop: '10px', fontSize: '12px' }}>
+                <div className="status-note" style={{ color: s.statusCor, backgroundColor: s.statusCor + '15', marginTop: '10px', fontSize: 'var(--font-size-xs)' }}>
                   {s.status === 'atrasada' ? <AlertCircle size={14} /> : <Clock size={14} />}
                   {s.statusNota}
                 </div>

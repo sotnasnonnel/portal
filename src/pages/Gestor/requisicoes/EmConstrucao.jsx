@@ -8,7 +8,7 @@ export default function EmConstrucao({ label }) {
         <AlertTriangle size={40} color="var(--color-text-muted)" />
         <div>
           <strong>{label}</strong> está em construção.
-          <div style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginTop: '4px' }}>
+          <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', marginTop: '4px' }}>
             Esta requisição ainda não está disponível. Em breve.
           </div>
         </div>

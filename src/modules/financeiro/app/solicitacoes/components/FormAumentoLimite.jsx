@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
-import { Loader2, Check, AlertTriangle, CreditCard, Inbox } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Loader2, Check, CreditCard, Inbox } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import CurrencyInput from '../../../../../components/CurrencyInput';
 import { parseCurrency } from '../../../../../utils/currencyMask';
 import { formatarMoeda } from '../../../../../utils/formatters';
 import SearchSelect from '../../components/SearchSelect';
 import TermosAceite from './TermosAceite';
-import ClassificacaoAlcada from './ClassificacaoAlcada';
+import PreviaAprovacao from './PreviaAprovacao';
 import { useSolicitacaoFin } from './useSolicitacaoFin';
 import { listarCartoesDoSolicitante } from '../cartoes';
 import '../../../../../components/UI/Components.css';
@@ -28,8 +28,10 @@ export default function FormAumentoLimite({ sol }) {
   const [observacao, setObservacao] = useState('');
   const [faltando, setFaltando] = useState([]);
   const [erroValor, setErroValor] = useState('');
-  // §6, pilar 1 — classificação obrigatória
-  const [classificacao, setClassificacao] = useState({ categoria: '', dentro_orcamento: null });
+  // Preenchido pela prévia quando a cadeia de aprovação não fecha (lacuna de
+  // papel, papel fora da cadeia ou ninguém acima no organograma).
+  const [bloqueio, setBloqueio] = useState(null);
+  const aoBloquear = useCallback((b) => setBloqueio(b), []);
 
   useEffect(() => {
     if (!t.user?.id) return undefined;
@@ -52,8 +54,6 @@ export default function FormAumentoLimite({ sol }) {
     if (!cartaoId) falta.push('cartao');
     const novo = parseCurrency(valor);
     if (novo == null) falta.push('valor');
-    if (!classificacao.categoria) falta.push('categoria');
-    if (classificacao.dentro_orcamento == null) falta.push('dentro_orcamento');
     setFaltando(falta);
     if (falta.length) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
 
@@ -76,11 +76,8 @@ export default function FormAumentoLimite({ sol }) {
       periodo_fim: cartao.periodo_fim,
       valor: novo,
       observacao: observacao.trim() || null,
-      categoria: classificacao.categoria,
-      dentro_orcamento: classificacao.dentro_orcamento,
     }, () => {
       setCartaoId(''); setValor(''); setObservacao('');
-      setClassificacao({ categoria: '', dentro_orcamento: null });
     });
   };
 
@@ -89,8 +86,7 @@ export default function FormAumentoLimite({ sol }) {
 
   // Botão só habilita com cartão escolhido, novo valor informado e termos aceitos.
   // (A regra "novo valor > limite atual" continua validada no submit, com mensagem.)
-  const podeEnviar = !!t.aceite && !!cartaoId && parseCurrency(valor) != null && !t.semFluxo
-    && !!classificacao.categoria && classificacao.dentro_orcamento != null;
+  const podeEnviar = !!t.aceite && !!cartaoId && parseCurrency(valor) != null && !bloqueio;
 
   return (
     <div className="table-container">
@@ -113,7 +109,7 @@ export default function FormAumentoLimite({ sol }) {
             <strong>Você não tem cartões ativos</strong>
             <span>
               O aumento de limite se aplica a um cartão já existente. Abra uma{' '}
-              <Link to="/financeiro/solicitacoes/nova/cartao-virtual">Solicitação de Cartão Virtual</Link> primeiro.
+              <Link to="/financeiro/solicitacoes/nova/cartao-virtual">Solicitação de Cartão</Link> primeiro.
             </span>
           </div>
         ) : (
@@ -167,22 +163,15 @@ export default function FormAumentoLimite({ sol }) {
 
             {/* A alçada enquadra pelo NOVO LIMITE TOTAL (não pelo incremento) —
                 mesma convenção do campo `valor` usada no resto do módulo. */}
-            <ClassificacaoAlcada
+            <PreviaAprovacao
               valor={parseCurrency(valor)}
-              categoria={classificacao.categoria}
-              dentroOrcamento={classificacao.dentro_orcamento}
               solicitanteId={t.user?.id}
-              erros={faltando}
-              onChange={(patch) => setClassificacao((p) => ({ ...p, ...patch }))}
+              tipoDb={sol.tipoDb}
+              onBloqueio={aoBloquear}
             />
 
             <TermosAceite sol={sol} {...t} />
 
-            {t.semFluxo && (
-              <div className="fin-aviso" style={{ marginTop: 'var(--space-lg)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <AlertTriangle size={15} /> O Financeiro ainda não configurou o fluxo de aprovação para você neste tipo de solicitação.
-              </div>
-            )}
             <button className="btn btn-primary" type="submit" disabled={t.submitting || !podeEnviar} style={{ width: '100%', marginTop: 'var(--space-lg)' }}>
               {t.submitting ? <Loader2 size={16} className="animate-spin" /> : <Icon size={16} />}
               {t.submitting ? ' Enviando...' : ' Enviar solicitação'}

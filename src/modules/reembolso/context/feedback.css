@@ -175,3 +175,25 @@
     width: 100%;
   }
 }
+
+
+/* Modal de reprovação (ReembolsoDetail): mesma caixa do confirm, com campo de
+   justificativa. Fica aqui porque reaproveita .modal-box/.modal-actions. */
+.reject-modal { max-width: 460px; }
+.reject-modal textarea {
+  width: 100%;
+  margin-top: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--ink);
+  resize: vertical;
+}
+.reject-modal textarea:focus {
+  outline: none;
+  border-color: var(--terracotta);
+  box-shadow: var(--focus-ring);
+}

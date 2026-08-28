@@ -24,6 +24,10 @@ export default function PolicyNotice({ compact = false }) {
                 <strong>{formatCurrency(it.value)}</strong>
               </li>
             ))}
+            <li className="policy-total">
+              <span>Máximo por dia</span>
+              <strong>{formatCurrency(POLICY.alimentacaoDia)}</strong>
+            </li>
           </ul>
         </div>
 
@@ -31,8 +35,16 @@ export default function PolicyNotice({ compact = false }) {
           <span className="policy-block-title">Diária (alimentação + hospedagem)</span>
           <ul>
             <li>
-              <span>Valor máximo</span>
-              <strong>{formatCurrency(POLICY.diaria)}</strong>
+              <span>Hospedagem</span>
+              <strong>{formatCurrency(POLICY.hospedagem)}</strong>
+            </li>
+            <li>
+              <span>Alimentação do dia</span>
+              <strong>{formatCurrency(POLICY.alimentacaoDia)}</strong>
+            </li>
+            <li className="policy-total">
+              <span>Máximo por dia</span>
+              <strong>{formatCurrency(POLICY.diariaMaxima)}</strong>
             </li>
           </ul>
         </div>

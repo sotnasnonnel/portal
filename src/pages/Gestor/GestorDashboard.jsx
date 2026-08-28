@@ -250,7 +250,7 @@ export default function GestorDashboard() {
                     <td>{formatarData(s.fim_ausencia)}</td>
                     <td>{s.dias_solicitados || 0} dias</td>
                     <td>
-                      <span className="badge" style={{ backgroundColor: s.calc.cor, color: '#fff', fontSize: '10px' }}>
+                      <span className="badge" style={{ backgroundColor: s.calc.cor, color: '#fff', fontSize: 'var(--font-size-2xs)' }}>
                         {s.calc.label}
                       </span>
                     </td>
@@ -289,7 +289,7 @@ export default function GestorDashboard() {
                       {formatarData(s.limite_efetiva)}
                     </td>
                     <td>
-                      <span className="badge" style={{ backgroundColor: s.calc.cor, color: '#fff', fontSize: '10px' }}>
+                      <span className="badge" style={{ backgroundColor: s.calc.cor, color: '#fff', fontSize: 'var(--font-size-2xs)' }}>
                         {s.calc.label}
                       </span>
                     </td>

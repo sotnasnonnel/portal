@@ -1,9 +1,10 @@
 // Avisa por e-mail sobre um chamado do módulo ADMINISTRATIVO.
 //
-//   'aprovacao' -> avisa o APROVADOR DA VEZ que há chamado esperando decisão
-//   'decidido'  -> avisa o SOLICITANTE do resultado (aprovado ou reprovado)
-//   'mensagem'  -> avisa o OUTRO LADO que há resposta nova
-//   'fechado'   -> avisa o SOLICITANTE e convida a avaliar
+//   'aprovacao'   -> avisa o APROVADOR DA VEZ que há chamado esperando decisão
+//   'decidido'    -> avisa o SOLICITANTE do resultado (aprovado ou reprovado)
+//   'atendimento' -> avisa o TÉCNICO que o chamado caiu na fila dele
+//   'mensagem'    -> avisa o OUTRO LADO que há resposta nova
+//   'fechado'     -> avisa o SOLICITANTE e convida a avaliar
 //
 // Mesmo padrão das outras notificações do portal (Microsoft Graph sendMail com
 // os secrets GRAPH_* já configurados no projeto).
@@ -23,7 +24,7 @@ function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...CORS, "Content-Type": "application/json" } });
 }
 
-const EVENTOS = ["aprovacao", "decidido", "mensagem", "fechado"] as const;
+const EVENTOS = ["aprovacao", "decidido", "atendimento", "mensagem", "fechado"] as const;
 type Evento = (typeof EVENTOS)[number];
 
 const escapeHtml = (s: string) =>
@@ -180,6 +181,27 @@ Deno.serve(async (req) => {
           ? `<strong>Motivo:</strong><br>${escapeHtml(etapaReprovada[0].justificativa)}`
           : null,
         botao: "Ver no Portal PHD",
+        url: urlChamado,
+        logo,
+      });
+    } else if (evento === "atendimento") {
+      // O chamado entrou na fila do Adm — por abertura direta ou porque a
+      // última aprovação saiu. Antes disto o técnico só descobria abrindo a
+      // Fila no portal: 'decidido' avisa o solicitante de que o pedido seguiu
+      // para o Administrativo, e ninguém avisava o Administrativo.
+      dest = atendente ? { nome: atendente.nome, email: atendente.email } : null;
+      // Chamado sem técnico não tem para quem mandar. Cair na caixa de alguém
+      // do time seria escolher um dono à revelia; ele continua na Fila, que é
+      // exatamente onde o time procura o que ainda não tem responsável.
+      if (!dest?.email) return json({ skipped: "atendente_sem_email" });
+      subject = `Chamado ${numero} está na sua fila – ${ch.assunto}`;
+      html = montarHtml({
+        destNome: dest.nome,
+        chamada: `O chamado ${numero}, aberto por <strong>${escapeHtml(solicitante?.nome ?? "")}</strong>, `
+          + "foi liberado e entrou na sua fila de atendimento.",
+        linhas: [...base, ["Descrição", ch.descricao], ["Vencimento do prazo", dataHoraBr(ch.sla_vence_em)]],
+        aviso: "O prazo já está correndo a partir de agora.",
+        botao: "Atender no Portal PHD",
         url: urlChamado,
         logo,
       });

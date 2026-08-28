@@ -171,7 +171,7 @@ function EmpresaTab() {
     setAssets((prev) => prev.filter((x) => x.id !== a.id));
   };
 
-  const smallBtn = { height: 34, padding: "0 12px", fontSize: 13, minWidth: 0 } as const;
+  const smallBtn = { height: 34, padding: "0 12px", fontSize: 'var(--font-size-sm)', minWidth: 0 } as const;
 
   return (
     <div style={{ display: "grid", gap: 20 }}>
@@ -191,7 +191,7 @@ function EmpresaTab() {
             + Cadastrar nova empresa
           </button>
         </div>
-        {rowErr ? <div className="small" style={{ color: "var(--danger)", fontWeight: 800, marginTop: 10 }}>{rowErr}</div> : null}
+        {rowErr ? <div className="small" style={{ color: "var(--danger)", fontWeight: 600, marginTop: 10 }}>{rowErr}</div> : null}
 
         <div style={{ marginTop: 14, overflowX: "auto" }}>
           <table className="table">
@@ -215,7 +215,7 @@ function EmpresaTab() {
                   </tr>
                 ) : (
                   <tr key={a.id}>
-                    <td data-label="Código" style={{ fontWeight: 800, color: "var(--text)" }}>{a.code}</td>
+                    <td data-label="Código" style={{ fontWeight: 700, color: "var(--text)" }}>{a.code}</td>
                     <td data-label="Nome">{a.title}</td>
                     <td className="actionCell" style={{ textAlign: "right", whiteSpace: "nowrap" }}>
                       <button className="ghost" style={ICON_BTN} title="Editar" aria-label="Editar" onClick={() => startEdit(a)}>
@@ -254,7 +254,7 @@ function EmpresaTab() {
             </div>
             <div className="cardSubtitle">Cadastre uma nova empresa/contrato no sistema.</div>
 
-            {err ? <div className="small" style={{ color: "var(--danger)", fontWeight: 800, marginTop: 12 }}>{err}</div> : null}
+            {err ? <div className="small" style={{ color: "var(--danger)", fontWeight: 600, marginTop: 12 }}>{err}</div> : null}
 
             <form onSubmit={onCreate} style={{ display: "grid", gap: 18, marginTop: 20 }}>
               <div style={{ display: "grid" }}>

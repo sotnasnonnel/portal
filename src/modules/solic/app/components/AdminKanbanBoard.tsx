@@ -57,10 +57,10 @@ function statusToPersistOnDrop(target: KanbanCol, current: SurveyStatus): Survey
 }
 
 function colColor(col: KanbanCol) {
-  if (col === "OPEN") return "#26405d";        // azul
-  if (col === "IN_PROGRESS") return "#c35e1e"; // amarelo/laranja
-  if (col === "DONE") return "#00a49a";        // verde
-  return "#b85236";                             // vermelho
+  if (col === "OPEN") return "var(--tone-aberto-fg)";
+  if (col === "IN_PROGRESS") return "var(--tone-andamento-fg)";
+  if (col === "DONE") return "var(--tone-ok-fg)";
+  return "var(--tone-erro-fg)";
 }
 
 
@@ -98,9 +98,15 @@ export function AdminKanbanBoard({
     // optimistic UI
     setSurveys((prev) => prev.map((s) => (s.id === surveyId ? { ...s, status: nextStatus } : s)));
 
+    // Mesmo carimbo da tela da solicitação: concluir aqui também precisa
+    // registrar QUANDO concluiu, senão o cartão nunca sai da lista.
     const { data: updatedRows, error } = await supabase
       .from("solic_surveys")
-      .update({ status: nextStatus })
+      .update({
+        status: nextStatus,
+        completed_at: nextStatus === "COMPLETED" ? new Date().toISOString() : null,
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", surveyId)
       .select("id,status"); // retorna array
 

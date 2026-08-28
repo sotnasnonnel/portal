@@ -9,11 +9,16 @@ import {
   FilePlus2,
   FileClock,
   CheckSquare,
+  UserCog,
 } from 'lucide-react';
 import { isGestao, podeConfigurarHoras } from '../../lib/roles';
 
-// Navegação por papel. A gestão (gestor/coordenador) aponta E administra/enxerga
-// a equipe; o usuário só aponta e vê o próprio tempo.
+// Navegação por papel, na mesma divisão dos outros módulos (padrão do
+// Financeiro): grupos colapsáveis para as rotinas do dia a dia e uma seção
+// simples de "Administração" no fim.
+//
+// A gestão (gestor/coordenador) aponta E administra/enxerga a equipe; o usuário
+// só aponta e vê o próprio tempo.
 // "Config. do Apontamento" e "Acesso a Projetos" fogem do papel: são curadoria
 // central, restrita a uma lista nominal (daí o `user` além do `role`).
 // A seção "Horas Extras" aqui é só a ponta do fluxo que o colaborador e o gestor
@@ -41,35 +46,72 @@ export function navSections(role, user) {
     : [];
 
   if (isGestao(role)) {
-    return [
-      { label: 'Apontamento', items: [{ label: 'Apontar', href: '/horas/apontar', Icon: Clock }] },
+    const secoes = [
+      {
+        label: 'Apontamento',
+        group: true,
+        key: 'apontamento',
+        Icon: Clock,
+        items: [{ label: 'Apontar', href: '/horas/apontar', Icon: Clock }],
+      },
       {
         label: 'Gestão',
+        group: true,
+        key: 'gestao',
+        Icon: Users,
         items: [
           { label: 'Dashboard da Equipe', href: '/horas/dashboard', Icon: BarChart3 },
-          { label: 'Configuração', href: '/horas/config', Icon: Settings, exato: true },
-          ...configHoras,
           { label: 'Equipe', href: '/horas/equipe', Icon: Users },
           { label: 'Registros', href: '/horas/registros', Icon: ListChecks },
         ],
       },
-      { label: 'Horas Extras', items: extras },
+      {
+        label: 'Horas Extras',
+        group: true,
+        key: 'extras',
+        Icon: FileClock,
+        items: extras,
+      },
     ];
+    secoes.push({
+      label: 'Administração',
+      key: 'admin',
+      items: [
+        // `exato`: /horas/config é prefixo de /horas/config/apontamento — sem
+        // isso os dois acendiam juntos.
+        { label: 'Configuração', href: '/horas/config', Icon: Settings, exato: true },
+        ...configHoras,
+      ],
+    });
+    return secoes;
   }
+
   // Quem configura o apontamento sem ter papel de gestão (não é o caso hoje, mas
   // a lista é nominal e independe do papel) também precisa do atalho.
-  return [
+  const secoes = [
     {
-      label: 'Menu',
+      label: 'Apontamento',
+      group: true,
+      key: 'apontamento',
+      Icon: Clock,
       items: [
         { label: 'Apontar', href: '/horas/apontar', Icon: Clock },
         { label: 'Meu Dashboard', href: '/horas/dashboard', Icon: BarChart3 },
         { label: 'Meus Registros', href: '/horas/registros', Icon: ListChecks },
-        ...configHoras,
       ],
     },
-    { label: 'Horas Extras', items: extras },
+    {
+      label: 'Horas Extras',
+      group: true,
+      key: 'extras',
+      Icon: FileClock,
+      items: extras,
+    },
   ];
+  if (configHoras.length) {
+    secoes.push({ label: 'Administração', key: 'admin', Icon: UserCog, items: configHoras });
+  }
+  return secoes;
 }
 
 // Primeira rota permitida ao papel (destino do índice e dos redirecionamentos).

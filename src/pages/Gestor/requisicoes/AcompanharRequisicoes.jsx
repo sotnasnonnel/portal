@@ -344,7 +344,7 @@ export default function AcompanharRequisicoes() {
               <button className="modal-close" onClick={() => setDecisao(null)}><X size={18} /></button>
             </div>
             <div className="modal-body">
-              <p style={{ marginBottom: 'var(--space-md)', color: 'var(--color-text-secondary)', fontSize: '13px' }}>{cfg.desc}</p>
+              <p style={{ marginBottom: 'var(--space-md)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>{cfg.desc}</p>
               <div className="form-group">
                 <label className="form-label">{cfg.label}{cfg.obrig && <span className="required"> *</span>}</label>
                 <textarea className="form-input" rows={3} style={{ resize: 'vertical', fontFamily: 'inherit' }}

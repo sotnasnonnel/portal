@@ -31,6 +31,7 @@ export const PROGRAMAS_EM_BREVE = true;
 export const PROGRAMAS_LIBERADOS = [
   'marcus.guimaraes@phdengenharia.eng.br',
   'andre.guimaraes@phdengenharia.eng.br',
+  'lennon.santos@phdengenharia.eng.br',
 ];
 
 export const podeAcessarProgramas = (user) => !PROGRAMAS_EM_BREVE
@@ -64,7 +65,8 @@ export const getForma = (slug) => FORMAS.find((f) => f.slug === slug);
 /** Setores da iniciativa (seletor da planilha, na ordem em que ela lista). */
 export const SETORES = [
   'ADM', 'RH', 'DP', 'MKT', 'Financeiro', 'Comercial', 'Contratos',
-  'Excelência operacional', 'TI', 'Operação', 'Outro',
+  'Excelência operacional', 'TI', 'Operação', 'Diretoria', 'Construtibilidade',
+  'Outro',
 ];
 
 /**
@@ -72,7 +74,7 @@ export const SETORES = [
  * setores" que a planilha pede no kanban (aba Campo de Ideias, B35).
  *
  * A cor é APOIO, nunca a informação sozinha: o nome do setor vem escrito no
- * rodapé de todo cartão e na legenda. Com 11 setores, alguns pares ficam
+ * rodapé de todo cartão e na legenda. Com 13 setores, alguns pares ficam
  * próximos demais para serem distinguidos só pelo tom — por isso o nome
  * escrito não é decoração, é o que garante a leitura.
  *
@@ -90,6 +92,10 @@ export const COR_SETOR = {
   'Excelência operacional': '#58ac48',
   TI: '#905dc6',
   Operação: '#aca70a',
+  // Os dois últimos entraram depois: os tons foram escolhidos nas maiores
+  // lacunas de matiz que sobraram (≈4° e ≈144°), não no olho.
+  Diretoria: '#bf3527',
+  Construtibilidade: '#14a34d',
   Outro: '#647ce5',
 };
 

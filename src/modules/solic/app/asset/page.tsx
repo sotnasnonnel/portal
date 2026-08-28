@@ -40,7 +40,7 @@ function Inner() {
 
       const { data, error } = await supabase
         .from("solic_surveys")
-        .select("id, status, created_by, requester, needed_date, admin_deadline, completed_at, assets:solic_assets(code,title)")
+        .select("id, status, created_by, requester, needed_date, admin_deadline, completed_at, updated_at, created_at, assets:solic_assets(code,title)")
         .eq("asset_id", contractId)
         .order("needed_date", { ascending: true, nullsFirst: false })
         .order("created_at", { ascending: false });
@@ -52,8 +52,11 @@ function Inner() {
         return;
       }
 
-      // ✅ esconde concluídas há mais de 7 dias (continuam no banco)
-      const visiveis = ((data as any[]) || []).filter((s) => !isOldCompleted(s.status, s.completed_at));
+      // ✅ esconde concluídas há mais de 7 dias (continuam no banco). Conta a
+      // partir da mudança de status, não da entrega (que pode não existir).
+      const visiveis = ((data as any[]) || []).filter(
+        (s) => !isOldCompleted(s.status, s.completed_at, 7, s.updated_at || s.created_at)
+      );
       setSurveys(visiveis as SurveyLite[]);
       setLoading(false);
     })();
@@ -89,27 +92,27 @@ function Inner() {
             ? "Admin: você pode arrastar cards no Kanban para mudar o status."
             : "Você pode acompanhar todas as solicitações. A sua fica destacada."}
         </div>
-        {err ? <div className="small" style={{ color: "var(--danger)", fontWeight: 800, marginTop: 8 }}>{err}</div> : null}
+        {err ? <div className="small" style={{ color: "var(--danger)", fontWeight: 600, marginTop: 8 }}>{err}</div> : null}
       </div>
 
       <div className="statGrid">
-        <div className="statCard" style={{ ["--accent" as any]: "#26405d" }}>
+        <div className="statCard" style={{ ["--accent" as any]: "var(--tone-aberto-fg)" }}>
           <div className="statLabel">Abertas</div>
           <div className="statValue">{counts.abertas}</div>
         </div>
-        <div className="statCard" style={{ ["--accent" as any]: "#c35e1e" }}>
+        <div className="statCard" style={{ ["--accent" as any]: "var(--tone-andamento-fg)" }}>
           <div className="statLabel">Em andamento</div>
           <div className="statValue">{counts.andamento}</div>
         </div>
-        <div className="statCard" style={{ ["--accent" as any]: "#00a49a" }}>
+        <div className="statCard" style={{ ["--accent" as any]: "var(--tone-ok-fg)" }}>
           <div className="statLabel">Concluídas</div>
           <div className="statValue">{counts.concluidas}</div>
         </div>
-        <div className="statCard" style={{ ["--accent" as any]: "#b85236" }}>
+        <div className="statCard" style={{ ["--accent" as any]: "var(--tone-erro-fg)" }}>
           <div className="statLabel">Canceladas</div>
           <div className="statValue">{counts.canceladas}</div>
         </div>
-        <div className="statCard" style={{ ["--accent" as any]: "#00a49a" }}>
+        <div className="statCard" style={{ ["--accent" as any]: "var(--tone-ok-fg)" }}>
           <div className="statLabel">Minhas</div>
           <div className="statValue">{myCount}</div>
         </div>

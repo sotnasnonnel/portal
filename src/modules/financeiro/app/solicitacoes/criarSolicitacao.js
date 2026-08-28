@@ -1,67 +1,48 @@
 import { supabase } from '../../../../services/supabase';
-import { buscarFluxoFin } from '../../../../config/aprovacaoFinanceiro';
-import { avaliarAlcada } from '../../../../config/alcadas';
 import {
-  resolverPapeis, montarEtapasAlcada, registrarAuditoria, PapelNaoAtribuidoError,
+  montarEtapasAlcada, registrarAuditoria, PapelNaoAtribuidoError,
 } from '../../../../services/alcadas';
+import {
+  montarCadeiaFin, ehTopoDaHierarquiaFin, SemAprovadorFinError, PapelForaDaCadeiaFinError,
+} from './cadeiaFin';
 import { getTermos } from '../../../../config/financeiroTermos';
 import { notificarAprovadorFin } from '../../../../services/notificarAprovadorFin';
 
 /**
  * Cria a solicitação do Financeiro: envelope + etapas (atômico, com delete
- * compensatório se as etapas falharem). Lança 'SEM_FLUXO' se o solicitante não
- * tem cadeia configurada para o tipo.
+ * compensatório se as etapas falharem).
  *
- * A cadeia final tem 4 trechos, nesta ordem:
- *   1. cadeia configurada em Fluxos (hierarquia do solicitante);
- *   2. aprovadores exigidos pela ALÇADA (faixa de valor + modificadores);
- *   3. pareceres bloqueantes (hoje: Jurídico, por cláusula atípica);
- *   4. execução do Financeiro.
+ * A cadeia final tem 3 trechos, nesta ordem (a mesma do módulo Administrativo):
+ *   1. cabeça da cadeia — escada do organograma (superior direto → gerente),
+ *      ou a exceção cadastrada em Fluxos quando existir;
+ *   2. aprovadores exigidos pela ALÇADA (faixa de valor, TABELA_ADMINISTRATIVO);
+ *   3. execução do Financeiro.
  *
- * Cartão Virtual e Aumento de Limite são despesa/limite: enquadram na tabela
- * de Compras e Despesas (§2.1 do Documento de Alçadas).
+ * Quem monta os trechos 1 e 2 é `montarCadeiaFin` — o mesmo caminho da prévia
+ * que o solicitante vê antes de enviar.
  */
 export async function criarSolicitacaoFin({ tipoDb, solicitanteId, envelope }) {
-  const { fluxo, erro } = await buscarFluxoFin(solicitanteId, tipoDb);
-  if (erro) throw new Error('Erro ao consultar o fluxo de aprovação. Tente novamente.');
-  if (!fluxo) throw new Error('SEM_FLUXO');
-
-  // --- 1. classificação obrigatória (§6, pilar 1) ---
   const valor = Number(envelope.valor) || 0;
-  if (!envelope.categoria) throw new Error('Classifique a categoria da despesa antes de enviar.');
-  if (envelope.dentro_orcamento == null) {
-    throw new Error('Informe se a despesa está dentro ou fora do orçamento aprovado.');
-  }
 
-  // --- 2. motor de alçadas decide QUE PAPÉIS precisam aprovar ---
-  const modificadores = envelope.dentro_orcamento === false ? ['fora_orcamento'] : [];
-  const gatilhos = envelope.categoria === 'capex' ? ['capex_relevante'] : [];
-  const decisao = avaliarAlcada({ tabela: 'compras', valor, modificadores, gatilhos });
+  // --- 1. cadeia efetiva de hoje (organograma/fluxo + faixa de valor) ---
+  const { cabeca, decisao, etapasAlcada, lacunas, foraDaCadeia } = await montarCadeiaFin({
+    solicitanteId, tipo: tipoDb, valor,
+  });
 
-  // --- 3. papéis -> pessoas; lacuna bloqueia a criação (§6, pilar 3) ---
-  const [alcada, parecer] = await Promise.all([
-    resolverPapeis(solicitanteId, decisao.papeis),
-    resolverPapeis(solicitanteId, decisao.pareceres),
-  ]);
-  const lacunas = [...alcada.lacunas, ...parecer.lacunas];
+  // Lacuna de papel bloqueia (§6, pilar 3); papel resolvido FORA da cadeia da
+  // pessoa bloqueia também — seguir mandaria o pedido a um gestor de outra área.
   if (lacunas.length) throw new PapelNaoAtribuidoError(lacunas);
+  if (foraDaCadeia.length) throw new PapelForaDaCadeiaFinError(foraDaCadeia);
 
-  // --- 4. cadeia configurada em Fluxos (nomes via RPC, a RLS esconde superiores) ---
-  const chainIds = (Array.isArray(fluxo.aprovadores) ? fluxo.aprovadores : [])
-    .map((x) => (x || '').toString().trim()).filter(Boolean);
-  let etapasCadeia = [];
-  if (chainIds.length) {
-    const { data: cols, error: e } = await supabase.rpc('nomes_colaboradores', { p_ids: chainIds });
-    if (e) throw e;
-    const nomePorId = Object.fromEntries((cols || []).map((c) => [c.id, c.nome]));
-    etapasCadeia = chainIds.map((id) => {
-      const nome = nomePorId[id];
-      if (!nome) throw new Error(`Aprovador sem nome resolvido (id ${id}). Recarregue e tente de novo.`);
-      return { aprovadorId: id, nome, papel: null };
-    });
+  const etapasCadeia = cabeca.pessoas.map((p) => ({ aprovadorId: p.id, nome: p.nome, papel: null }));
+
+  // Sem ninguém na cabeça e sem papel de faixa, a solicitação iria direto para a
+  // execução — aprovação nenhuma. Só o topo da hierarquia pode seguir assim.
+  if (!etapasCadeia.length && !etapasAlcada.length && !(await ehTopoDaHierarquiaFin(solicitanteId))) {
+    throw new SemAprovadorFinError();
   }
 
-  // --- 5. envelope, já carimbado com a decisão de alçada (trilha de auditoria) ---
+  // --- 2. envelope, já carimbado com a decisão de alçada (trilha de auditoria) ---
   const { data: sol, error: eSol } = await supabase
     .from('solicitacoes_financeiro')
     .insert([{
@@ -83,8 +64,7 @@ export async function criarSolicitacaoFin({ tipoDb, solicitanteId, envelope }) {
     const linhas = montarEtapasAlcada({
       solicitacaoId: sol.id,
       etapasCadeia,
-      etapasAlcada: alcada.etapas,
-      etapasParecer: parecer.etapas,
+      etapasAlcada,
       criadorId: solicitanteId,
     });
     const { error: eEt } = await supabase.from('solicitacoes_financeiro_etapas').insert(linhas);
@@ -94,7 +74,7 @@ export async function criarSolicitacaoFin({ tipoDb, solicitanteId, envelope }) {
     throw err;
   }
 
-  // --- 6. trilha de auditoria (§6, pilar 4): a classificação e a alçada aplicada ---
+  // --- 3. trilha de auditoria (§6, pilar 4): a classificação e a alçada aplicada ---
   registrarAuditoria({
     modulo: 'financeiro',
     solicitacao_id: sol.id,
@@ -107,7 +87,8 @@ export async function criarSolicitacaoFin({ tipoDb, solicitanteId, envelope }) {
     nivel_base: decisao.nivelBase,
     nivel_final: decisao.nivelFinal,
     excecoes: decisao.excecoes,
-    observacao: `Categoria ${envelope.categoria} · ${envelope.dentro_orcamento ? 'dentro' : 'FORA'} do orçamento · nível ${decisao.nivelFinal} (${decisao.rotuloNivel})`,
+    observacao: `Cadeia por ${cabeca.origem === 'cadastro' ? 'fluxo cadastrado' : 'organograma'}`
+      + ` · nível ${decisao.nivelFinal} (${decisao.rotuloNivel})`,
   });
   // §6, pilar 5 — exceção gera alerta à diretoria.
   if (decisao.alertaDiretoria) {

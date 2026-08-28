@@ -10,6 +10,9 @@ export default function MultiSelect({
   disabled = false,
   placeholder = 'Selecione…',
   searchThreshold = 6,
+  // Fecha a lista ao MARCAR uma opção. Desmarcar mantém aberto — tirar várias
+  // seguidas é o caso em que a lista aberta ajuda.
+  fecharAoSelecionar = false,
 }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
@@ -41,11 +44,14 @@ export default function MultiSelect({
     if (open && showSearch) inputRef.current?.focus();
   }, [open, showSearch]);
 
-  // Não fecha ao escolher: multi-seleção normalmente encadeia vários cliques.
+  // Por padrão não fecha ao escolher: multi-seleção costuma encadear cliques.
+  // Com `fecharAoSelecionar`, marcar fecha (e a lista reabre pelo botão).
   const alternarItem = (opt) => {
-    onChange(selecionados.includes(opt)
+    const jaEstava = selecionados.includes(opt);
+    onChange(jaEstava
       ? selecionados.filter((v) => v !== opt)
       : [...selecionados, opt]);
+    if (!jaEstava && fecharAoSelecionar) fechar();
   };
 
   const remover = (opt, e) => {

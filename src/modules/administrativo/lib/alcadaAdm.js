@@ -9,8 +9,13 @@
  *    ordem do Financeiro. A repetição que isso poderia causar (na faixa até
  *    R$ 2.000 o papel da alçada JÁ é o gerente) é resolvida por dedução de
  *    pessoa, não deixando o fluxo de fora.
- * 2. FLUXO CONFIGURADO — nos demais, a cadeia vem de `chamados_adm_fluxos`,
- *    cadastrada por (solicitante, classe), com um fluxo geral como padrão.
+ * 2. ESCADA DO ORGANOGRAMA — nos demais, o pedido sobe a hierarquia da pessoa:
+ *    COORDENADOR e depois o GERENTE acima dele (`escadaDoOrganograma`, no fim
+ *    deste arquivo). `chamados_adm_fluxos` continua existindo, mas como
+ *    EXCEÇÃO cadastrada à mão, não como o caminho de todo mundo.
+ *
+ * A escada vale nas duas: mesmo no serviço de gasto, quem responde pela pessoa
+ * avaliza antes de o pedido subir para a faixa de valor.
  *
  * Serviço que não exige aprovação não passa por nenhuma das duas: vai direto
  * para a fila do Adm.
@@ -120,4 +125,73 @@ export function papeisForaDaCadeia(etapas = []) {
     .filter((e) => PAPEIS_DA_CADEIA.has(e.papel))
     .filter((e) => (e.candidatos || []).every((c) => c.origem !== 'CADEIA'))
     .map((e) => e.papel);
+}
+
+// ---------------------------------------------------------------------------
+// Escada do organograma: Coordenador → Gerente
+// ---------------------------------------------------------------------------
+
+const semAcento = (s) => String(s || '')
+  .normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .toUpperCase().trim();
+
+/**
+ * Cargo de gerência. "GERENTE EXECUTIVO", "GERENTE FINANCEIRO" e "GERENTE DE
+ * PMO" contam — todos gerenciam; o que a regra procura é o degrau, não o
+ * sufixo do cargo.
+ */
+export const ehGerente = (funcao) => semAcento(funcao).includes('GERENTE');
+
+/** Acima de gerente: diretoria e CEO. Fim da linha da escada. */
+export const ehAcimaDeGerente = (funcao) => {
+  const f = semAcento(funcao);
+  return f.startsWith('DIRETOR') || f === 'CEO';
+};
+
+/** Já é gerência (ou mais alto)? Quem é, não precisa de mais ninguém acima. */
+export const ehGerencia = (funcao) => ehGerente(funcao) || ehAcimaDeGerente(funcao);
+
+export const PAPEL_GESTOR_DIRETO = 'Gestor direto';
+export const PAPEL_GERENTE = 'Gerente';
+
+/**
+ * A escada de aprovação tirada do organograma: o superior direto e, acima dele,
+ * o gerente.
+ *
+ * Dois degraus, na ordem em que decidem:
+ *
+ *   1. SUPERIOR DIRETO — o "coordenador da pessoa". Quem responde por ela no
+ *      dia a dia avaliza o pedido antes de qualquer outra coisa.
+ *   2. GERENTE ACIMA DELE — o primeiro cargo de gerência subindo a cadeia a
+ *      partir do coordenador. Sem gerente na cadeia (acontece em Comercial,
+ *      onde o coordenador responde direto à diretoria), cai no primeiro diretor
+ *      ou no CEO: o degrau existe, só está mais acima.
+ *
+ * A escada PARA no primeiro degrau quando o superior direto já é gerência —
+ * senão o pedido de quem responde a um gerente subiria para a diretoria, e o de
+ * quem responde a um diretor iria ao CEO, por menor que fosse.
+ *
+ * `superiores` é a saída de `chamados_adm_cadeia`: [{ nivel, id, nome, funcao }],
+ * nível 1 = superior direto. Pessoas inativas já vêm de fora pela RPC, então o
+ * primeiro da lista pode ser um avô — e é ele quem responde pela pessoa hoje.
+ *
+ * @returns {Array<{id: string, nome: string, funcao: string, papel: string}>}
+ */
+export function escadaDoOrganograma(superiores = []) {
+  const cadeia = [...superiores]
+    .filter((p) => p?.id)
+    .sort((a, b) => (a.nivel || 0) - (b.nivel || 0));
+
+  const direto = cadeia[0];
+  if (!direto) return [];
+
+  const passos = [{ ...direto, papel: PAPEL_GESTOR_DIRETO }];
+  if (ehGerencia(direto.funcao)) return passos;
+
+  const acima = cadeia.slice(1).filter((p) => p.id !== direto.id);
+  const gerente = acima.find((p) => ehGerente(p.funcao))
+    || acima.find((p) => ehAcimaDeGerente(p.funcao));
+  if (gerente) passos.push({ ...gerente, papel: PAPEL_GERENTE });
+
+  return passos;
 }

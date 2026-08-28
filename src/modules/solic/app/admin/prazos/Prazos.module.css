@@ -5,30 +5,30 @@
 
 .headerCard{
   background: var(--surface, #fff);
-  border: 1px solid rgba(38,64,93,0.12);
-  border-radius: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
   padding: 16px;
-  box-shadow: 0 6px 18px rgba(38,64,93,0.06);
+  box-shadow: var(--shadow-sm);
 }
 
 .title{
-  font-weight: 900;
-  font-size: 16px;
-  color: #26405d;
+  font-weight: 700;
+  font-size: var(--font-size-lg);
+  color: var(--text);
   margin-bottom: 6px;
 }
 
 .subtitle{
-  font-size: 13px;
-  color: rgba(38,64,93,0.68);
+  font-size: var(--font-size-sm);
+  color: var(--muted);
   line-height: 1.45;
 }
 
 .error{
   margin-top: 8px;
-  font-size: 13px;
-  font-weight: 900;
-  color: #b85236;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--tone-erro-fg);
 }
 
 /* Kanban grid */
@@ -39,9 +39,9 @@
 }
 
 .col{
-  background: rgba(255,255,255,0.75);
-  border: 1px solid rgba(38,64,93,0.12);
-  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -52,14 +52,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 12px;
-  border-bottom: 1px solid rgba(38,64,93,0.10);
-  background: rgba(242,242,242,0.65);
+  padding: var(--table-cell-pad);
+  border-bottom: 1px solid var(--border);
+  background: var(--neutral-bg);
 }
 
 .colTitle{
-  font-weight: 900;
-  color: #26405d;
+  font-weight: 700;
+  color: var(--text);
 }
 
 .colCount{
@@ -67,13 +67,13 @@
   height: 24px;
   padding: 0 10px;
   border-radius: 999px;
-  background: rgba(38,64,93,0.08);
-  color: rgba(38,64,93,0.85);
-  font-weight: 900;
+  background: var(--neutral-bg);
+  color: var(--text);
+  font-weight: 700;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: var(--font-size-xs);
 }
 
 .drop{
@@ -88,10 +88,10 @@
   position: relative;
   display: grid;
   grid-template-columns: 6px 1fr;
-  border-radius: 14px;
-  border: 1px solid rgba(38,64,93,0.12);
+  border-radius: var(--card-radius);
+  border: 1px solid var(--border);
   background: #fff;
-  box-shadow: 0 8px 18px rgba(38,64,93,0.06);
+  box-shadow: var(--shadow-md);
   overflow: hidden;
   text-decoration: none;
   color: inherit;
@@ -100,11 +100,11 @@
 
 .cardItem:hover{
   transform: translateY(-1px);
-  box-shadow: 0 12px 28px rgba(38,64,93,0.08);
+  box-shadow: 0 12px 28px var(--neutral-bg);
 }
 
 .dragging{
-  box-shadow: 0 16px 36px rgba(38,64,93,0.18);
+  box-shadow: 0 16px 36px var(--border-strong);
 }
 
 .bar{
@@ -125,41 +125,41 @@
 }
 
 .code{
-  font-weight: 900;
-  color: #26405d;
+  font-weight: 700;
+  color: var(--text);
 }
 
 .pill{
-  border: 1px solid rgba(38,64,93,0.14);
+  border: 1px solid var(--border);
   border-radius: 999px;
   padding: 3px 10px;
-  font-weight: 900;
-  font-size: 12px;
-  background: rgba(255,255,255,0.7);
+  font-weight: 700;
+  font-size: var(--font-size-xs);
+  background: var(--surface);
 }
 
 .name{
-  font-weight: 900;
-  color: rgba(38,64,93,0.85);
+  font-weight: 700;
+  color: var(--text);
   margin-bottom: 8px;
-  font-size: 13px;
+  font-size: var(--font-size-sm);
 }
 
 .meta{
   display: grid;
   gap: 4px;
-  font-size: 12px;
-  color: rgba(38,64,93,0.72);
+  font-size: var(--font-size-xs);
+  color: var(--muted);
   line-height: 1.35;
 }
 
 .empty{
   padding: 10px;
-  color: rgba(38,64,93,0.55);
-  font-weight: 800;
+  color: var(--muted);
+  font-weight: 700;
   text-align: center;
-  border: 1px dashed rgba(38,64,93,0.18);
-  border-radius: 14px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--card-radius);
   background: rgba(255,255,255,0.65);
 }
 

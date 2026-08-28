@@ -119,16 +119,16 @@ export default function FormAlteracao() {
           {colSel && (
             <div style={{ background: 'var(--color-bg-subtle)', borderRadius: 'var(--radius-md)', padding: 'var(--space-md)', marginBottom: 'var(--space-lg)', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
               <User size={16} color="var(--color-text-muted)" />
-              <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+              <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
                 Valor atual: <strong>{formatarMoeda(colSel.salario)}</strong>
               </span>
-              <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+              <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
                 Função atual: <strong>{colSel.funcao || '—'}</strong>
               </span>
             </div>
           )}
 
-          <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: 'var(--space-lg)' }}>
+          <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-lg)' }}>
             Preencha apenas o que deseja alterar (pelo menos um dos campos abaixo).
           </p>
 
@@ -158,7 +158,7 @@ export default function FormAlteracao() {
                 value={form.funcao_outro}
                 onChange={(e) => setForm((p) => ({ ...p, funcao_outro: e.target.value }))}
                 required />
-              <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+              <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
                 A função informada será adicionada à lista oficial.
               </span>
             </div>

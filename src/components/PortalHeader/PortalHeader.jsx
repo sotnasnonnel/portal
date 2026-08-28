@@ -1,5 +1,6 @@
 import { Menu, Calendar, HelpCircle } from "lucide-react";
 import { GUIA_OPEN_EVENT } from "../Guia/guides";
+import SinoNotificacoes from "../Notificacoes/SinoNotificacoes";
 import "./PortalHeader.css";
 
 // Barra superior compartilhada pelos 3 apps (padrão do Gestão de Pessoas):
@@ -8,6 +9,9 @@ import "./PortalHeader.css";
 //  - onMenuToggle: opcional; quando passado, mostra o botão de menu (drawer mobile)
 //  - acoes: opcional; botões do app entram à esquerda do "?". Fica vazio nos
 //    apps que não passam nada, então a barra continua idêntica nos outros dois.
+//
+// O sino de notificações mora aqui (e não em cada app) porque a central é uma
+// só: quem tem pedido em qualquer módulo vê o aviso de onde estiver.
 export default function PortalHeader({ userName, onMenuToggle, upper = false, acoes = null }) {
   const hoje = new Date().toLocaleDateString("pt-BR", {
     weekday: "long",
@@ -35,6 +39,7 @@ export default function PortalHeader({ userName, onMenuToggle, upper = false, ac
 
       <div className="portal-header-right">
         {acoes}
+        <SinoNotificacoes />
         <button
           type="button"
           className="portal-header-help"
