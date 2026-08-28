@@ -4,10 +4,11 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import {
-  CATEGORIAS, SITUACOES, GENEROS, SETORES, TAMANHOS_ALFA, ehOperadorEstoque,
+  CATEGORIAS, SITUACOES, GENEROS, SETORES, TAMANHOS_ALFA, ehOperadorEstoque, podeGravarEstoque,
 } from '../../../../config/estoque';
 import { listarPosicao, salvarVariante, garantirItem, criarVariante } from '../../lib/estoque';
 import { filtrarPosicao, detalheVariante, EM_ALERTA } from '../../lib/catalogo';
+import AvisoVitrine from '../components/AvisoVitrine';
 
 const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const moeda = (v) => (v === null || v === undefined ? '—' : BRL.format(v));
@@ -19,7 +20,10 @@ const NOVO = {
 
 export default function PosicaoEstoque() {
   const { modules } = useAuth();
+  // `operador` decide o que APARECE; `podeGravar` decide o que grava. Em modo
+  // vitrine o operador continua vendo a tabela, só sem as ações de edição.
   const operador = ehOperadorEstoque(modules);
+  const podeGravar = podeGravarEstoque(modules);
 
   const [posicao, setPosicao] = useState([]);
   const [carregando, setCarregando] = useState(true);
@@ -121,7 +125,7 @@ export default function PosicaoEstoque() {
             contagem, use o Inventário; aqui edita-se mínimo, máximo e custo.
           </p>
         </div>
-        {operador && (
+        {podeGravar && (
           <button type="button" className="est-btn est-btn-primary est-btn-sm"
             onClick={() => setNovoAberto((v) => !v)}>
             <Plus size={15} /> Novo item
@@ -129,9 +133,10 @@ export default function PosicaoEstoque() {
         )}
       </div>
 
+      <AvisoVitrine acao="editar" />
       {erro && <div className="est-aviso tom-erro"><AlertCircle size={16} /> {erro}</div>}
 
-      {operador && novoAberto && (
+      {podeGravar && novoAberto && (
         <form className="est-card" onSubmit={criar}>
           <h2 className="est-card-tit"><Plus size={13} /> Cadastrar item</h2>
           <p className="est-campo-dica" style={{ marginBottom: 14 }}>
@@ -277,7 +282,7 @@ export default function PosicaoEstoque() {
                 <th className="num">Custo un.</th>
                 <th className="num">Valor</th>
                 <th>Situação</th>
-                {operador && <th aria-label="Ações" />}
+                {podeGravar && <th aria-label="Ações" />}
               </tr>
             </thead>
             <tbody>
@@ -318,7 +323,7 @@ export default function PosicaoEstoque() {
                     </td>
                     <td className="num">{v.custo_unitario ? BRL.format(v.valor_total) : '—'}</td>
                     <td><span className={`est-badge tom-${sit.tom}`}>{sit.label}</span></td>
-                    {operador && (
+                    {podeGravar && (
                       <td>
                         <div style={{ display: 'flex', gap: 6 }}>
                           {edit ? (

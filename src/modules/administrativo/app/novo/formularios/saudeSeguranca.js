@@ -1,6 +1,10 @@
 // Regras dos serviços de Saúde e segurança (EPI, uniforme, outras demandas).
-// Sem imports, para rodar sob `node --test` e não quebrar o fast refresh —
-// as listas de opções ficam em opcoes.js.
+// Só importa o flag do Estoque, que é um arquivo sem dependências — assim o
+// módulo continua rodando sob `node --test` e sem quebrar o fast refresh.
+// As listas de opções ficam em opcoes.js.
+// Extensão explícita: este arquivo roda sob `node --test`, que não resolve
+// import sem `.js` (o Vite resolve, e por isso o build não acusaria).
+import { ESTOQUE_VITRINE } from '../../../../../config/estoqueModo.js';
 
 // "novo ou substituição": a planilha traz o motivo como quebra/desgaste, e o
 // pedido de item novo é o terceiro caso.
@@ -31,8 +35,23 @@ export const inicialSaudeSeguranca = () => ({
  * pedem coisas diferentes. A descrição e os anexos não entram aqui: são os do
  * próprio chamado, e duplicá-los faria a pessoa escrever a mesma coisa duas vezes.
  */
-export function validarSaudeSeguranca(v, servico) {
+export function validarSaudeSeguranca(v, servico, { vitrine = ESTOQUE_VITRINE } = {}) {
   if (!v.cc?.trim()) return 'Informe o centro de custo.';
+
+  // Modo vitrine: o catálogo do Estoque ainda não vale, então o pedido volta ao
+  // formato antigo — lista de EPIs e texto livre de uniforme. Sem isto, com o
+  // catálogo vazio, ninguém conseguiria abrir esses chamados.
+  if (vitrine) {
+    if (servico === 'epi') {
+      if (!v.tipo?.length) return 'Escolha ao menos um EPI.';
+      if (!v.motivo) return 'Informe o motivo do pedido.';
+    }
+    if (servico === 'uniforme') {
+      if (!v.tipo_livre?.trim()) return 'Descreva as peças de uniforme e os tamanhos.';
+      if (!v.motivo) return 'Informe o motivo do pedido.';
+    }
+    return '';
+  }
 
   if (servico === 'epi' || servico === 'uniforme') {
     const itens = v.itens || [];

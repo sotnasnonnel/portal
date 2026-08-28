@@ -5,14 +5,23 @@
 // contrário. As duas libs usadas aqui são puras.
 
 import { montarMovimentos, validarCarrinho } from '../../estoque/lib/carrinho.js';
+import { ESTOQUE_VITRINE } from '../../../config/estoqueModo.js';
 
 /**
  * Só EPI e uniforme mexem no estoque. Os outros ~24 serviços do catálogo (frota,
  * viagem, TI…) não têm item nenhum, e para eles a tela de fechamento continua
  * exatamente como sempre foi — sem nem uma query a mais.
+ *
+ * Em modo vitrine devolve false para TODOS: é o interruptor que desliga a
+ * integração inteira no Administrativo de uma vez (card de baixa, consulta de
+ * saldo e a coluna "Em estoque" saem juntos, porque todos dependem daqui).
+ *
+ * `vitrine` é injetável para o teste conseguir exercitar os dois modos sem
+ * depender do valor atual do flag.
  */
-export const chamadoUsaEstoque = (chamado) =>
-  chamado?.classe === 'saude-seguranca'
+export const chamadoUsaEstoque = (chamado, { vitrine = ESTOQUE_VITRINE } = {}) =>
+  !vitrine
+  && chamado?.classe === 'saude-seguranca'
   && ['epi', 'uniforme'].includes(chamado?.servico);
 
 /** Categoria do catálogo correspondente ao serviço. */

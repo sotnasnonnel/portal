@@ -9,14 +9,26 @@ const CAPACETE = { id: 'v1', descricao: 'CAPACETE 3M', ca: '29638', saldo: 5 };
 const BOTINA = { id: 'v2', descricao: 'BOTINA', tamanho: '42', saldo: 1 };
 const POSICAO = [CAPACETE, BOTINA];
 
+// `vitrine: false` = módulo ligado. Explícito para o teste não depender do
+// valor atual de ESTOQUE_VITRINE.
+const LIGADO = { vitrine: false };
+
 test('chamadoUsaEstoque só vale para EPI e uniforme', () => {
-  assert.equal(chamadoUsaEstoque({ classe: 'saude-seguranca', servico: 'epi' }), true);
-  assert.equal(chamadoUsaEstoque({ classe: 'saude-seguranca', servico: 'uniforme' }), true);
+  assert.equal(chamadoUsaEstoque({ classe: 'saude-seguranca', servico: 'epi' }, LIGADO), true);
+  assert.equal(chamadoUsaEstoque({ classe: 'saude-seguranca', servico: 'uniforme' }, LIGADO), true);
   // "Outras demandas" mora na mesma classe, mas não tem item de estoque.
-  assert.equal(chamadoUsaEstoque({ classe: 'saude-seguranca', servico: 'outras-demandas' }), false);
-  assert.equal(chamadoUsaEstoque({ classe: 'frota', servico: 'reserva-veiculos' }), false);
-  assert.equal(chamadoUsaEstoque(null), false);
-  assert.equal(chamadoUsaEstoque(undefined), false);
+  assert.equal(chamadoUsaEstoque({ classe: 'saude-seguranca', servico: 'outras-demandas' }, LIGADO), false);
+  assert.equal(chamadoUsaEstoque({ classe: 'frota', servico: 'reserva-veiculos' }, LIGADO), false);
+  assert.equal(chamadoUsaEstoque(null, LIGADO), false);
+  assert.equal(chamadoUsaEstoque(undefined, LIGADO), false);
+});
+
+// O interruptor: em vitrine a integração inteira com o Adm some de uma vez —
+// card de baixa, consulta de saldo e coluna "Em estoque" dependem todos daqui.
+test('modo vitrine desliga a integração para todos os serviços', () => {
+  const V = { vitrine: true };
+  assert.equal(chamadoUsaEstoque({ classe: 'saude-seguranca', servico: 'epi' }, V), false);
+  assert.equal(chamadoUsaEstoque({ classe: 'saude-seguranca', servico: 'uniforme' }, V), false);
 });
 
 test('categoriaDoChamado mapeia o serviço para a categoria do catálogo', () => {

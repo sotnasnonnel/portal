@@ -2,18 +2,20 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpFromLine, Loader2, AlertCircle, CheckCircle2, Ticket, Info } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { MOTIVOS_SAIDA, CATEGORIAS, ehOperadorEstoque } from '../../../../config/estoque';
+import { MOTIVOS_SAIDA, CATEGORIAS, ehOperadorEstoque, podeGravarEstoque } from '../../../../config/estoque';
 import {
   listarPosicao, listarPessoasEstoque, listarChamadosElegiveis, lancarMovimentos, baixarChamado,
 } from '../../lib/estoque';
 import { linhaVazia, validarCarrinho, montarMovimentos } from '../../lib/carrinho';
 import Carrinho from '../components/Carrinho';
+import AvisoVitrine from '../components/AvisoVitrine';
 
 const RESOLUCAO_PADRAO = 'Itens entregues pelo Estoque.';
 
 export default function SaidaEstoque() {
   const { modules } = useAuth();
   const operador = ehOperadorEstoque(modules);
+  const podeGravar = podeGravarEstoque(modules);
 
   const [posicao, setPosicao] = useState([]);
   const [pessoas, setPessoas] = useState([]);
@@ -142,6 +144,7 @@ export default function SaidaEstoque() {
         </div>
       </div>
 
+      <AvisoVitrine acao="registrar saída" />
       {erro && <div className="est-aviso tom-erro"><AlertCircle size={16} /> {erro}</div>}
       {feito && <div className="est-aviso tom-ok"><CheckCircle2 size={16} /> {feito}</div>}
 
@@ -218,7 +221,7 @@ export default function SaidaEstoque() {
           )}
 
           <div className="est-acoes">
-            <button type="submit" className="est-btn est-btn-primary" disabled={ocupado || carregando}>
+            <button type="submit" className="est-btn est-btn-primary" disabled={ocupado || carregando || !podeGravar}>
               {ocupado ? <Loader2 size={16} className="est-spin" /> : <ArrowUpFromLine size={16} />}
               {chamadoId ? 'Baixar e fechar chamado' : 'Registrar saída'}
             </button>

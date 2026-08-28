@@ -2,14 +2,16 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ClipboardCheck, Loader2, AlertCircle, CheckCircle2, Search } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { CATEGORIAS, MOTIVOS_AJUSTE, ehOperadorEstoque } from '../../../../config/estoque';
+import { CATEGORIAS, MOTIVOS_AJUSTE, ehOperadorEstoque, podeGravarEstoque } from '../../../../config/estoque';
 import { listarPosicao, lancarMovimentos } from '../../lib/estoque';
 import { movimentosDeInventario } from '../../lib/carrinho';
 import { filtrarPosicao, detalheVariante } from '../../lib/catalogo';
+import AvisoVitrine from '../components/AvisoVitrine';
 
 export default function AjusteEstoque() {
   const { modules } = useAuth();
   const operador = ehOperadorEstoque(modules);
+  const podeGravar = podeGravarEstoque(modules);
 
   const [posicao, setPosicao] = useState([]);
   const [contagem, setContagem] = useState({});   // variante_id -> valor digitado
@@ -93,6 +95,7 @@ export default function AjusteEstoque() {
         </div>
       </div>
 
+      <AvisoVitrine acao="aplicar ajustes" />
       {erro && <div className="est-aviso tom-erro"><AlertCircle size={16} /> {erro}</div>}
       {feito && <div className="est-aviso tom-ok"><CheckCircle2 size={16} /> {feito}</div>}
 
@@ -175,7 +178,7 @@ export default function AjusteEstoque() {
         <span><strong>{contados}</strong> {contados === 1 ? 'item contado' : 'itens contados'}</span>
         <span><strong>{movimentos.length}</strong> {movimentos.length === 1 ? 'divergência' : 'divergências'}</span>
         <button type="button" className="est-btn est-btn-primary est-acoes-fim"
-          disabled={ocupado || !movimentos.length} onClick={enviar}>
+          disabled={ocupado || !movimentos.length || !podeGravar} onClick={enviar}>
           {ocupado ? <Loader2 size={16} className="est-spin" /> : <ClipboardCheck size={16} />}
           Aplicar ajustes
         </button>
