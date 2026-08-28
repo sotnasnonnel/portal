@@ -31,6 +31,7 @@ export const PROGRAMAS_EM_BREVE = true;
 export const PROGRAMAS_LIBERADOS = [
   'marcus.guimaraes@phdengenharia.eng.br',
   'andre.guimaraes@phdengenharia.eng.br',
+  'lennon.santos@phdengenharia.eng.br',
 ];
 
 export const podeAcessarProgramas = (user) => !PROGRAMAS_EM_BREVE
