@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Search, Loader2, Boxes, ChevronDown } from 'lucide-react';
+import { Search, Loader2, Boxes, ChevronDown, Hammer } from 'lucide-react';
 import { listarPosicao } from '../../lib/estoque';
 import { filtrarPosicao, detalheVariante } from '../../lib/catalogo';
 import { SITUACOES } from '../../../../config/estoque';
@@ -59,6 +59,10 @@ export default function ConsultaEstoque({ categoria = '', titulo = 'Consultar es
         >
           <Boxes size={15} />
           <strong>{titulo}</strong>
+          {/* A marca fica NO próprio cabeçalho, e não numa faixa acima: é aqui
+              que a pessoa clica, e é aqui que ela precisa saber que o número
+              ainda não é para valer. */}
+          {ESTOQUE_VITRINE && <span className="est-tag-dev">Em desenvolvimento</span>}
           <span className="est-embed-dica">
             {aberto ? 'Fechar' : 'Ver se tem o item antes de responder'}
           </span>
@@ -67,6 +71,17 @@ export default function ConsultaEstoque({ categoria = '', titulo = 'Consultar es
 
         {aberto && (
           <>
+            {ESTOQUE_VITRINE && (
+              <div className="est-aviso tom-alerta" style={{ marginTop: 12, marginBottom: 0 }}>
+                <Hammer size={16} />
+                <span>
+                  Módulo de Estoque <strong>em desenvolvimento</strong>. A consulta já está
+                  aqui para você conhecer, mas o catálogo só entra no lançamento — até lá
+                  não use estes números para decidir uma entrega.
+                </span>
+              </div>
+            )}
+
             <div className="est-linha" style={{ marginTop: 12 }}>
               <div className="est-busca" style={{ flex: '2 1 220px' }}>
                 <Search size={16} />

@@ -26,11 +26,14 @@ export { ESTOQUE_VITRINE, AVISO_VITRINE } from './estoqueModo';
  */
 export const ESTOQUE_EM_BREVE = true;
 
+/**
+ * Quem enxerga o módulo enquanto ESTOQUE_EM_BREVE for true. Todos entram em
+ * modo VITRINE (ver config/estoqueModo.js) — ver as telas não é poder gravar.
+ *
+ * Só e-mail CORPORATIVO: o login é OAuth Microsoft, e endereço pessoal não
+ * autentica (conferido — não há colaborador cadastrado com um).
+ */
 export const ESTOQUE_LIBERADOS = [
-  // O login do portal é OAuth Microsoft corporativo; o e-mail pessoal está aqui
-  // porque foi o informado, mas provavelmente não é o que autentica. Se o acesso
-  // não abrir, o endereço certo é o corporativo logo abaixo.
-  'mrenanrguimaraes@gmail.com',
   'marcus.guimaraes@phdengenharia.eng.br',
   'andre.guimaraes@phdengenharia.eng.br',
   'lennon.santos@phdengenharia.eng.br',
