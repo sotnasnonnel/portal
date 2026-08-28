@@ -1,21 +1,28 @@
 import {
-  Boxes, BarChart3, ArrowDownToLine, ArrowUpFromLine, ClipboardCheck, History, FileSpreadsheet,
+  Boxes, BarChart3, ArrowDownToLine, ArrowUpFromLine, ClipboardCheck, History,
+  FileSpreadsheet, PackageSearch,
 } from 'lucide-react';
 
-// Navegação da sidebar do Estoque. Fica fora do Sidebar.jsx para não quebrar o
-// fast refresh (um arquivo de componente só deve exportar componentes).
+// Navegação da sidebar do Estoque, na divisão padrão do portal (mesma do
+// Financeiro): grupos colapsáveis para o dia a dia + seção simples de
+// Administração. Fica fora do Sidebar.jsx para não quebrar o fast refresh
+// (um arquivo de componente só deve exportar componentes).
 //
-// Consultar é de todo mundo: quem atende um chamado precisa saber se tem o item
-// antes de prometer. Movimentar é só do operador (administrativo_role), e a RLS
-// é quem realmente barra — esconder o item aqui só evita o clique que daria erro.
+// CONSULTA   -> o que todo mundo pode ver. Quem atende um chamado precisa saber
+//               se tem o item antes de prometer, então isso não tem gate.
+// MOVIMENTAR -> só o operador (administrativo_role). A RLS é quem realmente
+//               barra; esconder aqui só evita o clique que daria erro.
 export function navSections({ operador = false } = {}) {
   const secoes = [
     {
-      label: 'Menu',
+      label: 'Consulta',
+      group: true,
+      key: 'consulta',
+      Icon: PackageSearch,
       items: [
         { label: 'Posição de estoque', href: '/estoque/posicao', Icon: Boxes },
-        { label: 'Indicadores', href: '/estoque/dashboard', Icon: BarChart3 },
         { label: 'Movimentações', href: '/estoque/movimentos', Icon: History },
+        { label: 'Indicadores', href: '/estoque/dashboard', Icon: BarChart3 },
       ],
     },
   ];
@@ -23,6 +30,9 @@ export function navSections({ operador = false } = {}) {
   if (operador) {
     secoes.push({
       label: 'Movimentar',
+      group: true,
+      key: 'movimentar',
+      Icon: ArrowUpFromLine,
       items: [
         { label: 'Entrada', href: '/estoque/entrada', Icon: ArrowDownToLine },
         { label: 'Saída', href: '/estoque/saida', Icon: ArrowUpFromLine },
@@ -31,6 +41,7 @@ export function navSections({ operador = false } = {}) {
     });
     secoes.push({
       label: 'Administração',
+      key: 'admin',
       items: [
         { label: 'Importar planilha', href: '/estoque/importar', Icon: FileSpreadsheet },
       ],

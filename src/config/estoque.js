@@ -17,9 +17,9 @@ import { Boxes, HardHat, Shirt } from 'lucide-react';
 
 /**
  * Trava de lançamento, no mesmo molde de ADM_EM_BREVE (config/administrativo.js).
- * Enquanto `true`, o módulo some do AppSwitcher e da Home e a rota devolve para
- * o início — exceto para a lista abaixo. Vira `false` quando o catálogo estiver
- * carregado e a baixa pelo chamado tiver rodado em produção.
+ * Enquanto `true`, o módulo some da Home e a rota devolve para o início —
+ * exceto para a lista abaixo. Vira `false` quando o catálogo estiver carregado
+ * e a baixa pelo chamado tiver rodado em produção.
  */
 export const ESTOQUE_EM_BREVE = true;
 
