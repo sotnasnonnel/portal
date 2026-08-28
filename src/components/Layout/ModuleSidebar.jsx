@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ChevronDown, ChevronsLeft, ChevronsRight, Lock, LogOut } from 'lucide-react';
+import { ChevronDown, ChevronsLeft, ChevronsRight, Home, Lock, LogOut } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import AppSwitcher from '../AppSwitcher/AppSwitcher';
 import AvatarUsuario from '../UI/AvatarUsuario';
 import './ModuleSidebar.css';
 
@@ -25,6 +24,10 @@ import './ModuleSidebar.css';
 //   - locked       -> item/grupo "em breve": cadeado, sem navegar nem expandir
 //   - badge        -> contador; num grupo fechado, soma a dos filhos
 
+// Marca da PHD no topo da sidebar. O PNG do wordmark (assets/logo-phd.png) é
+// branco, para fundo escuro; aqui a sidebar é branca, então ele entra como
+// MÁSCARA CSS e a cor vem do background — ver .modSb-marca no CSS.
+
 function iniciais(nome, email) {
   const base = (nome || email || '').trim();
   if (!base) return '?';
@@ -34,10 +37,8 @@ function iniciais(nome, email) {
 }
 
 export default function ModuleSidebar({
-  moduloKey,
-  titulo,
-  Icon,
-  logo,
+  // moduloKey/titulo/Icon/logo continuam sendo passados pelos módulos, mas o
+  // topo agora é só a marca da PHD — quem identifica o módulo é o conteúdo.
   secoes = [],
   papelLabel = '',
   aberto = false,
@@ -116,13 +117,10 @@ export default function ModuleSidebar({
             to="/home"
             className="modSb-brand"
             title="Voltar ao início"
-            aria-label="Voltar ao início"
+            aria-label="PHD Engenharia — voltar ao início"
             onClick={onFechar}
           >
-            <span className={`modSb-logo ${logo ? 'is-img' : ''}`} aria-hidden="true">
-              {logo || (Icon ? <Icon size={20} /> : null)}
-            </span>
-            <strong className="modSb-brandtext">{titulo}</strong>
+            <span className="modSb-marca" role="img" aria-label="PHD Engenharia" />
           </Link>
           {onToggleCollapse && (
             <button
@@ -138,7 +136,10 @@ export default function ModuleSidebar({
         </div>
 
         <nav className="modSb-nav">
-          <AppSwitcher currentKey={moduloKey} onNavigate={onFechar} />
+          <Link to="/home" className="modSb-link modSb-modulos" onClick={onFechar} title="Módulos">
+            <Home size={16} />
+            <span>Módulos</span>
+          </Link>
           {secoes.map((sec) => {
             if (!sec.group) {
               return (

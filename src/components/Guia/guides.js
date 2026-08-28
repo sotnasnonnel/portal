@@ -535,7 +535,7 @@ const ADM_USAR_STEPS = [
     icon: Search,
     titulo: "Ache o serviço certo",
     texto:
-      'Em "Abrir chamado" estão as classes de serviço. Clique numa e os serviços dela aparecem logo abaixo; classe que tem um serviço só abre o formulário direto. Se você já sabe o que quer, use a busca do topo — digitar "uber", "EPI" ou "veículo" encontra o serviço sem precisar adivinhar em qual classe ele está.',
+      'Em "Abrir chamado" estão as classes de serviço. Clique numa e os serviços dela abrem numa janela; classe que tem um serviço só abre o formulário direto. Se você já sabe o que quer, use a busca do topo — digitar "uber", "EPI" ou "veículo" encontra o serviço sem precisar adivinhar em qual classe ele está.',
   },
   {
     icon: FilePlus2,
