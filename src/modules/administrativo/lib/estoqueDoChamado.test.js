@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  chamadoUsaEstoque, categoriaDoChamado, jaEntreguePorVariante, montarLinhasDeBaixa,
-  linhasComQuantidade, validarLinhasDeBaixa, movimentosDaBaixa,
+  chamadoDeEstoque, chamadoUsaEstoque, categoriaDoChamado, jaEntreguePorVariante,
+  montarLinhasDeBaixa, linhasComQuantidade, validarLinhasDeBaixa, movimentosDaBaixa,
 } from './estoqueDoChamado.js';
 
 const CAPACETE = { id: 'v1', descricao: 'CAPACETE 3M', ca: '29638', saldo: 5 };
@@ -23,12 +23,34 @@ test('chamadoUsaEstoque só vale para EPI e uniforme', () => {
   assert.equal(chamadoUsaEstoque(undefined, LIGADO), false);
 });
 
-// O interruptor: em vitrine a integração inteira com o Adm some de uma vez —
-// card de baixa, consulta de saldo e coluna "Em estoque" dependem todos daqui.
-test('modo vitrine desliga a integração para todos os serviços', () => {
-  const V = { vitrine: true };
-  assert.equal(chamadoUsaEstoque({ classe: 'saude-seguranca', servico: 'epi' }, V), false);
-  assert.equal(chamadoUsaEstoque({ classe: 'saude-seguranca', servico: 'uniforme' }, V), false);
+test('chamadoDeEstoque classifica o serviço, sem depender do modo', () => {
+  assert.equal(chamadoDeEstoque({ classe: 'saude-seguranca', servico: 'epi' }), true);
+  assert.equal(chamadoDeEstoque({ classe: 'saude-seguranca', servico: 'uniforme' }), true);
+  assert.equal(chamadoDeEstoque({ classe: 'saude-seguranca', servico: 'outras-demandas' }), false);
+  assert.equal(chamadoDeEstoque({ classe: 'frota', servico: 'reserva-veiculos' }), false);
+  assert.equal(chamadoDeEstoque(null), false);
+});
+
+// A separação que importa: em vitrine o Adm segue como antes (sem baixa, com o
+// formulário antigo), MAS a consulta de saldo continua de pé — ler não muda
+// nada, e é a informação que o Adm usa para decidir se fornece.
+test('modo vitrine tira a baixa mas mantém a consulta', () => {
+  const epi = { classe: 'saude-seguranca', servico: 'epi' };
+  const uniforme = { classe: 'saude-seguranca', servico: 'uniforme' };
+
+  assert.equal(chamadoUsaEstoque(epi, { vitrine: true }), false, 'baixa desligada');
+  assert.equal(chamadoUsaEstoque(uniforme, { vitrine: true }), false, 'baixa desligada');
+
+  // A consulta não olha o modo.
+  assert.equal(chamadoDeEstoque(epi), true, 'consulta continua');
+  assert.equal(chamadoDeEstoque(uniforme), true, 'consulta continua');
+});
+
+// Serviço sem material nenhum não ganha consulta em modo nenhum.
+test('serviço fora de EPI/uniforme não ganha consulta nem baixa', () => {
+  const frota = { classe: 'frota', servico: 'reserva-veiculos' };
+  assert.equal(chamadoDeEstoque(frota), false);
+  assert.equal(chamadoUsaEstoque(frota, { vitrine: false }), false);
 });
 
 test('categoriaDoChamado mapeia o serviço para a categoria do catálogo', () => {

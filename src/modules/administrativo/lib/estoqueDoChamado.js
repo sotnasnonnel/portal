@@ -8,21 +8,31 @@ import { montarMovimentos, validarCarrinho } from '../../estoque/lib/carrinho.js
 import { ESTOQUE_VITRINE } from '../../../config/estoqueModo.js';
 
 /**
- * Só EPI e uniforme mexem no estoque. Os outros ~24 serviços do catálogo (frota,
- * viagem, TI…) não têm item nenhum, e para eles a tela de fechamento continua
- * exatamente como sempre foi — sem nem uma query a mais.
+ * O chamado é de material de estoque? Só EPI e uniforme são; os outros ~24
+ * serviços do catálogo (frota, viagem, TI…) não têm item nenhum, e para eles a
+ * tela continua exatamente como sempre foi — sem nem uma query a mais.
  *
- * Em modo vitrine devolve false para TODOS: é o interruptor que desliga a
- * integração inteira no Administrativo de uma vez (card de baixa, consulta de
- * saldo e a coluna "Em estoque" saem juntos, porque todos dependem daqui).
+ * Classificação pura, sem depender do modo: vale para tudo que só LÊ estoque,
+ * como a consulta de saldo dentro do chamado.
+ */
+export const chamadoDeEstoque = (chamado) =>
+  chamado?.classe === 'saude-seguranca'
+  && ['epi', 'uniforme'].includes(chamado?.servico);
+
+/**
+ * O chamado pode dar BAIXA no estoque ao fechar?
  *
- * `vitrine` é injetável para o teste conseguir exercitar os dois modos sem
- * depender do valor atual do flag.
+ * Separado de `chamadoDeEstoque` de propósito: em modo vitrine o Administrativo
+ * funciona como antes — sem card de baixa e com o formulário antigo —, mas a
+ * CONSULTA de saldo continua disponível, porque ler não muda nada. Misturar as
+ * duas coisas num gate só tirava do Adm justamente a informação que ele usa
+ * para decidir se fornece.
+ *
+ * `vitrine` é injetável para o teste exercitar os dois modos sem depender do
+ * valor atual do flag.
  */
 export const chamadoUsaEstoque = (chamado, { vitrine = ESTOQUE_VITRINE } = {}) =>
-  !vitrine
-  && chamado?.classe === 'saude-seguranca'
-  && ['epi', 'uniforme'].includes(chamado?.servico);
+  !vitrine && chamadoDeEstoque(chamado);
 
 /** Categoria do catálogo correspondente ao serviço. */
 export const categoriaDoChamado = (chamado) =>

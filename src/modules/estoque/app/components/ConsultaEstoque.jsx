@@ -3,6 +3,7 @@ import { Search, Loader2, Boxes, ChevronDown } from 'lucide-react';
 import { listarPosicao } from '../../lib/estoque';
 import { filtrarPosicao, detalheVariante } from '../../lib/catalogo';
 import { SITUACOES } from '../../../../config/estoque';
+import { ESTOQUE_VITRINE } from '../../../../config/estoqueModo';
 // O CSS do módulo vem junto: este componente é usado DENTRO do Administrativo,
 // que não carrega o estoque.css. Tudo está escopado em .estRoot, então importar
 // aqui não vaza estilo para o módulo hospedeiro.
@@ -100,7 +101,18 @@ export default function ConsultaEstoque({ categoria = '', titulo = 'Consultar es
                   </thead>
                   <tbody>
                     {lista.length === 0 ? (
-                      <tr><td colSpan={3}>Nenhum item encontrado.</td></tr>
+                      <tr>
+                        {/* Catálogo vazio e busca sem resultado são coisas
+                            diferentes, e no modo vitrine a primeira é a regra —
+                            sem dizer isso, a consulta parece quebrada. */}
+                        <td colSpan={3}>
+                          {(posicao || []).length === 0
+                            ? (ESTOQUE_VITRINE
+                              ? 'O módulo de Estoque ainda não entrou no ar — o catálogo será carregado no lançamento.'
+                              : 'O catálogo do estoque ainda está vazio.')
+                            : 'Nenhum item encontrado para esta busca.'}
+                        </td>
+                      </tr>
                     ) : lista.map((v) => {
                       const sit = SITUACOES[v.situacao] || SITUACOES.ok;
                       return (

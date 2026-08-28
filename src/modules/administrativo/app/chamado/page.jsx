@@ -16,7 +16,7 @@ import FluxoAprovacao from './FluxoAprovacao';
 import BaixaEstoque from './BaixaEstoque';
 import { montarLinhaDoTempo, textoDoEvento } from '../../lib/linhaDoTempo';
 import {
-  chamadoUsaEstoque, categoriaDoChamado, montarLinhasDeBaixa, validarLinhasDeBaixa,
+  chamadoDeEstoque, chamadoUsaEstoque, categoriaDoChamado, montarLinhasDeBaixa, validarLinhasDeBaixa,
   linhasComQuantidade,
 } from '../../lib/estoqueDoChamado';
 // Consulta e catálogo vêm do módulo de Estoque — dependência de mão única.
@@ -109,7 +109,7 @@ export default function ChamadoAdm() {
    * número aqui é informação para quem vai atender.
    */
   useEffect(() => {
-    if (!chamado || !chamadoUsaEstoque(chamado) || !souAdm) return undefined;
+    if (!chamado || !chamadoDeEstoque(chamado) || !souAdm) return undefined;
     let cancelado = false;
     listarPosicao()
       .then((pos) => { if (!cancelado) setPosicaoEst(pos); })
@@ -209,6 +209,9 @@ export default function ChamadoAdm() {
 
   // EPI e uniforme descontam do estoque ao fechar; os demais serviços não têm
   // item nenhum e seguem pelo caminho de sempre (fecharChamado).
+  // Ler e escrever têm gates diferentes: a consulta de saldo continua de pé em
+  // modo vitrine (ler não muda nada); a baixa é que sai.
+  const deEstoque = chamadoDeEstoque(chamado);
   const usaEstoque = chamadoUsaEstoque(chamado);
   const itensPedidos = Array.isArray(chamado.campos?.itens) ? chamado.campos.itens : [];
   const vaiBaixar = usaEstoque && !semMovimentar && linhasComQuantidade(linhasBaixa).length > 0;
@@ -407,7 +410,7 @@ export default function ChamadoAdm() {
 
       {/* Saber se TEM o item antes de prometer a entrega, sem trocar de módulo.
           Nasce fechado e só consulta o estoque quando aberto. */}
-      {souAdm && usaEstoque && (
+      {souAdm && deEstoque && (
         <ConsultaEstoque categoria={categoriaDoChamado(chamado)} />
       )}
 
