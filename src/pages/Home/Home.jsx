@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, BarChart3, Clock, CreditCard, Headset, Sparkles, ShieldCheck, LogOut, ArrowRight, Lock, Hourglass, Blocks } from 'lucide-react';
+import { Users, BarChart3, Clock, CreditCard, Headset, Sparkles, Boxes, ShieldCheck, LogOut, ArrowRight, Lock, Hourglass, Blocks } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { isSuperAdmin } from '../../config/superAdmin';
 import { podeAcessarAdm } from '../../config/administrativo';
 import { podeAcessarProgramas } from '../../config/programas';
+import { podeAcessarEstoque } from '../../config/estoque';
 import SolucoesModal from './SolucoesModal';
 import AvatarUsuario from '../../components/UI/AvatarUsuario';
 import './Home.css';
@@ -84,6 +85,18 @@ export default function Home() {
       desc: 'Campo de Ideias e indicações da Alavanca PHD',
       locked: !podeAcessarProgramas(user),
       emBreve: !podeAcessarProgramas(user),
+    },
+    {
+      // Consulta é aberta a todos (quem atende um chamado precisa saber se tem o
+      // item); movimentar é do time do Adm, e quem barra é a RLS. Ainda não
+      // lançado (ver ESTOQUE_LIBERADOS em config/estoque.js).
+      to: '/estoque/posicao',
+      icon: Boxes,
+      tone: 'slate',
+      title: 'Estoque',
+      desc: 'Almoxarifado de EPIs e uniformes',
+      locked: !podeAcessarEstoque(user),
+      emBreve: !podeAcessarEstoque(user),
     },
     {
       // Reembolsos deixou de ser card próprio: virou um grupo na sidebar do

@@ -13,6 +13,8 @@ import AdministrativoShell from '../modules/administrativo/app/components/AppShe
 import { podeAcessarAdm } from '../config/administrativo';
 import ProgramasShell from '../modules/programas/app/components/AppShell';
 import { podeAcessarProgramas } from '../config/programas';
+import EstoqueShell from '../modules/estoque/app/components/AppShell';
+import { podeAcessarEstoque } from '../config/estoque';
 
 const Login = lazy(() => import('../pages/Login/Login'));
 const Home = lazy(() => import('../pages/Home/Home'));
@@ -82,6 +84,13 @@ const NovaIdeia = lazy(() => import('../modules/programas/app/ideias/nova/page')
 const MinhasIndicacoes = lazy(() => import('../modules/programas/app/alavanca/page'));
 const NovaIndicacao = lazy(() => import('../modules/programas/app/alavanca/nova/page'));
 const PainelAlavanca = lazy(() => import('../modules/programas/app/painelAlavanca/page'));
+const PosicaoEstoque = lazy(() => import('../modules/estoque/app/posicao/page'));
+const EntradaEstoque = lazy(() => import('../modules/estoque/app/entrada/page'));
+const SaidaEstoque = lazy(() => import('../modules/estoque/app/saida/page'));
+const AjusteEstoque = lazy(() => import('../modules/estoque/app/ajuste/page'));
+const MovimentosEstoque = lazy(() => import('../modules/estoque/app/movimentos/page'));
+const ImportarEstoque = lazy(() => import('../modules/estoque/app/importar/page'));
+const DashboardEstoque = lazy(() => import('../modules/estoque/app/dashboard/page'));
 
 function RouteFallback() {
   return <div style={{ padding: 'var(--space-3xl)', textAlign: 'center' }}>Carregando...</div>;
@@ -139,6 +148,14 @@ function AdmEmBreveRoute({ children }) {
 function ProgramasEmBreveRoute({ children }) {
   const { user } = useAuth();
   if (!podeAcessarProgramas(user)) return <Navigate to="/home" replace />;
+  return children;
+}
+
+// Estoque em construção: mesma trava do Administrativo. Gate de UI — quem
+// movimenta é decidido pela RLS (app_private.is_estoque_operador).
+function EstoqueEmBreveRoute({ children }) {
+  const { user } = useAuth();
+  if (!podeAcessarEstoque(user)) return <Navigate to="/home" replace />;
   return children;
 }
 
@@ -570,6 +587,30 @@ export default function AppRoutes() {
           <Route path="fluxos" element={<LazyPage><FluxosAdm /></LazyPage>} />
           <Route path="dashboard" element={<LazyPage><DashboardAdm /></LazyPage>} />
           <Route path="satisfacao" element={<LazyPage><SatisfacaoAdm /></LazyPage>} />
+        </Route>
+
+        {/* Estoque: almoxarifado de EPIs e uniformes. Consultar é de todos os
+            logados — é o que o Adm precisa antes de prometer um item; movimentar
+            é do time do Adm, e quem barra é a RLS. Enquanto está em construção,
+            a rota inteira devolve para a Home, exceto para quem está testando. */}
+        <Route
+          path="/estoque"
+          element={
+            <ProtectedRoute>
+              <EstoqueEmBreveRoute>
+                <EstoqueShell />
+              </EstoqueEmBreveRoute>
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="/estoque/posicao" replace />} />
+          <Route path="posicao" element={<LazyPage><PosicaoEstoque /></LazyPage>} />
+          <Route path="entrada" element={<LazyPage><EntradaEstoque /></LazyPage>} />
+          <Route path="saida" element={<LazyPage><SaidaEstoque /></LazyPage>} />
+          <Route path="ajuste" element={<LazyPage><AjusteEstoque /></LazyPage>} />
+          <Route path="movimentos" element={<LazyPage><MovimentosEstoque /></LazyPage>} />
+          <Route path="importar" element={<LazyPage><ImportarEstoque /></LazyPage>} />
+          <Route path="dashboard" element={<LazyPage><DashboardEstoque /></LazyPage>} />
         </Route>
 
         {/* Programas: os programas internos da PHD (Campo de Ideias e Alavanca).

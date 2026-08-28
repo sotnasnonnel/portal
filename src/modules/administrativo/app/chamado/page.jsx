@@ -10,10 +10,18 @@ import { contextoDoChamado } from '../../lib/rotulos';
 import { rotuloDoCampo, formatarValorCampo, CAMPOS_OCULTOS } from '../novo/formularios/schemas';
 import {
   buscarChamado, listarInteracoes, listarEventos, listarEtapas, responder, marcarLidas,
-  assumirChamado, fecharChamado, reabrirChamado, avaliarChamado, urlDoAnexo,
+  assumirChamado, fecharChamado, fecharChamadoComBaixa, reabrirChamado, avaliarChamado, urlDoAnexo,
 } from '../../lib/chamados';
 import FluxoAprovacao from './FluxoAprovacao';
+import BaixaEstoque from './BaixaEstoque';
 import { montarLinhaDoTempo, textoDoEvento } from '../../lib/linhaDoTempo';
+import {
+  chamadoUsaEstoque, categoriaDoChamado, montarLinhasDeBaixa, validarLinhasDeBaixa,
+  linhasComQuantidade,
+} from '../../lib/estoqueDoChamado';
+// Consulta e catálogo vêm do módulo de Estoque — dependência de mão única.
+import ConsultaEstoque from '../../../estoque/app/components/ConsultaEstoque';
+import { listarPosicao, listarPessoasEstoque, movimentosDoChamado } from '../../../estoque/lib/estoque';
 
 // Satisfação de 1 a 5 estrelas. Até 3 exige comentário — é onde mora a
 // informação útil de uma pesquisa; o banco também barra.
@@ -54,6 +62,13 @@ export default function ChamadoAdm() {
   const [nota, setNota] = useState(0);
   const [comentario, setComentario] = useState('');
 
+  // Baixa de estoque — só existe em EPI e uniforme (ver estoqueDoChamado.js).
+  const [linhasBaixa, setLinhasBaixa] = useState([]);
+  const [posicaoEst, setPosicaoEst] = useState([]);
+  const [pessoasEst, setPessoasEst] = useState([]);
+  const [estCarregando, setEstCarregando] = useState(false);
+  const [semMovimentar, setSemMovimentar] = useState(false);
+
   const souAdm = modules?.administrativo === 'admin' || modules?.administrativo === 'atendente';
 
   const carregar = useCallback(async () => {
@@ -80,6 +95,45 @@ export default function ChamadoAdm() {
   }, [id, user?.id]);
 
   useEffect(() => { carregar(); }, [carregar]);
+
+  /**
+   * Carrega o estoque só quando o chamado é de EPI/uniforme E quem está olhando
+   * pode fechá-lo. A guarda é o ponto: para os outros ~24 serviços do catálogo
+   * não sai nem uma query a mais, e a tela deles fica idêntica à de sempre.
+   *
+   * `movimentosDoChamado` é o que alimenta a coluna "já entregue" — sem ela,
+   * fechar de novo depois de uma reabertura baixaria o material em dobro.
+   */
+  useEffect(() => {
+    if (!chamado || !chamadoUsaEstoque(chamado)) return undefined;
+    const podeBaixar = (souAdm || chamado.atendente_id === user?.id)
+      && ['aberto', 'em_atendimento', 'aguardando_solicitante'].includes(chamado.status);
+    if (!podeBaixar) return undefined;
+
+    let cancelado = false;
+    setEstCarregando(true);
+    (async () => {
+      try {
+        const [pos, pes, movs] = await Promise.all([
+          listarPosicao(), listarPessoasEstoque(), movimentosDoChamado(chamado.id),
+        ]);
+        if (cancelado) return;
+        setPosicaoEst(pos);
+        setPessoasEst(pes);
+        setLinhasBaixa(montarLinhasDeBaixa({
+          campos: chamado.campos, movimentos: movs, posicao: pos,
+          solicitanteId: chamado.solicitante_id,
+        }));
+      } catch (e) {
+        // Falhar aqui não pode travar o fechamento: o atendente ainda consegue
+        // fechar marcando "sem movimentar o estoque".
+        if (!cancelado) setErro(`Estoque indisponível: ${e.message}`);
+      } finally {
+        if (!cancelado) setEstCarregando(false);
+      }
+    })();
+    return () => { cancelado = true; };
+  }, [chamado, souAdm, user?.id]);
 
   const acao = async (nome, fn) => {
     setOcupado(nome);
@@ -132,6 +186,13 @@ export default function ChamadoAdm() {
   const emAndamento = ['aberto', 'em_atendimento', 'aguardando_solicitante'].includes(chamado.status);
   const podeAssumir = souAdm && chamado.atendente_id !== user?.id && emAndamento;
   const podeFechar = (souAdm || chamado.atendente_id === user?.id) && emAndamento;
+
+  // EPI e uniforme descontam do estoque ao fechar; os demais serviços não têm
+  // item nenhum e seguem pelo caminho de sempre (fecharChamado).
+  const usaEstoque = chamadoUsaEstoque(chamado);
+  const itensPedidos = Array.isArray(chamado.campos?.itens) ? chamado.campos.itens : [];
+  const vaiBaixar = usaEstoque && !semMovimentar && linhasComQuantidade(linhasBaixa).length > 0;
+  const problemaBaixa = usaEstoque && !semMovimentar ? validarLinhasDeBaixa(linhasBaixa) : '';
   const podeReabrir = souSolicitante && chamado.status === 'fechado';
   const precisaAvaliar = souSolicitante && chamado.status === 'fechado' && !chamado.avaliacao;
 
@@ -209,6 +270,48 @@ export default function ChamadoAdm() {
           ))}
         </dl>
 
+        {/* Itens do pedido: bloco próprio porque `campos.itens` é um array de
+            OBJETOS, e o formatador genérico faria join(', ') nele — sairia
+            "[object Object]". Está em CAMPOS_OCULTOS por isso. */}
+        {itensPedidos.length > 0 && (
+          <div className="adm-campo">
+            <label>Itens solicitados</label>
+            <div className="adm-tabela-scroll">
+              <table className="adm-tabela">
+                <thead>
+                  <tr>
+                    <th className="num">Qtd.</th>
+                    <th>Item</th>
+                    {souAdm && <th className="num">Em estoque</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {itensPedidos.map((it, i) => {
+                    // O saldo só chega quando o card de baixa carregou o estoque
+                    // (atendente, chamado em andamento); fora disso mostra "—".
+                    const v = posicaoEst.find((pp) => pp.id === it.variante_id);
+                    return (
+                      <tr key={`${it.variante_id}-${i}`}>
+                        <td className="num">{it.quantidade}</td>
+                        <td>
+                          {it.descricao}
+                          {[it.tamanho, it.ca ? `CA ${it.ca}` : ''].filter(Boolean).length > 0
+                            && ` · ${[it.tamanho, it.ca ? `CA ${it.ca}` : ''].filter(Boolean).join(' · ')}`}
+                        </td>
+                        {souAdm && (
+                          <td className={`num ${v && v.saldo === 0 ? 'is-vencido' : ''}`}>
+                            {v ? v.saldo : '—'}
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {chamado.descricao && <p className="adm-aprov-desc">{chamado.descricao}</p>}
 
         {(chamado.anexos || []).length > 0 && (
@@ -267,6 +370,12 @@ export default function ChamadoAdm() {
         </div>
       </div>
 
+      {/* Saber se TEM o item antes de prometer a entrega, sem trocar de módulo.
+          Nasce fechado e só consulta o estoque quando aberto. */}
+      {souAdm && usaEstoque && (
+        <ConsultaEstoque categoria={categoriaDoChamado(chamado)} />
+      )}
+
       {/* Fechar exige escrever a resolução: é o texto que o solicitante lê ao
           avaliar, e o único registro do que foi feito. */}
       {podeFechar && (
@@ -278,11 +387,38 @@ export default function ChamadoAdm() {
               onChange={(e) => setResolucao(e.target.value)}
               placeholder="O que foi feito para resolver o pedido." />
           </div>
+
+          {/* Só EPI e uniforme: nos outros serviços o card é o mesmo de sempre. */}
+          {usaEstoque && (
+            <BaixaEstoque
+              linhas={linhasBaixa}
+              onMudar={setLinhasBaixa}
+              posicao={posicaoEst}
+              pessoas={pessoasEst}
+              categoria={categoriaDoChamado(chamado)}
+              carregando={estCarregando}
+              semMovimentar={semMovimentar}
+              onSemMovimentar={setSemMovimentar}
+              desabilitado={ocupado === 'fechar'}
+            />
+          )}
+
+          {problemaBaixa && (
+            <div className="adm-aviso tom-erro"><AlertCircle size={16} /> {problemaBaixa}</div>
+          )}
+
           <div className="adm-acoes">
             <button type="button" className="adm-btn adm-btn-primary"
-              disabled={!resolucao.trim() || ocupado === 'fechar'}
-              onClick={() => acao('fechar', () => fecharChamado(chamado.id, resolucao))}>
-              {ocupado === 'fechar' ? <Loader2 size={16} className="adm-spin" /> : <CheckCircle2 size={16} />} Fechar
+              disabled={!resolucao.trim() || !!problemaBaixa || ocupado === 'fechar'}
+              onClick={() => acao('fechar', () => (
+                // Com itens a baixar, fechamento e baixa vão juntos numa
+                // transação (RPC). Sem itens, é o caminho de sempre.
+                vaiBaixar
+                  ? fecharChamadoComBaixa(chamado.id, resolucao, linhasBaixa)
+                  : fecharChamado(chamado.id, resolucao)
+              ))}>
+              {ocupado === 'fechar' ? <Loader2 size={16} className="adm-spin" /> : <CheckCircle2 size={16} />}
+              {vaiBaixar ? 'Fechar e baixar estoque' : 'Fechar'}
             </button>
           </div>
         </div>

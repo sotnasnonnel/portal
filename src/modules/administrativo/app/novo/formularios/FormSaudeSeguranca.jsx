@@ -1,9 +1,15 @@
 import { MOTIVOS } from './saudeSeguranca';
-import { OPCOES_EPI } from './opcoes';
+import SeletorPedido from '../../../../estoque/app/components/SeletorPedido';
 
 /**
  * EPI, uniforme e outras demandas de Saúde e segurança. É o pedido AVULSO —
  * quem está sendo mobilizado pede esses itens dentro da própria mobilização.
+ *
+ * EPI e uniforme escolhem itens do CATÁLOGO DO ESTOQUE, com quantidade. Antes,
+ * o EPI era uma lista de rótulos sem quantidade e o uniforme era texto livre
+ * ("2 camisas polo M") — com isso o Administrativo não conseguia saber se tinha
+ * o item nem descontar do saldo ao entregar. O saldo aparece ao lado de cada
+ * item, mas não bloqueia: pedir o que está em falta é o que sinaliza a compra.
  *
  * Descrição e anexos não aparecem aqui: são os campos do chamado, logo abaixo.
  */
@@ -11,11 +17,6 @@ export default function FormSaudeSeguranca({ valores, onChange, servico }) {
   const mexer = (patch) => onChange({ ...valores, ...patch });
   const eEpi = servico === 'epi';
   const eUniforme = servico === 'uniforme';
-
-  const alternarTipo = (item) => {
-    const atual = valores.tipo || [];
-    mexer({ tipo: atual.includes(item) ? atual.filter((t) => t !== item) : [...atual, item] });
-  };
 
   return (
     <>
@@ -25,36 +26,21 @@ export default function FormSaudeSeguranca({ valores, onChange, servico }) {
           onChange={(e) => mexer({ cc: e.target.value })} />
       </div>
 
-      {eEpi && (
-        <div className="adm-campo">
-          <label>EPIs<span className="req">*</span></label>
-          <div className="adm-marc-itens">
-            {OPCOES_EPI.map((item) => (
-              <button key={item} type="button"
-                className={`adm-chip ${(valores.tipo || []).includes(item) ? 'is-on' : ''}`}
-                onClick={() => alternarTipo(item)}
-                aria-pressed={(valores.tipo || []).includes(item)}>
-                {item}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {eUniforme && (
-        <div className="adm-campo">
-          <label htmlFor="ss-unif">Peças e tamanhos<span className="req">*</span></label>
-          <textarea id="ss-unif" className="adm-textarea adm-textarea-curto"
-            value={valores.tipo_livre} placeholder="Ex.: 2 camisas polo M, 1 blusão G"
-            onChange={(e) => mexer({ tipo_livre: e.target.value })} />
-          <span className="adm-campo-dica">
-            A lista de uniformes ainda não está cadastrada no portal.
-          </span>
-        </div>
-      )}
-
       {(eEpi || eUniforme) && (
         <>
+          <div className="adm-campo">
+            <label>{eEpi ? 'EPIs' : 'Peças de uniforme'}<span className="req">*</span></label>
+            <SeletorPedido
+              itens={valores.itens || []}
+              categoria={eEpi ? 'epi' : 'uniforme'}
+              onMudar={(itens) => mexer({ itens })}
+            />
+            <span className="adm-campo-dica">
+              Escolha o item e a quantidade. Não achou o que precisa? Descreva no campo de
+              descrição, logo abaixo, que o Administrativo cadastra.
+            </span>
+          </div>
+
           <div className="adm-campo">
             <label>Motivo<span className="req">*</span></label>
             <div className="adm-radios">

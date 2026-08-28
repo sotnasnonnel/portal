@@ -250,6 +250,10 @@ const ROTULOS_CODIFICADOS = {
   devolucao_descricao: 'O que será devolvido',
   tipo: 'Tipo', tipo_livre: 'Peças e tamanhos', motivo: 'Motivo',
   localizacao: 'Localização', observacao: 'Observação',
+  // Fica aqui como defesa: `itens` é renderizado por um bloco próprio na tela
+  // do chamado (está em CAMPOS_OCULTOS), mas se um dia escapar para a lista
+  // genérica é melhor sair "Itens solicitados" do que "itens".
+  itens: 'Itens solicitados',
 };
 
 /** Rótulo de um campo gravado em chamados_adm.campos. */
@@ -299,8 +303,15 @@ export function formatarValorCampo(classe, servico, chave, valor) {
   return String(valor);
 }
 
-/** Campos internos que não fazem sentido exibir como dado do pedido. */
-export const CAMPOS_OCULTOS = new Set(['profissional_id', 'pessoa_id']);
+/**
+ * Campos internos que não fazem sentido exibir como dado do pedido.
+ *
+ * `itens` (o pedido de EPI/uniforme) entra aqui porque é um ARRAY DE OBJETOS e
+ * formatarValorCampo faz `valor.join(', ')` em qualquer array — sairia
+ * "[object Object]". A tela do chamado o renderiza numa tabela própria, com
+ * quantidade e saldo.
+ */
+export const CAMPOS_OCULTOS = new Set(['profissional_id', 'pessoa_id', 'itens']);
 
 export const usaDescricao = (classe, servico) => COM_DESCRICAO.has(`${classe}/${servico}`);
 export const usaAnexo = (classe, servico) => !SEM_ANEXO.has(`${classe}/${servico}`);

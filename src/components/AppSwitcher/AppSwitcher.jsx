@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Home, Users, BarChart3, Clock, CreditCard, Headset, Sparkles, ChevronDown } from "lucide-react";
+import { Home, Users, BarChart3, Clock, CreditCard, Headset, Sparkles, Boxes, ChevronDown } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { podeAcessarAdm } from "../../config/administrativo";
 import { podeAcessarProgramas } from "../../config/programas";
+import { podeAcessarEstoque } from "../../config/estoque";
 import "./AppSwitcher.css";
 
 // Seletor de app compartilhado pelas sidebars do portal.
@@ -11,7 +12,7 @@ import "./AppSwitcher.css";
 // que o usuário tem acesso, lido de `modules` no AuthContext unificado.
 //
 // Props:
-//  - currentKey: 'dp' | 'solic' | 'horas' | 'financeiro' | 'administrativo' | 'programas'  (qual app está aberto)
+//  - currentKey: 'dp' | 'solic' | 'horas' | 'financeiro' | 'administrativo' | 'programas' | 'estoque'  (qual app está aberto)
 //  - onNavigate: callback opcional ao escolher um app (ex.: fechar drawer mobile)
 export default function AppSwitcher({ currentKey, onNavigate }) {
   const { modules, user } = useAuth();
@@ -39,6 +40,10 @@ export default function AppSwitcher({ currentKey, onNavigate }) {
     // Programas é aberto a todos os logados, como o Controle de Horas —
     // mas enquanto está em construção só aparece para quem está testando.
     { key: "programas", label: "Programas", to: "/programas/inicio", Icon: Sparkles, show: podeAcessarProgramas(user) },
+    // Estoque é aberto a todos os logados para consulta (quem atende um chamado
+    // precisa saber se tem o item) — mas enquanto está em construção só aparece
+    // para quem está testando.
+    { key: "estoque", label: "Estoque", to: "/estoque/posicao", Icon: Boxes, show: podeAcessarEstoque(user) },
     { key: "home", label: "Portal (início)", to: "/home", Icon: Home, show: true },
   ].filter((a) => a.show);
 

@@ -15,6 +15,10 @@ import { temAvaliacao } from './satisfacao';
 import { desdobrarMobilizacao } from './desdobramento';
 import { getClasse, getServico } from '../../../config/administrativo';
 import { notificarChamadoAdm } from '../../../services/notificarChamadoAdm';
+// Baixa de estoque no fechamento. A dependência é de mão única — o
+// Administrativo importa do Estoque, nunca o contrário.
+import { baixarChamado } from '../../estoque/lib/estoque';
+import { movimentosDaBaixa } from './estoqueDoChamado';
 
 export const BUCKET_ADM = 'chamados-adm-anexos';
 
@@ -937,6 +941,28 @@ export async function fecharChamado(chamadoId, resolucao) {
     .select('id');
   exigirLinha(data, error, 'Não foi possível fechar o chamado');
   notificarChamadoAdm(chamadoId, 'fechado');
+}
+
+/**
+ * Fechamento de chamado de EPI/uniforme COM baixa no estoque, na mesma
+ * transação (RPC estoque_baixa_chamado). Ou os dois acontecem, ou nenhum:
+ * fechar sem baixar deixa o saldo mentindo, e baixar sem fechar entrega o
+ * material num chamado que continua aberto.
+ *
+ * ATENÇÃO: aqui NÃO se usa `exigirLinha`. Ele existe porque UPDATE barrado por
+ * RLS devolve zero linhas sem erro; a RPC usa `raise exception` e devolve erro
+ * de verdade, já com a mensagem escrita para o usuário (ela nomeia o item que
+ * faltou). Embrulhar a mensagem aqui só a pioraria.
+ *
+ * `linhas` vem de lib/estoqueDoChamado.js; sem nenhum item para baixar, use
+ * `fecharChamado` — é o caminho de todos os outros serviços.
+ */
+export async function fecharChamadoComBaixa(chamadoId, resolucao, linhas) {
+  const movs = movimentosDaBaixa(linhas);
+  // Quem avisa o solicitante é a própria baixarChamado — a tela de Saída do
+  // Estoque fecha chamado pelo mesmo caminho, e notificar aqui mandaria e-mail
+  // em dobro por um lado e nenhum pelo outro.
+  return baixarChamado(chamadoId, resolucao, movs);
 }
 
 /** Reabertura pelo solicitante. O prazo de 3 dias é garantido por trigger. */
