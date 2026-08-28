@@ -94,6 +94,10 @@ export function resumoAlavanca(linhas = []) {
     // porque é a fila de trabalho do time — não decidir é a pior saída.
     emAnalise: linhas.filter((i) => i.elegibilidade === 'em_analise').length,
     naoElegiveis: linhas.filter((i) => i.elegibilidade === 'nao_elegivel').length,
+    // Encerradas pelo comercial. Ficam fora do funil pelo mesmo motivo das não
+    // elegíveis — não viram etapa — mas contadas à parte: uma diz que a
+    // indicação não valia, a outra que a oportunidade não foi adiante.
+    canceladas: linhas.filter((i) => i.status === 'cancelada').length,
     evoluidas: linhas.filter(evoluiu).length,
     concluidas: concluidas.length,
     premioTotal: concluidas.reduce((s, i) => s + Number(i.valor_premio || 0), 0),

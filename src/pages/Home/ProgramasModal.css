@@ -1,0 +1,69 @@
+/* Popup "Programas" — aberto pelo card da Home (ProgramasModal.jsx).
+   A casca (overlay, cartão, cabeçalho, botão de fechar) vem do SolucoesModal;
+   aqui está só o que é próprio da escolha de programa. */
+
+/* Duas opções: o cartão do SolucoesModal é largo demais para elas. */
+.progmodal { max-width: 660px; }
+
+.progmodal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.progmodal-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  text-align: left;
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid rgba(38, 64, 93, 0.12);
+  border-radius: 16px;
+  font-family: inherit;
+  color: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+.progmodal-card:hover {
+  border-color: rgba(195, 94, 30, 0.45);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(20, 32, 48, 0.12);
+}
+
+.progmodal-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: rgba(195, 94, 30, 0.10);
+  color: #c35e1e;
+}
+
+.progmodal-card strong {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink, #0f172a);
+}
+
+.progmodal-card-desc {
+  font-size: var(--font-size-sm);
+  line-height: 1.55;
+  color: var(--muted, #475569);
+}
+
+/* margin-top auto: com descrições de alturas diferentes, os dois "Registrar" e
+   "Minhas indicações" continuam alinhados na base dos cartões. */
+.progmodal-card-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 10px;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: #c35e1e;
+}

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ExternalLink, Pencil, Trash2, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { AlertTriangle, Boxes, ExternalLink, Pencil, Trash2, X } from 'lucide-react';
 import {
   CATEGORIA_LABEL, ELEGIBILIDADE_LABEL, SITUACAO_LABEL, STATUS_ALAVANCA_LABEL, corDoSetor,
 } from '../../../../config/programas';
@@ -77,6 +77,11 @@ function Casca({ titulo, etiquetas, children, onFechar, acoes }) {
  * Sem window.confirm de propósito: o diálogo nativo aparece fora do popup, com
  * texto que não dá para escrever, e alguns navegadores o suprimem. Aqui o
  * primeiro clique arma e o segundo apaga — e "Cancelar" desarma.
+ *
+ * Vale DENTRO do popup, onde há espaço e contexto. Na tabela dos painéis quem
+ * confirma é o ConfirmarExclusao (abaixo): armar no próprio botão faria a
+ * linha mudar de altura no meio do clique, e a célula não tem onde dizer o que
+ * está prestes a sumir.
  */
 function BotaoExcluir({ rotulo, excluindo, onExcluir }) {
   const [armado, setArmado] = useState(false);
@@ -102,6 +107,56 @@ function BotaoExcluir({ rotulo, excluindo, onExcluir }) {
 }
 
 /**
+ * Confirmação de exclusão em POPUP, para as linhas de tabela dos painéis.
+ *
+ * Na tabela, a ação é só a lixeira — ícone, sem rótulo, para a coluna não
+ * competir com o dado. O que a lixeira apaga fica escrito aqui, junto com o
+ * aviso de que não dá para desfazer: é a única chance de conferir que se
+ * clicou na linha certa.
+ *
+ * `alvo` é o texto que identifica o registro (o título, com o número).
+ */
+export function ConfirmarExclusao({ alvo, excluindo, onCancelar, onConfirmar }) {
+  // Esc cancela — nunca confirma. Um diálogo destrutivo em que a tecla de
+  // fuga executa a ação seria uma armadilha.
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape' && !excluindo) onCancelar(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onCancelar, excluindo]);
+
+  return (
+    <div className="pg-modal-overlay" onClick={() => !excluindo && onCancelar()}>
+      <div
+        className="pg-modal pg-modal-estreito" onClick={(e) => e.stopPropagation()}
+        role="dialog" aria-modal="true" aria-label="Confirmar exclusão"
+      >
+        <div className="pg-modal-cab">
+          <h2>Excluir registro</h2>
+          <button type="button" className="pg-modal-x" onClick={onCancelar} aria-label="Fechar">
+            <X size={18} />
+          </button>
+        </div>
+        <div className="pg-modal-corpo">
+          <p className="pg-confirma-alvo">{alvo}</p>
+          <p className="pg-confirma-aviso">
+            <AlertTriangle size={15} /> Some do painel para todo mundo e não dá para desfazer.
+          </p>
+        </div>
+        <div className="pg-modal-pe">
+          <button type="button" className="pg-btn pg-btn-ghost" onClick={onCancelar} disabled={excluindo}>
+            Cancelar
+          </button>
+          <button type="button" className="pg-btn pg-btn-perigo" onClick={onConfirmar} disabled={excluindo}>
+            <Trash2 size={15} /> {excluindo ? 'Excluindo…' : 'Excluir'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
  * Detalhe de uma ideia ou iniciativa.
  *
  * `podeEditar` e `podeExcluir` são SEPARADOS de propósito: editar é só de quem
@@ -112,6 +167,8 @@ function BotaoExcluir({ rotulo, excluindo, onExcluir }) {
  */
 export function DetalheIdeia({
   registro, podeEditar = false, podeExcluir = false, onFechar, onSalvar, onExcluir,
+  // Classificar: só o admin do módulo recebe o callback (ver dashboard/page.jsx).
+  onClassificar = null,
 }) {
   const [editando, setEditando] = useState(false);
   const [salvando, setSalvando] = useState(false);
@@ -180,6 +237,14 @@ export function DetalheIdeia({
             <BotaoExcluir rotulo="Excluir para sempre?" excluindo={excluindo} onExcluir={excluir} />
           )}
           <span className="pg-modal-pe-espaco" />
+          {/* Só a INICIATIVA vira catálogo: ideia é o que ainda não existe. Já
+              classificada, o botão sai de cena — repetir criaria uma segunda
+              linha lá com o mesmo nome. */}
+          {onClassificar && ehIniciativa && !registro.pipeline_id && (
+            <button type="button" className="pg-btn pg-btn-ghost" onClick={() => onClassificar(registro)}>
+              <Boxes size={15} /> Classificar
+            </button>
+          )}
           {podeEditar && (
             <button type="button" className="pg-btn pg-btn-primary" onClick={() => setEditando(true)}>
               <Pencil size={15} /> Editar

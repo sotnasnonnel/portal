@@ -1,22 +1,27 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { AlertCircle, Loader2, Target, Trophy } from 'lucide-react';
+import { AlertCircle, Loader2, Target, Trash2, Trophy } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import {
   ELEGIBILIDADE_LABEL, STATUS_ALAVANCA, STATUS_ALAVANCA_LABEL,
-  calcularPremio, ehComercial,
+  calcularPremio, ehAdminProgramas, ehComercial,
 } from '../../../../config/programas';
 import { COR_BARRA } from '../../lib/paleta';
-import { DetalheIndicacao } from '../components/Detalhe';
-import { listarIndicacoes, atualizarIndicacao } from '../../lib/alavanca';
+import { ConfirmarExclusao, DetalheIndicacao } from '../components/Detalhe';
+import { listarIndicacoes, atualizarIndicacao, excluirIndicacao } from '../../lib/alavanca';
 import { resumoAlavanca } from '../../lib/indicadores';
 import ConcluirIndicacao from './ConcluirIndicacao';
 
 /**
  * Painel da Alavanca — "**Apenas para o time comercial" (planilha).
  *
- * Reúne os quatro cards do funil, o mapa geral (onde o status e o comentário
- * são editados) e o mapa de vencedores.
+ * Reúne o funil, a premiação, quem está indicando, o mapa geral (onde o status
+ * e o comentário são editados) e o mapa de vencedores.
+ *
+ * Mesma gramática do Painel da Inovação: contagem em cards compactos, número
+ * escrito sempre que houver cor, e as tabelas longas rolando por dentro. Os
+ * dois painéis são lidos pela mesma gente na mesma semana — divergir no formato
+ * obriga a reaprender a tela.
  */
 
 const data = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR') : '—');
@@ -33,6 +38,8 @@ export default function PainelAlavanca() {
   const [concluindo, setConcluindo] = useState(null);
   const [detalhe, setDetalhe] = useState(null);
   const [rascunhos, setRascunhos] = useState({});   // comentário em edição, por id
+  const [excluindo, setExcluindo] = useState('');
+  const [confirmando, setConfirmando] = useState(null);   // indicação na fila de exclusão
   const [fStatus, setFStatus] = useState('');
   const [fElegib, setFElegib] = useState('');
 
@@ -58,7 +65,17 @@ export default function PainelAlavanca() {
 
   const r = useMemo(() => resumoAlavanca(filtradas), [filtradas]);
   const filtrando = Boolean(fStatus || fElegib);
-  const maiorPessoa = Math.max(1, ...r.porPessoa.map((p) => p.total));
+  const souAdmin = ehAdminProgramas(modules);
+  // Só apresentação: o pé de cada etapa do funil. São as mesmas frases que os
+  // quatro tiles carregavam antes de serem absorvidos pelo funil.
+  const recebidas = r.funil[0].total;
+  const notaEtapa = [
+    null,
+    // Atenção só aqui: é a única nota que cobra uma decisão de quem está lendo.
+    r.emAnalise > 0 ? { texto: `+ ${r.emAnalise} dependendo da sua confirmação`, alerta: true } : null,
+    null,
+    r.premioTotal > 0 ? { texto: `${dinheiro(r.premioTotal)} em premiação` } : null,
+  ];
 
   // Gate de UI. Quem não é do comercial não perde nada: a RLS já esconderia as
   // indicações alheias, e a tela sem dados seria mais confusa que a Alavanca.
@@ -86,11 +103,37 @@ export default function PainelAlavanca() {
     return aplicar(indicacao, { status: novo });
   };
 
+  // A célula do comentário nasce como TEXTO. A caixa de edição em toda linha
+  // punia as indicações que ninguém vai comentar: a tabela inteira virava
+  // formulário e cada linha ganhava a altura do campo.
+  const editarComentario = (indicacao) =>
+    setRascunhos((a) => ({ ...a, [indicacao.id]: indicacao.comentario || '' }));
+
+  const cancelarComentario = (indicacao) =>
+    setRascunhos((a) => ({ ...a, [indicacao.id]: undefined }));
+
   const salvarComentario = async (indicacao) => {
     const texto = rascunhos[indicacao.id];
     if (texto === undefined) return;
     const ok = await aplicar(indicacao, { comentario: texto });
     if (ok) setRascunhos((a) => ({ ...a, [indicacao.id]: undefined }));
+  };
+
+  // Excluir sai na própria linha, e só para o admin do módulo — é a regra da
+  // RLS (programas_alavanca_delete): o comercial trabalha a indicação, mas
+  // apagar uma indicação de terceiro, inclusive concluída, é do admin.
+  const apagar = async (indicacao) => {
+    setExcluindo(indicacao.id);
+    setErro('');
+    try {
+      await excluirIndicacao(indicacao.id);
+      setLinhas((atual) => atual.filter((l) => l.id !== indicacao.id));
+      setConfirmando(null);
+    } catch (e) {
+      setErro(e.message);
+    } finally {
+      setExcluindo('');
+    }
   };
 
   return (
@@ -129,38 +172,16 @@ export default function PainelAlavanca() {
                 Limpar filtros
               </button>
             )}
+
+            {/* De quanto saiu o recorte, no canto — mesma linha discreta do
+                Painel da Inovação. Antes isso morava no pé de um tile gigante. */}
+            <p className="pg-resumo">
+              <strong>{r.total}</strong> indicação(ões)
+              {filtrando && <span> · de {linhas.length} recebidas no total</span>}
+            </p>
           </div>
 
-          <div className="pg-tiles">
-            <div className="pg-card pg-tile is-destaque">
-              <span className="pg-tile-rot">Indicações</span>
-              <strong className="pg-tile-num">{r.total}</strong>
-              <span className="pg-tile-pe">
-                {filtrando ? `de ${linhas.length} recebidas no total` : 'recebidas no total'}
-              </span>
-            </div>
-            <div className="pg-card pg-tile">
-              <span className="pg-tile-rot">Elegíveis</span>
-              <strong className="pg-tile-num tom-alta">{r.elegiveis}</strong>
-              <span className="pg-tile-pe">
-                {r.emAnalise > 0
-                  ? `+ ${r.emAnalise} dependendo da sua confirmação`
-                  : `${r.naoElegiveis} não elegíveis`}
-              </span>
-            </div>
-            <div className="pg-card pg-tile">
-              <span className="pg-tile-rot">Evoluíram</span>
-              <strong className="pg-tile-num">{r.evoluidas}</strong>
-              <span className="pg-tile-pe">com status ou comentário do comercial</span>
-            </div>
-            <div className="pg-card pg-tile">
-              <span className="pg-tile-rot">Concluídas</span>
-              <strong className={`pg-tile-num ${r.concluidas ? 'tom-alta' : ''}`}>{r.concluidas}</strong>
-              <span className="pg-tile-pe">{dinheiro(r.premioTotal)} em premiação</span>
-            </div>
-          </div>
-
-          {/* A fila de trabalho vem antes da tabela: "depende do comercial" é a
+          {/* A fila de trabalho vem antes de tudo: "depende do comercial" é a
               única situação que não anda sozinha. */}
           {r.emAnalise > 0 && (
             <div className="pg-aviso tom-atencao">
@@ -173,43 +194,51 @@ export default function PainelAlavanca() {
             </div>
           )}
 
-          <div className="pg-graficos">
-            <div className="pg-card">
-              <h2 className="pg-card-tit">Funil das indicações</h2>
-              <div
-                className="pg-funil"
-                role="img"
-                aria-label={`Funil. ${r.funil.map((e) => `${e.nome}: ${e.total}`).join('. ')}.`}
-              >
-                {r.funil.map((e, i) => (
-                  <div className="pg-funil-linha" key={e.nome} aria-hidden="true">
-                    <span className="pg-barra-nome">{e.nome}</span>
-                    <span className="pg-barra-trilho">
-                      <span
-                        className="pg-barra"
-                        style={{
-                          width: `${r.funil[0].total ? (e.total / r.funil[0].total) * 100 : 0}%`,
-                          background: COR_BARRA,
-                        }}
-                      />
+          {/* ---- funil ----
+              Os quatro tiles do topo diziam recebidas / elegíveis / evoluíram /
+              concluídas, e o gráfico logo abaixo repetia os mesmos quatro
+              números em barras. Viraram um bloco só: a etapa carrega o número,
+              a retenção e o pé que era do tile. */}
+          <div className="pg-card">
+            <h2 className="pg-card-tit">Funil das indicações</h2>
+            <p className="pg-campo-dica">
+              Cada etapa é um subconjunto da anterior — a porcentagem é sobre as recebidas.
+            </p>
+            <ol className="pg-funil" aria-label="Funil das indicações">
+              {r.funil.map((e, i) => {
+                const pct = recebidas ? Math.round((e.total / recebidas) * 100) : 0;
+                return (
+                  <li className="pg-funil-etapa" key={e.nome}>
+                    <span className="pg-funil-rot">{e.nome}</span>
+                    <strong className="pg-funil-num">{e.total}</strong>
+                    <span className="pg-funil-medida" aria-hidden="true">
+                      <i style={{ width: `${pct}%`, background: COR_BARRA }} />
                     </span>
-                    <span className="pg-barra-valor">{e.total}</span>
-                    <span className="pg-funil-pct">
-                      {i === 0 || !r.funil[0].total
-                        ? '—'
-                        : `${Math.round((e.total / r.funil[0].total) * 100)}%`}
+                    <span className="pg-funil-pe">
+                      {i === 0 ? 'recebidas no recorte atual' : `${pct}% das recebidas`}
                     </span>
-                  </div>
-                ))}
-              </div>
-              {(r.naoElegiveis > 0 || r.pendentes > 0) && (
-                <p className="pg-campo-dica">
-                  {r.naoElegiveis} barrada(s) por não elegibilidade
-                  {r.pendentes > 0 ? ` · ${r.pendentes} sem verificação automática` : ''}.
-                </p>
-              )}
-            </div>
+                    {notaEtapa[i] && (
+                      <span className={`pg-funil-nota ${notaEtapa[i].alerta ? 'tom-atencao' : ''}`}>
+                        {notaEtapa[i].texto}
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+            {(r.naoElegiveis > 0 || r.pendentes > 0 || r.canceladas > 0) && (
+              <p className="pg-campo-dica">
+                Fora do funil:{' '}
+                {[
+                  r.naoElegiveis > 0 ? `${r.naoElegiveis} barrada(s) por não elegibilidade` : null,
+                  r.canceladas > 0 ? `${r.canceladas} cancelada(s) pelo comercial` : null,
+                  r.pendentes > 0 ? `${r.pendentes} sem verificação automática` : null,
+                ].filter(Boolean).join(' · ')}.
+              </p>
+            )}
+          </div>
 
+          <div className="pg-graficos">
             <div className="pg-card">
               <h2 className="pg-card-tit">Premiação</h2>
               <p className="pg-campo-dica">0,5% do contrato, teto de R$ 10.000 por indicação.</p>
@@ -229,32 +258,6 @@ export default function PainelAlavanca() {
               </dl>
             </div>
 
-            {r.porPessoa.length > 0 && (
-              <div className="pg-card pg-card-largo">
-                <h2 className="pg-card-tit">Quem está indicando</h2>
-                <p className="pg-campo-dica">
-                  Participação no programa — o mapa de vencedores, abaixo, é a premiação.
-                </p>
-                <div
-                  className="pg-barras"
-                  role="img"
-                  aria-label={`Indicações por colaborador. ${r.porPessoa.map((x) => `${x.nome}: ${x.total}`).join('. ')}.`}
-                >
-                  {r.porPessoa.map((x) => (
-                    <div className="pg-barra-linha" key={x.nome} aria-hidden="true">
-                      <span className="pg-barra-nome" title={x.nome}>{x.nome}</span>
-                      <span className="pg-barra-trilho">
-                        <span
-                          className="pg-barra"
-                          style={{ width: `${(x.total / maiorPessoa) * 100}%`, background: COR_BARRA }}
-                        />
-                      </span>
-                      <span className="pg-barra-valor">{x.total}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
           <div className="pg-card">
@@ -267,7 +270,9 @@ export default function PainelAlavanca() {
             {filtradas.length === 0 ? (
               <p className="pg-campo-dica">Nenhuma indicação recebida ainda.</p>
             ) : (
-              <div className="pg-tabela-scroll">
+              /* O mapa cresce com o programa: rola por dentro e prende o
+                 cabeçalho, como o mapa do Painel da Inovação. */
+              <div className="pg-tabela-scroll is-alta">
                 <table className="pg-tabela">
                   <thead>
                     <tr>
@@ -279,6 +284,7 @@ export default function PainelAlavanca() {
                       <th>Status</th>
                       <th>Comentário</th>
                       <th>Premiação</th>
+                      {souAdmin && <th className="col-acoes">Ações</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -324,43 +330,86 @@ export default function PainelAlavanca() {
                               ))}
                             </select>
                           </td>
-                          <td>
-                            <textarea
-                              className="pg-textarea"
-                              style={{ minHeight: 64, minWidth: 200, fontSize: 'var(--font-size-xs)' }}
-                              value={emEdicao ? rascunho : (i.comentario || '')}
-                              onChange={(e) => setRascunhos((a) => ({ ...a, [i.id]: e.target.value }))}
-                              placeholder="Anote o andamento…"
-                              aria-label={`Comentário da indicação ${i.numero}`}
-                            />
-                            {emEdicao && (
+                          <td className="col-coment">
+                            {emEdicao ? (
+                              <>
+                                <textarea
+                                  className="pg-textarea"
+                                  // Foco na caixa que acabou de abrir: quem clicou já quer digitar.
+                                  autoFocus
+                                  value={rascunho}
+                                  onChange={(e) => setRascunhos((a) => ({ ...a, [i.id]: e.target.value }))}
+                                  placeholder="Anote o andamento…"
+                                  aria-label={`Comentário da indicação ${i.numero}`}
+                                />
+                                <div className="pg-cel-acao pg-cel-acoes">
+                                  <button
+                                    type="button"
+                                    className="pg-btn pg-btn-primary pg-btn-sm"
+                                    disabled={salvando === i.id}
+                                    onClick={() => salvarComentario(i)}
+                                  >
+                                    Salvar
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="pg-btn pg-btn-ghost pg-btn-sm"
+                                    disabled={salvando === i.id}
+                                    onClick={() => cancelarComentario(i)}
+                                  >
+                                    Cancelar
+                                  </button>
+                                </div>
+                              </>
+                            ) : (
+                              // Botão, e não div com onClick: a célula é editável e
+                              // precisa receber foco e abrir com Enter.
                               <button
                                 type="button"
-                                className="pg-btn pg-btn-primary pg-btn-sm"
-                                style={{ marginTop: 6 }}
-                                disabled={salvando === i.id}
-                                onClick={() => salvarComentario(i)}
+                                className="pg-coment"
+                                onClick={() => editarComentario(i)}
+                                aria-label={`Editar comentário da indicação ${i.numero}`}
                               >
-                                Salvar comentário
+                                <span className={i.comentario ? '' : 'is-vazio'}>
+                                  {i.comentario || '—'}
+                                </span>
                               </button>
                             )}
                           </td>
                           <td className="num">
-                            {dinheiro(i.valor_premio)}
+                            {/* O próprio valor abre a edição, como o comentário
+                                ao lado: um botão embaixo de cada linha concluída
+                                dobrava a altura dela para repetir o que o clique
+                                no número já diz. */}
+                            {i.status === 'concluida' ? (
+                              <button
+                                type="button"
+                                className="pg-valor-edit"
+                                onClick={() => setConcluindo(i)}
+                                title="Editar premiação"
+                              >
+                                {dinheiro(i.valor_premio)}
+                              </button>
+                            ) : (
+                              dinheiro(i.valor_premio)
+                            )}
                             {i.valor_contrato != null && (
                               <span className="pg-motivo">Contrato: {dinheiro(i.valor_contrato)}</span>
                             )}
-                            {i.status === 'concluida' && (
+                          </td>
+                          {souAdmin && (
+                            <td className="col-acoes">
                               <button
                                 type="button"
-                                className="pg-btn pg-btn-ghost pg-btn-sm"
-                                style={{ marginTop: 6 }}
-                                onClick={() => setConcluindo(i)}
+                                className="pg-icone-acao"
+                                onClick={() => setConfirmando(i)}
+                                title="Excluir indicação"
+                                aria-label={`Excluir ${i.oportunidade}`}
                               >
-                                Editar premiação
+                                <Trash2 size={16} />
                               </button>
-                            )}
-                          </td>
+                            </td>
+                          )}
                         </tr>
                       );
                     })}
@@ -409,6 +458,15 @@ export default function PainelAlavanca() {
             )}
           </div>
         </>
+      )}
+
+      {confirmando && (
+        <ConfirmarExclusao
+          alvo={`#${confirmando.numero} — ${confirmando.oportunidade}`}
+          excluindo={excluindo === confirmando.id}
+          onCancelar={() => setConfirmando(null)}
+          onConfirmar={() => apagar(confirmando)}
+        />
       )}
 
       <DetalheIndicacao indicacao={detalhe} onFechar={() => setDetalhe(null)} />

@@ -4,6 +4,8 @@
 //   'ideia_status'     -> GERENTES e DIRETORIA: a situação de uma iniciativa mudou
 //   'alavanca_nova'    -> DIRETORIA e TIME COMERCIAL: chegou uma indicação nova
 //   'alavanca_retorno' -> quem indicou: resultado da avaliação da indicação
+//   'iniciativa_pedido_novo'   -> ADMINS do módulo: pediram uma iniciativa para uma obra
+//   'iniciativa_pedido_status' -> quem pediu: a Inovação respondeu
 //
 // Mesmo padrão das outras notificações do portal (Microsoft Graph sendMail com
 // os secrets GRAPH_* já configurados no projeto).
@@ -17,7 +19,7 @@
 // de `perfil`: no portal o perfil não reflete o cargo — diretores e gerentes
 // ficam todos como 'gestor'. Mesmo critério de config/financeiroAcesso.js.
 //
-// Body: { evento, ideia_id?, indicacao_id?, de?, para?, dry_run? }
+// Body: { evento, ideia_id?, indicacao_id?, pedido_id?, de?, para?, dry_run? }
 // dry_run responde quantos receberiam, sem enviar.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -30,7 +32,10 @@ function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...CORS, "Content-Type": "application/json" } });
 }
 
-const EVENTOS = ["ideia_nova", "ideia_status", "alavanca_nova", "alavanca_retorno"] as const;
+const EVENTOS = [
+  "ideia_nova", "ideia_status", "alavanca_nova", "alavanca_retorno",
+  "iniciativa_pedido_novo", "iniciativa_pedido_status",
+] as const;
 type Evento = (typeof EVENTOS)[number];
 
 const escapeHtml = (s: string) =>
@@ -52,6 +57,13 @@ const STATUS_ALAVANCA: Record<string, string> = {
   nao_elegivel: "Não elegível",
   em_evolucao: "Em evolução",
   concluida: "Concluída",
+};
+const STATUS_PEDIDO: Record<string, string> = {
+  recebido: "Recebido",
+  em_analise: "Em análise",
+  aprovado: "Aprovado",
+  implantado: "Implantado",
+  recusado: "Recusado",
 };
 const ELEGIBILIDADE: Record<string, string> = {
   pendente: "Verificação pendente",
@@ -172,11 +184,15 @@ Deno.serve(async (req) => {
     let evento: Evento = "ideia_nova";
     let ideia_id: string | null = null;
     let indicacao_id: string | null = null;
+    let pedido_id: string | null = null;
     let de: string | null = null;
     let para: string | null = null;
     let dry_run = false;
     try {
-      ({ evento = "ideia_nova", ideia_id = null, indicacao_id = null, de = null, para = null, dry_run = false } = await req.json());
+      ({
+        evento = "ideia_nova", ideia_id = null, indicacao_id = null, pedido_id = null,
+        de = null, para = null, dry_run = false,
+      } = await req.json());
     } catch {
       return json({ error: "invalid_body" }, 400);
     }
@@ -352,6 +368,70 @@ Deno.serve(async (req) => {
         url: `${appUrl}/#/programas/alavanca`,
         logo,
       });
+    }
+
+    // ---- pedido de uma iniciativa da Inovação para uma obra ----
+    if (evento === "iniciativa_pedido_novo" || evento === "iniciativa_pedido_status") {
+      if (!pedido_id) return json({ error: "missing_pedido_id" }, 400);
+      const { data: pedido, error } = await supabase
+        .from("programas_iniciativa_pedidos")
+        .select("numero, iniciativa_titulo, obra_cod_phd, justificativa, status, resposta, solicitante_id")
+        .eq("id", pedido_id)
+        .maybeSingle();
+      if (error) return json({ error: error.message }, 500);
+      if (!pedido) return json({ skipped: "not_found" });
+
+      const { data: quem } = await supabase
+        .from("colaboradores").select("nome, email").eq("id", pedido.solicitante_id).maybeSingle();
+
+      if (evento === "iniciativa_pedido_novo") {
+        // Quem trata a fila é o admin do módulo — o mesmo critério da tela
+        // (programas_role = 'admin'), lido aqui para não sair do navegador.
+        const { data: admins, error: eAdmins } = await supabase
+          .from("colaboradores").select("email").eq("ativo", true)
+          .eq("programas_role", "admin").not("email", "is", null);
+        if (eAdmins) return json({ error: eAdmins.message }, 500);
+        destinatarios = [...new Set((admins ?? []).map((c) => (c.email ?? "").trim()).filter(Boolean))];
+        emCopiaOculta = true;
+
+        subject = `Iniciativas: pedido #${pedido.numero} — ${pedido.iniciativa_titulo}`;
+        html = montarHtml({
+          saudacao: "Olá!",
+          chamada: `<strong>${escapeHtml(quem?.nome ?? "Um colaborador")}</strong> pediu uma iniciativa para uma obra.`,
+          linhas: [
+            ["Iniciativa", `#${pedido.numero} — ${pedido.iniciativa_titulo}`],
+            ["Obra", pedido.obra_cod_phd],
+            ["Quem pediu", quem?.nome],
+            ["Para que precisa", pedido.justificativa],
+          ],
+          aviso: "Você está recebendo por administrar o módulo Programas.",
+          botao: "Abrir os pedidos",
+          url: `${appUrl}/#/programas/iniciativas`,
+          logo,
+        });
+      } else {
+        if (!quem?.email) return json({ skipped: "solicitante_sem_email" });
+        destinatarios = [quem.email];
+
+        subject = `Iniciativas: retorno sobre o seu pedido #${pedido.numero}`;
+        html = montarHtml({
+          saudacao: `Olá, <strong>${escapeHtml((quem.nome ?? "").split(" ")[0])}</strong>.`,
+          chamada: `Há novidade no seu pedido de <strong>${escapeHtml(pedido.iniciativa_titulo)}</strong> para a obra ${escapeHtml(pedido.obra_cod_phd)}.`,
+          linhas: [
+            ["Iniciativa", pedido.iniciativa_titulo],
+            ["Obra", pedido.obra_cod_phd],
+            ["Situação", STATUS_PEDIDO[pedido.status] ?? pedido.status],
+          ],
+          // A resposta é o que responde "por quê?" — sem ela, recusa vira só
+          // uma negativa, e aprovação não diz o "quando".
+          alerta: pedido.resposta
+            ? `<strong>Resposta da Inovação:</strong><br>${escapeHtml(pedido.resposta)}`
+            : null,
+          botao: "Ver no Portal PHD",
+          url: `${appUrl}/#/programas/iniciativas`,
+          logo,
+        });
+      }
     }
 
     if (!destinatarios.length) return json({ skipped: "sem_destinatarios" });

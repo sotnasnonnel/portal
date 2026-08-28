@@ -86,6 +86,8 @@ const NovaIdeia = lazy(() => import('../modules/programas/app/ideias/nova/page')
 const MinhasIndicacoes = lazy(() => import('../modules/programas/app/alavanca/page'));
 const NovaIndicacao = lazy(() => import('../modules/programas/app/alavanca/nova/page'));
 const PainelAlavanca = lazy(() => import('../modules/programas/app/painelAlavanca/page'));
+const IniciativasEmUso = lazy(() => import('../modules/programas/app/iniciativas/page'));
+const PedidosIniciativa = lazy(() => import('../modules/programas/app/pedidos/page'));
 const PosicaoEstoque = lazy(() => import('../modules/estoque/app/posicao/page'));
 const EntradaEstoque = lazy(() => import('../modules/estoque/app/entrada/page'));
 const SaidaEstoque = lazy(() => import('../modules/estoque/app/saida/page'));
@@ -643,6 +645,8 @@ export default function AppRoutes() {
           <Route path="ideias" element={<LazyPage><CampoDeIdeias /></LazyPage>} />
           <Route path="ideias/nova" element={<Navigate to="/programas/ideias" replace />} />
           <Route path="ideias/nova/:tipo" element={<LazyPage><NovaIdeia /></LazyPage>} />
+          <Route path="iniciativas" element={<LazyPage><IniciativasEmUso /></LazyPage>} />
+          <Route path="pedidos" element={<LazyPage><PedidosIniciativa /></LazyPage>} />
           <Route path="alavanca" element={<LazyPage><MinhasIndicacoes /></LazyPage>} />
           <Route path="alavanca/nova" element={<LazyPage><NovaIndicacao /></LazyPage>} />
           {/* Irmão de /alavanca, e não filho: a sidebar marca o item ativo por

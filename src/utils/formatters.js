@@ -1,3 +1,16 @@
+/**
+ * Primeiro + último nome ("LENNON SANTOS" -> "Lennon Santos" fica a cargo de
+ * quem exibe; aqui só se corta o meio). Nomes completos de cadastro têm quatro
+ * ou cinco partes e estouram qualquer coluna de tabela.
+ *
+ * Quem só tem um nome não aparece repetido.
+ */
+export const nomeCurto = (nome) => {
+  const partes = (nome || '').trim().split(/\s+/).filter(Boolean);
+  if (!partes.length) return '';
+  return partes.length === 1 ? partes[0] : `${partes[0]} ${partes[partes.length - 1]}`;
+};
+
 export const formatarData = (data) => {
   if (!data) return '—';
   const d = new Date(data + 'T00:00:00');

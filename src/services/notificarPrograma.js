@@ -8,6 +8,9 @@ import { supabase } from './supabase';
  *   'alavanca_nova'     -> diretoria e time comercial: chegou indicação nova
  *   'alavanca_retorno'  -> quem indicou: resultado da avaliação da indicação
  *                          (elegível, não elegível, em evolução, concluída)
+ *   'iniciativa_pedido_novo'   -> admins do módulo: pediram uma iniciativa
+ *                                 da Inovação para uma obra
+ *   'iniciativa_pedido_status' -> quem pediu: a Inovação respondeu
  *
  * Os três primeiros vão para uma lista, e é justamente por isso que ela é
  * montada no servidor: mandar a lista de e-mails daqui exporia o quadro de

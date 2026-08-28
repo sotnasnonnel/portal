@@ -1,4 +1,4 @@
-import { Lightbulb, Rocket, Wrench } from 'lucide-react';
+import { Boxes, Lightbulb, Rocket, Wrench } from 'lucide-react';
 
 /**
  * Catálogo do módulo Programas — os programas internos da PHD.
@@ -22,11 +22,14 @@ import { Lightbulb, Rocket, Wrench } from 'lucide-react';
  * Enquanto `true`, o módulo aparece como "Em breve" para a empresa: o card da
  * Home fica travado e a rota /programas devolve para lá.
  *
- * A lista abaixo é a exceção que continua navegando. É por e-mail, e não por
- * papel, de propósito: o papel de comercial será dado a mais gente antes do
- * lançamento, e isso não pode destravar o módulo sem querer.
+ * LANÇADO em 2026-08-28: aberto a todos os logados, como o Controle de Horas.
+ * A lista abaixo deixa de valer com a trava desligada — fica porque é o que
+ * volta a funcionar se alguém precisar fechar o módulo de novo.
+ *
+ * A lista é por e-mail, e não por papel, de propósito: o papel de comercial é
+ * dado a mais gente, e isso não pode destravar o módulo sem querer.
  */
-export const PROGRAMAS_EM_BREVE = true;
+export const PROGRAMAS_EM_BREVE = false;
 
 export const PROGRAMAS_LIBERADOS = [
   'marcus.guimaraes@phdengenharia.eng.br',
@@ -123,6 +126,25 @@ export const SITUACOES = [
 
 export const SITUACAO_LABEL = Object.fromEntries(SITUACOES.map((s) => [s.valor, s.label]));
 
+// ==================== Iniciativas em uso (Inovação) ====================
+
+/**
+ * Status do pedido de uma iniciativa para uma obra, na ordem em que andam.
+ * "Implantado" é o fim de verdade: aprovar é a decisão, implantar é a entrega —
+ * juntar os dois esconderia a fila do que foi aprovado e ainda não rodou.
+ */
+export const STATUS_PEDIDO = [
+  { valor: 'recebido', label: 'Recebido', tom: 'tom-neutro' },
+  { valor: 'em_analise', label: 'Em análise', tom: 'tom-andamento' },
+  { valor: 'aprovado', label: 'Aprovado', tom: 'tom-destaque' },
+  { valor: 'implantado', label: 'Implantado', tom: 'tom-ok' },
+  { valor: 'recusado', label: 'Recusado', tom: 'tom-recusado' },
+];
+
+export const STATUS_PEDIDO_LABEL = Object.fromEntries(STATUS_PEDIDO.map((s) => [s.valor, s.label]));
+export const tomDoPedido = (valor) =>
+  STATUS_PEDIDO.find((s) => s.valor === valor)?.tom || 'tom-neutro';
+
 // ============================ Alavanca PHD ============================
 
 /**
@@ -135,6 +157,11 @@ export const STATUS_ALAVANCA = [
   { valor: 'nao_elegivel', label: 'Não elegível' },
   { valor: 'em_evolucao', label: 'Em evolução' },
   { valor: 'concluida', label: 'Concluída' },
+  // Cancelada é o comercial DESISTINDO depois de olhar — cliente sem demanda,
+  // sem retorno, em processo de venda. Diferente de "não elegível", que é a
+  // checagem contra a base dizendo que a indicação não valia desde o início.
+  // Como a não elegível, é saída do funil, não etapa dele.
+  { valor: 'cancelada', label: 'Cancelada' },
 ];
 
 export const STATUS_ALAVANCA_LABEL = Object.fromEntries(STATUS_ALAVANCA.map((s) => [s.valor, s.label]));
@@ -170,6 +197,17 @@ export const PROGRAMAS = [
     desc: 'Registre uma ideia nova ou cadastre o que você já está construindo.',
     href: '/programas/ideias',
     cta: 'Registrar',
+  },
+  {
+    // Não é programa de participação como os outros dois: é consulta ao que a
+    // empresa já tem. Entra no mesmo modal porque a pergunta de quem abre
+    // "Programas" é a mesma — "o que existe por aqui?".
+    slug: 'iniciativas',
+    label: 'Iniciativas em uso',
+    icon: Boxes,
+    desc: 'Veja as soluções que a PHD já tem e em quais obras estão aplicadas.',
+    href: '/programas/iniciativas',
+    cta: 'Ver iniciativas',
   },
   {
     slug: 'alavanca',

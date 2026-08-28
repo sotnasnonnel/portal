@@ -11,8 +11,35 @@ const COLUNAS = `
   id, numero, tipo, titulo, categoria, retorno, situacao,
   descricao, problema, beneficios,
   data_inicio, setor, ferramentas, finalidade,
-  link, observacoes, autor_id, criado_em, updated_at
+  link, observacoes, autor_id, criado_em, updated_at,
+  pipeline_id, classificado_em
 `;
+
+/**
+ * Classifica a iniciativa como item do catálogo da empresa: cria a linha em
+ * inovacao_pipeline (projeto backoffice) e marca este registro.
+ *
+ * Passa por Edge Function porque a escrita no backoffice exige service-role, e
+ * essa chave não pode ir para o navegador — ver
+ * supabase/functions/classificar-iniciativa. A permissão (admin do módulo) é
+ * conferida lá, com o JWT de quem chamou.
+ *
+ * Aqui o erro NÃO é engolido, ao contrário dos avisos por e-mail: classificar
+ * é a ação, não o aviso dela. Se falhar, quem clicou precisa saber.
+ */
+export async function classificarIniciativa(registro, { area, estagio, responsavel }) {
+  const { data, error } = await supabase.functions.invoke('classificar-iniciativa', {
+    body: { ideia_id: registro.id, area, estagio, responsavel },
+  });
+  if (error) {
+    // O corpo da resposta traz o motivo (sem_permissao, ja_classificada...);
+    // sem ele, sobra "Edge Function returned a non-2xx status code".
+    const detalhe = await error.context?.json?.().catch(() => null);
+    throw new Error(detalhe?.error || error.message);
+  }
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
 
 /**
  * Nome do autor vem numa segunda consulta, pela RPC `nomes_colaboradores`.

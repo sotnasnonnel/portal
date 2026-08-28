@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  AlertCircle, LayoutDashboard, Lightbulb, Loader2, Wrench,
+  AlertCircle, Lightbulb, Loader2, Wrench,
 } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import {
@@ -98,9 +98,6 @@ export default function CampoDeIdeias() {
         </Link>
         <Link to="/programas/ideias/nova/iniciativa" className="pg-btn pg-btn-primary">
           <Wrench size={16} /> Registrar iniciativa
-        </Link>
-        <Link to="/programas/dashboard" className="pg-btn pg-btn-ghost">
-          <LayoutDashboard size={16} /> Abrir o Painel da Inovação
         </Link>
       </div>
       <p className="pg-campo-dica" style={{ marginBottom: 22 }}>

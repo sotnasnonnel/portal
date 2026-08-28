@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { AlertCircle, Loader2, Plus, Rocket } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import {
-  ELEGIBILIDADE_LABEL, STATUS_ALAVANCA_LABEL, ehComercial,
+  ELEGIBILIDADE_LABEL, STATUS_ALAVANCA_LABEL,
 } from '../../../../config/programas';
 import { listarIndicacoes, editarIndicacao, excluirIndicacao } from '../../lib/alavanca';
 import { DetalheIndicacao } from '../components/Detalhe';
@@ -22,7 +22,7 @@ const dinheiro = (n) => (n == null
   : Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }));
 
 export default function MinhasIndicacoes() {
-  const { user, modules } = useAuth();
+  const { user } = useAuth();
   const [linhas, setLinhas] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
@@ -66,11 +66,6 @@ export default function MinhasIndicacoes() {
         <Link to="/programas/alavanca/nova" className="pg-btn pg-btn-primary">
           <Plus size={16} /> Indicar oportunidade
         </Link>
-        {ehComercial(modules) && (
-          <Link to="/programas/painel-alavanca" className="pg-btn pg-btn-ghost">
-            Abrir o painel do comercial
-          </Link>
-        )}
       </div>
 
       {erro && <div className="pg-aviso tom-erro"><AlertCircle size={16} /> {erro}</div>}

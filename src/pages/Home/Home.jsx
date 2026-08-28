@@ -7,7 +7,9 @@ import { podeAcessarAdm } from '../../config/administrativo';
 import { podeAcessarProgramas } from '../../config/programas';
 import { podeAcessarEstoque } from '../../config/estoque';
 import SolucoesModal from './SolucoesModal';
+import ProgramasModal from './ProgramasModal';
 import AvatarUsuario from '../../components/UI/AvatarUsuario';
+import { nomeCurto } from '../../utils/formatters';
 import './Home.css';
 
 const DP_HOME = { admin: '/admin/listagem', gestor: '/gestor', usuario: '/usuario', rh: '/gestor/solicitacoes/acompanhar' };
@@ -20,18 +22,11 @@ function iniciais(nome) {
   return (primeira + ultima).toUpperCase();
 }
 
-// Primeiro + último nome ("Lennon Santos"), na mesma lógica das iniciais. Os
-// nomes do meio ficam de fora e quem só tem um nome não aparece repetido.
-function nomeCurto(nome) {
-  const partes = (nome || '').trim().split(/\s+/).filter(Boolean);
-  if (!partes.length) return '';
-  return partes.length === 1 ? partes[0] : `${partes[0]} ${partes[partes.length - 1]}`;
-}
-
 export default function Home() {
   const { user, modules, logout } = useAuth();
   const saudacao = nomeCurto(user?.nome);
   const [solucoesAbertas, setSolucoesAbertas] = useState(false);
+  const [programasAbertos, setProgramasAbertos] = useState(false);
 
   const cards = [
     {
@@ -75,10 +70,11 @@ export default function Home() {
       emBreve: !podeAcessarAdm(user),
     },
     {
-      // Aberto a todos, como o Controle de Horas — mas ainda não lançado:
-      // fica visível e travado, exceto para quem está testando
-      // (ver PROGRAMAS_LIBERADOS em config/programas.js).
-      to: '/programas/inicio',
+      // Aberto a todos os logados, como o Controle de Horas (lançado em
+      // 2026-08-28; a trava está em PROGRAMAS_EM_BREVE, config/programas.js).
+      // Não navega: abre a escolha de programa em popup, e o programa
+      // escolhido é que leva para dentro do módulo.
+      acao: () => setProgramasAbertos(true),
       icon: Sparkles,
       tone: 'terracotta',
       title: 'Programas',
@@ -166,16 +162,39 @@ export default function Home() {
                 </div>
               );
             }
-            return (
-              <Link key={c.title} to={c.to} className="home-card">
+            const conteudo = (
+              <>
                 <span className={`home-card-icon tone-${c.tone}`}>
                   <Icon size={26} />
                 </span>
                 <h2>{c.title}</h2>
                 <p>{c.desc}</p>
                 <span className="home-card-cta">
-                  Acessar <ArrowRight size={15} />
+                  {c.acao ? 'Escolher' : 'Acessar'} <ArrowRight size={15} />
                 </span>
+              </>
+            );
+
+            // Card que ABRE um popup em vez de navegar (Programas). Botão, e
+            // não link: não há para onde ir até a escolha ser feita.
+            if (c.acao) {
+              return (
+                <div key={c.title} className="home-card home-card-solucoes">
+                  <button
+                    type="button"
+                    className="home-solucoes-toggle"
+                    onClick={c.acao}
+                    aria-haspopup="dialog"
+                  >
+                    {conteudo}
+                  </button>
+                </div>
+              );
+            }
+
+            return (
+              <Link key={c.title} to={c.to} className="home-card">
+                {conteudo}
               </Link>
             );
           })}
@@ -205,6 +224,7 @@ export default function Home() {
       <footer className="home-footer">PHD Engenharia</footer>
 
       {solucoesAbertas && <SolucoesModal onClose={() => setSolucoesAbertas(false)} />}
+      {programasAbertos && <ProgramasModal onClose={() => setProgramasAbertos(false)} />}
     </div>
   );
 }
