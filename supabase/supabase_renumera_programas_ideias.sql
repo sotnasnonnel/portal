@@ -1,5 +1,6 @@
 -- ============================================================================
 -- Renumera o Campo de Ideias a partir de 1, na ordem de registro.
+-- (Aplicada no portal_phd em 2026-08-28.)
 --
 -- O `numero` é o ID que aparece na tela ("#26"). Ele saiu torto porque a
 -- sequência da identity conta INSERTs, não linhas: o dado de demonstração que
