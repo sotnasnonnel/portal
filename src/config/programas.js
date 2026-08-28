@@ -19,8 +19,8 @@ import { Lightbulb, Rocket, Wrench } from 'lucide-react';
 
 /**
  * Trava de lançamento, mesma mecânica do Administrativo (ADM_EM_BREVE).
- * Enquanto `true`, o módulo aparece como "Em breve" para a empresa: some do
- * AppSwitcher e a rota /programas devolve para a Home.
+ * Enquanto `true`, o módulo aparece como "Em breve" para a empresa: o card da
+ * Home fica travado e a rota /programas devolve para lá.
  *
  * A lista abaixo é a exceção que continua navegando. É por e-mail, e não por
  * papel, de propósito: o papel de comercial será dado a mais gente antes do

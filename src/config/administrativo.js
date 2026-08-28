@@ -26,13 +26,13 @@ import {
 
 /**
  * Trava de lançamento. Enquanto `true`, o módulo aparece como "Em breve" para a
- * empresa: some do AppSwitcher e a rota /administrativo devolve para a Home.
+ * empresa: o card da Home fica travado e a rota /administrativo devolve para lá.
  *
  * ABERTO em 21/08/2026 — o módulo está liberado para toda a empresa. A lista
  * abaixo fica só como registro de quem testou antes; ela não tem efeito
  * enquanto ADM_EM_BREVE for false.
  *
- * Home, AppSwitcher e AppRoutes leem daqui; para fechar de novo, volte a true.
+ * Home e AppRoutes leem daqui; para fechar de novo, volte a true.
  */
 export const ADM_EM_BREVE = false;
 
