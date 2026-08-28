@@ -15,7 +15,7 @@ import { extractNfFromDataUrl } from "../services/nfExtraction.js";
 import { compressImageToDataUrl } from "../lib/image.js";
 import { formatCurrency, todayIso } from "../lib/format.js";
 import { makeKey, newItem, itemsFromExtraction } from "../lib/nfCapture.js";
-import { evaluatePolicyOverage, detectForbiddenItems } from "../lib/reimbursementPolicy.js";
+import { evaluatePolicyOverage, detectForbiddenItems, REGRAS_VALOR_ATIVAS } from "../lib/reimbursementPolicy.js";
 import { kindMeta } from "../lib/kind.js";
 // Mesma fonte de Cliente/Obra do CC das solicitações do Financeiro: o
 // organograma (projeto backoffice). Uma lista só, para os dois módulos
@@ -256,8 +256,11 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
 
       // Alerta imediato: se a IA leu uma refeição (ou diária) acima do limite,
       // avisa quanto passou já no momento da importação da nota.
+      // Excedente só é anunciado com a política de valores no ar — ver
+      // REGRAS_VALOR_ATIVAS. Item proibido (bebida, cigarro) continua avisando:
+      // essa regra não mudou.
       const food = evaluatePolicyOverage(newItems);
-      if (food.hasOverage) {
+      if (REGRAS_VALOR_ATIVAS && food.hasOverage) {
         showToast(
           `${food.lodging.hasOverage && !food.food.hasOverage ? "Hospedagem" : "Alimentação"} acima do limite nesta nota: ` +
             `${formatCurrency(food.spent)} gastos, ` +

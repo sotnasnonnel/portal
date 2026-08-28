@@ -3,6 +3,22 @@
 // Centralizado aqui para que solicitante (formulário), gestor (aprovação) e o
 // PDF usem exatamente os mesmos valores.
 
+/**
+ * PROVISÓRIO (lançamento de 2026-09-01): os tetos por refeição saem de cena.
+ *
+ * A política nova é por LOCAL (Belo Horizonte / demais cidades do Brasil /
+ * México e Guatemala) e ainda não está fechada — enquanto isso, mostrar os
+ * valores antigos e descontar por eles seria aplicar regra que já se sabe
+ * errada. Com a chave desligada:
+ *   - o quadro "Regras de reembolso" não aparece;
+ *   - o aviso de excedente não aparece;
+ *   - a aprovação é sempre pelo valor total, sem o botão de desconto.
+ *
+ * O cálculo continua no código, inteiro e testado: quando a tabela nova
+ * chegar, é ligar a chave e trocar os valores. Nada aqui foi apagado.
+ */
+export const REGRAS_VALOR_ATIVAS = false;
+
 export const POLICY = {
   // Limites por refeição (R$)
   alimentacao: [
@@ -305,10 +321,17 @@ export function evaluatePolicyOverage(items) {
   };
 }
 
-// Data de pagamento calculada a partir da data de APROVAÇÃO:
-//   • aprovado entre os dias 1 e 5  -> paga dia 15 do mesmo mês
-//   • aprovado entre os dias 6 e 20 -> paga dia 1º do mês seguinte
-//   • aprovado entre os dias 21 e 31 -> paga dia 15 do mês seguinte
+// Data de pagamento calculada a partir da data de APROVAÇÃO.
+//
+// Regra PROVISÓRIA do lançamento (2026-09-01), que substituiu a de 5/20/21:
+//   • aprovado entre os dias 1 e 10  -> paga dia 16 do mesmo mês
+//   • aprovado entre os dias 11 e 25 -> paga dia 1º do mês seguinte
+//   • aprovado do dia 26 em diante   -> paga dia 16 do mês seguinte
+//
+// A terceira faixa não veio escrita: é a continuação das duas primeiras, que
+// alternam entre os dois pagamentos do mês (dia 1º e dia 16). Confirmar com o
+// Financeiro — se estiver errada, é esta linha que muda.
+//
 // Retorna string "YYYY-MM-DD" (data local), ou null se a entrada for inválida.
 export function computePaymentDate(approvalIso) {
   const base = approvalIso ? new Date(approvalIso) : new Date();
@@ -318,14 +341,14 @@ export function computePaymentDate(approvalIso) {
   let payMonth = base.getMonth(); // 0-based
   let payDay;
 
-  if (day <= 5) {
-    payDay = 15; // mesmo mês
-  } else if (day <= 20) {
+  if (day <= 10) {
+    payDay = 16; // mesmo mês
+  } else if (day <= 25) {
     payDay = 1;
     payMonth += 1; // dia 1º do mês seguinte
   } else {
-    payDay = 15;
-    payMonth += 1; // dia 15 do mês seguinte
+    payDay = 16;
+    payMonth += 1; // dia 16 do mês seguinte
   }
 
   // O construtor normaliza o estouro de mês (ex.: dezembro -> janeiro).

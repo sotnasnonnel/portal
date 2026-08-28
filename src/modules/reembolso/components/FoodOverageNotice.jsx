@@ -1,5 +1,5 @@
 import { AlertTriangle } from "lucide-react";
-import { evaluatePolicyOverage } from "../lib/reimbursementPolicy.js";
+import { evaluatePolicyOverage, REGRAS_VALOR_ATIVAS } from "../lib/reimbursementPolicy.js";
 import { formatCurrency } from "../lib/format.js";
 import "./FoodOverageNotice.css";
 
@@ -10,6 +10,11 @@ import "./FoodOverageNotice.css";
 // do reembolso (para calcular o "dentro do limite"); se omitido, usa só a soma
 // dos itens avaliados.
 export default function FoodOverageNotice({ items, total }) {
+  // Fora do ar junto com o quadro de regras: apontar excedente contra um teto
+  // que a empresa já sabe que vai mudar só gera pergunta.
+  // Ver REGRAS_VALOR_ATIVAS em lib/reimbursementPolicy.js.
+  if (!REGRAS_VALOR_ATIVAS) return null;
+
   const check = evaluatePolicyOverage(items);
   if (!check.hasOverage) return null;
 

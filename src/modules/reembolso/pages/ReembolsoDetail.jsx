@@ -15,7 +15,7 @@ import {
 } from "../services/reimbursements.js";
 import { reconcileAdvance } from "../lib/advanceAccountability.js";
 import { formatCurrency, formatDate } from "../lib/format.js";
-import { evaluatePolicyOverage } from "../lib/reimbursementPolicy.js";
+import { evaluatePolicyOverage, REGRAS_VALOR_ATIVAS } from "../lib/reimbursementPolicy.js";
 import { kindMeta } from "../lib/kind.js";
 import StatusBadge from "../components/StatusBadge.jsx";
 import ImageLightbox from "../components/ImageLightbox.jsx";
@@ -107,8 +107,11 @@ export default function ReembolsoDetail() {
   const meta = kindMeta(reembolso.kind);
 
   // Excedente de alimentação ou de hospedagem -> permite aprovar com desconto.
+  // Enquanto REGRAS_VALOR_ATIVAS está desligada, o excedente é ignorado: a
+  // aprovação sai sempre pelo total, sem o botão de desconto.
   const total = Number(reembolso.total || 0);
-  const foodCheck = evaluatePolicyOverage(reembolso.items);
+  const overage = evaluatePolicyOverage(reembolso.items);
+  const foodCheck = REGRAS_VALOR_ATIVAS ? overage : { ...overage, hasOverage: false, over: 0 };
   const discountedTotal = Math.max(0, total - foodCheck.over);
   // Valor efetivamente aprovado/pago. Registros antigos (sem approved_amount)
   // foram aprovados pelo total cheio.
@@ -615,7 +618,7 @@ export default function ReembolsoDetail() {
           <p className="payment-hint">
             {isAdiantamento
               ? "Informada pelo solicitante ao pedir o adiantamento. Compõe o nome do arquivo do PDF."
-              : "Calculada automaticamente pela data de aprovação (aprovado até dia 20 → pagamento no dia 1º; aprovado entre os dias 21 e 5 → pagamento no dia 15). Compõe o nome do arquivo do PDF."}
+              : "Calculada automaticamente pela data de aprovação (aprovado do dia 1 ao 10 → pagamento no dia 16 do mesmo mês; do dia 11 ao 25 → dia 1º do mês seguinte; do 26 em diante → dia 16 do mês seguinte). Compõe o nome do arquivo do PDF."}
           </p>
         </section>
       )}

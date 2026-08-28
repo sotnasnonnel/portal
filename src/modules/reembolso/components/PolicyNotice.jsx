@@ -1,5 +1,5 @@
 import { AlertTriangle } from "lucide-react";
-import { POLICY } from "../lib/reimbursementPolicy.js";
+import { POLICY, REGRAS_VALOR_ATIVAS } from "../lib/reimbursementPolicy.js";
 import { formatCurrency } from "../lib/format.js";
 import "./PolicyNotice.css";
 
@@ -7,6 +7,11 @@ import "./PolicyNotice.css";
 // proibidos). Mostrado ao solicitante no formulário e ao gestor na aprovação.
 // `compact` reduz margens para caber dentro de modais.
 export default function PolicyNotice({ compact = false }) {
+  // Fora do ar enquanto a política por local não fecha: os valores daqui são os
+  // antigos, e regra errada na tela é pior do que regra nenhuma.
+  // Ver REGRAS_VALOR_ATIVAS em lib/reimbursementPolicy.js.
+  if (!REGRAS_VALOR_ATIVAS) return null;
+
   return (
     <div className={`policy-notice${compact ? " policy-notice--compact" : ""}`}>
       <div className="policy-notice-head">
