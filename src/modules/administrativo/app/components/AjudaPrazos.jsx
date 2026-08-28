@@ -135,7 +135,7 @@ export default function AjudaPrazos() {
                       <tbody>
                         <tr><td>até R$ 5.000</td><td>líder imediato</td></tr>
                         <tr><td>R$ 5.000 a R$ 20.000</td><td>Diretoria + Financeiro (aprovação dupla)</td></tr>
-                        <tr><td>acima de R$ 20.000</td><td>Diretoria + Financeiro + COO</td></tr>
+                        <tr><td>acima de R$ 20.000</td><td>Diretoria + Financeiro + CEO</td></tr>
                       </tbody>
                     </table>
                   </dd>
