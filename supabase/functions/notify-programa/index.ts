@@ -279,7 +279,7 @@ Deno.serve(async (req) => {
           logo,
         });
       }
-    } else {
+    } else if (evento === "alavanca_nova" || evento === "alavanca_retorno") {
       if (!indicacao_id) return json({ error: "missing_indicacao_id" }, 400);
       const { data: ind, error } = await supabase
         .from("programas_alavanca")
