@@ -2,16 +2,14 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowDownToLine, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { MOTIVOS_ENTRADA, CATEGORIAS, ehOperadorEstoque, podeGravarEstoque } from '../../../../config/estoque';
+import { MOTIVOS_ENTRADA, CATEGORIAS, ehOperadorEstoque } from '../../../../config/estoque';
 import { listarPosicao, lancarMovimentos } from '../../lib/estoque';
 import { linhaVazia, validarCarrinho, montarMovimentos } from '../../lib/carrinho';
 import Carrinho from '../components/Carrinho';
-import AvisoVitrine from '../components/AvisoVitrine';
 
 export default function EntradaEstoque() {
   const { modules } = useAuth();
   const operador = ehOperadorEstoque(modules);
-  const podeGravar = podeGravarEstoque(modules);
 
   const [posicao, setPosicao] = useState([]);
   const [linhas, setLinhas] = useState([linhaVazia()]);
@@ -83,7 +81,6 @@ export default function EntradaEstoque() {
         </div>
       </div>
 
-      <AvisoVitrine acao="registrar entrada" />
       {erro && <div className="est-aviso tom-erro"><AlertCircle size={16} /> {erro}</div>}
       {feito && <div className="est-aviso tom-ok"><CheckCircle2 size={16} /> {feito}</div>}
 
@@ -125,7 +122,7 @@ export default function EntradaEstoque() {
             />
           )}
           <div className="est-acoes">
-            <button type="submit" className="est-btn est-btn-primary" disabled={ocupado || carregando || !podeGravar}>
+            <button type="submit" className="est-btn est-btn-primary" disabled={ocupado || carregando}>
               {ocupado ? <Loader2 size={16} className="est-spin" /> : <ArrowDownToLine size={16} />}
               Registrar entrada
             </button>

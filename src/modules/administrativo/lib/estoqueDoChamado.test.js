@@ -9,18 +9,14 @@ const CAPACETE = { id: 'v1', descricao: 'CAPACETE 3M', ca: '29638', saldo: 5 };
 const BOTINA = { id: 'v2', descricao: 'BOTINA', tamanho: '42', saldo: 1 };
 const POSICAO = [CAPACETE, BOTINA];
 
-// `vitrine: false` = módulo ligado. Explícito para o teste não depender do
-// valor atual de ESTOQUE_VITRINE.
-const LIGADO = { vitrine: false };
-
 test('chamadoUsaEstoque só vale para EPI e uniforme', () => {
-  assert.equal(chamadoUsaEstoque({ classe: 'saude-seguranca', servico: 'epi' }, LIGADO), true);
-  assert.equal(chamadoUsaEstoque({ classe: 'saude-seguranca', servico: 'uniforme' }, LIGADO), true);
+  assert.equal(chamadoUsaEstoque({ classe: 'saude-seguranca', servico: 'epi' }), true);
+  assert.equal(chamadoUsaEstoque({ classe: 'saude-seguranca', servico: 'uniforme' }), true);
   // "Outras demandas" mora na mesma classe, mas não tem item de estoque.
-  assert.equal(chamadoUsaEstoque({ classe: 'saude-seguranca', servico: 'outras-demandas' }, LIGADO), false);
-  assert.equal(chamadoUsaEstoque({ classe: 'frota', servico: 'reserva-veiculos' }, LIGADO), false);
-  assert.equal(chamadoUsaEstoque(null, LIGADO), false);
-  assert.equal(chamadoUsaEstoque(undefined, LIGADO), false);
+  assert.equal(chamadoUsaEstoque({ classe: 'saude-seguranca', servico: 'outras-demandas' }), false);
+  assert.equal(chamadoUsaEstoque({ classe: 'frota', servico: 'reserva-veiculos' }), false);
+  assert.equal(chamadoUsaEstoque(null), false);
+  assert.equal(chamadoUsaEstoque(undefined), false);
 });
 
 test('chamadoDeEstoque classifica o serviço, sem depender do modo', () => {
@@ -31,26 +27,11 @@ test('chamadoDeEstoque classifica o serviço, sem depender do modo', () => {
   assert.equal(chamadoDeEstoque(null), false);
 });
 
-// A separação que importa: em vitrine o Adm segue como antes (sem baixa, com o
-// formulário antigo), MAS a consulta de saldo continua de pé — ler não muda
-// nada, e é a informação que o Adm usa para decidir se fornece.
-test('modo vitrine tira a baixa mas mantém a consulta', () => {
-  const epi = { classe: 'saude-seguranca', servico: 'epi' };
-  const uniforme = { classe: 'saude-seguranca', servico: 'uniforme' };
-
-  assert.equal(chamadoUsaEstoque(epi, { vitrine: true }), false, 'baixa desligada');
-  assert.equal(chamadoUsaEstoque(uniforme, { vitrine: true }), false, 'baixa desligada');
-
-  // A consulta não olha o modo.
-  assert.equal(chamadoDeEstoque(epi), true, 'consulta continua');
-  assert.equal(chamadoDeEstoque(uniforme), true, 'consulta continua');
-});
-
 // Serviço sem material nenhum não ganha consulta em modo nenhum.
 test('serviço fora de EPI/uniforme não ganha consulta nem baixa', () => {
   const frota = { classe: 'frota', servico: 'reserva-veiculos' };
   assert.equal(chamadoDeEstoque(frota), false);
-  assert.equal(chamadoUsaEstoque(frota, { vitrine: false }), false);
+  assert.equal(chamadoUsaEstoque(frota), false);
 });
 
 test('categoriaDoChamado mapeia o serviço para a categoria do catálogo', () => {

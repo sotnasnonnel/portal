@@ -5,7 +5,6 @@
 // contrário. As duas libs usadas aqui são puras.
 
 import { montarMovimentos, validarCarrinho } from '../../estoque/lib/carrinho.js';
-import { ESTOQUE_VITRINE } from '../../../config/estoqueModo.js';
 
 /**
  * O chamado é de material de estoque? Só EPI e uniforme são; os outros ~24
@@ -20,19 +19,12 @@ export const chamadoDeEstoque = (chamado) =>
   && ['epi', 'uniforme'].includes(chamado?.servico);
 
 /**
- * O chamado pode dar BAIXA no estoque ao fechar?
- *
- * Separado de `chamadoDeEstoque` de propósito: em modo vitrine o Administrativo
- * funciona como antes — sem card de baixa e com o formulário antigo —, mas a
- * CONSULTA de saldo continua disponível, porque ler não muda nada. Misturar as
- * duas coisas num gate só tirava do Adm justamente a informação que ele usa
- * para decidir se fornece.
- *
- * `vitrine` é injetável para o teste exercitar os dois modos sem depender do
- * valor atual do flag.
+ * O chamado pode dar BAIXA no estoque ao fechar? Hoje é o mesmo conjunto de
+ * `chamadoDeEstoque`; os dois nomes seguem separados porque LER saldo e ESCREVER
+ * baixa são permissões diferentes por natureza, e já foram desligados
+ * independentemente uma vez.
  */
-export const chamadoUsaEstoque = (chamado, { vitrine = ESTOQUE_VITRINE } = {}) =>
-  !vitrine && chamadoDeEstoque(chamado);
+export const chamadoUsaEstoque = (chamado) => chamadoDeEstoque(chamado);
 
 /** Categoria do catálogo correspondente ao serviço. */
 export const categoriaDoChamado = (chamado) =>

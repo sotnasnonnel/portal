@@ -4,10 +4,6 @@ import { MOTIVOS, inicialSaudeSeguranca, validarSaudeSeguranca } from './saudeSe
 
 const base = () => ({ ...inicialSaudeSeguranca(), cc: 'CC-100' });
 
-// Os dois modos, explícitos: o teste não depende do valor atual de
-// ESTOQUE_VITRINE, e a troca do flag não quebra a suíte.
-const LIGADO = { vitrine: false };
-const VITRINE = { vitrine: true };
 
 // Item já escolhido do catálogo do Estoque, no formato que vai para
 // chamados_adm.campos.itens.
@@ -22,27 +18,27 @@ test('motivo cobre item novo e as duas substituições da planilha', () => {
 
 test('CC é exigido nos três serviços', () => {
   for (const s of ['epi', 'uniforme', 'outras']) {
-    assert.match(validarSaudeSeguranca(inicialSaudeSeguranca(), s, LIGADO), /centro de custo/i);
+    assert.match(validarSaudeSeguranca(inicialSaudeSeguranca(), s), /centro de custo/i);
   }
 });
 
-test('EPI exige item do catálogo e motivo', () => {
-  assert.match(validarSaudeSeguranca(base(), 'epi', LIGADO), /EPI/i);
-  assert.match(validarSaudeSeguranca({ ...base(), itens: [item()] }, 'epi', LIGADO), /motivo/i);
-  assert.equal(validarSaudeSeguranca({ ...base(), itens: [item()], motivo: MOTIVOS[0] }, 'epi', LIGADO), '');
+test('EPI: pedido vazio é recusado, com item do catálogo passa', () => {
+  assert.match(validarSaudeSeguranca(base(), 'epi'), /catálogo ou descreva/i);
+  assert.match(validarSaudeSeguranca({ ...base(), itens: [item()] }, 'epi'), /motivo/i);
+  assert.equal(validarSaudeSeguranca({ ...base(), itens: [item()], motivo: MOTIVOS[0] }, 'epi'), '');
 });
 
-test('uniforme exige peça do catálogo e motivo', () => {
-  assert.match(validarSaudeSeguranca(base(), 'uniforme', LIGADO), /peça/i);
-  assert.match(validarSaudeSeguranca({ ...base(), itens: [item()] }, 'uniforme', LIGADO), /motivo/i);
-  assert.equal(validarSaudeSeguranca({ ...base(), itens: [item()], motivo: MOTIVOS[1] }, 'uniforme', LIGADO), '');
+test('uniforme: pedido vazio é recusado, com item do catálogo passa', () => {
+  assert.match(validarSaudeSeguranca(base(), 'uniforme'), /catálogo ou descreva/i);
+  assert.match(validarSaudeSeguranca({ ...base(), itens: [item()] }, 'uniforme'), /motivo/i);
+  assert.equal(validarSaudeSeguranca({ ...base(), itens: [item()], motivo: MOTIVOS[1] }, 'uniforme'), '');
 });
 
 // A quantidade é o que o estoque vai descontar na baixa: sem ela válida, a
 // entrega não fecha.
 test('quantidade precisa ser inteira e maior que zero', () => {
   const com = (q) => validarSaudeSeguranca(
-    { ...base(), itens: [item({ quantidade: q })], motivo: MOTIVOS[0] }, 'epi', LIGADO,
+    { ...base(), itens: [item({ quantidade: q })], motivo: MOTIVOS[0] }, 'epi',
   );
   assert.match(com(0), /quantidade inteira maior que zero/);
   assert.match(com(-1), /quantidade inteira maior que zero/);
@@ -56,39 +52,46 @@ test('quantidade precisa ser inteira e maior que zero', () => {
 test('item sem variante escolhida é recusado', () => {
   assert.match(
     validarSaudeSeguranca(
-      { ...base(), itens: [item({ variante_id: '' })], motivo: MOTIVOS[0] }, 'epi', LIGADO,
+      { ...base(), itens: [item({ variante_id: '' })], motivo: MOTIVOS[0] }, 'epi',
     ),
     /quantidade inteira maior que zero/,
   );
 });
 
 test('outras demandas pede só o CC — o resto é a descrição do chamado', () => {
-  assert.equal(validarSaudeSeguranca(base(), 'outras', LIGADO), '');
+  assert.equal(validarSaudeSeguranca(base(), 'outras'), '');
 });
 
-// Os campos antigos continuam existindo no estado (chamados legados e os filhos
-// da mobilização usam esse formato), mas não valem mais como pedido preenchido.
-test('os campos legados não substituem a escolha de itens', () => {
-  assert.match(validarSaudeSeguranca({ ...base(), tipo: ['Capacete'] }, 'epi', LIGADO), /EPI/i);
-  assert.match(validarSaudeSeguranca({ ...base(), tipo_livre: '2 polos M' }, 'uniforme', LIGADO), /peça/i);
+// A REGRA CENTRAL: o estado do estoque nunca bloqueia um pedido. Catálogo
+// vazio ou item não cadastrado são problema de quem fornece, não de quem
+// precisa do EPI — e é o pedido que sinaliza a compra.
+test('texto livre basta: catálogo vazio não impede abrir o chamado', () => {
+  const soTexto = { ...base(), tipo_livre: '2 camisas polo M', motivo: MOTIVOS[0] };
+  assert.equal(validarSaudeSeguranca(soTexto, 'epi'), '');
+  assert.equal(validarSaudeSeguranca(soTexto, 'uniforme'), '');
 });
 
-// Enquanto o catálogo do Estoque não está no ar, o pedido volta ao formato
-// antigo. Sem isto, com o catálogo vazio, ninguém abriria esses chamados.
-test('modo vitrine: volta a exigir os campos antigos, e não os itens', () => {
-  assert.match(validarSaudeSeguranca(base(), 'epi', VITRINE), /EPI/i);
-  assert.equal(
-    validarSaudeSeguranca({ ...base(), tipo: ['Capacete'], motivo: MOTIVOS[0] }, 'epi', VITRINE),
-    '',
-  );
-  assert.match(validarSaudeSeguranca(base(), 'uniforme', VITRINE), /peças/i);
-  assert.equal(
-    validarSaudeSeguranca({ ...base(), tipo_livre: '2 polos M', motivo: MOTIVOS[1] }, 'uniforme', VITRINE),
-    '',
-  );
-  // E o formato novo não é exigido: item escolhido sem os campos antigos não
-  // basta em vitrine, porque o formulário nem oferece o seletor.
-  assert.match(validarSaudeSeguranca({ ...base(), itens: [item()], motivo: MOTIVOS[0] }, 'epi', VITRINE), /EPI/i);
-  // O CC continua obrigatório nos dois modos.
-  assert.match(validarSaudeSeguranca(inicialSaudeSeguranca(), 'epi', VITRINE), /centro de custo/i);
+test('catálogo e texto livre podem vir juntos', () => {
+  const ambos = {
+    ...base(), itens: [item()], tipo_livre: '1 luva anticorte 9', motivo: MOTIVOS[0],
+  };
+  assert.equal(validarSaudeSeguranca(ambos, 'epi'), '');
 });
+
+// O formato legado do desdobramento da mobilização (lib/desdobramento.js)
+// precisa continuar valendo, senão a mobilização para de gerar os filhos.
+test('o formato legado do desdobramento continua aceito', () => {
+  assert.equal(
+    validarSaudeSeguranca({ ...base(), tipo: ['Capacete'], motivo: MOTIVOS[0] }, 'epi'),
+    '',
+  );
+});
+
+// Espaço em branco não é pedido.
+test('texto livre só com espaços não conta como pedido', () => {
+  assert.match(
+    validarSaudeSeguranca({ ...base(), tipo_livre: '   ', motivo: MOTIVOS[0] }, 'epi'),
+    /catálogo ou descreva/i,
+  );
+});
+

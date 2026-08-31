@@ -1,10 +1,6 @@
 // Regras dos serviços de Saúde e segurança (EPI, uniforme, outras demandas).
-// Só importa o flag do Estoque, que é um arquivo sem dependências — assim o
-// módulo continua rodando sob `node --test` e sem quebrar o fast refresh.
-// As listas de opções ficam em opcoes.js.
-// Extensão explícita: este arquivo roda sob `node --test`, que não resolve
-// import sem `.js` (o Vite resolve, e por isso o build não acusaria).
-import { ESTOQUE_VITRINE } from '../../../../../config/estoqueModo.js';
+// Sem imports, para rodar sob `node --test` e não quebrar o fast refresh —
+// as listas de opções ficam em opcoes.js.
 
 // "novo ou substituição": a planilha traz o motivo como quebra/desgaste, e o
 // pedido de item novo é o terceiro caso.
@@ -12,19 +8,18 @@ export const MOTIVOS = ['Item novo', 'Substituição por quebra', 'Substituiçã
 
 export const inicialSaudeSeguranca = () => ({
   cc: '',
-  // Pedido estruturado: itens do catálogo do Estoque, com quantidade. É o que
-  // permite ao Adm consultar o saldo antes de prometer e dar baixa ao concluir.
-  // Cada item guarda os dados denormalizados
-  // ({ variante_id, descricao, tamanho, ca, genero, setor, quantidade })
-  // porque o detalhe do chamado precisa continuar legível mesmo que a variante
-  // seja renomeada ou desativada depois.
+  // Itens escolhidos do catálogo do Estoque, com quantidade
+  // ({ variante_id, descricao, tamanho, ca, genero, setor, quantidade }).
+  // Vão denormalizados de propósito: o detalhe do chamado precisa continuar
+  // legível mesmo que a variante seja renomeada ou desativada depois.
   itens: [],
-  // Campos legados. Nunca mais escritos por este formulário, mas continuam aqui
-  // porque os chamados abertos até hoje — e os filhos gerados pela mobilização
-  // (lib/desdobramento.js) — usam este formato, e as telas de leitura precisam
-  // aguentar os dois.
-  tipo: [],          // EPI: lista de rótulos, sem quantidade
-  tipo_livre: '',    // Uniforme: texto livre ("2 camisas polo M")
+  // Texto livre para o que NÃO está no catálogo. Não é resquício do formato
+  // antigo: é a garantia de que ninguém fica sem pedir por causa de um cadastro
+  // incompleto do almoxarifado.
+  tipo_livre: '',
+  // Legado: chamados abertos antes do catálogo, e os filhos gerados pela
+  // mobilização (lib/desdobramento.js), que ainda gravam neste formato.
+  tipo: [],
   motivo: '',
   localizacao: '',
   observacao: '',
@@ -34,38 +29,35 @@ export const inicialSaudeSeguranca = () => ({
  * `servico` decide o que é exigido — os três compartilham o formulário, mas
  * pedem coisas diferentes. A descrição e os anexos não entram aqui: são os do
  * próprio chamado, e duplicá-los faria a pessoa escrever a mesma coisa duas vezes.
+ *
+ * REGRA CENTRAL: o estado do estoque NUNCA bloqueia um pedido. Catálogo vazio,
+ * item não cadastrado ou saldo zerado são problemas de quem fornece, não de quem
+ * precisa do EPI — e é justamente o pedido que sinaliza a compra. Basta ter dito
+ * o que se quer: escolhendo no catálogo, escrevendo, ou os dois.
  */
-export function validarSaudeSeguranca(v, servico, { vitrine = ESTOQUE_VITRINE } = {}) {
+export function validarSaudeSeguranca(v, servico) {
   if (!v.cc?.trim()) return 'Informe o centro de custo.';
-
-  // Modo vitrine: o catálogo do Estoque ainda não vale, então o pedido volta ao
-  // formato antigo — lista de EPIs e texto livre de uniforme. Sem isto, com o
-  // catálogo vazio, ninguém conseguiria abrir esses chamados.
-  if (vitrine) {
-    if (servico === 'epi') {
-      if (!v.tipo?.length) return 'Escolha ao menos um EPI.';
-      if (!v.motivo) return 'Informe o motivo do pedido.';
-    }
-    if (servico === 'uniforme') {
-      if (!v.tipo_livre?.trim()) return 'Descreva as peças de uniforme e os tamanhos.';
-      if (!v.motivo) return 'Informe o motivo do pedido.';
-    }
-    return '';
-  }
 
   if (servico === 'epi' || servico === 'uniforme') {
     const itens = v.itens || [];
-    if (!itens.length) {
-      return servico === 'epi'
-        ? 'Escolha ao menos um EPI.'
-        : 'Escolha ao menos uma peça de uniforme.';
-    }
-    // Quantidade inteira e positiva: é ela que o estoque vai descontar na baixa.
+
+    // Quantidade inteira e positiva no que veio do catálogo: é ela que o estoque
+    // desconta na baixa. Vale só para o que foi escolhido lá.
     const invalido = itens.find((i) => {
       const n = Number(i.quantidade);
       return !i.variante_id || !Number.isInteger(n) || n <= 0;
     });
     if (invalido) return 'Informe uma quantidade inteira maior que zero para cada item.';
+
+    // Catálogo OU texto livre: qualquer um dos dois basta. O legado `tipo`
+    // também conta, para o desdobramento da mobilização continuar valendo.
+    const pediuAlgo = itens.length > 0 || !!v.tipo_livre?.trim() || (v.tipo?.length || 0) > 0;
+    if (!pediuAlgo) {
+      return servico === 'epi'
+        ? 'Escolha os EPIs no catálogo ou descreva o que precisa.'
+        : 'Escolha as peças no catálogo ou descreva o que precisa.';
+    }
+
     if (!v.motivo) return 'Informe o motivo do pedido.';
     return '';
   }

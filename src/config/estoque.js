@@ -1,7 +1,4 @@
 import { Boxes, HardHat, Shirt } from 'lucide-react';
-import { ESTOQUE_VITRINE } from './estoqueModo';
-
-export { ESTOQUE_VITRINE, AVISO_VITRINE } from './estoqueModo';
 
 /**
  * Módulo de Estoque — almoxarifado de EPIs e uniformes.
@@ -28,7 +25,7 @@ export const ESTOQUE_EM_BREVE = true;
 
 /**
  * Quem enxerga o módulo enquanto ESTOQUE_EM_BREVE for true. Todos entram em
- * modo VITRINE (ver config/estoqueModo.js) — ver as telas não é poder gravar.
+ * módulo (ver ESTOQUE_EM_BREVE acima).
  *
  * Só e-mail CORPORATIVO: o login é OAuth Microsoft, e endereço pessoal não
  * autentica (conferido — não há colaborador cadastrado com um).
@@ -53,13 +50,6 @@ export const podeAcessarEstoque = (user) => !ESTOQUE_EM_BREVE
 export const ehOperadorEstoque = (modules) =>
   modules?.administrativo === 'admin' || modules?.administrativo === 'atendente';
 
-/**
- * Quem pode GRAVAR agora. Separado de `ehOperadorEstoque` de propósito: em
- * modo vitrine o operador continua enxergando as telas (é o ponto de mostrar o
- * frontend), só não grava. As telas usam isto para desligar os botões; a trava
- * de verdade está em lib/estoque.js, que recusa a escrita de qualquer jeito.
- */
-export const podeGravarEstoque = (modules) => !ESTOQUE_VITRINE && ehOperadorEstoque(modules);
 
 export const CATEGORIAS = [
   { valor: 'epi', label: 'EPI', plural: 'EPIs', icon: HardHat },

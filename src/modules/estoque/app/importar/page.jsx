@@ -5,16 +5,14 @@ import {
   FileSpreadsheet, Loader2, AlertCircle, CheckCircle2, Upload, TriangleAlert, ArrowRight,
 } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { CATEGORIAS, ehOperadorEstoque, podeGravarEstoque } from '../../../../config/estoque';
+import { CATEGORIAS, ehOperadorEstoque } from '../../../../config/estoque';
 import { listarPosicao, importarLinhas } from '../../lib/estoque';
 import { normalizarPlanilha, planejarImportacao } from '../../lib/importar';
 import { detalheVariante } from '../../lib/catalogo';
-import AvisoVitrine from '../components/AvisoVitrine';
 
 export default function ImportarEstoque() {
   const { modules } = useAuth();
   const operador = ehOperadorEstoque(modules);
-  const podeGravar = podeGravarEstoque(modules);
   const inputRef = useRef(null);
 
   const [posicao, setPosicao] = useState([]);
@@ -126,7 +124,6 @@ export default function ImportarEstoque() {
         </div>
       </div>
 
-      <AvisoVitrine acao="importar" />
       {erro && <div className="est-aviso tom-erro"><AlertCircle size={16} /> {erro}</div>}
 
       {resultado && (
@@ -287,7 +284,7 @@ export default function ImportarEstoque() {
                 )}
                 <button type="button" className="est-btn est-btn-primary est-acoes-fim"
                   onClick={importar}
-                  disabled={ocupado || !podeGravar || (!plano.resumo.criar && !plano.resumo.atualizar)}>
+                  disabled={ocupado || (!plano.resumo.criar && !plano.resumo.atualizar)}>
                   {ocupado ? <Loader2 size={16} className="est-spin" /> : <Upload size={16} />}
                   Importar {plano.resumo.criar + plano.resumo.atualizar} linha(s)
                 </button>

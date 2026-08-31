@@ -3,7 +3,6 @@ import { supabase } from '../../../services/supabase';
 // fecha o chamado — nos dois pontos de entrada (a tela de Saída e o card do
 // Adm). Deixá-lo em quem chama já custou um caminho silencioso.
 import { notificarChamadoAdm } from '../../../services/notificarChamadoAdm';
-import { ESTOQUE_VITRINE } from '../../../config/estoqueModo';
 
 /**
  * Única camada de acesso a dados do módulo de Estoque — nenhuma página fala com
@@ -19,19 +18,6 @@ import { ESTOQUE_VITRINE } from '../../../config/estoqueModo';
  *
  * Trocar um pelo outro é o erro fácil de cometer aqui.
  */
-
-/**
- * Trava do modo vitrine. Fica AQUI, e não só nos botões, porque esta é a única
- * porta por onde toda escrita do módulo passa — botão esquecido, atalho de
- * teclado ou chamada futura esbarram nela do mesmo jeito.
- *
- * Lança em vez de ignorar em silêncio: fingir que gravou seria pior que recusar.
- */
-const recusarSeVitrine = () => {
-  if (ESTOQUE_VITRINE) {
-    throw new Error('O módulo de Estoque está em demonstração: as ações ainda não gravam dados.');
-  }
-};
 
 // UPDATE barrado pela RLS não dá erro, dá zero linhas.
 const exigirLinha = (data, erro, mensagem) => {
@@ -68,7 +54,6 @@ export async function listarItens() {
 
 /** Cria o item; se já existir a dupla (categoria, descrição), devolve o existente. */
 export async function garantirItem({ categoria, descricao, unidade = 'un' }) {
-  recusarSeVitrine();
   const nome = descricao.trim();
   const { data: achado } = await supabase
     .from('estoque_itens')
@@ -87,7 +72,6 @@ export async function garantirItem({ categoria, descricao, unidade = 'un' }) {
 }
 
 export async function salvarItem({ id, descricao, unidade, ativo }) {
-  recusarSeVitrine();
   const { data, error } = await supabase
     .from('estoque_itens')
     .update({ descricao: descricao?.trim(), unidade, ativo })
@@ -108,7 +92,6 @@ const inteiroOuNulo = (v) => {
 };
 
 export async function criarVariante(dados) {
-  recusarSeVitrine();
   const { data, error } = await supabase
     .from('estoque_variantes')
     .insert({
@@ -136,7 +119,6 @@ export async function criarVariante(dados) {
  * de explicar o número. Para corrigir contagem existe o inventário (/estoque/ajuste).
  */
 export async function salvarVariante(id, { estoque_minimo, estoque_maximo, custo_unitario, ativo, codigo }) {
-  recusarSeVitrine();
   const patch = {};
   if (estoque_minimo !== undefined) patch.estoque_minimo = inteiroOuNulo(estoque_minimo) ?? 0;
   if (estoque_maximo !== undefined) patch.estoque_maximo = inteiroOuNulo(estoque_maximo);
@@ -161,7 +143,6 @@ export async function salvarVariante(id, { estoque_minimo, estoque_maximo, custo
  * saída quita um chamado do Adm sem fechá-lo.
  */
 export async function lancarMovimentos(movs, chamadoId = null) {
-  recusarSeVitrine();
   if (!movs?.length) throw new Error('Nenhum item para lançar.');
   const { data, error } = await supabase.rpc('estoque_lancar', {
     p_movs: movs, p_chamado: chamadoId,
@@ -186,7 +167,6 @@ export async function lancarMovimentos(movs, chamadoId = null) {
  * erro de verdade, não zero linhas.
  */
 export async function baixarChamado(chamadoId, resolucao, movs) {
-  recusarSeVitrine();
   const { data, error } = await supabase.rpc('estoque_baixa_chamado', {
     p_chamado: chamadoId, p_resolucao: (resolucao || '').trim(), p_itens: movs || [],
   });
@@ -286,7 +266,6 @@ export async function listarChamadosElegiveis() {
  * idempotente (o plano compara com o que já existe), então basta reimportar.
  */
 export async function importarLinhas(plano, aoProgredir) {
-  recusarSeVitrine();
   const erros = [];
   let criadas = 0;
   let ajustadas = 0;

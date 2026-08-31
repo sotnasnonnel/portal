@@ -209,8 +209,8 @@ export default function ChamadoAdm() {
 
   // EPI e uniforme descontam do estoque ao fechar; os demais serviços não têm
   // item nenhum e seguem pelo caminho de sempre (fecharChamado).
-  // Ler e escrever têm gates diferentes: a consulta de saldo continua de pé em
-  // modo vitrine (ler não muda nada); a baixa é que sai.
+  // Ler saldo e escrever baixa seguem separados: são permissões diferentes por
+  // natureza, e já precisaram ser desligadas independentemente uma vez.
   const deEstoque = chamadoDeEstoque(chamado);
   const usaEstoque = chamadoUsaEstoque(chamado);
   const itensPedidos = Array.isArray(chamado.campos?.itens) ? chamado.campos.itens : [];
