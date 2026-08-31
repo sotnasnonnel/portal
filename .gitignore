@@ -32,3 +32,8 @@ portal_phd.zip
 
 # Cache da CLI do Supabase
 supabase/.temp/
+
+# Planilhas, prints e payloads soltos na raiz (material de trabalho local)
+/*.xlsx
+/*.png
+/.fn_payload.json
