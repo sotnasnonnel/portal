@@ -109,6 +109,17 @@ test('filtrarPosicao combina categoria e alerta', () => {
   assert.equal(filtrarPosicao(POSICAO, { categoria: 'epi', apenasAlerta: true }).length, 1);
 });
 
+test('filtrarPosicao isola uma situação — o caminho do painel para cá', () => {
+  assert.deepEqual(
+    filtrarPosicao(POSICAO, { situacao: 'sem_estoque' }).map((v) => v.descricao),
+    ['BOTINA COM METATARSO'],
+  );
+  assert.equal(filtrarPosicao(POSICAO, { situacao: 'ok' }).length, 1);
+  assert.equal(filtrarPosicao(POSICAO, { situacao: 'acima_maximo' }).length, 0);
+  // Combina com os outros filtros.
+  assert.equal(filtrarPosicao(POSICAO, { situacao: 'sem_estoque', categoria: 'uniforme' }).length, 0);
+});
+
 test('filtrarPosicao devolve ordenado e aguenta lista vazia', () => {
   assert.deepEqual(filtrarPosicao(null, {}), []);
   assert.deepEqual(

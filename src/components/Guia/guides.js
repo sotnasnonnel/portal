@@ -858,9 +858,9 @@ export const ESTOQUE_GUIA = {
       },
       {
         icon: AlertTriangle,
-        titulo: "Mínimo e máximo mandam no alerta",
+        titulo: "Mínimo e máximo mandam nos indicadores",
         texto:
-          'O estoque mínimo é o que define "precisa repor" — no painel, nos gráficos e no aviso do sino. Sem mínimo cadastrado, um item só é sinalizado quando zera, e aí já é tarde. Vale preencher ao menos nos itens de giro.',
+          'O mínimo define "estoque baixo" — no painel, nos gráficos e no aviso do sino; o máximo define "estoque alto". Enquanto não forem preenchidos, esses dois indicadores ficam em zero: um item só é sinalizado quando zera, e aí já é tarde. A planilha de origem não trazia essas colunas, então começa tudo em branco — vale preencher ao menos nos itens de giro.',
       },
       ESTOQUE_CONSULTAR,
       ESTOQUE_VARIACAO,
@@ -869,7 +869,7 @@ export const ESTOQUE_GUIA = {
         icon: BarChart3,
         titulo: "Indicadores",
         texto:
-          'Em "Indicadores" ficam o que repor primeiro (por quanto falta, não por quanto tem), o consumo mês a mês, os itens que mais saem, as entregas por colaborador e o valor imobilizado. O cartão "chamados aguardando entrega" é o que liga os dois módulos.',
+          'Em "Indicadores" ficam o que repor primeiro (por quanto falta, não por quanto tem), o consumo mês a mês, os itens que mais saem, as entregas por colaborador e o valor imobilizado. Os cartões "sem estoque", "estoque baixo" e "estoque alto" abrem a lista de quais itens são. E "chamados aguardando entrega" é o que liga os dois módulos.',
       },
       ESTOQUE_NOTIFICACAO,
       NOTIFICACOES,

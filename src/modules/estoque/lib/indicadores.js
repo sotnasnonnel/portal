@@ -37,10 +37,19 @@ export function resumoPosicao(posicao) {
     semEstoque: ativos.filter((v) => v.situacao === 'sem_estoque').length,
     abaixoMinimo: ativos.filter((v) => v.situacao === 'abaixo_minimo').length,
     emAlerta: ativos.filter((v) => EM_ALERTA.has(v.situacao)).length,
+    // Excesso é o oposto do alerta e tem outro dono: não é falta de material, é
+    // dinheiro parado e risco de vencer. Sem um número próprio, a situação
+    // "acima do máximo" ficava classificada no banco e invisível na tela.
+    acimaMaximo: ativos.filter((v) => v.situacao === 'acima_maximo').length,
     valorTotal: ativos.reduce((s, v) => s + (Number(v.valor_total) || 0), 0),
     // Custo em branco é a regra nos EPIs; sem isto o valor total parece baixo
     // sem explicação.
     semCusto: ativos.filter((v) => v.custo_unitario === null || v.custo_unitario === undefined).length,
+    // Mínimo e máximo é que definem "baixo" e "alto". Sem eles, esses dois
+    // indicadores ficam zerados para sempre e parecem defeito — a planilha de
+    // referência não trazia essas colunas, então no começo é o caso de todos.
+    semMinimo: ativos.filter((v) => !Number(v.estoque_minimo)).length,
+    semMaximo: ativos.filter((v) => v.estoque_maximo === null || v.estoque_maximo === undefined).length,
   };
 }
 
@@ -128,4 +137,29 @@ export function valorPorCategoria(posicao) {
   return [...soma.entries()]
     .map(([name, valor]) => ({ name, valor }))
     .filter((x) => x.valor > 0);
+}
+
+/**
+ * A lista por trás de um indicador — o que o número está contando.
+ *
+ * Ordena pelo que decide a ação, não pelo nome: em falta, quem tem o maior
+ * buraco a preencher; em excesso, quem tem mais peça parada. Item sem mínimo
+ * cadastrado e zerado entra com déficit 1, senão sumiria justamente quando
+ * acabou (mesma regra de topDeficit).
+ */
+export function listaPorSituacao(posicao, situacao) {
+  const num = (v) => Number(v) || 0;
+  return (posicao || [])
+    .filter((v) => v.ativo !== false && v.situacao === situacao)
+    .map((v) => ({
+      ...v,
+      deficit: Math.max(situacao === 'sem_estoque' ? 1 : 0, num(v.estoque_minimo) - num(v.saldo)),
+      excesso: v.estoque_maximo === null || v.estoque_maximo === undefined
+        ? 0
+        : Math.max(0, num(v.saldo) - num(v.estoque_maximo)),
+    }))
+    .sort((a, b) => (situacao === 'acima_maximo'
+      ? b.excesso - a.excesso || b.saldo - a.saldo
+      : b.deficit - a.deficit || a.saldo - b.saldo)
+      || String(a.descricao).localeCompare(String(b.descricao)));
 }

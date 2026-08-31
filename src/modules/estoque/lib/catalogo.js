@@ -94,12 +94,18 @@ export function compararVariantes(a, b) {
  * inteiro (descrição + tamanho + CA + gênero + setor), então buscar "botina 42"
  * ou "45021" encontra — é como as pessoas procuram no almoxarifado.
  */
-export function filtrarPosicao(lista, { termo = '', categoria = '', apenasAlerta = false } = {}) {
+export function filtrarPosicao(lista, {
+  termo = '', categoria = '', apenasAlerta = false, situacao = '',
+} = {}) {
   const t = normalizar(termo);
   const termos = t ? t.split(' ').filter(Boolean) : [];
   return (lista || []).filter((v) => {
     if (categoria && v.categoria !== categoria) return false;
-    if (apenasAlerta && !EM_ALERTA.has(v.situacao || situacaoDoSaldo(v))) return false;
+    const sit = v.situacao || situacaoDoSaldo(v);
+    // Filtro por uma situação específica — é como o painel manda a pessoa para
+    // cá ao clicar num indicador (/estoque/posicao?situacao=acima_maximo).
+    if (situacao && sit !== situacao) return false;
+    if (apenasAlerta && !EM_ALERTA.has(sit)) return false;
     if (!termos.length) return true;
     const alvo = normalizar(rotuloVariante(v));
     return termos.every((p) => alvo.includes(p));

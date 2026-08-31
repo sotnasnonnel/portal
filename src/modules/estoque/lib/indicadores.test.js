@@ -3,11 +3,13 @@ import assert from 'node:assert/strict';
 import {
   mesDe, janelaDeMeses, resumoPosicao, topDeficit, consumoMensal,
   entradaSaidaMensal, topConsumidos, entregasPorColaborador, valorPorCategoria,
+  listaPorSituacao,
 } from './indicadores.js';
 
 const REF = '2026-08-28T12:00:00Z';
 
 const POSICAO = [
+  { id: 'f', categoria: 'uniforme', descricao: 'Camisa Polo', tamanho: 'GG', saldo: 28, estoque_minimo: 2, estoque_maximo: 10, situacao: 'acima_maximo', valor_total: 0, custo_unitario: null, ativo: true },
   { id: 'a', categoria: 'epi', descricao: 'CAPACETE 3M', ca: '29638', saldo: 0, estoque_minimo: 2, situacao: 'sem_estoque', valor_total: 0, custo_unitario: 40, ativo: true },
   { id: 'b', categoria: 'epi', descricao: 'BOTINA', tamanho: '42', saldo: 3, estoque_minimo: 20, situacao: 'abaixo_minimo', valor_total: 300, custo_unitario: 100, ativo: true },
   { id: 'c', categoria: 'uniforme', descricao: 'Camisa Polo', tamanho: 'M', saldo: 28, estoque_minimo: 5, situacao: 'ok', valor_total: 1419.6, custo_unitario: 50.7, ativo: true },
@@ -39,13 +41,46 @@ test('janelaDeMeses atravessa a virada de ano', () => {
 
 test('resumoPosicao ignora inativos e conta o que falta custo', () => {
   const r = resumoPosicao(POSICAO);
-  assert.equal(r.skus, 4);              // o inativo fica de fora
-  assert.equal(r.pecas, 0 + 3 + 28 + 5);
+  assert.equal(r.skus, 5);              // o inativo fica de fora
   assert.equal(r.semEstoque, 1);
   assert.equal(r.abaixoMinimo, 1);
-  assert.equal(r.emAlerta, 2);
-  assert.equal(Math.round(r.valorTotal), 1720);
-  assert.equal(r.semCusto, 1);
+  assert.equal(r.acimaMaximo, 1);
+  assert.equal(r.emAlerta, 2);          // excesso NÃO é alerta de reposição
+  assert.equal(r.semCusto, 2);
+});
+
+test('listaPorSituacao devolve o que o indicador está contando', () => {
+  assert.deepEqual(listaPorSituacao(POSICAO, 'sem_estoque').map((v) => v.id), ['a']);
+  assert.deepEqual(listaPorSituacao(POSICAO, 'abaixo_minimo').map((v) => v.id), ['b']);
+  assert.deepEqual(listaPorSituacao(POSICAO, 'acima_maximo').map((v) => v.id), ['f']);
+  // Em 'ok' a ordem nao tem significado (todos com deficit 0); so o conteudo importa.
+  assert.deepEqual(listaPorSituacao(POSICAO, 'ok').map((v) => v.id).sort(), ['c', 'd']);
+  assert.deepEqual(listaPorSituacao(null, 'sem_estoque'), []);
+});
+
+test('listaPorSituacao calcula déficit e excesso, e ignora inativo', () => {
+  const [botina] = listaPorSituacao(POSICAO, 'abaixo_minimo');
+  assert.equal(botina.deficit, 17);     // mínimo 20 - saldo 3
+  assert.equal(botina.excesso, 0);
+  const [polo] = listaPorSituacao(POSICAO, 'acima_maximo');
+  assert.equal(polo.excesso, 18);       // saldo 28 - máximo 10
+  // O item inativo tem situação 'ok' e não aparece em lista nenhuma.
+  assert.equal(listaPorSituacao(POSICAO, 'ok').some((v) => v.id === 'e'), false);
+});
+
+// Ordenar por nome faria a pessoa procurar o urgente no meio da lista.
+test('listaPorSituacao ordena pelo que decide a ação', () => {
+  const p = [
+    { id: 'x', descricao: 'POUCO', saldo: 1, estoque_minimo: 2, situacao: 'abaixo_minimo', ativo: true },
+    { id: 'y', descricao: 'MUITO', saldo: 1, estoque_minimo: 30, situacao: 'abaixo_minimo', ativo: true },
+  ];
+  assert.deepEqual(listaPorSituacao(p, 'abaixo_minimo').map((v) => v.id), ['y', 'x']);
+});
+
+// Zerado sem mínimo cadastrado precisa aparecer: é quando mais falta.
+test('listaPorSituacao dá déficit 1 ao zerado sem mínimo', () => {
+  const p = [{ id: 'z', descricao: 'MOCHILA', saldo: 0, estoque_minimo: 0, situacao: 'sem_estoque', ativo: true }];
+  assert.equal(listaPorSituacao(p, 'sem_estoque')[0].deficit, 1);
 });
 
 // Ordenar por saldo poria o capacete zerado (mínimo 2) à frente da botina

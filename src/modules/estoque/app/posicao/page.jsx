@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
-  Boxes, Search, Loader2, AlertCircle, Pencil, Check, X, Plus, TriangleAlert, EyeOff, Eye,
+  Boxes, Search, Loader2, AlertCircle, Pencil, Check, X, Plus, TriangleAlert, TrendingUp, EyeOff, Eye,
 } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import {
@@ -31,6 +32,17 @@ export default function PosicaoEstoque() {
   const [apenasAlerta, setApenasAlerta] = useState(false);
   const [verInativas, setVerInativas] = useState(false);
 
+  // O painel manda para cá com a situação na URL ao clicar num indicador
+  // (/estoque/posicao?situacao=acima_maximo). Fica na URL, e não no estado, para
+  // o link ser compartilhável e o voltar do navegador funcionar.
+  const [params, setParams] = useSearchParams();
+  const situacao = params.get('situacao') || '';
+  const trocarSituacao = (nova) => {
+    const p = new URLSearchParams(params);
+    if (nova) p.set('situacao', nova); else p.delete('situacao');
+    setParams(p, { replace: true });
+  };
+
   const [editando, setEditando] = useState(null);   // id da variante em edição
   const [rascunho, setRascunho] = useState({});
   const [novoAberto, setNovoAberto] = useState(false);
@@ -51,11 +63,12 @@ export default function PosicaoEstoque() {
   useEffect(() => { carregar(); }, [carregar]);
 
   const lista = useMemo(
-    () => filtrarPosicao(posicao, { termo, categoria, apenasAlerta }),
-    [posicao, termo, categoria, apenasAlerta],
+    () => filtrarPosicao(posicao, { termo, categoria, apenasAlerta, situacao }),
+    [posicao, termo, categoria, apenasAlerta, situacao],
   );
 
   const emAlerta = useMemo(() => posicao.filter((v) => EM_ALERTA.has(v.situacao)).length, [posicao]);
+  const acimaMaximo = useMemo(() => posicao.filter((v) => v.situacao === 'acima_maximo').length, [posicao]);
 
   const abrirEdicao = (v) => {
     setEditando(v.id);
@@ -253,6 +266,18 @@ export default function PosicaoEstoque() {
             onClick={() => setApenasAlerta((v) => !v)}>
             <TriangleAlert size={14} /> Precisa repor ({emAlerta})
           </button>
+          {/* Excesso é o oposto: não falta material, sobra. Chip próprio para
+              não se misturar ao "precisa repor". */}
+          <button type="button"
+            className={`est-chip ${situacao === 'acima_maximo' ? 'is-on' : ''}`}
+            onClick={() => trocarSituacao(situacao === 'acima_maximo' ? '' : 'acima_maximo')}>
+            <TrendingUp size={14} /> Estoque alto ({acimaMaximo})
+          </button>
+          {situacao && situacao !== 'acima_maximo' && (
+            <button type="button" className="est-chip is-on" onClick={() => trocarSituacao('')}>
+              {SITUACOES[situacao]?.label || situacao} ✕
+            </button>
+          )}
           {operador && (
             <button type="button" className={`est-chip ${verInativas ? 'is-on' : ''}`}
               onClick={() => setVerInativas((v) => !v)}>

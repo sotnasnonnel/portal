@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BarChart3, Loader2, AlertCircle, Info } from 'lucide-react';
+import { BarChart3, Loader2, AlertCircle, Info, TriangleAlert } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { ehOperadorEstoque } from '../../../../config/estoque';
 import { listarPosicao, listarMovimentos, listarChamadosElegiveis } from '../../lib/estoque';
@@ -11,6 +11,7 @@ import {
 import {
   GraficoDeficit, GraficoConsumo, GraficoRanking, GraficoEntradaSaida, GraficoValor,
 } from '../components/Charts';
+import ListaSituacao from '../components/ListaSituacao';
 
 const BRL = new Intl.NumberFormat('pt-BR', {
   style: 'currency', currency: 'BRL', maximumFractionDigits: 0,
@@ -28,6 +29,8 @@ export default function DashboardEstoque() {
   const [chamados, setChamados] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
+  // Qual indicador está aberto no popup. null = nenhum.
+  const [detalhe, setDetalhe] = useState(null);
 
   useEffect(() => {
     let cancelado = false;
@@ -97,12 +100,34 @@ export default function DashboardEstoque() {
         <div className="est-tile">
           <strong>{resumo.pecas}</strong><span>peças em estoque</span>
         </div>
-        <div className={`est-tile ${resumo.semEstoque ? 'is-critico' : ''}`}>
-          <strong>{resumo.semEstoque}</strong><span>sem estoque</span>
-        </div>
-        <div className={`est-tile ${resumo.abaixoMinimo ? 'is-alerta' : ''}`}>
-          <strong>{resumo.abaixoMinimo}</strong><span>abaixo do mínimo</span>
-        </div>
+        {/* Os três indicadores de situação abrem a lista por trás do número:
+            saber QUAIS são é o passo seguinte imediato de quem olha o painel. */}
+        <button type="button"
+          className={`est-tile est-tile-botao ${resumo.semEstoque ? 'is-critico' : ''}`}
+          disabled={!resumo.semEstoque}
+          onClick={() => setDetalhe('sem_estoque')}>
+          <strong>{resumo.semEstoque}</strong>
+          <span>sem estoque</span>
+          {resumo.semEstoque > 0 && <span className="est-tile-dica">ver quais</span>}
+        </button>
+        <button type="button"
+          className={`est-tile est-tile-botao ${resumo.abaixoMinimo ? 'is-alerta' : ''}`}
+          disabled={!resumo.abaixoMinimo}
+          onClick={() => setDetalhe('abaixo_minimo')}>
+          <strong>{resumo.abaixoMinimo}</strong>
+          <span>estoque baixo</span>
+          {resumo.abaixoMinimo > 0 && <span className="est-tile-dica">ver quais</span>}
+        </button>
+        {/* Excesso não é alerta de reposição: é dinheiro parado, e por isso não
+            entra no "precisa repor" nem no aviso do sino. */}
+        <button type="button"
+          className="est-tile est-tile-botao"
+          disabled={!resumo.acimaMaximo}
+          onClick={() => setDetalhe('acima_maximo')}>
+          <strong>{resumo.acimaMaximo}</strong>
+          <span>estoque alto</span>
+          {resumo.acimaMaximo > 0 && <span className="est-tile-dica">ver quais</span>}
+        </button>
         <div className="est-tile">
           <strong>{BRL.format(resumo.valorTotal)}</strong><span>valor imobilizado</span>
         </div>
@@ -113,6 +138,31 @@ export default function DashboardEstoque() {
           </Link>
         )}
       </div>
+
+      {/* "Baixo" e "alto" dependem de mínimo e máximo. Sem eles os dois
+          indicadores ficam em zero para sempre, e isso parece defeito. */}
+      {(resumo.semMinimo > 0 || resumo.semMaximo > 0) && (
+        <div className="est-aviso tom-alerta">
+          <TriangleAlert size={16} />
+          <span>
+            {resumo.semMinimo > 0 && (
+              <>
+                <strong>{resumo.semMinimo}</strong> {resumo.semMinimo === 1 ? 'variação está' : 'variações estão'} sem
+                {' '}<strong>estoque mínimo</strong> cadastrado — {resumo.semMinimo === 1 ? 'ela' : 'elas'} só
+                {' '}{resumo.semMinimo === 1 ? 'aparece' : 'aparecem'} como “estoque baixo” quando zerar.
+              </>
+            )}
+            {resumo.semMinimo > 0 && resumo.semMaximo > 0 && ' '}
+            {resumo.semMaximo > 0 && (
+              <>
+                <strong>{resumo.semMaximo}</strong> sem <strong>máximo</strong>, e por isso nunca
+                {' '}{resumo.semMaximo === 1 ? 'entra' : 'entram'} em “estoque alto”.
+              </>
+            )}
+            {' '}Dá para preencher em <Link to="/estoque/posicao">Posição de estoque</Link>.
+          </span>
+        </div>
+      )}
 
       {resumo.semCusto > 0 && (
         <div className="est-aviso tom-info">
@@ -164,6 +214,10 @@ export default function DashboardEstoque() {
           <div className="est-grafico-area"><GraficoValor data={ind.valor} /></div>
         </div>
       </div>
+
+      {detalhe && (
+        <ListaSituacao situacao={detalhe} posicao={posicao} onFechar={() => setDetalhe(null)} />
+      )}
     </div>
   );
 }

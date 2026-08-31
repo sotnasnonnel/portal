@@ -341,3 +341,53 @@
   .est-embed-dica { display: none; }
 }
 
+
+/* ======================= popup de um indicador =======================
+   Abre por cima do painel com a lista que está por trás do número. O overlay
+   fecha ao clique; o conteúdo para a propagação. */
+.est-modal-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px; background: rgba(15, 23, 42, 0.55);
+  animation: estFade 0.15s ease;
+}
+.est-modal {
+  background: var(--neutral-surface); border-radius: var(--card-radius);
+  box-shadow: var(--e-shadow-md);
+  width: min(760px, 100%); max-height: min(80vh, 640px);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.est-modal-cab {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 18px 20px 12px; border-bottom: 1px solid var(--e-gray-100);
+}
+.est-modal-cab h2 {
+  font-size: var(--font-size-lg); font-weight: var(--fw-bold);
+  color: var(--e-ink); margin: 0 0 3px;
+}
+.est-modal-cab p { font-size: var(--font-size-xs); color: var(--e-muted); margin: 0; line-height: var(--lh-normal); }
+.est-modal-cab .est-btn-icone { margin-left: auto; flex-shrink: 0; }
+.est-modal-busca { margin: 12px 20px 0; }
+/* A rolagem vive AQUI, não no modal inteiro: cabeçalho e rodapé ficam parados,
+   e o rodapé continua à vista numa lista longa. */
+.est-modal-corpo { flex: 1; overflow-y: auto; padding: 12px 20px; min-height: 0; }
+.est-modal-corpo .est-vazio { border: none; padding: 32px 0; }
+.est-modal-rodape {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 12px 20px; border-top: 1px solid var(--e-gray-100);
+  font-size: var(--font-size-sm); color: var(--e-muted);
+}
+.est-modal-rodape strong { color: var(--e-ink); font-variant-numeric: tabular-nums; }
+
+/* Tile que abre o popup: é botão, mas não parece um. */
+.est-tile-botao {
+  font-family: inherit; text-align: left; cursor: pointer;
+  border: 1px solid var(--e-border); transition: border-color 0.15s, box-shadow 0.15s;
+}
+.est-tile-botao:hover { border-color: var(--e-primary-line); box-shadow: var(--e-shadow-sm); }
+.est-tile-dica { font-size: var(--font-size-2xs); color: var(--e-primary); font-weight: var(--fw-semibold); }
+
+@media (max-width: 620px) {
+  .est-modal-overlay { padding: 0; align-items: flex-end; }
+  .est-modal { max-height: 88vh; width: 100%; border-radius: var(--card-radius) var(--card-radius) 0 0; }
+}
