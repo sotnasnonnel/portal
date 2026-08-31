@@ -29,6 +29,7 @@ const MODULO_LABEL = {
   dp: 'Gestão de Pessoas',
   horas: 'Controle de Horas',
   programas: 'Programas',
+  estoque: 'Estoque',
 };
 
 // "agora", "há 5 min", "ontem" — data cheia só quando passa de uma semana.

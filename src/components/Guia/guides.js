@@ -41,6 +41,12 @@ import {
   Trophy,
   AlertTriangle,
   Bell,
+  Boxes,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  PackageCheck,
+  FileSpreadsheet,
+  Home,
 } from "lucide-react";
 import { POLICY } from "../../modules/reembolso/lib/reimbursementPolicy.js";
 
@@ -60,12 +66,14 @@ const NOTIFICACOES = {
     'O sino na barra do topo mostra o que aconteceu com os seus pedidos e o que está esperando decisão sua: chegou a sua vez de aprovar, seu pedido foi aprovado, reprovado ou concluído. A bolinha conta o que você ainda não leu; clicar na notificação abre o pedido e dá baixa nela. Vale para todos os apps do portal, não só para este.',
 };
 
-// Passo comum aos apps: o seletor de app no topo da sidebar.
+// Passo comum aos apps: como ir para outro sistema do portal. O seletor "App"
+// que ficava no topo da sidebar deixou de existir quando a marca da PHD tomou
+// esse lugar; hoje a volta é pelo "Início".
 const TROCAR_APP = {
-  icon: Repeat,
+  icon: Home,
   titulo: "Troque de app quando quiser",
   texto:
-    'No topo do menu lateral, o seletor "App" leva você aos outros sistemas do Portal PHD a que você tem acesso (Gestão de Pessoas, PMO, Controle de Horas, Financeiro) sem precisar voltar à tela inicial.',
+    'No menu lateral, "Início" leva de volta à tela inicial do Portal PHD, onde ficam os cards de todos os sistemas a que você tem acesso (Gestão de Pessoas, PMO, Controle de Horas, Administrativo, Financeiro, Programas e Estoque). Clicar na marca da PHD, no topo do menu, faz o mesmo.',
 };
 
 // ============================ Gestão de Pessoas (DP) ============================
@@ -709,6 +717,152 @@ export const PROGRAMAS_GUIA = {
           'O "Painel da Alavanca" no menu lateral traz a fila de indicações de toda a empresa: elegibilidade, status, comentários e a premiação de cada uma.',
       },
       ...PROGRAMAS_USAR_STEPS,
+      NOTIFICACOES,
+      TROCAR_APP,
+    ],
+  },
+};
+
+// ============================ Estoque ============================
+// Dois papéis: quem só CONSULTA (todo mundo) e quem OPERA o almoxarifado
+// (o time do Administrativo, por administrativo_role).
+//
+// O guia carrega mais peso aqui que nos outros módulos porque o vocabulário é
+// novo: "variação" não é sinônimo de item, e o saldo não se digita.
+
+const ESTOQUE_CONSULTAR = {
+  icon: Search,
+  titulo: "Consultar o que tem",
+  texto:
+    'Em "Posição de estoque" está o saldo de cada item. A busca casa nome, tamanho e CA ao mesmo tempo — dá para procurar "botina 42" ou só "45021". O filtro "Precisa repor" mostra de uma vez o que está zerado ou abaixo do mínimo.',
+};
+
+const ESTOQUE_VARIACAO = {
+  icon: Boxes,
+  titulo: 'Item e "variação" são coisas diferentes',
+  texto:
+    'O item é o nome ("BOTINA COM METATARSO"); a variação é o que de fato tem saldo, e inclui tamanho, CA, gênero e setor. Botina 39 e botina 43 são variações distintas, e respirador CA 45021 não substitui o CA 12011 num laudo — por isso cada um tem seu próprio saldo, e a busca sempre mostra esses detalhes embaixo do nome.',
+};
+
+const ESTOQUE_PEDIR = {
+  icon: Headset,
+  titulo: "Pedir EPI ou uniforme continua no Administrativo",
+  texto:
+    'O pedido é feito como sempre, em Administrativo → Saúde e segurança. A diferença é que agora dá para escolher o item do catálogo, com a quantidade — e o saldo aparece ao lado. Falta de estoque NÃO impede o pedido: se o item está zerado ou nem existe no catálogo, peça do mesmo jeito (há um campo de texto livre para isso). É o pedido que avisa o Administrativo de que precisa comprar.',
+};
+
+const ESTOQUE_NOTIFICACAO = {
+  icon: Bell,
+  titulo: "O sino avisa quando um item acaba",
+  texto:
+    "Quando uma saída deixa um item zerado ou abaixo do mínimo, o time do Administrativo recebe um aviso no sino da barra do topo, com link direto para a lista do que precisa repor. Não é preciso ficar olhando o painel.",
+};
+
+export const ESTOQUE_GUIA = {
+  appName: "Estoque",
+  fallbackRole: "user",
+  roleLabels: {
+    admin: "Almoxarifado",
+    atendente: "Almoxarifado",
+    user: "Consulta",
+  },
+  contentByRole: {
+    user: [
+      {
+        icon: Boxes,
+        titulo: "Bem-vindo ao Estoque",
+        texto:
+          "Aqui fica o almoxarifado de EPIs e uniformes da PHD, no lugar das planilhas. Você pode consultar o que existe e quanto tem; quem movimenta o material é o time do Administrativo.",
+      },
+      ESTOQUE_CONSULTAR,
+      ESTOQUE_VARIACAO,
+      ESTOQUE_PEDIR,
+      {
+        icon: List,
+        titulo: "O que você já recebeu",
+        texto:
+          'Em "Movimentações" aparece o que saiu para o seu nome e o que foi entregue nos seus chamados — a sua ficha de EPI, que antes só existia numa aba de planilha.',
+      },
+      NOTIFICACOES,
+      TROCAR_APP,
+    ],
+    atendente: [
+      {
+        icon: PackageCheck,
+        titulo: "Seu papel: almoxarifado",
+        texto:
+          "Além de consultar, você movimenta o estoque: registra entrada, entrega material e faz inventário. Toda saída fica registrada no nome de quem recebeu.",
+      },
+      ESTOQUE_CONSULTAR,
+      ESTOQUE_VARIACAO,
+      {
+        icon: ArrowDownToLine,
+        titulo: "Entrada: material que chegou",
+        texto:
+          'Em "Entrada" você lança o que foi recebido, com o motivo e o número da nota. O saldo NUNCA é digitado direto na tabela: ele é sempre a soma dos movimentos, e é isso que permite responder depois "de onde veio esse número".',
+      },
+      {
+        icon: ArrowUpFromLine,
+        titulo: "Saída: entrega com dono",
+        texto:
+          'Em "Saída" você registra a entrega, e informar quem recebeu é obrigatório. Se a entrega atende a um chamado, escolha o chamado no topo da tela: os itens pedidos entram sozinhos no carrinho e o chamado é FECHADO junto com a baixa, numa operação só.',
+      },
+      {
+        icon: ClipboardCheck,
+        titulo: "Inventário: quando a prateleira discorda",
+        texto:
+          'Em "Inventário" você digita o que CONTOU, não a diferença. Só o que divergir do sistema vira ajuste, e item deixado em branco não é tocado — dá para conferir uma prateleira por vez, sem precisar contar o almoxarifado inteiro.',
+      },
+      {
+        icon: Headset,
+        titulo: "Dar baixa direto pelo chamado",
+        texto:
+          'Ao fechar um chamado de EPI ou uniforme no Administrativo, aparece o card "Baixa no estoque" com o que foi pedido, o que já foi entregue e o saldo de cada item. Ajuste as quantidades e feche: o chamado fecha e o estoque desconta juntos. Se não houver o que baixar (item comprado direto, pedido negado), marque "Fechar sem movimentar o estoque".',
+      },
+      {
+        icon: Search,
+        titulo: "Conferir o saldo sem sair do chamado",
+        texto:
+          'Dentro do chamado, o card "Consultar estoque" responde se tem o item antes de você prometer a entrega — e na lista de itens pedidos a coluna "Em estoque" já avisa quando falta ("3 · faltam 2").',
+      },
+      ESTOQUE_NOTIFICACAO,
+      {
+        icon: AlertTriangle,
+        titulo: "Movimento não se apaga",
+        texto:
+          "Entrada, saída e ajuste são registros definitivos: não dá para editar nem excluir. Errou? Lance o movimento contrário, ou corrija pelo inventário. É o que mantém o histórico explicando o saldo.",
+      },
+      NOTIFICACOES,
+      TROCAR_APP,
+    ],
+    admin: [
+      {
+        icon: ShieldCheck,
+        titulo: "Seu papel: administrador do Estoque",
+        texto:
+          "Você faz tudo o que o almoxarifado faz e mais o cadastro: criar itens e variações, definir estoque mínimo e máximo, custo unitário, e desativar o que saiu de linha.",
+      },
+      {
+        icon: FileSpreadsheet,
+        titulo: "Carregar o catálogo da planilha",
+        texto:
+          'Em "Importar planilha" você sobe as planilhas de EPIs e uniformes. Antes de gravar, a tela mostra tudo que será criado, linha a linha, e o que não deu para ler. Pode ser repetido: item que já existe não é duplicado, e saldo diferente vira ajuste — não uma segunda entrada.',
+      },
+      {
+        icon: AlertTriangle,
+        titulo: "Mínimo e máximo mandam no alerta",
+        texto:
+          'O estoque mínimo é o que define "precisa repor" — no painel, nos gráficos e no aviso do sino. Sem mínimo cadastrado, um item só é sinalizado quando zera, e aí já é tarde. Vale preencher ao menos nos itens de giro.',
+      },
+      ESTOQUE_CONSULTAR,
+      ESTOQUE_VARIACAO,
+      {
+        icon: BarChart3,
+        titulo: "Indicadores",
+        texto:
+          'Em "Indicadores" ficam o que repor primeiro (por quanto falta, não por quanto tem), o consumo mês a mês, os itens que mais saem, as entregas por colaborador e o valor imobilizado. O cartão "chamados aguardando entrega" é o que liga os dois módulos.',
+      },
+      ESTOQUE_NOTIFICACAO,
       NOTIFICACOES,
       TROCAR_APP,
     ],
