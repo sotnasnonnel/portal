@@ -93,7 +93,6 @@ const EntradaEstoque = lazy(() => import('../modules/estoque/app/entrada/page'))
 const SaidaEstoque = lazy(() => import('../modules/estoque/app/saida/page'));
 const AjusteEstoque = lazy(() => import('../modules/estoque/app/ajuste/page'));
 const MovimentosEstoque = lazy(() => import('../modules/estoque/app/movimentos/page'));
-const ImportarEstoque = lazy(() => import('../modules/estoque/app/importar/page'));
 const DashboardEstoque = lazy(() => import('../modules/estoque/app/dashboard/page'));
 
 function RouteFallback() {
@@ -616,7 +615,6 @@ export default function AppRoutes() {
           <Route path="saida" element={<LazyPage><SaidaEstoque /></LazyPage>} />
           <Route path="ajuste" element={<LazyPage><AjusteEstoque /></LazyPage>} />
           <Route path="movimentos" element={<LazyPage><MovimentosEstoque /></LazyPage>} />
-          <Route path="importar" element={<LazyPage><ImportarEstoque /></LazyPage>} />
           <Route path="dashboard" element={<LazyPage><DashboardEstoque /></LazyPage>} />
         </Route>
 

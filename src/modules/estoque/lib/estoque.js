@@ -27,7 +27,8 @@ const exigirLinha = (data, erro, mensagem) => {
 };
 
 const COLS_POSICAO = 'id, item_id, categoria, descricao, unidade, tamanho, ca, genero, setor, '
-  + 'codigo, custo_unitario, estoque_minimo, estoque_maximo, saldo, ativo, valor_total, situacao';
+  + 'codigo, referencia, custo_unitario, estoque_minimo, estoque_maximo, '
+  + 'saldo_novo, saldo_usado, saldo, ativo, valor_total, situacao';
 
 /**
  * Posição de estoque. A view já traz situação e valor calculados, então a tela
@@ -101,6 +102,7 @@ export async function criarVariante(dados) {
       genero: nuloSeVazio(dados.genero),
       setor: nuloSeVazio(dados.setor),
       codigo: nuloSeVazio(dados.codigo),
+      referencia: nuloSeVazio(dados.referencia),
       custo_unitario: dados.custo_unitario ?? null,
       estoque_minimo: inteiroOuNulo(dados.estoque_minimo) ?? 0,
       estoque_maximo: inteiroOuNulo(dados.estoque_maximo),
@@ -118,7 +120,7 @@ export async function criarVariante(dados) {
  * ENTRA AQUI de propósito: saldo só muda por movimento, senão o histórico deixa
  * de explicar o número. Para corrigir contagem existe o inventário (/estoque/ajuste).
  */
-export async function salvarVariante(id, { estoque_minimo, estoque_maximo, custo_unitario, ativo, codigo }) {
+export async function salvarVariante(id, { estoque_minimo, estoque_maximo, custo_unitario, ativo, codigo, referencia }) {
   const patch = {};
   if (estoque_minimo !== undefined) patch.estoque_minimo = inteiroOuNulo(estoque_minimo) ?? 0;
   if (estoque_maximo !== undefined) patch.estoque_maximo = inteiroOuNulo(estoque_maximo);
@@ -128,6 +130,7 @@ export async function salvarVariante(id, { estoque_minimo, estoque_maximo, custo
   }
   if (ativo !== undefined) patch.ativo = ativo;
   if (codigo !== undefined) patch.codigo = nuloSeVazio(codigo);
+  if (referencia !== undefined) patch.referencia = nuloSeVazio(referencia);
 
   const { data, error } = await supabase
     .from('estoque_variantes').update(patch).eq('id', id).select('id');
@@ -255,70 +258,4 @@ export async function listarChamadosElegiveis() {
   const { data, error } = await supabase.rpc('estoque_chamados_elegiveis');
   if (error) throw new Error(`Não foi possível carregar os chamados: ${error.message}`);
   return data || [];
-}
-
-/**
- * Executa o plano de lib/importar.js.
- *
- * Não é atômico e não tenta ser: são ~100 linhas, cada uma independente da
- * outra, e uma transação única aqui significaria perder as 99 boas por causa de
- * uma ruim. Em vez disso devolve o que passou e o que falhou, e a importação é
- * idempotente (o plano compara com o que já existe), então basta reimportar.
- */
-export async function importarLinhas(plano, aoProgredir) {
-  const erros = [];
-  let criadas = 0;
-  let ajustadas = 0;
-  let atualizadas = 0;
-  const total = plano.criar.length + plano.atualizar.length;
-  let feitas = 0;
-
-  const passo = () => { feitas += 1; aoProgredir?.(feitas, total); };
-
-  for (const l of plano.criar) {
-    try {
-      const itemId = await garantirItem({ categoria: l.categoria, descricao: l.descricao });
-      const varianteId = await criarVariante({ ...l, item_id: itemId });
-      // O saldo entra como MOVIMENTO, nunca escrito direto na coluna: assim ele
-      // tem procedência e a view estoque_conferencia fecha desde o primeiro dia.
-      if (l.saldo > 0) {
-        await lancarMovimentos([{
-          variante_id: varianteId, tipo: 'entrada', quantidade: l.saldo,
-          motivo: 'Carga inicial (planilha)', colaborador_id: '',
-          observacao: `Linha ${l.linhaPlanilha} da planilha`,
-        }]);
-      }
-      criadas += 1;
-    } catch (e) {
-      erros.push(`Linha ${l.linhaPlanilha} (${l.descricao}): ${e.message}`);
-    }
-    passo();
-  }
-
-  for (const l of plano.atualizar) {
-    try {
-      if (l.mudouCadastro) {
-        await salvarVariante(l.variante_id, {
-          estoque_minimo: l.estoque_minimo,
-          estoque_maximo: l.estoque_maximo,
-          custo_unitario: l.custo_unitario ?? '',
-          codigo: l.codigo,
-        });
-        atualizadas += 1;
-      }
-      if (l.delta !== 0) {
-        await lancarMovimentos([{
-          variante_id: l.variante_id, tipo: 'ajuste', quantidade: l.delta,
-          motivo: 'Conferência com a planilha', colaborador_id: '',
-          observacao: `Planilha ${l.saldo}, sistema ${l.saldoAtual}`,
-        }]);
-        ajustadas += 1;
-      }
-    } catch (e) {
-      erros.push(`Linha ${l.linhaPlanilha} (${l.descricao}): ${e.message}`);
-    }
-    passo();
-  }
-
-  return { criadas, atualizadas, ajustadas, erros };
 }

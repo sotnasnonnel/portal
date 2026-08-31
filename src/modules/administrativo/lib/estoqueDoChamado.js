@@ -76,6 +76,8 @@ export function montarLinhasDeBaixa({ campos, movimentos, posicao, solicitanteId
       // Já entregue por inteiro fica com 0: a linha aparece (mostrando que está
       // resolvida) mas não vira movimento.
       quantidade: Math.max(0, pedido - jaEntregue),
+      // Entrega de peça nova é o caso comum; o atendente troca quando for usada.
+      condicao: 'novo',
       colaborador_id: solicitanteId || '',
       motivo: 'Entrega por chamado',
       observacao: '',

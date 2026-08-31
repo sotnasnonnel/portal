@@ -90,7 +90,7 @@ export default function SeletorItens({
                 <small>
                   {termo
                     ? 'Confira a busca ou cadastre o item na Posição de estoque.'
-                    : 'O catálogo ainda está vazio — importe a planilha.'}
+                    : 'O catálogo ainda está vazio.'}
                 </small>
               </span>
             </div>
@@ -111,6 +111,7 @@ export default function SeletorItens({
               {escolhida?.id === v.id && <Check size={14} />}
               <span className={`est-seletor-op-saldo ${v.saldo === 0 ? 'is-critico' : ''}`}>
                 {v.saldo} {v.unidade || 'un'}
+                {v.saldo_usado > 0 && <small> ({v.saldo_usado} usada)</small>}
               </span>
             </button>
           ))}

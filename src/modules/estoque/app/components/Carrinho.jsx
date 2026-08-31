@@ -1,7 +1,7 @@
 import { Plus, Trash2 } from 'lucide-react';
 import SeletorItens from './SeletorItens';
-import { linhaVazia, variantesSemSaldo, totalizar } from '../../lib/carrinho';
-import { situacaoDoSaldo } from '../../lib/catalogo';
+import { linhaVazia, variantesSemSaldo, linhaSemSaldo, saldoDaCondicao, totalizar } from '../../lib/carrinho';
+import { CONDICOES } from '../../../../config/estoque';
 
 const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -29,12 +29,11 @@ export default function Carrinho({
       <div className="est-carrinho">
         {linhas.map((l, i) => {
           const v = l.variante;
-          const situacao = v ? situacaoDoSaldo(v) : null;
           return (
             <div
               key={i}
               className={`est-carrinho-linha ${tipo === 'saida' ? '' : 'sem-quem'} `
-                + `${l.variante_id && semSaldo.has(l.variante_id) ? 'is-erro' : ''}`}
+                + `${linhaSemSaldo(l, semSaldo) ? 'is-erro' : ''}`}
             >
               <div className="est-campo">
                 <label htmlFor={`item-${i}`}>Item{i === 0 ? <span className="req">*</span> : null}</label>
@@ -46,12 +45,26 @@ export default function Carrinho({
                   onEscolher={(esc) => mexer(i, { variante_id: esc.id, variante: esc })}
                 />
                 {v && (
-                  <span className={`est-saldo-dica ${situacao === 'sem_estoque' ? 'is-critico'
-                    : situacao === 'abaixo_minimo' ? 'is-alerta' : ''}`}>
-                    Saldo atual: {v.saldo} {v.unidade || 'un'}
-                    {v.estoque_minimo ? ` · mínimo ${v.estoque_minimo}` : ''}
+                  // O saldo do BOLSO escolhido é o que decide a linha; o outro
+                  // aparece ao lado para a pessoa poder trocar de condição.
+                  <span className={`est-saldo-dica ${saldoDaCondicao(v, l.condicao) === 0 ? 'is-critico' : ''}`}>
+                    Disponível: {saldoDaCondicao(v, l.condicao)} {v.unidade || 'un'}
+                    {' · '}nova {v.saldo_novo} / usada {v.saldo_usado}
                   </span>
                 )}
+              </div>
+
+              <div className="est-campo">
+                <label htmlFor={`cond-${i}`}>Condição{i === 0 ? <span className="req">*</span> : null}</label>
+                <select
+                  id={`cond-${i}`}
+                  className="est-select"
+                  value={l.condicao || 'novo'}
+                  disabled={desabilitado}
+                  onChange={(e) => mexer(i, { condicao: e.target.value })}
+                >
+                  {CONDICOES.map((c) => <option key={c.valor} value={c.valor}>{c.label}</option>)}
+                </select>
               </div>
 
               <div className="est-campo">

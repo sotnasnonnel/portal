@@ -1,7 +1,8 @@
 import { Plus, Trash2, Loader2, PackageCheck, Info } from 'lucide-react';
 import SeletorItens from '../../../estoque/app/components/SeletorItens';
-import { variantesSemSaldo } from '../../../estoque/lib/carrinho';
+import { variantesSemSaldo, linhaSemSaldo, saldoDaCondicao } from '../../../estoque/lib/carrinho';
 import { detalheVariante } from '../../../estoque/lib/catalogo';
+import { CONDICOES } from '../../../../config/estoque';
 import '../../../estoque/estoque.css';
 
 /**
@@ -29,7 +30,8 @@ export default function BaixaEstoque({
   const remover = (i) => onMudar(linhas.filter((_, j) => j !== i));
   const adicionar = () => onMudar([...linhas, {
     variante_id: '', variante: null, descricaoPedida: '', detalhePedido: '',
-    pedido: 0, jaEntregue: 0, quantidade: 1, colaborador_id: '', motivo: 'Entrega por chamado',
+    pedido: 0, jaEntregue: 0, quantidade: 1, condicao: 'novo',
+    colaborador_id: '', motivo: 'Entrega por chamado',
   }]);
 
   return (
@@ -69,6 +71,7 @@ export default function BaixaEstoque({
                       <th>Item</th>
                       <th className="num">Pedido</th>
                       <th className="num">Já entregue</th>
+                      <th>Condição</th>
                       <th className="num">Saldo</th>
                       <th className="num">A entregar</th>
                       <th>Quem recebeu</th>
@@ -78,7 +81,7 @@ export default function BaixaEstoque({
                   <tbody>
                     {linhas.map((l, i) => {
                       const v = l.variante;
-                      const erro = l.variante_id && semSaldo.has(l.variante_id);
+                      const erro = linhaSemSaldo(l, semSaldo);
                       return (
                         <tr key={i} style={erro ? { background: '#fef2f2' } : undefined}>
                           <td style={{ minWidth: 230 }}>
@@ -102,8 +105,20 @@ export default function BaixaEstoque({
                           </td>
                           <td className="num">{l.pedido || '—'}</td>
                           <td className="num">{l.jaEntregue || '—'}</td>
-                          <td className={`num ${v && v.saldo === 0 ? 'is-critico' : ''}`}>
-                            {v ? v.saldo : '—'}
+                          <td style={{ width: 110 }}>
+                            <select
+                              className="est-select" value={l.condicao || 'novo'} disabled={desabilitado}
+                              aria-label={`Condição do item ${i + 1}`}
+                              onChange={(e) => mexer(i, { condicao: e.target.value })}
+                            >
+                              {CONDICOES.map((c) => (
+                                <option key={c.valor} value={c.valor}>{c.label}</option>
+                              ))}
+                            </select>
+                          </td>
+                          {/* O saldo do BOLSO escolhido — é ele que a baixa consome. */}
+                          <td className={`num ${v && saldoDaCondicao(v, l.condicao) === 0 ? 'is-critico' : ''}`}>
+                            {v ? saldoDaCondicao(v, l.condicao) : '—'}
                           </td>
                           <td className="num" style={{ width: 96 }}>
                             <input

@@ -14,7 +14,7 @@ const moeda = (v) => (v === null || v === undefined ? '—' : BRL.format(v));
 
 const NOVO = {
   categoria: 'epi', descricao: '', tamanho: '', ca: '', genero: '', setor: '',
-  codigo: '', estoque_minimo: '', estoque_maximo: '', custo_unitario: '',
+  codigo: '', referencia: '', estoque_minimo: '', estoque_maximo: '', custo_unitario: '',
 };
 
 export default function PosicaoEstoque() {
@@ -181,6 +181,12 @@ export default function PosicaoEstoque() {
                   </select>
                 </div>
                 <div className="est-campo">
+                  <label htmlFor="n-ref">Referência</label>
+                  <input id="n-ref" className="est-input" value={novo.referencia}
+                    placeholder="Modelo, código do fornecedor…"
+                    onChange={(e) => setNovo({ ...novo, referencia: e.target.value })} />
+                </div>
+                <div className="est-campo">
                   <label htmlFor="n-set">Setor</label>
                   <select id="n-set" className="est-select" value={novo.setor}
                     onChange={(e) => setNovo({ ...novo, setor: e.target.value })}>
@@ -261,7 +267,7 @@ export default function PosicaoEstoque() {
       ) : lista.length === 0 ? (
         <div className="est-vazio">
           {posicao.length === 0
-            ? 'O catálogo está vazio. Importe a planilha em “Importar planilha” ou cadastre um item.'
+            ? 'O catálogo está vazio. Use “Novo item” para cadastrar a primeira variação.'
             : 'Nenhum item encontrado com esses filtros.'}
         </div>
       ) : (
@@ -271,7 +277,9 @@ export default function PosicaoEstoque() {
               <tr>
                 <th>Item</th>
                 <th>Categoria</th>
-                <th className="num">Saldo</th>
+                <th className="num">Nova</th>
+                <th className="num">Usada</th>
+                <th className="num">Total</th>
                 <th className="num">Mín.</th>
                 <th className="num">Máx.</th>
                 <th className="num">Custo un.</th>
@@ -291,6 +299,8 @@ export default function PosicaoEstoque() {
                       <span className="est-item-det">{detalheVariante(v) || '—'}</span>
                     </td>
                     <td><span className={`est-badge tom-${v.categoria}`}>{v.categoria === 'epi' ? 'EPI' : 'Uniforme'}</span></td>
+                    <td className="num">{v.saldo_novo}</td>
+                    <td className="num">{v.saldo_usado}</td>
                     <td className={`num ${v.situacao === 'sem_estoque' ? 'is-critico'
                       : v.situacao === 'abaixo_minimo' ? 'is-alerta' : ''}`}>
                       {v.saldo}

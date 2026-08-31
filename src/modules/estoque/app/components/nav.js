@@ -1,6 +1,5 @@
 import {
-  Boxes, BarChart3, ArrowDownToLine, ArrowUpFromLine, ClipboardCheck, History,
-  FileSpreadsheet, PackageSearch,
+  Boxes, BarChart3, ArrowDownToLine, ArrowUpFromLine, ClipboardCheck, History, PackageSearch,
 } from 'lucide-react';
 
 // Navegação da sidebar do Estoque, na divisão padrão do portal (mesma do
@@ -37,13 +36,6 @@ export function navSections({ operador = false } = {}) {
         { label: 'Entrada', href: '/estoque/entrada', Icon: ArrowDownToLine },
         { label: 'Saída', href: '/estoque/saida', Icon: ArrowUpFromLine },
         { label: 'Inventário', href: '/estoque/ajuste', Icon: ClipboardCheck },
-      ],
-    });
-    secoes.push({
-      label: 'Administração',
-      key: 'admin',
-      items: [
-        { label: 'Importar planilha', href: '/estoque/importar', Icon: FileSpreadsheet },
       ],
     });
   }

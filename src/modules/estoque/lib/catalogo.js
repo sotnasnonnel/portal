@@ -55,8 +55,8 @@ export function rotuloVariante(v) {
 }
 
 /**
- * Mesma chave do índice único do banco (estoque_variantes_chave). Serve para o
- * import saber se a linha da planilha cria ou atualiza, sem ida ao servidor.
+ * Mesma chave do índice único do banco (estoque_variantes_chave). Serve para
+ * detectar variação repetida antes de mandar ao servidor.
  */
 export const chaveVariante = (v) => [
   normalizar(v?.categoria), normalizar(v?.descricao), normalizar(v?.tamanho),

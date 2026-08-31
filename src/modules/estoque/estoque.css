@@ -244,10 +244,11 @@
 .est-carrinho { display: flex; flex-direction: column; gap: 10px; }
 .est-carrinho-linha {
   display: grid; align-items: end; gap: 10px;
-  grid-template-columns: minmax(0, 1fr) 96px 1fr 34px;
+  /* item · condição · qtd · quem recebeu · remover */
+  grid-template-columns: minmax(0, 1fr) 110px 90px 1fr 34px;
   padding: 12px; border: 1px solid var(--e-border); border-radius: 12px; background: var(--e-gray-50);
 }
-.est-carrinho-linha.sem-quem { grid-template-columns: minmax(0, 1fr) 96px 34px; }
+.est-carrinho-linha.sem-quem { grid-template-columns: minmax(0, 1fr) 110px 90px 34px; }
 .est-carrinho-linha.is-erro { border-color: #fecaca; background: #fef2f2; }
 .est-carrinho-linha .est-campo { margin-bottom: 0; }
 .est-carrinho-rodape {

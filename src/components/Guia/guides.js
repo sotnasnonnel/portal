@@ -751,6 +751,13 @@ const ESTOQUE_PEDIR = {
     'O pedido é feito como sempre, em Administrativo → Saúde e segurança. A diferença é que agora dá para escolher o item do catálogo, com a quantidade — e o saldo aparece ao lado. Falta de estoque NÃO impede o pedido: se o item está zerado ou nem existe no catálogo, peça do mesmo jeito (há um campo de texto livre para isso). É o pedido que avisa o Administrativo de que precisa comprar.',
 };
 
+const ESTOQUE_USADO = {
+  icon: Boxes,
+  titulo: "Peça nova e peça usada têm saldos separados",
+  texto:
+    'Cada variação carrega dois saldos: quantas peças novas e quantas usadas. É como a planilha sempre controlou (colunas USADO e NOVO), e faz diferença na hora de entregar — dar um capacete usado não gasta o estoque de novos. Toda entrada, saída e contagem pergunta a condição; o total é a soma dos dois e não se digita.',
+};
+
 const ESTOQUE_NOTIFICACAO = {
   icon: Bell,
   titulo: "O sino avisa quando um item acaba",
@@ -795,6 +802,7 @@ export const ESTOQUE_GUIA = {
       },
       ESTOQUE_CONSULTAR,
       ESTOQUE_VARIACAO,
+      ESTOQUE_USADO,
       {
         icon: ArrowDownToLine,
         titulo: "Entrada: material que chegou",
@@ -811,7 +819,7 @@ export const ESTOQUE_GUIA = {
         icon: ClipboardCheck,
         titulo: "Inventário: quando a prateleira discorda",
         texto:
-          'Em "Inventário" você digita o que CONTOU, não a diferença. Só o que divergir do sistema vira ajuste, e item deixado em branco não é tocado — dá para conferir uma prateleira por vez, sem precisar contar o almoxarifado inteiro.',
+          'Em "Inventário" você digita o que CONTOU, não a diferença, separando peça nova de usada. Só o que divergir do sistema vira ajuste, e campo deixado em branco não é tocado — dá para conferir uma prateleira (ou só as novas) por vez, sem precisar contar o almoxarifado inteiro.',
       },
       {
         icon: Headset,
@@ -844,9 +852,9 @@ export const ESTOQUE_GUIA = {
       },
       {
         icon: FileSpreadsheet,
-        titulo: "Carregar o catálogo da planilha",
+        titulo: "O catálogo já veio carregado",
         texto:
-          'Em "Importar planilha" você sobe as planilhas de EPIs e uniformes. Antes de gravar, a tela mostra tudo que será criado, linha a linha, e o que não deu para ler. Pode ser repetido: item que já existe não é duplicado, e saldo diferente vira ajuste — não uma segunda entrada.',
+          'As 102 variações das planilhas de EPI e uniforme foram carregadas na largada, com os saldos que elas traziam. Daqui em diante o cadastro é manual: use "Novo item" na Posição de estoque para o que faltar, e a Entrada para as peças que chegarem.',
       },
       {
         icon: AlertTriangle,
@@ -856,6 +864,7 @@ export const ESTOQUE_GUIA = {
       },
       ESTOQUE_CONSULTAR,
       ESTOQUE_VARIACAO,
+      ESTOQUE_USADO,
       {
         icon: BarChart3,
         titulo: "Indicadores",

@@ -10,8 +10,14 @@
 import { rotuloVariante } from './catalogo.js';
 
 export const linhaVazia = () => ({
-  variante_id: '', quantidade: 1, colaborador_id: '', motivo: '', observacao: '', variante: null,
+  variante_id: '', quantidade: 1, condicao: 'novo',
+  colaborador_id: '', motivo: '', observacao: '', variante: null,
 });
+
+/** Saldo do bolso que a linha vai mexer. Peça usada e nova têm saldos próprios. */
+export const saldoDaCondicao = (variante, condicao) => Number(
+  condicao === 'usado' ? variante?.saldo_usado : variante?.saldo_novo,
+) || 0;
 
 const inteiroPositivo = (v) => {
   const n = Number(v);
@@ -19,31 +25,46 @@ const inteiroPositivo = (v) => {
 };
 
 /**
- * Quanto cada variante está saindo no lote INTEIRO.
+ * Quanto cada variante está saindo no lote INTEIRO, POR CONDIÇÃO.
  *
  * Somar é o ponto: duas linhas de 1 capacete para pessoas diferentes são
  * legítimas, mas se o saldo é 1 o lote não passa. Validar linha a linha deixaria
  * as duas passarem no front e o banco recusaria o lote no meio.
+ *
+ * A chave inclui a condição porque os saldos são separados: pedir 2 novos e
+ * 2 usados de um item que tem 2 de cada cabe, e conferir só o total diria que
+ * não. É o mesmo agrupamento que a RPC faz no banco.
  */
 export function conferirSaldos(linhas) {
-  const porVariante = new Map();
+  const porBolso = new Map();
   for (const l of linhas || []) {
     if (!l?.variante_id || !inteiroPositivo(l.quantidade)) continue;
-    const atual = porVariante.get(l.variante_id) || {
-      variante: l.variante, pedido: 0, saldo: Number(l.variante?.saldo) || 0,
+    const cond = l.condicao === 'usado' ? 'usado' : 'novo';
+    const chave = `${l.variante_id}|${cond}`;
+    const atual = porBolso.get(chave) || {
+      variante_id: l.variante_id, condicao: cond, variante: l.variante,
+      pedido: 0, saldo: saldoDaCondicao(l.variante, cond),
     };
     atual.pedido += Number(l.quantidade);
-    if (l.variante) atual.variante = l.variante;
-    porVariante.set(l.variante_id, atual);
+    if (l.variante) {
+      atual.variante = l.variante;
+      atual.saldo = saldoDaCondicao(l.variante, cond);
+    }
+    porBolso.set(chave, atual);
   }
-  return [...porVariante.entries()].map(([variante_id, v]) => ({
-    variante_id, ...v, falta: Math.max(0, v.pedido - v.saldo),
-  }));
+  return [...porBolso.values()].map((v) => ({ ...v, falta: Math.max(0, v.pedido - v.saldo) }));
 }
 
-/** Ids das variantes cujo total do lote não cabe no saldo — para pintar a linha. */
+/** Chaves `varianteId|condicao` que não cabem no saldo — para pintar a linha. */
 export const variantesSemSaldo = (linhas) =>
-  new Set(conferirSaldos(linhas).filter((c) => c.falta > 0).map((c) => c.variante_id));
+  new Set(conferirSaldos(linhas)
+    .filter((c) => c.falta > 0)
+    .map((c) => `${c.variante_id}|${c.condicao}`));
+
+/** A linha estoura o saldo do seu bolso? */
+export const linhaSemSaldo = (linha, semSaldo) =>
+  !!linha?.variante_id
+  && semSaldo.has(`${linha.variante_id}|${linha.condicao === 'usado' ? 'usado' : 'novo'}`);
 
 /**
  * Valida o lote antes de chamar a RPC. Devolve string de erro ou ''.
@@ -69,7 +90,7 @@ export function validarCarrinho(linhas, { tipo } = {}) {
   if (tipo === 'saida') {
     const semSaldo = conferirSaldos(uteis).find((c) => c.falta > 0);
     if (semSaldo) {
-      return `Saldo insuficiente de ${rotuloVariante(semSaldo.variante)}: `
+      return `Saldo insuficiente de ${rotuloVariante(semSaldo.variante)} (${semSaldo.condicao}): `
         + `disponível ${semSaldo.saldo}, pedido ${semSaldo.pedido}.`;
     }
   }
@@ -87,6 +108,8 @@ export function montarMovimentos(linhas, { tipo, motivo = '', documento = '' } =
     .map((l) => ({
       variante_id: l.variante_id,
       tipo,
+      // O banco guarda os dois saldos separados; sem isto tudo cairia em "novo".
+      condicao: l.condicao === 'usado' ? 'usado' : 'novo',
       quantidade: tipo === 'saida' ? -Math.abs(Number(l.quantidade)) : Number(l.quantidade),
       motivo: (l.motivo || motivo || '').trim(),
       colaborador_id: l.colaborador_id || '',
@@ -107,14 +130,19 @@ export function movimentosDeInventario(linhas, { motivo = 'Inventário' } = {}) 
   return (linhas || [])
     .filter((l) => l?.variante_id && l.contagem !== '' && l.contagem !== null
       && l.contagem !== undefined && Number.isInteger(Number(l.contagem)) && Number(l.contagem) >= 0)
-    .map((l) => ({
-      variante_id: l.variante_id,
-      tipo: 'ajuste',
-      quantidade: Number(l.contagem) - (Number(l.variante?.saldo) || 0),
-      motivo,
-      colaborador_id: '',
-      observacao: `Contagem ${l.contagem}, sistema ${Number(l.variante?.saldo) || 0}`,
-    }))
+    .map((l) => {
+      const cond = l.condicao === 'usado' ? 'usado' : 'novo';
+      const sistema = saldoDaCondicao(l.variante, cond);
+      return {
+        variante_id: l.variante_id,
+        tipo: 'ajuste',
+        condicao: cond,
+        quantidade: Number(l.contagem) - sistema,
+        motivo,
+        colaborador_id: '',
+        observacao: `Contagem ${l.contagem}, sistema ${sistema} (${cond})`,
+      };
+    })
     .filter((m) => m.quantidade !== 0);
 }
 

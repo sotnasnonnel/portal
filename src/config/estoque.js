@@ -100,6 +100,16 @@ export const MOTIVOS_AJUSTE = [
   'Correção de lançamento',
 ];
 
+// Peça nova e peça usada têm saldos separados (colunas USADO e NOVO da
+// planilha). Não é atributo do item: é de cada movimento, e por isso a mesma
+// variação carrega os dois saldos.
+export const CONDICOES = [
+  { valor: 'novo', label: 'Nova' },
+  { valor: 'usado', label: 'Usada' },
+];
+
+export const rotuloCondicao = (v) => (v === 'usado' ? 'Usada' : 'Nova');
+
 export const SITUACOES = {
   ok: { label: 'Ok', tom: 'ok' },
   abaixo_minimo: { label: 'Abaixo do mínimo', tom: 'alerta' },

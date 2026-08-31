@@ -41,9 +41,14 @@ export default function AjusteEstoque() {
 
   // Só o que foi contado E diverge vira movimento. Item não contado fica de fora
   // — inventário parcial é o normal (conta-se uma prateleira por vez).
+  //
+  // Conta os DOIS bolsos separadamente: quem contou 4 peças novas não disse nada
+  // sobre as usadas, e um ajuste que somasse tudo zeraria as usadas em silêncio.
   const movimentos = useMemo(
     () => movimentosDeInventario(
-      posicao.map((v) => ({ variante_id: v.id, contagem: contagem[v.id] ?? '', variante: v })),
+      posicao.flatMap((v) => ['novo', 'usado'].map((condicao) => ({
+        variante_id: v.id, condicao, contagem: contagem[`${v.id}|${condicao}`] ?? '', variante: v,
+      }))),
       { motivo },
     ),
     [posicao, contagem, motivo],
@@ -86,9 +91,10 @@ export default function AjusteEstoque() {
         <div className="est-cab-txt">
           <h1 className="est-title"><ClipboardCheck size={22} /> Inventário</h1>
           <p className="est-sub">
-            Digite o que foi <strong>contado na prateleira</strong>. Só o que divergir do
-            sistema vira um ajuste — item deixado em branco não é tocado, então dá para
-            conferir uma prateleira por vez.
+            Digite o que foi <strong>contado na prateleira</strong>, separando peça nova
+            de peça usada. Só o que divergir do sistema vira um ajuste — campo deixado em
+            branco não é tocado, então dá para conferir uma prateleira (ou só as novas)
+            por vez.
           </p>
         </div>
       </div>
@@ -135,33 +141,44 @@ export default function AjusteEstoque() {
             <thead>
               <tr>
                 <th>Item</th>
-                <th className="num">Sistema</th>
-                <th className="num">Contado</th>
+                <th className="num">Nova (sistema)</th>
+                <th className="num">Nova (contado)</th>
+                <th className="num">Usada (sistema)</th>
+                <th className="num">Usada (contado)</th>
                 <th className="num">Diferença</th>
               </tr>
             </thead>
             <tbody>
               {lista.map((v) => {
-                const cru = contagem[v.id] ?? '';
-                const temContagem = cru !== '' && Number.isInteger(Number(cru)) && Number(cru) >= 0;
-                const delta = temContagem ? Number(cru) - v.saldo : null;
+                const deltaDe = (cond, sistema) => {
+                  const cru = contagem[`${v.id}|${cond}`] ?? '';
+                  const vale = cru !== '' && Number.isInteger(Number(cru)) && Number(cru) >= 0;
+                  return vale ? Number(cru) - sistema : null;
+                };
+                const dNovo = deltaDe('novo', v.saldo_novo);
+                const dUsado = deltaDe('usado', v.saldo_usado);
+                const soma = (dNovo ?? 0) + (dUsado ?? 0);
+                const nada = dNovo === null && dUsado === null;
+                const campo = (cond) => (
+                  <input
+                    className="est-input est-input-num" type="number" min="0" step="1"
+                    inputMode="numeric" value={contagem[`${v.id}|${cond}`] ?? ''}
+                    aria-label={`Contagem de ${v.descricao} (${cond})`}
+                    onChange={(e) => setContagem({ ...contagem, [`${v.id}|${cond}`]: e.target.value })}
+                  />
+                );
                 return (
                   <tr key={v.id}>
                     <td>
                       <span className="est-item-nome">{v.descricao}</span>
                       <span className="est-item-det">{detalheVariante(v) || '—'}</span>
                     </td>
-                    <td className="num">{v.saldo}</td>
-                    <td className="num est-col-min">
-                      <input
-                        className="est-input est-input-num" type="number" min="0" step="1"
-                        inputMode="numeric" value={cru}
-                        aria-label={`Contagem de ${v.descricao}`}
-                        onChange={(e) => setContagem({ ...contagem, [v.id]: e.target.value })}
-                      />
-                    </td>
-                    <td className={`num ${delta ? (delta > 0 ? 'is-alerta' : 'is-critico') : ''}`}>
-                      {delta === null ? '—' : delta === 0 ? 'confere' : (delta > 0 ? `+${delta}` : delta)}
+                    <td className="num">{v.saldo_novo}</td>
+                    <td className="num est-col-min">{campo('novo')}</td>
+                    <td className="num">{v.saldo_usado}</td>
+                    <td className="num est-col-min">{campo('usado')}</td>
+                    <td className={`num ${soma ? (soma > 0 ? 'is-alerta' : 'is-critico') : ''}`}>
+                      {nada ? '—' : soma === 0 ? 'confere' : (soma > 0 ? `+${soma}` : soma)}
                     </td>
                   </tr>
                 );
