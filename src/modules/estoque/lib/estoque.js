@@ -187,7 +187,7 @@ export async function baixarChamado(chamadoId, resolucao, movs) {
 export async function listarMovimentos({ varianteId, colaboradorId, chamadoId, de, ate, limite = 500 } = {}) {
   let q = supabase
     .from('estoque_movimentos')
-    .select('id, tipo, quantidade, motivo, documento, observacao, criado_em, '
+    .select('id, tipo, condicao, quantidade, motivo, documento, observacao, criado_em, '
       + 'colaborador_id, chamado_id, registrado_por, '
       + 'estoque_variantes(id, tamanho, ca, genero, setor, estoque_itens(descricao, categoria)), '
       + 'chamados_adm(numero, servico)')
@@ -216,6 +216,7 @@ export async function listarMovimentos({ varianteId, colaboradorId, chamadoId, d
     return {
       id: m.id,
       tipo: m.tipo,
+      condicao: m.condicao,
       quantidade: m.quantidade,
       motivo: m.motivo,
       documento: m.documento,
@@ -240,7 +241,7 @@ export async function listarMovimentos({ varianteId, colaboradorId, chamadoId, d
 export async function movimentosDoChamado(chamadoId) {
   const { data, error } = await supabase
     .from('estoque_movimentos')
-    .select('variante_id, quantidade, tipo')
+    .select('variante_id, quantidade, tipo, condicao')
     .eq('chamado_id', chamadoId);
   if (error) throw new Error(`Não foi possível ler as baixas do chamado: ${error.message}`);
   return data || [];

@@ -7,6 +7,9 @@ import { listarMovimentos, listarPessoasEstoque } from '../../lib/estoque';
 import { normalizar, rotuloVariante } from '../../lib/catalogo';
 
 const TIPO_LABEL = { entrada: 'Entrada', saida: 'Saída', ajuste: 'Ajuste' };
+// Peça nova e usada têm saldos separados: sem esta coluna o histórico não
+// explica de qual dos dois o movimento saiu.
+const CONDICAO_LABEL = { novo: 'Nova', usado: 'Usada' };
 
 const dataHora = (iso) => (iso
   ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
@@ -64,6 +67,7 @@ export default function MovimentosEstoque() {
     return movs.filter((m) => {
       const alvo = normalizar(
         `${rotuloVariante(m.variante)} ${m.colaboradorNome} ${m.motivo || ''} `
+        + `${CONDICAO_LABEL[m.condicao] || ''} `
         + `${m.documento || ''} ${m.chamadoNumero ? `#${m.chamadoNumero}` : ''}`,
       );
       return partes.every((p) => alvo.includes(p));
@@ -92,7 +96,7 @@ export default function MovimentosEstoque() {
             <div className="est-busca">
               <Search size={16} />
               <input id="m-busca" className="est-input" value={termo}
-                placeholder="Item, pessoa, motivo ou nº do chamado…"
+                placeholder="Item, pessoa, condição, motivo ou nº do chamado…"
                 onChange={(e) => setTermo(e.target.value)} />
             </div>
           </div>
@@ -131,6 +135,7 @@ export default function MovimentosEstoque() {
                 <th>Data</th>
                 <th>Tipo</th>
                 <th>Item</th>
+                <th>Condição</th>
                 <th className="num">Qtd.</th>
                 <th>Quem recebeu</th>
                 <th>Motivo</th>
@@ -146,6 +151,11 @@ export default function MovimentosEstoque() {
                   <td>
                     <span className="est-item-nome">{m.variante.descricao}</span>
                     <span className="est-item-det">{rotuloVariante(m.variante).replace(m.variante.descricao, '').replace(/^ · /, '') || '—'}</span>
+                  </td>
+                  <td>
+                    <span className={`est-badge tom-${m.condicao === 'usado' ? 'alerta' : 'info'}`}>
+                      {CONDICAO_LABEL[m.condicao] || m.condicao}
+                    </span>
                   </td>
                   {/* O sinal é a informação: +5 recebido, -2 entregue. */}
                   <td className={`num ${m.quantidade < 0 ? 'is-critico' : ''}`}>
