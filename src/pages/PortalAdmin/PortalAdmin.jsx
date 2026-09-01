@@ -4,6 +4,7 @@ import { ArrowLeft, Search, Loader2, RefreshCw, CheckCircle2, MinusCircle } from
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../services/supabase";
 import { isSuperAdmin } from "../../config/superAdmin";
+import { horasRoleFromPerfil, perfilEfetivoDp, HORAS_PAPEL_LABEL } from "../../config/horasPapel";
 import "./PortalAdmin.css";
 
 const DP_ROLES = [
@@ -23,9 +24,13 @@ const SOLIC_ROLES = [
   ["user", "Usuário"],
   ["admin", "Admin"],
 ];
+// Financeiro: mesma lógica do Administrativo e do Programas — o módulo é aberto
+// a todos (qualquer um pede cartão), então aqui só se define quem é do TIME do
+// Financeiro, que executa e configura os fluxos. "Solicitante" é a ausência de
+// papel; não existe mais "sem acesso" para escolher, porque marcar isso não
+// tirava o acesso de ninguém.
 const FIN_ROLES = [
-  ["", "Sem acesso"],
-  ["user", "Usuário"],
+  ["", "Solicitante"],
   ["admin", "Admin"],
 ];
 // Administrativo: o módulo é aberto a todos (qualquer um abre chamado), então
@@ -184,8 +189,24 @@ export default function PortalAdmin() {
   function RoleSelect({ row, app, value, options, hasAccess }) {
     const key = `${row.email}:${app}`;
     const saving = savingKey === key;
+    // Reembolso e PMO guardam o papel numa tabela propria, cuja linha nasce no
+    // PRIMEIRO login da pessoa (a chave e o id de autenticacao, que so existe
+    // depois que ela entra). Antes disso nao ha papel para editar — e dizer
+    // "sem acesso" fazia parecer decisao de quem administra, quando e so
+    // ninguem ter entrado ainda.
     if (!hasAccess) {
-      return <span className="pa-noaccess">Sem acesso</span>;
+      return (
+        <span
+          className="pa-noaccess"
+          title={
+            row.jaLogou
+              ? "Perfil ainda nao criado neste app."
+              : "O papel neste app e criado no primeiro acesso da pessoa ao portal."
+          }
+        >
+          {row.jaLogou ? "Sem perfil" : "Aguardando 1º acesso"}
+        </span>
+      );
     }
     return (
       <div className={`pa-select-wrap${saving ? " is-saving" : ""}`}>
@@ -288,6 +309,12 @@ export default function PortalAdmin() {
                   </td>
                   <td>
                     <RoleSelect row={row} app="horas" value={row.horasRole} options={HORAS_ROLES} hasAccess />
+                    {/* O select mostra a ELEVACAO; o papel que a pessoa tem de
+                        fato e o maior entre ela e o que vem da hierarquia.
+                        Sem esta linha, "Pela hierarquia" nao dizia qual. */}
+                    <small className="pa-efetivo">
+                      Hoje: {HORAS_PAPEL_LABEL[horasRoleFromPerfil(perfilEfetivoDp(row.dpRole, row.dpRh), row.horasRole)]}
+                    </small>
                   </td>
                   <td>
                     <RoleSelect
@@ -308,7 +335,16 @@ export default function PortalAdmin() {
                     />
                   </td>
                   <td>
-                    <RoleSelect row={row} app="financeiro" value={row.finRole ?? ""} options={FIN_ROLES} hasAccess />
+                    <RoleSelect
+                      row={row}
+                      app="financeiro"
+                      /* 'user' e NULL passaram a significar a mesma coisa (o
+                         módulo é aberto a todos), então quem estiver gravado
+                         como 'user' aparece como Solicitante. */
+                      value={row.finRole === "admin" ? "admin" : ""}
+                      options={FIN_ROLES}
+                      hasAccess
+                    />
                   </td>
                   <td>
                     <RoleSelect row={row} app="administrativo" value={row.admRole ?? ""} options={ADM_ROLES} hasAccess />

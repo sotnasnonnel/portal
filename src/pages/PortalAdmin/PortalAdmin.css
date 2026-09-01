@@ -267,3 +267,12 @@
     transform: rotate(360deg);
   }
 }
+
+/* Papel efetivo no Controle de Horas, abaixo do select da elevação. O select
+   diz o que foi CONFIGURADO; esta linha diz o que a pessoa tem hoje. */
+.pa-efetivo {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--muted, #6b7280);
+}

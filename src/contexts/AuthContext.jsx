@@ -1,10 +1,10 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../services/supabase';
+import { horasRoleFromPerfil, perfilEfetivoDp } from '../config/horasPapel';
 import { clearSupabaseCache as clearReembolsoCache } from '../modules/reembolso/lib/supabaseCache.js';
 import { resetPreload } from '../modules/reembolso/services/dataPreload.js';
 import { clearSolicIdentity } from '../modules/solic/lib/identity.ts';
 import { clearSupabaseCache as clearSolicCache } from '../modules/solic/lib/supabaseCache.ts';
-import { temCargoFinanceiro } from '../config/financeiroAcesso';
 import { carregarFotoMicrosoft, fotoEmCache, limparFotoMicrosoft } from '../services/fotoMicrosoft';
 
 const AuthContext = createContext(null);
@@ -12,31 +12,8 @@ const AuthContext = createContext(null);
 // Papéis do Controle de Horas — DERIVADOS do perfil da Gestão de Pessoas
 // (colaboradores.perfil), a mesma hierarquia do módulo de Pessoas: quem é
 // gestor/admin lá é "gestor" aqui, coordenador é "coordenador", o resto é
-// "usuario". A visibilidade (subárvore) é da RLS.
-//
-// A coluna colaboradores.horas_role funciona como ELEVAÇÃO só-do-Horas: permite
-// tornar alguém gestor/coordenador APENAS neste módulo (ex.: administrar os
-// projetos da equipe) — ou 'admin', que é o "vê tudo" do módulo (todas as
-// equipes, todas as áreas) — sem promover o perfil e, com isso, sem abrir a
-// Gestão de Pessoas. O papel efetivo é o MAIOR entre o derivado do perfil e o
-// override.
-// Espelha app_private.my_horas_role() no banco.
-// horas_role='admin' (o "vê tudo" do módulo) entra aqui como 'gestor': menus e
-// telas são os mesmos: quem separa o escopo é a RLS / isHorasAdmin.
-const HORAS_RANK = { usuario: 1, coordenador: 2, gestor: 3, admin: 3 };
-const horasRoleFromPerfil = (perfil, horasRole) => {
-  const doPerfil = perfil === 'admin' || perfil === 'gestor'
-    ? 'gestor'
-    : perfil === 'coordenador'
-      ? 'coordenador'
-      : 'usuario';
-  const override = horasRole === 'admin'
-    ? 'gestor'
-    : horasRole === 'gestor' || horasRole === 'coordenador'
-      ? horasRole
-      : 'usuario';
-  return HORAS_RANK[override] > HORAS_RANK[doPerfil] ? override : doPerfil;
-};
+// "usuario". A visibilidade (subárvore) é da RLS. A regra do papel efetivo
+// mora em config/horasPapel.js (a tela de acessos mostra o mesmo cálculo).
 
 // Limpa o ?code= do retorno OAuth da URL (PKCE + HashRouter).
 function cleanOAuthParams() {
@@ -159,7 +136,7 @@ export function AuthProvider({ children }) {
       setBlocked(null);
       const rhDp = colab.rh_dp === true;
       // Perfil efetivo no DP: RH que não é gestor/admin navega como 'rh' (perfil real fica no banco).
-      const perfilEfetivo = (rhDp && !['gestor', 'admin', 'coordenador'].includes(colab.perfil)) ? 'rh' : colab.perfil;
+      const perfilEfetivo = perfilEfetivoDp(colab.perfil, rhDp);
       setUser({
         id: colab.id,
         nome: colab.nome,
@@ -250,9 +227,7 @@ export function AuthProvider({ children }) {
       .maybeSingle();
     if (!data) return;
     const rhDp = data.rh_dp === true;
-    const perfilEfetivo = (rhDp && !['gestor', 'admin', 'coordenador'].includes(data.perfil))
-      ? 'rh'
-      : data.perfil;
+    const perfilEfetivo = perfilEfetivoDp(data.perfil, rhDp);
     const novoHorasRole = data.horas_role || null;
     setUser((u) => {
       if (!u) return u;
@@ -277,13 +252,15 @@ export function AuthProvider({ children }) {
     // superiores da árvore (garantido pela RLS). O super-admin também tem passe
     // livre no banco.
     horas: user ? horasRoleFromPerfil(user.perfil, user.horasRole) : null,
-    // Financeiro: visível só a quem tem CARGO de diretor, gerente ou coordenador
-    // (pela função). 'admin' = time do Financeiro (executa/configura fluxos), via
-    // financeiro_role (Gerenciar acessos), que também dá acesso independentemente
-    // do cargo. Demais: null = sem acesso (module invisível).
-    financeiro: user
-      ? (user.financeiroRole || (temCargoFinanceiro(user.funcao) ? 'user' : null))
-      : null,
+    // Financeiro: aberto a todos os logados (como o Administrativo e o
+    // Programas). Era restrito a quem tinha CARGO de diretor, gerente ou
+    // coordenador, e a restrição não se sustentava: pedir cartão é demanda de
+    // quem executa, e quem ficava de fora acabava pedindo pelo gestor — sem
+    // rastro de quem realmente precisava. A RLS já é por colaborador (cada um
+    // enxerga e edita os PRÓPRIOS pedidos), então abrir a porta não abre dado
+    // de ninguém. 'admin' = time do Financeiro (executa/configura fluxos), via
+    // financeiro_role (Gerenciar acessos), e continua restrito.
+    financeiro: user ? (user.financeiroRole || 'user') : null,
     // Administrativo: aberto a todos os logados (como o Controle de Horas) —
     // qualquer um abre chamado. 'atendente'/'admin' são o time do Adm, que
     // enxerga a fila; vêm de administrativo_role (Gerenciar acessos).
