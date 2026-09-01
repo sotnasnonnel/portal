@@ -80,3 +80,55 @@
   line-height: 1.5;
   color: var(--ink-soft);
 }
+
+/* Tabela de alimentação por local. Rola sozinha no celular: são 3 colunas de
+   valores mais a coluna da refeição, e apertar isso na largura do telefone
+   quebrava os valores em duas linhas. */
+.policy-table-wrap {
+  overflow-x: auto;
+}
+
+.policy-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+}
+
+.policy-table th,
+.policy-table td {
+  padding: 5px 8px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.policy-table thead th {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--border);
+}
+
+.policy-table th[scope="row"],
+.policy-table thead th:first-child {
+  text-align: left;
+  font-weight: 600;
+}
+
+.policy-table td {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.policy-table-total th,
+.policy-table-total td {
+  border-top: 1px dashed var(--border);
+  font-weight: 600;
+}
+
+.policy-note {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}

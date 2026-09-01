@@ -1,4 +1,6 @@
-// Storage das imagens de NF no Supabase (bucket PRIVADO -> URLs assinadas).
+// Storage dos anexos de NF no Supabase (bucket PRIVADO -> URLs assinadas).
+// Aceita imagem e PDF: a extensão e o content-type saem do próprio dataUrl, e
+// não de um "jpg" fixo — sem isso o PDF subia rotulado como JPEG e não abria.
 
 import { supabase } from "../lib/supabase.js";
 
@@ -13,13 +15,22 @@ function dataUrlToBlob(dataUrl) {
   return new Blob([bytes], { type: mime });
 }
 
-/** Sobe a imagem e devolve o caminho (path) dentro do bucket. */
+// Extensão a partir do mime. Só o que o anexo aceita (imagem ou PDF).
+function extensaoDoMime(mime) {
+  if (mime === "application/pdf") return "pdf";
+  if (mime === "image/png") return "png";
+  if (mime === "image/webp") return "webp";
+  return "jpg";
+}
+
+/** Sobe o anexo (imagem ou PDF) e devolve o caminho (path) dentro do bucket. */
 export async function uploadNfImage(dataUrl, { reimbursementId, index = 0 } = {}) {
   const blob = dataUrlToBlob(dataUrl);
-  const path = `${reimbursementId}/${Date.now()}-${index}.jpg`;
+  const ext = extensaoDoMime(blob.type);
+  const path = `${reimbursementId}/${Date.now()}-${index}.${ext}`;
   const { error } = await supabase.storage
     .from(NF_BUCKET)
-    .upload(path, blob, { contentType: "image/jpeg", upsert: true });
+    .upload(path, blob, { contentType: blob.type, upsert: true });
   if (error) throw new Error(`Storage: ${error.message}`);
   return path;
 }
@@ -51,7 +62,7 @@ export async function refToDataUrl(ref) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(new Error("Falha ao baixar a imagem da NF."));
+    reader.onerror = () => reject(new Error("Falha ao baixar o anexo da NF."));
     reader.readAsDataURL(blob);
   });
 }

@@ -22,6 +22,7 @@ import ImageLightbox from "../components/ImageLightbox.jsx";
 import PolicyNotice from "../components/PolicyNotice.jsx";
 import FoodOverageNotice from "../components/FoodOverageNotice.jsx";
 import ForbiddenItemsNotice from "../components/ForbiddenItemsNotice.jsx";
+import NfAnexoPreview from "../components/NfAnexoPreview.jsx";
 import "./ReembolsoDetail.css";
 
 export default function ReembolsoDetail() {
@@ -632,14 +633,12 @@ export default function ReembolsoDetail() {
               return (
                 <div className="nf-detail-thumb" key={img.id}>
                   {img.ref?.value && (
-                    <button
-                      type="button"
-                      className="nf-thumb-btn"
-                      onClick={() => setLightbox({ src: img.ref.value, alt: label })}
-                      title="Clique para abrir"
-                    >
-                      <img src={img.ref.value} alt={label} />
-                    </button>
+                    <NfAnexoPreview
+                      img={img}
+                      label={label}
+                      src={img.ref.value}
+                      onOpenImage={setLightbox}
+                    />
                   )}
                   <span>{label}</span>
                 </div>

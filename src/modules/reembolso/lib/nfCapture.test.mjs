@@ -35,3 +35,37 @@ test("itemsFromExtraction com itens gera uma linha por item, replicando dados da
   assert.equal(rows[1].nf_number, "9");
   assert.equal(rows[0].meal_category, "café da manhã");
 });
+
+test("recibo de corrida vira UM item pelo total, não pelas partes do preço", () => {
+  // "Preço da viagem R$ 15,47" + "Custo fixo R$ 1,50" = "Total R$ 16,97":
+  // lançar as duas linhas cobrava a corrida quase duas vezes.
+  const rows = itemsFromExtraction(
+    {
+      categoria: "UBER",
+      valor_total: 16.97,
+      itens: [
+        { descricao: "Preço da viagem", valor: 15.47 },
+        { descricao: "Custo fixo", valor: 1.5 },
+      ],
+    },
+    0
+  );
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].description, "UBER");
+  assert.equal(rows[0].value, "16.97");
+});
+
+test("cupom com produtos de verdade continua item a item", () => {
+  const rows = itemsFromExtraction(
+    {
+      categoria: "ALMOÇO",
+      valor_total: 38,
+      itens: [
+        { descricao: "Prato feito", valor: 30 },
+        { descricao: "Suco", valor: 8 },
+      ],
+    },
+    0
+  );
+  assert.equal(rows.length, 2);
+});

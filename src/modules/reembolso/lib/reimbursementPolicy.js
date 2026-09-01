@@ -4,42 +4,38 @@
 // PDF usem exatamente os mesmos valores.
 
 /**
- * PROVISÓRIO (lançamento de 2026-09-01): os tetos por refeição saem de cena.
- *
- * A política nova é por LOCAL (Belo Horizonte / demais cidades do Brasil /
- * México e Guatemala) e ainda não está fechada — enquanto isso, mostrar os
- * valores antigos e descontar por eles seria aplicar regra que já se sabe
- * errada. Com a chave desligada:
- *   - o quadro "Regras de reembolso" não aparece;
- *   - o aviso de excedente não aparece;
- *   - a aprovação é sempre pelo valor total, sem o botão de desconto.
- *
- * O cálculo continua no código, inteiro e testado: quando a tabela nova
- * chegar, é ligar a chave e trocar os valores. Nada aqui foi apagado.
+ * Regras de valor no ar desde a tabela por LOCAL (2026-09-01). Ficaram
+ * desligadas enquanto a tabela não fechou — voltaram com os valores abaixo.
  */
-export const REGRAS_VALOR_ATIVAS = false;
+export const REGRAS_VALOR_ATIVAS = true;
+
+/**
+ * Tabela de alimentação por REGIÃO. O teto de cada refeição depende de onde a
+ * despesa aconteceu, e o local vem da própria nota: a IA extrai `local` no
+ * formato "ESTABELECIMENTO, CIDADE - UF" e `regiaoDoLocal()` traduz isso para
+ * uma destas faixas.
+ *
+ * `id` é interno (usado no cálculo); `label` é o que aparece na tela.
+ */
+export const REGIOES_ALIMENTACAO = [
+  { id: "bh", label: "Belo Horizonte — MG", cafe: 20, almoco: 40, jantar: 40 },
+  { id: "brasil", label: "Demais cidades do Brasil", cafe: 30, almoco: 50, jantar: 50 },
+  { id: "intl", label: "México / Guatemala", cafe: 40, almoco: 80, jantar: 80 },
+];
+
+/**
+ * Faixa usada quando a nota não diz onde foi (local em branco, ou cidade que
+ * não bate com nenhuma regra). É a linha "demais cidades do Brasil" — a linha
+ * genérica da tabela. Belo Horizonte só vale quando está escrito na nota:
+ * assumir BH por omissão apertaria o teto de quem não tem culpa de a nota vir
+ * sem cidade.
+ */
+export const REGIAO_PADRAO = "brasil";
 
 export const POLICY = {
-  // Limites por refeição (R$)
-  alimentacao: [
-    { label: "Almoço", value: 40 },
-    { label: "Jantar", value: 40 },
-    { label: "Café da manhã", value: 20 },
-  ],
-  // Teto de alimentação por DIA: as três refeições somadas (40 + 40 + 20).
-  // Sem ele, três almoços no mesmo dia passavam, porque cada um cabia no teto
-  // da refeição.
-  get alimentacaoDia() {
-    return this.alimentacao.reduce((s, it) => s + it.value, 0);
-  },
-  // Hospedagem: teto POR DIÁRIA (R$). É um limite separado do da alimentação.
-  hospedagem: 285,
-  // Diária cheia = o que um dia de viagem completo pode custar: a alimentação
-  // do dia MAIS a hospedagem. Só de exibição — quem trava são os dois tetos
-  // acima, cada um no seu grupo de itens.
-  get diariaMaxima() {
-    return this.alimentacaoDia + this.hospedagem;
-  },
+  // Tetos de alimentação por região (tabela acima)
+  regioes: REGIOES_ALIMENTACAO,
+  regiaoPadrao: REGIAO_PADRAO,
   // Itens que não podem ser reembolsados
   naoPermitido: [
     "Bebidas alcoólicas",
@@ -53,16 +49,20 @@ export const POLICY = {
   ],
 };
 
-// Limite por refeição, casado pela descrição do item (acento-insensível).
-// Café da manhã tem teto menor (R$20); almoço e jantar, R$40. As chaves
-// cobrem tanto a categoria que a IA atribui (ALMOÇO, JANTA, CAFÉ, COMIDA)
-// quanto palavras comuns nas descrições dos itens.
+/**
+ * Refeição reconhecida pela descrição do item ou pela categoria da nota
+ * (acento-insensível). O TETO não está aqui: ele sai da tabela por região,
+ * pelo campo `campo` de cada refeição (REGIOES_ALIMENTACAO).
+ *
+ * A refeição genérica ("COMIDA", que é o que a IA usa quando não dá para dizer
+ * se foi almoço ou jantar) usa o teto do café da manhã — o menor da região —
+ * para não afrouxar o limite quando a nota não diz qual refeição foi.
+ */
 const FOOD_LIMITS = [
-  { keys: ["CAFE DA MANHA", "CAFE MANHA", "CAFE"], label: "Café da manhã", limit: 20 },
-  { keys: ["ALMOCO"], label: "Almoço", limit: 40 },
-  { keys: ["JANTAR", "JANTA", "JANTAR"], label: "Jantar", limit: 40 },
-  // refeição genérica (a IA usa "COMIDA"; também pega lanche/restaurante)
-  { keys: ["COMIDA", "REFEICAO", "RESTAURANTE", "LANCHE"], label: "Refeição", limit: 30 },
+  { keys: ["CAFE DA MANHA", "CAFE MANHA", "CAFE"], label: "Café da manhã", campo: "cafe" },
+  { keys: ["ALMOCO"], label: "Almoço", campo: "almoco" },
+  { keys: ["JANTAR", "JANTA"], label: "Jantar", campo: "jantar" },
+  { keys: ["COMIDA", "REFEICAO", "RESTAURANTE", "LANCHE"], label: "Refeição", campo: "cafe" },
 ];
 
 function normalize(text) {
@@ -70,6 +70,85 @@ function normalize(text) {
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "") // remove acentos
     .toUpperCase();
+}
+
+// =========================== Região da despesa ===========================
+
+// Cidades/estados que caem em cada faixa da tabela. Só Belo Horizonte tem o
+// teto menor, então a lista de "bh" é curta e literal: BH e as grafias que
+// aparecem em cupom ("BELO HORIZONTE - MG", "BELO HORIZONTE/MG", "BH - MG").
+const REGIAO_KEYS = {
+  bh: ["BELO HORIZONTE"],
+  intl: [
+    "MEXICO", "GUATEMALA", "CDMX", "CIUDAD DE MEXICO", "CANCUN", "MONTERREY",
+    "GUADALAJARA", "PUEBLA", "QUERETARO", "ANTIGUA GUATEMALA", "QUETZALTENANGO",
+    "ESCUINTLA", "MIXCO",
+  ],
+};
+
+// "BH" só vale como palavra isolada (senão casaria dentro de qualquer nome).
+const BH_SIGLA = /(?:^|[^A-Z])BH(?:[^A-Z]|$)/;
+
+/**
+ * Faixa da tabela a partir do texto do local da nota ("PADARIA X, BELO
+ * HORIZONTE - MG"). Sem local reconhecível, devolve a faixa padrão.
+ */
+export function regiaoDoLocal(local) {
+  const d = normalize(local);
+  if (!d) return REGIAO_PADRAO;
+  if (REGIAO_KEYS.intl.some((k) => d.includes(k))) return "intl";
+  if (REGIAO_KEYS.bh.some((k) => d.includes(k)) || BH_SIGLA.test(d)) return "bh";
+  return REGIAO_PADRAO;
+}
+
+/** Linha da tabela de alimentação de uma região (cai no padrão se não achar). */
+export function regraDaRegiao(regiaoId) {
+  return (
+    REGIOES_ALIMENTACAO.find((r) => r.id === regiaoId) ||
+    REGIOES_ALIMENTACAO.find((r) => r.id === REGIAO_PADRAO)
+  );
+}
+
+/** Teto de alimentação do DIA na região: as três refeições somadas. */
+export function alimentacaoDia(regiaoId) {
+  const r = regraDaRegiao(regiaoId);
+  return r.cafe + r.almoco + r.jantar;
+}
+
+// ============================ Itens proibidos ============================
+
+// Combustível NÃO é bebida. Fica antes da checagem de item proibido porque a
+// nota do posto usa as mesmas palavras de bebida ("álcool") e nomes de produto
+// que embutem chaves da lista ("Gasolina Original", "Etanol Original", da
+// Ipiranga, carregam "GIN" dentro de "ORIGINAL").
+const COMBUSTIVEL_KEYS = [
+  "GASOLINA", "ETANOL", "ALCOOL", "DIESEL", "GNV", "ARLA", "COMBUSTIVEL",
+  "ABASTECIMENTO", "QUEROSENE",
+];
+
+function ehCombustivel(desc) {
+  return COMBUSTIVEL_KEYS.some((k) => desc.includes(k));
+}
+
+/**
+ * Casa a palavra-chave só no COMEÇO de uma palavra, deixando continuar depois
+ * (CERVEJA pega CERVEJAS; VINHO pega VINHOS).
+ *
+ * Antes era `includes` solto, e uma chave curta casava no meio de outra
+ * palavra: "GIN" dentro de "GASOLINA ORIGINAL" fazia todo abastecimento
+ * aparecer como bebida alcoólica.
+ */
+function temPalavra(desc, key) {
+  const k = key.trim();
+  if (!k) return false;
+  const i = desc.indexOf(k);
+  if (i < 0) return false;
+  // início do texto ou logo depois de um caractere que não é letra/número
+  for (let pos = i; pos >= 0; pos = desc.indexOf(k, pos + 1)) {
+    const antes = pos === 0 ? "" : desc[pos - 1];
+    if (!antes || !/[A-Z0-9]/.test(antes)) return true;
+  }
+  return false;
 }
 
 // Itens que não podem ser reembolsados, detectados por palavra-chave na
@@ -98,8 +177,9 @@ export function detectForbiddenItems(items) {
   for (const it of items ?? []) {
     const d = normalize(it.description);
     if (!d) continue;
+    if (ehCombustivel(d)) continue; // abastecimento não é bebida/vestuário
     for (const f of FORBIDDEN_KEYWORDS) {
-      if (f.keys.some((k) => d.includes(k))) {
+      if (f.keys.some((k) => temPalavra(d, k))) {
         found.push({
           label: f.label,
           description: it.description,
@@ -114,11 +194,14 @@ export function detectForbiddenItems(items) {
 
 // Retorna { label, limit } da refeição correspondente ao texto (descrição do
 // item ou categoria da nota), ou null quando não é uma refeição com limite
-// (ex.: UBER, HOSPEDAGEM, BEBIDA LACTE).
-export function foodLimitFor(text) {
+// (ex.: UBER, HOSPEDAGEM, BEBIDA LACTE). O teto sai da região da despesa.
+export function foodLimitFor(text, regiaoId = REGIAO_PADRAO) {
   const d = normalize(text);
+  const regra = regraDaRegiao(regiaoId);
   for (const f of FOOD_LIMITS) {
-    if (f.keys.some((k) => d.includes(k))) return { label: f.label, limit: f.limit };
+    if (f.keys.some((k) => d.includes(k))) {
+      return { label: f.label, limit: regra[f.campo] };
+    }
   }
   return null;
 }
@@ -130,23 +213,32 @@ export function foodLimitFor(text) {
 // inteira (ex.: "CAFÉ" mantém o teto de R$20 mesmo que um item diga "COMIDA").
 // Sem categoria (ex.: itens digitados à mão), cai na descrição dos itens —
 // nesse caso usa o MENOR teto encontrado, para não afrouxar o limite.
-function mealOfGroup(group) {
+function mealOfGroup(group, regiaoId) {
   // 1. categoria da nota tem prioridade
   for (const it of group) {
-    const info = foodLimitFor(it.meal_category);
+    const info = foodLimitFor(it.meal_category, regiaoId);
     if (info) return info;
   }
   // 2. fallback pela descrição dos itens (menor teto encontrado)
   let meal = null;
   for (const it of group) {
-    const info = foodLimitFor(it.description);
+    const info = foodLimitFor(it.description, regiaoId);
     if (info && (!meal || info.limit < meal.limit)) meal = info;
   }
   return meal;
 }
 
-// Palavras que identificam HOSPEDAGEM, pela categoria que a IA atribuiu à nota
-// ou pela descrição do item.
+// Região de um grupo de itens: o local é da NOTA, então basta o primeiro item
+// que tenha o campo preenchido.
+function regiaoDoGrupo(group) {
+  const comLocal = group.find((it) => it.local);
+  return regiaoDoLocal(comLocal?.local);
+}
+
+// Palavras que identificam HOSPEDAGEM. O reembolso NÃO tem mais teto de
+// diária — hospedagem passou a ser tratada em outra plataforma —, mas a
+// palavra continua reconhecida para que uma nota de hotel não seja confundida
+// com refeição e caia no teto de alimentação.
 const LODGING_KEYS = ["HOSPEDAGEM", "HOTEL", "POUSADA", "AIRBNB", "HOSTEL", "DIARIA"];
 
 export function isLodging(text) {
@@ -155,7 +247,7 @@ export function isLodging(text) {
 }
 
 // Agrupa itens por NOTA. Item sem nota vira um grupo próprio (uma linha = um
-// gasto). Compartilhado pelas duas avaliações (alimentação e hospedagem).
+// gasto).
 function groupByNote(items) {
   const groups = new Map();
   let soloId = 0;
@@ -167,9 +259,6 @@ function groupByNote(items) {
   }
   return [...groups.values()];
 }
-
-const somaGrupo = (grupo) =>
-  grupo.reduce((s, it) => s + Number(it.value || 0) * (Number(it.qty || 1) || 1), 0);
 
 // Avalia uma lista de itens e calcula o quanto a alimentação passou do limite.
 // O limite (almoço/jantar R$40, café R$20) é POR REFEIÇÃO, não por linha do
@@ -192,7 +281,8 @@ export function evaluateFoodOverage(items) {
   const porDia = new Map();
 
   for (const group of groups) {
-    const meal = mealOfGroup(group.items);
+    const regiaoId = regiaoDoGrupo(group.items);
+    const meal = mealOfGroup(group.items, regiaoId);
     if (!meal) continue; // grupo não é refeição (ex.: estacionamento, hospedagem)
 
     // total da refeição: soma todos os itens da nota (a bebida acompanha o café)
@@ -209,12 +299,23 @@ export function evaluateFoodOverage(items) {
     allowed += liberado;
 
     const dia = group.items.find((it) => it.item_date)?.item_date || null;
-    if (dia) porDia.set(dia, (porDia.get(dia) || 0) + liberado);
+    if (dia) {
+      // Num dia com refeições de regiões diferentes (viagem começando em BH e
+      // terminando fora, p.ex.) vale o maior teto do dia: o dia mudou de faixa
+      // junto com a pessoa, e o teto menor puniria a metade que não era dele.
+      const atual = porDia.get(dia) || { total: 0, regiaoId };
+      porDia.set(dia, {
+        total: atual.total + liberado,
+        regiaoId:
+          alimentacaoDia(regiaoId) > alimentacaoDia(atual.regiaoId) ? regiaoId : atual.regiaoId,
+      });
+    }
 
     if (total > limit) {
       const count = group.items.length;
       exceeded.push({
         label: meal.label,
+        regiao: regraDaRegiao(regiaoId).label,
         description:
           group.isNote && count > 1
             ? `${meal.label} (${count} itens da nota)`
@@ -228,18 +329,20 @@ export function evaluateFoodOverage(items) {
   }
 
   // Teto do DIA: o que sobreviveu aos tetos por refeição ainda precisa caber
-  // nos R$ 100 diários (almoço + jantar + café).
-  for (const [dia, liberadoNoDia] of porDia) {
-    if (liberadoNoDia <= POLICY.alimentacaoDia + 0.001) continue;
-    const excedeDia = liberadoNoDia - POLICY.alimentacaoDia;
+  // no diário da região (almoço + jantar + café).
+  for (const [dia, { total: liberadoNoDia, regiaoId }] of porDia) {
+    const tetoDia = alimentacaoDia(regiaoId);
+    if (liberadoNoDia <= tetoDia + 0.001) continue;
+    const excedeDia = liberadoNoDia - tetoDia;
     allowed -= excedeDia;
     exceeded.push({
       kind: "alimentacao",
       label: "Alimentação do dia",
+      regiao: regraDaRegiao(regiaoId).label,
       description: `Alimentação em ${formatarDia(dia)}`,
       meals: 1,
       value: liberadoNoDia,
-      limit: POLICY.alimentacaoDia,
+      limit: tetoDia,
       over: excedeDia,
     });
   }
@@ -255,69 +358,21 @@ function formatarDia(iso) {
 }
 
 /**
- * Hospedagem acima do teto por diária (POLICY.hospedagem).
+ * O excedente que o formulário mostra e que o gestor desconta ao aprovar.
  *
- * Contado por NOTA, não por dia: a nota do hotel cobre várias diárias e traz a
- * quantidade — o limite é R$ 285 × diárias. Fosse por dia, uma nota de 3 noites
- * lançada num dia só apareceria como excedente que não existe.
- */
-export function evaluateLodgingOverage(items) {
-  let spent = 0;
-  let allowed = 0;
-  const exceeded = [];
-
-  for (const group of groupByNote(items)) {
-    const ehHospedagem = group.items.some(
-      (it) => isLodging(it.meal_category) || isLodging(it.description)
-    );
-    if (!ehHospedagem) continue;
-
-    const total = somaGrupo(group.items);
-    const diarias = Math.max(
-      1,
-      group.items.reduce((s, it) => s + (Number(it.qty || 1) || 1), 0)
-    );
-    const limit = POLICY.hospedagem * diarias;
-
-    spent += total;
-    allowed += Math.min(total, limit);
-    if (total > limit) {
-      exceeded.push({
-        kind: "hospedagem",
-        label: "Hospedagem",
-        description: group.items[0].description || "Hospedagem",
-        meals: diarias,
-        value: total,
-        limit,
-        over: total - limit,
-      });
-    }
-  }
-
-  const over = spent - allowed;
-  return { hasOverage: over > 0.001, spent, allowed, over, exceeded };
-}
-
-/**
- * Alimentação + hospedagem numa conta só — é o que o formulário mostra e o que
- * o gestor desconta ao aprovar. Os dois tetos são independentes: um dia inteiro
- * de viagem pode chegar a R$ 100 de alimentação MAIS R$ 285 de hospedagem.
+ * Hoje é só alimentação: o teto de hospedagem saiu do reembolso (passou a ser
+ * tratado em outra plataforma). A função continua existindo como a porta única
+ * do cálculo — se outro teto voltar, entra aqui, e nenhuma tela precisa mudar.
  */
 export function evaluatePolicyOverage(items) {
   const food = evaluateFoodOverage(items);
-  const lodging = evaluateLodgingOverage(items);
-  const over = food.over + lodging.over;
   return {
-    hasOverage: over > 0.001,
-    spent: food.spent + lodging.spent,
-    allowed: food.allowed + lodging.allowed,
-    over,
-    exceeded: [
-      ...food.exceeded.map((e) => ({ kind: "alimentacao", ...e })),
-      ...lodging.exceeded,
-    ],
+    hasOverage: food.hasOverage,
+    spent: food.spent,
+    allowed: food.allowed,
+    over: food.over,
+    exceeded: food.exceeded.map((e) => ({ kind: "alimentacao", ...e })),
     food,
-    lodging,
   };
 }
 

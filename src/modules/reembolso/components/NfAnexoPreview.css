@@ -1,0 +1,30 @@
+/* Bloco do anexo em PDF. Ocupa exatamente o mesmo quadrado da miniatura de
+   imagem (84px) para a fileira de notas não ficar desalinhada quando o pedido
+   mistura foto e PDF. */
+.nf-pdf-tile {
+  width: 84px;
+  height: 84px;
+  display: grid;
+  place-content: center;
+  gap: 4px;
+  justify-items: center;
+  padding: 0;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.nf-pdf-tile:hover {
+  border-color: var(--terracotta);
+  color: var(--terracotta);
+}
+
+.nf-pdf-tile:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}

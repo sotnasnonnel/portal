@@ -89,3 +89,12 @@
     justify-content: space-between;
   }
 }
+
+/* Região aplicada à refeição ("Belo Horizonte — MG"). Vem junto do item porque
+   o mesmo pedido pode ter notas de cidades diferentes, e sem isso o limite
+   mostrado parece errado para quem só olha o número. */
+.food-overage-regiao {
+  color: var(--ink-soft);
+  font-style: normal;
+  font-size: 12px;
+}

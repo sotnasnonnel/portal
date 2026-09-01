@@ -12,7 +12,7 @@ import {
   updateReimbursement,
 } from "../services/reimbursements.js";
 import { extractNfFromDataUrl } from "../services/nfExtraction.js";
-import { compressImageToDataUrl } from "../lib/image.js";
+import { compressImageToDataUrl, ANEXO_ACCEPT } from "../lib/image.js";
 import { formatCurrency, todayIso } from "../lib/format.js";
 import { makeKey, newItem, itemsFromExtraction } from "../lib/nfCapture.js";
 import { evaluatePolicyOverage, detectForbiddenItems, REGRAS_VALOR_ATIVAS } from "../lib/reimbursementPolicy.js";
@@ -26,6 +26,7 @@ import ImageLightbox from "../components/ImageLightbox.jsx";
 import PolicyNotice from "../components/PolicyNotice.jsx";
 import FoodOverageNotice from "../components/FoodOverageNotice.jsx";
 import ForbiddenItemsNotice from "../components/ForbiddenItemsNotice.jsx";
+import NfAnexoPreview from "../components/NfAnexoPreview.jsx";
 import "./ReembolsoForm.css";
 
 const ITEM_SUGGESTIONS = [
@@ -254,7 +255,7 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
         return [...base, ...newItems].map((it, idx) => ({ ...it, sort_order: idx }));
       });
 
-      // Alerta imediato: se a IA leu uma refeição (ou diária) acima do limite,
+      // Alerta imediato: se a IA leu uma refeição acima do teto do local,
       // avisa quanto passou já no momento da importação da nota.
       // Excedente só é anunciado com a política de valores no ar — ver
       // REGRAS_VALOR_ATIVAS. Item proibido (bebida, cigarro) continua avisando:
@@ -262,7 +263,7 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
       const food = evaluatePolicyOverage(newItems);
       if (REGRAS_VALOR_ATIVAS && food.hasOverage) {
         showToast(
-          `${food.lodging.hasOverage && !food.food.hasOverage ? "Hospedagem" : "Alimentação"} acima do limite nesta nota: ` +
+          `Alimentação acima do limite nesta nota: ` +
             `${formatCurrency(food.spent)} gastos, ` +
             `${formatCurrency(food.allowed)} dentro do limite — excede ${formatCurrency(food.over)}.`,
           "warning",
@@ -630,11 +631,11 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
                     hidden
                     onChange={handleImportFiles}
                   />
-                  {/* Galeria / arquivos: permite selecionar varias imagens */}
+                  {/* Galeria / arquivos: varias notas de uma vez, imagem ou PDF */}
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/*"
+                    accept={ANEXO_ACCEPT}
                     multiple
                     hidden
                     onChange={handleImportFiles}
@@ -654,27 +655,10 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
               <div className="nf-thumbs">
                 {nfImages.map((img) => (
                   <div className="nf-thumb" key={img.id}>
-                    <img
-                      src={img.dataUrl ?? img.url}
-                      alt={img.nf_number ? `NF ${img.nf_number}` : "NF"}
-                      title="Clique para abrir"
-                      role="button"
-                      tabIndex={0}
-                      onClick={() =>
-                        setLightbox({
-                          src: img.dataUrl ?? img.url,
-                          alt: img.nf_number ? `NF ${img.nf_number}` : "NF",
-                        })
-                      }
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          setLightbox({
-                            src: img.dataUrl ?? img.url,
-                            alt: img.nf_number ? `NF ${img.nf_number}` : "NF",
-                          });
-                        }
-                      }}
+                    <NfAnexoPreview
+                      img={img}
+                      label={img.nf_number ? `NF ${img.nf_number}` : "NF"}
+                      onOpenImage={setLightbox}
                     />
                     <button
                       type="button"

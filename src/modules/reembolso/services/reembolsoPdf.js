@@ -9,6 +9,7 @@ import { formatCurrency, formatDate } from "../lib/format.js";
 import { computePaymentDate } from "../lib/reimbursementPolicy.js";
 import { STATUS_LABEL } from "./reimbursements.js";
 import { refToDataUrl } from "./nfStorage.js";
+import { mimeFromDataUrl } from "../lib/image.js";
 
 const FIXO_EMPRESA = "PHDA";
 const FIXO_TIPO = "REEMB_SN";
@@ -168,7 +169,10 @@ export async function generateReembolsoPdf(r) {
     margin: { left: margin, right: margin },
   });
 
-  // Uma pagina por imagem de NF anexada
+  // Uma pagina por nota anexada. Nota em PDF nao vira pagina de imagem: o
+  // jsPDF nao embute outro PDF, entao a pagina fica com a legenda e o aviso de
+  // que o arquivo original esta no sistema — melhor do que uma pagina em
+  // branco ou um erro tecnico no meio do documento.
   for (const img of r.nf_images ?? []) {
     let dataUrl;
     try {
@@ -190,6 +194,17 @@ export async function generateReembolsoPdf(r) {
       .join("  •  ");
     doc.text(legenda, margin, 40);
 
+    if (mimeFromDataUrl(dataUrl) === "application/pdf") {
+      doc.setFontSize(10);
+      doc.setTextColor(90, 90, 90);
+      doc.text(
+        "Nota anexada em PDF — o arquivo original está no pedido, no sistema.",
+        margin,
+        70
+      );
+      continue;
+    }
+
     try {
       const props = doc.getImageProperties(dataUrl);
       const maxW = pageW - margin * 2;
@@ -197,11 +212,11 @@ export async function generateReembolsoPdf(r) {
       const ratio = Math.min(maxW / props.width, maxH / props.height);
       const w = props.width * ratio;
       const h = props.height * ratio;
-      doc.addImage(dataUrl, "JPEG", margin + (maxW - w) / 2, 55, w, h);
+      doc.addImage(dataUrl, props.fileType, margin + (maxW - w) / 2, 55, w, h);
     } catch (err) {
       doc.setFontSize(9);
       doc.setTextColor(180, 60, 60);
-      doc.text(`(não foi possível renderizar a imagem: ${err.message})`, margin, 70);
+      doc.text(`(não foi possível renderizar o anexo: ${err.message})`, margin, 70);
     }
   }
 

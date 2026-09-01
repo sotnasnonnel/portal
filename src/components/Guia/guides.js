@@ -48,12 +48,27 @@ import {
   FileSpreadsheet,
   Home,
 } from "lucide-react";
-import { POLICY } from "../../modules/reembolso/lib/reimbursementPolicy.js";
+import {
+  POLICY,
+  REGIOES_ALIMENTACAO,
+  alimentacaoDia,
+} from "../../modules/reembolso/lib/reimbursementPolicy.js";
 
 // Os limites do guia saem da POLICY, não de texto solto: guia que contradiz a
 // regra que o sistema aplica é pior do que guia nenhum.
 const brl = (v) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-const LIMITES_REFEICAO = POLICY.alimentacao.map((r) => `${r.label} ${brl(r.value)}`).join(", ");
+
+// A tabela é por local, então o guia mostra as três colunas em texto corrido:
+// "Belo Horizonte — MG: café R$ 20, almoço R$ 40, jantar R$ 40 (R$ 100/dia)".
+const TABELA_ALIMENTACAO = REGIOES_ALIMENTACAO.map(
+  (r) =>
+    `${r.label}: café ${brl(r.cafe)}, almoço ${brl(r.almoco)}, jantar ${brl(r.jantar)} ` +
+    `(${brl(alimentacaoDia(r.id))} no dia)`
+).join("; ");
+
+// Faixas de alimentação do dia, do menor ao maior — para as frases que só
+// precisam da ordem de grandeza do teto diário.
+const FAIXA_DIA = `${brl(alimentacaoDia("bh"))} a ${brl(alimentacaoDia("intl"))}`;
 
 export const GUIA_OPEN_EVENT = "abrir_guia";
 
@@ -195,9 +210,9 @@ export const REEMBOLSO_GUIA = {
       },
       {
         icon: AlertTriangle,
-        titulo: "Limites de alimentação e hospedagem",
+        titulo: "Limites de alimentação",
         texto:
-          `Dois limites separados, conferidos pelo sistema. Alimentação: ${LIMITES_REFEICAO} por refeição e no máximo ${brl(POLICY.alimentacaoDia)} somando o dia — três almoços no mesmo dia não passam só porque cada um cabe no teto. Hospedagem: ${brl(POLICY.hospedagem)} por diária, contada por nota (3 noites numa nota = 3 diárias). Máximo por dia: ${brl(POLICY.diariaMaxima)}. Passar do teto não impede o envio: aparece o aviso com o excedente e o gestor decide.`,
+          `O teto da refeição depende de ONDE foi a despesa — ${TABELA_ALIMENTACAO}. O local sai da cidade do estabelecimento na nota anexada; sem cidade identificada vale a faixa "demais cidades do Brasil". Além do teto por refeição vale o teto do dia (${FAIXA_DIA}, conforme o local): três almoços no mesmo dia não passam só porque cada um cabe no teto. Hospedagem não tem teto aqui — é tratada em outra plataforma. Passar do teto não impede o envio: aparece o aviso com o excedente e o gestor decide.`,
       },
       {
         icon: Clock,
@@ -234,7 +249,7 @@ export const REEMBOLSO_GUIA = {
         icon: AlertTriangle,
         titulo: "Pedido acima do limite",
         texto:
-          `Passou de algum teto — ${brl(POLICY.alimentacaoDia)} de alimentação no dia, o limite da refeição ou ${brl(POLICY.hospedagem)} por diária —, o app mostra o excedente item a item e libera "Aprovar com desconto", que paga já sem o que passou. Aprovar pelo valor cheio continua possível: a decisão é sua, o sistema só não deixa passar despercebido. Itens proibidos (bebida alcoólica, cigarro, vestuário) também aparecem sinalizados.`,
+          `Passou do teto — o da refeição, ou o de alimentação do dia (${FAIXA_DIA}, conforme o local) —, o app mostra o excedente item a item e libera "Aprovar com desconto", que paga já sem o que passou. Aprovar pelo valor cheio continua possível: a decisão é sua, o sistema só não deixa passar despercebido. Itens proibidos (bebida alcoólica, cigarro, vestuário) também aparecem sinalizados.`,
       },
       {
         icon: Receipt,
@@ -264,7 +279,7 @@ export const REEMBOLSO_GUIA = {
         icon: AlertTriangle,
         titulo: "Valor aprovado x solicitado",
         texto:
-          `Quando o gestor aprova com desconto (pedido acima do teto da refeição, dos ${brl(POLICY.alimentacaoDia)} de alimentação no dia ou dos ${brl(POLICY.hospedagem)} por diária), o que se paga é o "Valor aprovado", não o solicitado — o detalhe e o PDF mostram os dois, com o desconto destacado.`,
+          `Quando o gestor aprova com desconto (pedido acima do teto da refeição ou do teto de alimentação do dia), o que se paga é o "Valor aprovado", não o solicitado — o detalhe e o PDF mostram os dois, com o desconto destacado.`,
       },
       {
         icon: FileText,

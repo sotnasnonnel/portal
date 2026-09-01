@@ -11,7 +11,7 @@ import {
   STATUS,
 } from "../services/reimbursements.js";
 import { extractNfFromDataUrl } from "../services/nfExtraction.js";
-import { compressImageToDataUrl } from "../lib/image.js";
+import { compressImageToDataUrl, ANEXO_ACCEPT } from "../lib/image.js";
 import { formatCurrency } from "../lib/format.js";
 import { makeKey, newItem, itemsFromExtraction } from "../lib/nfCapture.js";
 import { reconcileAdvance } from "../lib/advanceAccountability.js";
@@ -20,6 +20,7 @@ import CameraCapture from "../components/CameraCapture.jsx";
 import ImageLightbox from "../components/ImageLightbox.jsx";
 import FoodOverageNotice from "../components/FoodOverageNotice.jsx";
 import ForbiddenItemsNotice from "../components/ForbiddenItemsNotice.jsx";
+import NfAnexoPreview from "../components/NfAnexoPreview.jsx";
 import "./ReembolsoForm.css";
 import "./PrestacaoContas.css";
 
@@ -344,7 +345,7 @@ export default function PrestacaoContas() {
             </button>
             {importing && <span className="nf-importing"><Loader2 size={14} className="spin" /> Lendo nota…</span>}
             <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" hidden onChange={handleImportFiles} />
-            <input ref={fileInputRef} type="file" accept="image/*" multiple hidden onChange={handleImportFiles} />
+            <input ref={fileInputRef} type="file" accept={ANEXO_ACCEPT} multiple hidden onChange={handleImportFiles} />
           </div>
         </div>
 
@@ -356,13 +357,10 @@ export default function PrestacaoContas() {
             <div className="nf-thumbs">
               {nfImages.map((img) => (
                 <div className="nf-thumb" key={img.id}>
-                  <img
-                    src={img.dataUrl ?? img.url}
-                    alt={img.nf_number ? `NF ${img.nf_number}` : "NF"}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => setLightbox({ src: img.dataUrl ?? img.url, alt: img.nf_number ? `NF ${img.nf_number}` : "NF" })}
-                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setLightbox({ src: img.dataUrl ?? img.url, alt: "NF" }); } }}
+                  <NfAnexoPreview
+                    img={img}
+                    label={img.nf_number ? `NF ${img.nf_number}` : "NF"}
+                    onOpenImage={setLightbox}
                   />
                   <button type="button" className="nf-thumb-remove" onClick={() => removeNfImage(img.id)} aria-label="Remover nota">
                     <X size={12} />

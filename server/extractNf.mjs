@@ -1,4 +1,4 @@
-// Extracao de dados de Nota Fiscal via Google Gemini (visao). SERVER-SIDE apenas.
+// Extracao de dados de Nota Fiscal via Google Gemini (visao/PDF). SERVER-SIDE apenas.
 // Usado pelo endpoint de desenvolvimento do Vite (vite.config.js).
 // NUNCA importar no codigo do frontend: a chave da API nao pode ir pro bundle do navegador.
 //
@@ -35,6 +35,16 @@ Regras:
 - Datas no formato ISO YYYY-MM-DD. Se so houver dia/mes, use o ano atual.
 - Para refeicao classifique entre ALMOÇO/JANTA/CAFÉ/COMIDA conforme horario/contexto; corrida de app = UBER.
 - itens: liste CADA produto/linha do comprovante separadamente, com seu valor proprio.
+- EXCECAO para corrida de app (UBER/99/inDrive) e outros recibos de SERVICO:
+  nao quebre o recibo em partes do preco. Linhas como "Preco da viagem",
+  "Custo fixo", "Tarifa dinamica", "Taxa", "Pedagio", "Espera", "Gorjeta",
+  "Desconto", "Promocao" e "Subtotal" sao a composicao de UM valor so — devolva
+  UM item unico, com a descricao do servico (ex.: "UBER") e o valor do TOTAL
+  cobrado. Ex.: "Preco da viagem R$ 15,47" + "Custo fixo R$ 1,50" +
+  "Total R$ 16,97" -> um item de 16.97, e valor_total 16.97.
+- Regra geral: a soma dos itens tem que bater com o valor_total. Se o
+  comprovante tiver linhas que sao pedaco do preco (e nao produtos distintos),
+  agrupe num item so.
 - local: nome do estabelecimento e a cidade/UF.
 - observacoes: APENAS notas gerais (forma de pagamento, numero da mesa, etc.). NAO repita aqui o estabelecimento, o numero da nota, nem a lista de itens.
 - Se um campo nao existir na imagem, use null (ou lista vazia para itens).
@@ -62,10 +72,11 @@ export async function extractNf({
   baseUrl = "https://generativelanguage.googleapis.com/v1beta",
 }) {
   if (!apiKey) throw new Error("GEMINI_API_KEY ausente.");
-  if (!dataUrl) throw new Error("Imagem (dataUrl) ausente.");
+  if (!dataUrl) throw new Error("Anexo (dataUrl) ausente.");
 
+  // Imagem ou PDF: o Gemini le os dois pelo mesmo inline_data, so muda o mime.
   const match = /^data:(.+?);base64,(.*)$/s.exec(dataUrl);
-  if (!match) throw new Error("Formato de imagem invalido (esperado data URL base64).");
+  if (!match) throw new Error("Formato de anexo invalido (esperado data URL base64).");
   const [, mimeType, base64] = match;
 
   const body = {
@@ -75,7 +86,7 @@ export async function extractNf({
         role: "user",
         parts: [
           { inline_data: { mime_type: mimeType, data: base64 } },
-          { text: "Extraia os dados desta nota fiscal e retorne o JSON." },
+          { text: "Extraia os dados desta nota fiscal / recibo e retorne o JSON." },
         ],
       },
     ],
