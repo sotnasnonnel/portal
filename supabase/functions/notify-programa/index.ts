@@ -57,6 +57,9 @@ const STATUS_ALAVANCA: Record<string, string> = {
   nao_elegivel: "Não elegível",
   em_evolucao: "Em evolução",
   concluida: "Concluída",
+  // Ausente aqui, o status cru ("encerrada") vazava para o e-mail de quem
+  // indicou. Chamava-se "cancelada" e nem esse estava mapeado.
+  encerrada: "Encerrada",
 };
 const STATUS_PEDIDO: Record<string, string> = {
   recebido: "Recebido",
@@ -74,6 +77,14 @@ const ELEGIBILIDADE: Record<string, string> = {
 
 const dinheiro = (n: unknown) =>
   (n == null ? null : Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }));
+
+// Recortada da string, não via new Date(): a coluna é `date` e chega como
+// "2026-08-31". Passar por Date a lê como meia-noite UTC e, num fuso negativo,
+// o e-mail anunciaria o pagamento para o dia anterior.
+const dataBr = (iso: unknown) => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso ?? ""));
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : null;
+};
 
 // Sem acento e em caixa alta: "Operação" e "OPERACAO" precisam casar.
 const semAcento = (s: string) =>
@@ -351,10 +362,20 @@ Deno.serve(async (req) => {
           ["Indicação", `#${ind.numero} — ${ind.oportunidade}`],
           ["Empresa", ind.empresa],
           ["Elegibilidade", ELEGIBILIDADE[ind.elegibilidade] ?? ind.elegibilidade],
+          // O "por quê" da elegibilidade só saía na recusa, dentro da tarja
+          // vermelha abaixo. Mas o comercial agora decide (e explica) também as
+          // que ele APROVA — e uma aprovação sem motivo deixa quem indicou sem
+          // saber o que mudou desde o "depende do comercial". Aqui em linha
+          // normal; recusa continua na tarja, que é onde ela pertence.
+          ["Por que esta elegibilidade",
+            ind.elegibilidade === "nao_elegivel" ? null : ind.elegibilidade_motivo],
           ["Situação", STATUS_ALAVANCA[ind.status] ?? ind.status],
           ["Comentário do comercial", ind.comentario],
-          ["Premiação", concluida ? dinheiro(ind.valor_premio) : null],
-          ["Pagamento", ind.pago_em],
+          // O valor passou a ser editável em qualquer status (o comercial sabe
+          // o prêmio antes de fechar a linha). Preso à conclusão, o e-mail
+          // omitia justamente o número que quem indicou quer ver.
+          ["Premiação", ind.valor_premio != null ? dinheiro(ind.valor_premio) : null],
+          ["Pagamento", dataBr(ind.pago_em)],
         ],
         // O motivo da recusa é o que responde "por quê?" — sem ele, o e-mail
         // seria só uma negativa.

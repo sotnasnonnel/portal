@@ -410,13 +410,27 @@
   .pg-col { flex: 0 0 82vw; }
 }
 
-/* ---- grade de gráficos: dois por linha em tela larga, um por linha no resto.
-   Os dois cards que sobraram aqui (premiação e quem está indicando) são curtos
-   e ficavam com meia tela de branco ao lado quando empilhados. ---- */
+/* ---- grade de cards curtos: dois por linha em tela larga, um por linha no
+   resto. Os dois que moram aqui (fora do funil e premiação) são curtos e
+   ficavam com meia tela de branco ao lado quando empilhados. ---- */
 .pg-graficos {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-  gap: 0 14px; align-items: start;
+  gap: 0 14px;
+  /* `stretch` (o padrão) no lugar do `start` que estava aqui: com `start` cada
+     card tinha a altura do próprio conteúdo e os dois terminavam em alturas
+     diferentes. */
 }
+/* As linhas de número dos dois cards precisam se alinhar entre si, e não só
+   dentro do próprio card: são a mesma leitura, lado a lado. Só que o texto de
+   apoio acima delas tem tamanhos diferentes — uma linha num card, duas no
+   outro — e isso empurrava um bloco de números para baixo do outro.
+
+   Empurrar as duas listas para o RODAPÉ resolve sem depender de as frases
+   terem o mesmo comprimento: os cards já têm a mesma altura, então encostar no
+   fundo é o mesmo que alinhar. Encurtar uma das frases também "resolveria" —
+   até a primeira tela estreita quebrar de novo. */
+.pg-graficos > .pg-card { display: flex; flex-direction: column; }
+.pg-graficos > .pg-card > .pg-valores { margin-top: auto; }
 
 /* ---- funil: as quatro etapas lado a lado ----
    O painel abria com quatro tiles gigantes (recebidas, elegíveis, evoluíram,
@@ -617,41 +631,28 @@
 /* Ação que só aparece quando a célula está em edição — separa do campo acima. */
 .pg-tabela .pg-cel-acao { margin-top: 6px; }
 .pg-tabela .pg-cel-acoes { display: flex; gap: 6px; flex-wrap: wrap; }
-/* Comentário fechado: texto comum, com o lápis dizendo que dá para editar.
-   O realce só no hover/foco mantém a coluna com o mesmo peso das outras. */
-.pg-tabela .pg-coment {
-  display: flex; align-items: flex-start; gap: 8px; width: 100%;
-  padding: 6px 8px; margin: -6px -8px;
-  background: none; border: none; border-radius: var(--ctl-radius-sm);
-  font-family: inherit; font-size: inherit; line-height: 1.5;
-  color: var(--p-gray-600); text-align: left; cursor: pointer;
-  transition: background 0.12s;
+/* Texto longo de célula (comentário do comercial). É LEITURA: a edição foi
+   para o diálogo da linha, porque status, comentário e prêmio se decidem
+   juntos e mandam um e-mail só. Limitado em altura para que um comentário de
+   dez linhas não estique a linha inteira da tabela. */
+.pg-tabela .pg-cel-texto {
+  display: block; max-height: 84px; overflow-y: auto;
+  line-height: 1.5; color: var(--p-gray-600); white-space: pre-line;
 }
-.pg-tabela .pg-coment:hover { background: var(--p-gray-100); }
-.pg-tabela .pg-coment:focus-visible {
-  outline: none; background: var(--p-gray-100); box-shadow: 0 0 0 2px var(--p-primary-line);
-}
-.pg-tabela .pg-coment span { flex: 1; min-width: 0; }
-.pg-tabela .pg-coment .is-vazio { color: var(--p-muted); }
-/* Valor que abre edição ao clique (premiação). Fica com a cara de dado, não de
-   botão: o realce só aparece no hover/foco, como no comentário ao lado. */
-.pg-tabela .pg-valor-edit {
-  padding: 4px 6px; margin: -4px -6px;
-  background: none; border: none; border-radius: var(--ctl-radius-sm);
-  font: inherit; font-variant-numeric: tabular-nums; color: inherit;
-  cursor: pointer; transition: background 0.12s;
-}
-.pg-tabela .pg-valor-edit:hover { background: var(--p-gray-100); }
-.pg-tabela .pg-valor-edit:focus-visible {
-  outline: none; background: var(--p-gray-100); box-shadow: 0 0 0 2px var(--p-primary-line);
-}
+.pg-tabela .pg-cel-texto.is-vazio { color: var(--p-muted); }
 /* Sem piso, a coluna encolhe até o comentário quebrar palavra a palavra. */
 .pg-tabela .col-coment { min-width: 220px; }
 
-/* Coluna de ações do admin: só a lixeira, que abre o popup de confirmação. */
+/* Linha que abre o registro inteiro ao clique. O realce no hover é o que
+   promete isso — sem ele, a linha só reagiria depois do clique, e quem não
+   soubesse continuaria mirando no nome. */
+.pg-tabela tr.is-clicavel { cursor: pointer; }
+.pg-tabela tr.is-clicavel:hover > td { background: var(--p-gray-50); }
+
+/* Coluna de ações: o lápis (avaliar) e, para o admin, a lixeira. */
 .pg-tabela .col-acoes { width: 1%; white-space: nowrap; }
-/* Ícone-ação de tabela. Neutro em repouso e vermelho só no hover/foco: uma
-   coluna de lixeiras vermelhas puxaria o olho para a ação mais rara da tela. */
+/* Ícone-ação de tabela. Neutro em repouso — uma coluna de ícones coloridos
+   puxaria o olho para as ações mais raras da tela. */
 .pg-tabela .pg-icone-acao {
   display: inline-flex; align-items: center; justify-content: center;
   width: 32px; height: 32px; padding: 0;
@@ -661,7 +662,14 @@
 }
 .pg-tabela .pg-icone-acao:hover,
 .pg-tabela .pg-icone-acao:focus-visible {
-  outline: none; background: var(--tone-erro-bg, #fef2f2);
+  outline: none; background: var(--p-gray-100);
+  border-color: var(--p-line); color: var(--p-ink);
+}
+/* Só a exclusão fica vermelha, e só quando a mão chega nela. Enquanto as duas
+   dividiam o mesmo hover, avaliar uma indicação parecia apagá-la. */
+.pg-tabela .pg-icone-acao.is-perigo:hover,
+.pg-tabela .pg-icone-acao.is-perigo:focus-visible {
+  background: var(--tone-erro-bg, #fef2f2);
   border-color: var(--tone-erro-fg, #b91c1c); color: var(--tone-erro-fg, #b91c1c);
 }
 
@@ -714,7 +722,7 @@
 .pg-badge.tom-concluida { background: #ecfdf5; color: #047857; }
 .pg-badge.tom-nao_elegivel { background: #fef2f2; color: #b91c1c; }
 /* Cancelada sai em cinza, e não em vermelho: encerrar não é reprovar. */
-.pg-badge.tom-cancelada { background: var(--p-gray-100); color: var(--p-gray-600); }
+.pg-badge.tom-encerrada { background: var(--p-gray-100); color: var(--p-gray-600); }
 .pg-badge.tom-elegivel { background: #ecfdf5; color: #047857; }
 .pg-badge.tom-pendente { background: var(--p-gray-100); color: var(--p-gray-600); }
 /* Estágio da iniciativa da Inovação (ver lib/iniciativas.js). */

@@ -434,7 +434,7 @@ export default function DashboardIdeias() {
                                 )}
                                 <button
                                   type="button"
-                                  className="pg-icone-acao"
+                                  className="pg-icone-acao is-perigo"
                                   onClick={() => setConfirmando(l)}
                                   title="Excluir registro"
                                   aria-label={`Excluir ${l.titulo}`}

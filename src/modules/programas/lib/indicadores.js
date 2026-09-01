@@ -47,14 +47,24 @@ export function resumoIdeias(linhas = []) {
  * status ou deixou comentário. É o critério da planilha ("se o time comercial
  * colocou algum comentário e/ou status significa que a iniciativa evoluiu").
  * Concluída também evoluiu — é o estágio seguinte, não um ramo paralelo.
+ *
+ * ENCERRADA não evoluiu, mesmo tendo comentário: o funil mede o que ainda pode
+ * virar contrato, e a encerrada já saiu. Contá-la fazia "Evoluíram" inchar com
+ * oportunidades mortas — a etapa dizia 105 quando 60 delas não iam a lugar
+ * nenhum, e a retenção para "Concluídas" parecia um despencar que não era real.
  */
-export const evoluiu = (i) =>
-  i.status === 'em_evolucao' || i.status === 'concluida' || Boolean(i.comentario);
+export const evoluiu = (i) => i.status !== 'encerrada'
+  && (i.status === 'em_evolucao' || i.status === 'concluida' || Boolean(i.comentario));
 
 export function resumoAlavanca(linhas = []) {
   const concluidas = linhas.filter((i) => i.status === 'concluida');
   const elegiveis = linhas.filter((i) => i.elegibilidade === 'elegivel');
-  const evoluidas = linhas.filter(evoluiu);
+  // Encadeadas de propósito: cada etapa é filtrada sobre a ANTERIOR, não sobre
+  // a base inteira. Solto, "Evoluíram" contava 45 contra 19 elegíveis e o funil
+  // desenhava uma barra crescendo no meio — as 40 indicações nunca triadas
+  // entravam por terem comentário, mas o comentário delas é metadado da carga
+  // ("Planilha: Hunter"), não trabalho do comercial.
+  const evoluidas = elegiveis.filter(evoluiu);
 
   // Quem indica. Sem cortar em top-N: cortar a cauda esconde justamente quem
   // participou uma vez, que é o que o programa quer ver crescer.
@@ -77,7 +87,7 @@ export function resumoAlavanca(linhas = []) {
       { nome: 'Recebidas', total: linhas.length },
       { nome: 'Elegíveis', total: elegiveis.length },
       { nome: 'Evoluíram', total: evoluidas.length },
-      { nome: 'Concluídas', total: concluidas.length },
+      { nome: 'Concluídas', total: evoluidas.filter((i) => i.status === 'concluida').length },
     ],
     porPessoa: [...porPessoa.values()].sort((a, b) => b.total - a.total),
     premioPago: concluidas.filter((i) => i.pago_em)
@@ -87,18 +97,29 @@ export function resumoAlavanca(linhas = []) {
     premioAPagar: concluidas.filter((i) => !i.pago_em)
       .reduce((s, i) => s + Number(i.valor_premio || 0), 0),
     contratoTotal: concluidas.reduce((s, i) => s + Number(i.valor_contrato || 0), 0),
-    pendentes: linhas.filter((i) => i.elegibilidade === 'pendente').length,
+    /**
+     * Saídas do funil, em ORDEM DE PRECEDÊNCIA — cada indicação cai em uma só.
+     * Somadas com as que seguem vivas, dão o total; contadas soltas, não: 46
+     * das encerradas também estão com elegibilidade pendente, e o card as
+     * mostrava duas vezes (60 + 1 + 87 = 148 sobre uma base de 107).
+     *
+     * A ordem diz quem decidiu: encerrar é decisão do comercial e vale sobre
+     * qualquer coisa; não elegível é a checagem contra a base; pendente é o
+     * que sobrou sem ninguém olhar.
+     */
+    encerradas: linhas.filter((i) => i.status === 'encerrada').length,
+    naoElegiveis: linhas.filter(
+      (i) => i.status !== 'encerrada' && i.elegibilidade === 'nao_elegivel'
+    ).length,
+    pendentes: linhas.filter(
+      (i) => i.status !== 'encerrada' && i.elegibilidade === 'pendente'
+    ).length,
     total: linhas.length,
-    elegiveis: linhas.filter((i) => i.elegibilidade === 'elegivel').length,
+    elegiveis: elegiveis.length,
     // "Depende do comercial": empresa já na base com contato novo. Fica visível
     // porque é a fila de trabalho do time — não decidir é a pior saída.
     emAnalise: linhas.filter((i) => i.elegibilidade === 'em_analise').length,
-    naoElegiveis: linhas.filter((i) => i.elegibilidade === 'nao_elegivel').length,
-    // Encerradas pelo comercial. Ficam fora do funil pelo mesmo motivo das não
-    // elegíveis — não viram etapa — mas contadas à parte: uma diz que a
-    // indicação não valia, a outra que a oportunidade não foi adiante.
-    canceladas: linhas.filter((i) => i.status === 'cancelada').length,
-    evoluidas: linhas.filter(evoluiu).length,
+    evoluidas: evoluidas.length,
     concluidas: concluidas.length,
     premioTotal: concluidas.reduce((s, i) => s + Number(i.valor_premio || 0), 0),
     // Mapa de vencedores: nome, valor e data de pagamento, conforme as regras.

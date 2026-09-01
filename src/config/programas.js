@@ -157,11 +157,16 @@ export const STATUS_ALAVANCA = [
   { valor: 'nao_elegivel', label: 'Não elegível' },
   { valor: 'em_evolucao', label: 'Em evolução' },
   { valor: 'concluida', label: 'Concluída' },
-  // Cancelada é o comercial DESISTINDO depois de olhar — cliente sem demanda,
-  // sem retorno, em processo de venda. Diferente de "não elegível", que é a
-  // checagem contra a base dizendo que a indicação não valia desde o início.
-  // Como a não elegível, é saída do funil, não etapa dele.
-  { valor: 'cancelada', label: 'Cancelada' },
+  // Encerrada é a oportunidade que NÃO FOI ADIANTE — cliente sem demanda, sem
+  // retorno, já em processo de venda, ou que andou um tempo e parou. Diferente
+  // de "não elegível", que é a checagem contra a base dizendo que a indicação
+  // não valia desde o início. Como a não elegível, é saída do funil, não etapa
+  // dele: por isso não conta como "evoluiu" (ver lib/indicadores.js).
+  //
+  // Chamava-se "cancelada", e o nome atrapalhava: sugeria alguém desistindo por
+  // decisão, quando a maioria só parou. As duas viraram uma só em 2026-08-31
+  // (supabase/supabase_migration_alavanca_encerrada.sql).
+  { valor: 'encerrada', label: 'Encerrada' },
 ];
 
 export const STATUS_ALAVANCA_LABEL = Object.fromEntries(STATUS_ALAVANCA.map((s) => [s.valor, s.label]));

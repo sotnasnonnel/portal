@@ -6,6 +6,7 @@ import {
 import { COR_FORMA } from '../../lib/paleta';
 import EditarIdeia from './EditarIdeia';
 import EditarIndicacao from './EditarIndicacao';
+import AvaliarIndicacao from './AvaliarIndicacao';
 
 /**
  * Popup de detalhe, aberto ao clicar num cartão ou numa linha do mapa.
@@ -320,14 +321,44 @@ export function DetalheIdeia({
  * que o comercial encostou nela, mudar a empresa por baixo dele invalidaria a
  * avaliação já feita. Quem decide de verdade é a RLS; aqui a regra é repetida
  * para o botão não aparecer e falhar.
+ *
+ * `onAvaliar` é do COMERCIAL e vem só do painel: com ele o popup ganha a aba
+ * "Avaliação", onde status, comentário e valores se editam juntos. É por isso
+ * que o mapa é só leitura — ler a indicação e decidir sobre ela são o mesmo
+ * gesto, e separá-los em duas telas fazia o comercial decidir sem ter na frente
+ * a descrição da oportunidade e o que já tinha sido tratado.
+ *
+ * `abaInicial` deixa o lápis da tabela cair direto na avaliação, sem obrigar a
+ * passar pelos detalhes. Como o popup guarda a aba em estado, quem monta o
+ * componente precisa remontá-lo a cada abertura (ver a `key` em
+ * painelAlavanca/page.jsx) — senão a segunda indicação abriria na aba em que a
+ * primeira foi deixada.
  */
-export function DetalheIndicacao({ indicacao, onFechar, onSalvar, onExcluir }) {
+export function DetalheIndicacao({
+  indicacao, onFechar, onSalvar, onExcluir, onAvaliar = null, abaInicial = 'detalhes',
+}) {
   const [editando, setEditando] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
   const [erro, setErro] = useState('');
+  const [aba, setAba] = useState(abaInicial);
 
   if (!indicacao) return null;
+
+  const avaliando = Boolean(onAvaliar) && aba === 'avaliacao';
+
+  const avaliar = async (valores) => {
+    setSalvando(true);
+    setErro('');
+    try {
+      await onAvaliar(indicacao, valores);
+      onFechar();
+    } catch (e) {
+      setErro(e.message);
+    } finally {
+      setSalvando(false);
+    }
+  };
 
   const emAnalise = indicacao.status === 'em_analise';
   const podeEditar = Boolean(onSalvar) && emAnalise;
@@ -386,7 +417,9 @@ export function DetalheIndicacao({ indicacao, onFechar, onSalvar, onExcluir }) {
     <Casca
       titulo={`#${indicacao.numero} — ${indicacao.oportunidade}`}
       onFechar={fechar}
-      acoes={(
+      acoes={avaliando ? (
+        <span className="pg-editar-dica">Use os botões no fim do formulário.</span>
+      ) : (
         <>
           {podeExcluir && (
             <BotaoExcluir rotulo="Excluir para sempre?" excluindo={excluindo} onExcluir={excluir} />
@@ -411,48 +444,81 @@ export function DetalheIndicacao({ indicacao, onFechar, onSalvar, onExcluir }) {
         </>
       )}
     >
-      {erro && <div className="pg-aviso tom-erro"><X size={16} /> {erro}</div>}
-
-      {/* Quem indicou tenta editar e não acha o botão: dizer o motivo evita o
-          chamado "sumiu o editar". Só para quem teria o botão. */}
-      {onSalvar && !emAnalise && (
-        <div className="pg-aviso tom-info">
-          <span>
-            O time comercial já começou a trabalhar esta indicação, então os dados não
-            podem mais ser alterados.
-          </span>
+      {/* Abas só para quem avalia. Sem o callback o popup é o de sempre — uma
+          aba solitária chamada "Detalhes" só pediria um clique a mais. */}
+      {onAvaliar && (
+        <div className="pg-tabs" role="tablist">
+          {[['detalhes', 'Detalhes'], ['avaliacao', 'Avaliação']].map(([id, rotulo]) => (
+            <button
+              key={id} type="button" role="tab"
+              className={`pg-tab ${aba === id ? 'is-active' : ''}`}
+              aria-selected={aba === id}
+              onClick={() => { setAba(id); setErro(''); }}
+            >
+              {rotulo}
+            </button>
+          ))}
         </div>
       )}
 
-      <Campos itens={[
-        ['Empresa', indicacao.empresa],
-        ['Indicado por', indicacao.indicadorNome],
-        ['Enviada em', data(indicacao.criado_em)],
-        ['Contato', indicacao.contato_nome],
-        ['Cargo', indicacao.contato_cargo],
-        ['Telefone', indicacao.contato_telefone],
-        ['E-mail', indicacao.contato_email],
-      ]}
-      />
+      {avaliando ? (
+        <AvaliarIndicacao
+          indicacao={indicacao}
+          salvando={salvando}
+          erro={erro}
+          onCancelar={() => { setAba('detalhes'); setErro(''); }}
+          onSalvar={avaliar}
+        />
+      ) : (
+        <>
+          {erro && <div className="pg-aviso tom-erro"><X size={16} /> {erro}</div>}
 
-      <Texto titulo="Descrição da oportunidade" valor={indicacao.descricao} />
-      <Texto titulo="O que já foi tratado" valor={indicacao.tratativas} />
-      <Texto titulo="Por que esta elegibilidade" valor={indicacao.elegibilidade_motivo} />
-      <Texto titulo="Comentário do comercial" valor={indicacao.comentario} />
+          {/* Quem indicou tenta editar e não acha o botão: dizer o motivo evita
+              o chamado "sumiu o editar". Só para quem teria o botão. */}
+          {onSalvar && !emAnalise && (
+            <div className="pg-aviso tom-info">
+              <span>
+                O time comercial já começou a trabalhar esta indicação, então os dados não
+                podem mais ser alterados.
+              </span>
+            </div>
+          )}
 
-      {/* Só existe depois da conclusão; antes disso a seção inteira some, em vez
-          de aparecer com três traços. */}
-      {indicacao.status === 'concluida' && (
-        <div className="pg-det-bloco">
-          <h3>Premiação</h3>
           <Campos itens={[
-            ['Valor do contrato', dinheiro(indicacao.valor_contrato)],
-            ['Premiação', dinheiro(indicacao.valor_premio)],
-            ['Concluída em', dataHora(indicacao.concluida_em)],
-            ['Pagamento', indicacao.pago_em ? data(indicacao.pago_em) : 'A pagar'],
+            ['Empresa', indicacao.empresa],
+            ['Indicado por', indicacao.indicadorNome],
+            ['Enviada em', data(indicacao.criado_em)],
+            ['Contato', indicacao.contato_nome],
+            ['Cargo', indicacao.contato_cargo],
+            ['Telefone', indicacao.contato_telefone],
+            ['E-mail', indicacao.contato_email],
           ]}
           />
-        </div>
+
+          <Texto titulo="Descrição da oportunidade" valor={indicacao.descricao} />
+          <Texto titulo="O que já foi tratado" valor={indicacao.tratativas} />
+          <Texto titulo="Por que esta elegibilidade" valor={indicacao.elegibilidade_motivo} />
+          <Texto titulo="Comentário do comercial" valor={indicacao.comentario} />
+
+          {/* Aparece assim que HOUVER dinheiro registrado, e não só na conclusão:
+              o comercial passou a poder anotar contrato e prêmio antes de fechar
+              a linha, e a seção presa ao status escondia o que ele acabara de
+              digitar. Sem nenhum valor, some inteira em vez de mostrar traços. */}
+          {(indicacao.valor_contrato != null || indicacao.valor_premio != null) && (
+            <div className="pg-det-bloco">
+              <h3>Premiação</h3>
+              <Campos itens={[
+                ['Valor do contrato', dinheiro(indicacao.valor_contrato)],
+                ['Premiação', dinheiro(indicacao.valor_premio)],
+                ['Concluída em', dataHora(indicacao.concluida_em)],
+                ['Pagamento', indicacao.pago_em
+                  ? data(indicacao.pago_em)
+                  : (indicacao.status === 'concluida' ? 'A pagar' : null)],
+              ]}
+              />
+            </div>
+          )}
+        </>
       )}
     </Casca>
   );
