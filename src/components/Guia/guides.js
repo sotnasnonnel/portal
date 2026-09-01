@@ -848,6 +848,12 @@ export const ESTOQUE_GUIA = {
         texto:
           'Dentro do chamado, o card "Consultar estoque" responde se tem o item antes de você prometer a entrega — e na lista de itens pedidos a coluna "Em estoque" já avisa quando falta ("3 · faltam 2").',
       },
+      {
+        icon: FileSpreadsheet,
+        titulo: "Cadastrar item, mínimo e máximo",
+        texto:
+          'Na Posição de estoque você também cadastra o que falta ("Novo item") e edita mínimo, máximo e custo de cada variação. O mínimo é o que define "estoque baixo" — no painel e no aviso do sino; o máximo define "estoque alto". O catálogo veio da planilha sem esses limites, então eles começam em branco: enquanto não forem preenchidos, um item só é sinalizado quando zera.',
+      },
       ESTOQUE_NOTIFICACAO,
       {
         icon: AlertTriangle,

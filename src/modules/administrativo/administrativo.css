@@ -420,7 +420,18 @@
   background: #fff; border: 1px solid var(--a-border);
   font-size: var(--font-size-2xs); font-weight: 700; color: var(--a-muted); text-align: center;
 }
-.adm-col-corpo { padding: 10px; display: flex; flex-direction: column; gap: 8px; min-height: 60px; }
+/* A coluna rola por dentro em vez de esticar a página.
+   O corte é o MENOR entre ~10 cartões (1100px) e o que sobra da janela: dez
+   cartões dão mais de 1000px e ainda estouram uma tela de 1080p, então em
+   monitor pequeno manda a janela e em monitor grande manda o limite de dez.
+   Sem isso, uma coluna cheia empurrava o rodapé do quadro para longe e obrigava
+   a rolar a página inteira para ver a coluna seguinte. */
+.adm-col-corpo {
+  padding: 10px; display: flex; flex-direction: column; gap: 8px; min-height: 60px;
+  max-height: min(calc(100dvh - 240px), 1100px);
+  overflow-y: auto;
+  overscroll-behavior: contain;   /* rolar até o fim não arrasta a página junto */
+}
 .adm-col-vazia { margin: 6px 0; text-align: center; color: #cbd5e1; }
 
 .adm-cartao {

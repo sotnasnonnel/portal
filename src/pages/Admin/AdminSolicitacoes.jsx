@@ -4,7 +4,7 @@ import { supabase } from '../../services/supabase';
 import { formatarMoeda } from '../../utils/formatters';
 import {
   FileText, Check, X, CheckCheck,
-  Loader2, Filter, Trash2, Wrench, FastForward, History, ChevronDown, Ban,
+  Loader2, Filter, Trash2, Wrench, FastForward, History, ChevronDown, Ban, Search,
 } from 'lucide-react';
 import FluxoTimeline from '../../components/Solicitacoes/FluxoTimeline';
 import {
@@ -27,12 +27,16 @@ const SELECT_SOL = `
   etapas:solicitacoes_rh_etapas ( id, ordem, aprovador_id, papel, tipo_etapa, status, justificativa, decidido_em )
 `;
 
+/** Normaliza para busca: sem acento, sem caixa. */
+const semAcento = (t) => (t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
 export default function AdminSolicitacoes() {
   const { user, markSolicVisto } = useAuth();
   const [solicitacoes, setSolicitacoes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filtroStatus, setFiltroStatus] = useState('todos');
   const [filtroTipo, setFiltroTipo] = useState('todos');
+  const [busca, setBusca] = useState('');
   const [acaoId, setAcaoId] = useState(null);
   const [decisao, setDecisao] = useState(null); // { sol, modo: 'aprovar' | 'reprovar' }
   const [comentario, setComentario] = useState('');
@@ -102,6 +106,10 @@ export default function AdminSolicitacoes() {
   }, [solicitacoes]);
 
   // filtroStatus: 'todos' | 'pendente' | 'historico' (concluídas+reprovadas) | 'concluida' | 'reprovada'
+  // Busca sem acento e sem caixa: quem procura "brandao" precisa achar
+  // "BRANDÃO". Cobre o colaborador, quem abriu e o número da solicitação —
+  // é por um desses três que se procura uma requisição específica.
+  const termo = semAcento(busca).trim();
   const filtradas = solicitacoes.filter((s) => {
     const matchStatus = filtroStatus === 'todos'
       ? true
@@ -109,7 +117,10 @@ export default function AdminSolicitacoes() {
         ? s.status !== 'pendente'
         : s.status === filtroStatus;
     const matchTipo = filtroTipo === 'todos' || s.tipo === filtroTipo;
-    return matchStatus && matchTipo;
+    const matchBusca = !termo || [
+      s.colaborador?.nome, s.gestor?.nome, s.numero != null ? `#${s.numero}` : '',
+    ].some((campo) => semAcento(campo).includes(termo));
+    return matchStatus && matchTipo && matchBusca;
   });
 
   const cont = (st) => solicitacoes.filter((s) => s.status === st).length;
@@ -367,6 +378,18 @@ export default function AdminSolicitacoes() {
             )}
           </div>
           <div style={{ display: 'flex', gap: 'var(--space-sm)', alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* Busca antes dos chips: com muitas requisições, filtrar por tipo
+                ainda deixa dezenas na tela, e quem procura já sabe o nome. */}
+            <div className="sol-busca">
+              <Search size={15} aria-hidden />
+              <input
+                type="search"
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                placeholder="Buscar por nome ou nº…"
+                aria-label="Buscar por nome do colaborador, solicitante ou número"
+              />
+            </div>
             <Filter size={15} color="var(--color-text-muted)" />
             {['todos', ...Object.keys(TIPO_LABEL)].map((t) => (
               <button key={t} className={`filter-chip ${filtroTipo === t ? 'active' : ''}`} onClick={() => setFiltroTipo(t)}
@@ -380,7 +403,11 @@ export default function AdminSolicitacoes() {
         {loading ? (
           <div style={{ textAlign: 'center', padding: 'var(--space-3xl)' }}><Loader2 size={24} className="animate-spin" /></div>
         ) : filtradas.length === 0 ? (
-          <div className="table-empty" style={{ padding: 'var(--space-3xl)' }}>Nenhuma solicitação encontrada.</div>
+          <div className="table-empty" style={{ padding: 'var(--space-3xl)' }}>
+            {termo
+              ? <>Nenhuma solicitação para “{busca.trim()}”. <button type="button" className="btn btn-outline btn-sm" onClick={() => setBusca('')}>Limpar busca</button></>
+              : 'Nenhuma solicitação encontrada.'}
+          </div>
         ) : (
           <div style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
             {filtradas.map((s) => {
