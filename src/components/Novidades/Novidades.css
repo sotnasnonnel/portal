@@ -1,0 +1,403 @@
+/* Aviso de novidades da plataforma, aberto pela Home.
+   Casca do Guia (overlay escuro + cartão branco arredondado) com um hero
+   próprio: este popup abre SOZINHO, uma vez por versão, e precisa se anunciar
+   antes de ser lido — daí o cabeçalho grande em vez de uma barra de título.
+   Rampa neutra do ui.css + acento terracota do portal; medidas em px, como o
+   Guia, para não depender da escala de cada módulo. */
+.novid-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+  padding: 16px;
+  animation: novidFadeIn 0.2s ease;
+}
+
+@keyframes novidFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes novidScaleIn {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes novidItemIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.novid-modal {
+  background: var(--neutral-surface, #fff);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 580px;
+  /* Teto de altura + rolagem só no corpo: a lista cresce a cada versão, e um
+     cartão maior que a tela deixaria o botão "Entendi" fora do alcance. */
+  max-height: min(84vh, 760px);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+  overflow: hidden;
+  animation: novidScaleIn 0.25s ease;
+}
+
+/* ------------------------------- Hero ---------------------------------- */
+
+.novid-hero {
+  position: relative;
+  padding: 28px 28px 24px;
+  text-align: center;
+  color: #fff;
+  /* Único bloco colorido do popup. O resto é a neutra do portal: se o corpo
+     também fosse terracota, nada dentro dele teria destaque. */
+  background:
+    radial-gradient(120% 140% at 50% -20%, #d97b3e 0%, #c35e1e 55%, #a94f19 100%);
+}
+
+/* Textura discreta por cima do gradiente — dá profundidade sem virar enfeite. */
+.novid-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.22) 0, transparent 42%),
+    radial-gradient(circle at 88% 82%, rgba(255, 255, 255, 0.14) 0, transparent 46%);
+  pointer-events: none;
+}
+
+.novid-hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.novid-hero-icon {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 14px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
+}
+
+.novid-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-2xs, 11px);
+  font-weight: 700;
+  letter-spacing: var(--ls-wide, 0.06em);
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.novid-eyebrow-sep {
+  opacity: 0.6;
+}
+
+.novid-hero h2 {
+  margin: 6px 0 0;
+  font-size: var(--font-size-2xl, 22px);
+  font-weight: var(--fw-bold, 700);
+  line-height: var(--lh-tight, 1.25);
+  letter-spacing: var(--ls-tight, -0.02em);
+}
+
+/* Só a contagem — vira selo, não frase: duas palavras soltas no meio do hero
+   pareciam uma linha que ficou pela metade. */
+.novid-hero-sub {
+  display: inline-block;
+  margin: 12px auto 0;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  font-size: var(--font-size-xs, 12px);
+  font-weight: var(--fw-semibold, 600);
+  line-height: var(--lh-normal, 1.5);
+  color: #fff;
+}
+
+.novid-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.novid-close:hover {
+  background: rgba(255, 255, 255, 0.32);
+}
+
+.novid-close:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
+}
+
+/* ------------------------------- Corpo --------------------------------- */
+
+.novid-body {
+  padding: 22px;
+  overflow-y: auto;
+}
+
+.novid-versao + .novid-versao {
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid var(--neutral-border, #e2e8f0);
+}
+
+.novid-versao-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.novid-versao-head h3 {
+  margin: 0;
+  font-size: var(--font-size-lg, 16px);
+  font-weight: var(--fw-bold, 700);
+  color: var(--neutral-ink, #0f172a);
+}
+
+.novid-data {
+  flex: none;
+  font-size: var(--font-size-xs, 12px);
+  color: var(--neutral-muted, #64748b);
+}
+
+.novid-itens {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Cada mudança é um CARTÃO, não um item de lista: são assuntos independentes
+   (um módulo cada), e a moldura separa um do outro sem precisar de régua. */
+.novid-item {
+  display: flex;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--neutral-border, #e2e8f0);
+  border-radius: 14px;
+  background: var(--neutral-surface, #fff);
+  animation: novidItemIn 0.3s ease both;
+}
+
+/* Entrada em cascata: os cartões chegam na ordem de leitura. Curto de
+   propósito — o quarto já está na tela quando o olho chega nele. */
+.novid-item:nth-child(1) { animation-delay: 0.04s; }
+.novid-item:nth-child(2) { animation-delay: 0.10s; }
+.novid-item:nth-child(3) { animation-delay: 0.16s; }
+.novid-item:nth-child(n + 4) { animation-delay: 0.22s; }
+
+.novid-item-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  flex: none;
+  border-radius: 12px;
+  background: rgba(195, 94, 30, 0.1);
+  color: var(--color-primary, #c35e1e);
+}
+
+.novid-item-txt {
+  min-width: 0;
+  flex: 1;
+}
+
+.novid-item-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.novid-item-head strong {
+  font-size: var(--font-size-md, 14px);
+  font-weight: var(--fw-bold, 700);
+  color: var(--neutral-ink, #0f172a);
+}
+
+/* Selo do canto: diz em duas palavras que tipo de mudança é ("Novo nome"). */
+.novid-marca {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(195, 94, 30, 0.1);
+  color: var(--color-primary, #c35e1e);
+  font-size: var(--font-size-2xs, 11px);
+  font-weight: var(--fw-bold, 700);
+  letter-spacing: 0.02em;
+}
+
+.novid-chip {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--neutral-bg, #f8fafc);
+  border: 1px solid var(--neutral-border, #e2e8f0);
+  color: var(--neutral-muted, #64748b);
+  font-size: var(--font-size-2xs, 11px);
+  font-weight: var(--fw-semibold, 600);
+}
+
+.novid-item-txt p {
+  margin: 8px 0 0;
+  font-size: var(--font-size-sm, 13px);
+  line-height: var(--lh-relaxed, 1.65);
+  color: var(--neutral-muted, #64748b);
+}
+
+/* ------------------- Prévias: "de → para" e as opções ------------------- */
+
+/* A renomeação, desenhada: o nome antigo riscado, o novo em destaque. Quem só
+   bate o olho já sai sabendo qual card procurar na Home. */
+.novid-de-para {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.novid-nome {
+  padding: 5px 12px;
+  border-radius: 10px;
+  font-size: var(--font-size-xs, 12px);
+  font-weight: var(--fw-semibold, 600);
+  white-space: nowrap;
+}
+
+.novid-nome-antes {
+  background: var(--neutral-bg, #f8fafc);
+  border: 1px dashed var(--neutral-border-strong, #cbd5e1);
+  color: var(--neutral-muted, #64748b);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+.novid-nome-depois {
+  background: rgba(195, 94, 30, 0.1);
+  border: 1px solid rgba(195, 94, 30, 0.28);
+  color: var(--color-primary, #c35e1e);
+}
+
+.novid-seta {
+  flex: none;
+  color: var(--neutral-border-strong, #cbd5e1);
+}
+
+/* Mini-cartões do que a pessoa vai encontrar (ex.: as duas portas do card de
+   horas). São uma FIGURA do popup real, não botões — daí não terem hover. */
+.novid-opcoes {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.novid-opcao {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--neutral-border, #e2e8f0);
+  background: var(--neutral-bg, #f8fafc);
+  color: var(--neutral-ink, #0f172a);
+  font-size: var(--font-size-xs, 12px);
+  font-weight: var(--fw-semibold, 600);
+}
+
+.novid-opcao svg {
+  color: var(--color-primary, #c35e1e);
+}
+
+/* ------------------------------- Rodapé -------------------------------- */
+
+.novid-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 14px 22px;
+  border-top: 1px solid var(--neutral-border, #e2e8f0);
+  background: var(--neutral-surface, #fff);
+}
+
+.novid-btn {
+  height: var(--ctl-h-lg, 44px);
+  padding: 0 22px;
+  border-radius: 9999px;
+  border: 1px solid var(--color-primary, #c35e1e);
+  background: var(--color-primary, #c35e1e);
+  color: #fff;
+  font-size: var(--font-size-md, 14px);
+  font-weight: var(--fw-semibold, 600);
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+
+.novid-btn:hover {
+  background: #a94f19;
+  border-color: #a94f19;
+}
+
+.novid-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(195, 94, 30, 0.35);
+}
+
+/* Quem pediu menos movimento no sistema não recebe a cascata nem o zoom. */
+@media (prefers-reduced-motion: reduce) {
+  .novid-overlay,
+  .novid-modal,
+  .novid-item {
+    animation: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .novid-hero {
+    padding: 24px 20px 20px;
+  }
+
+  .novid-body {
+    padding: 16px;
+  }
+
+  .novid-item {
+    padding: 14px;
+    gap: 12px;
+  }
+
+  .novid-footer {
+    padding: 12px 16px;
+  }
+
+  .novid-btn {
+    width: 100%;
+  }
+}

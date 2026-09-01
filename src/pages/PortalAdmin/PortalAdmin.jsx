@@ -48,7 +48,7 @@ const PROGRAMAS_ROLES = [
   ["comercial", "Time comercial"],
   ["admin", "Admin"],
 ];
-// Controle de Horas: o papel BASE deriva da hierarquia da Gestão de Pessoas
+// Gestão de Horas: o papel BASE deriva da hierarquia da Gestão de Pessoas
 // (perfil + superior_id) — gestor/coordenador enxergam a própria equipe, o
 // resto vê só o próprio tempo. O que se edita aqui é a ELEVAÇÃO (horas_role),
 // que só vale neste módulo e nunca rebaixa: "Pela hierarquia" (= sem elevação)
@@ -189,7 +189,7 @@ export default function PortalAdmin() {
   function RoleSelect({ row, app, value, options, hasAccess }) {
     const key = `${row.email}:${app}`;
     const saving = savingKey === key;
-    // Reembolso e PMO guardam o papel numa tabela propria, cuja linha nasce no
+    // Reembolso e Dados guardam o papel numa tabela propria, cuja linha nasce no
     // PRIMEIRO login da pessoa (a chave e o id de autenticacao, que so existe
     // depois que ela entra). Antes disso nao ha papel para editar — e dizer
     // "sem acesso" fazia parecer decisao de quem administra, quando e so
@@ -276,9 +276,9 @@ export default function PortalAdmin() {
                 <th>Pessoa</th>
                 <th className="pa-center">Já entrou?</th>
                 <th>Gestão de Pessoas</th>
-                <th>Controle de Horas</th>
+                <th>Gestão de Horas</th>
                 <th>Reembolso</th>
-                <th>PMO</th>
+                <th>Dados</th>
                 <th>Financeiro</th>
                 <th>Administrativo</th>
                 <th>Programas</th>

@@ -152,7 +152,7 @@ export default function ConfigPage() {
       <div className="horas-hint">
         Aqui ficam só os projetos. Os demais campos do apontamento (sigla, tarefa, frente de
         serviço — o que fizer sentido para a sua equipe) são definidos centralmente, em{' '}
-        <b>Config. do Apontamento</b>: peça a quem administra o Controle de Horas.
+        <b>Config. do Apontamento</b>: peça a quem administra a Gestão de Horas.
       </div>
 
       {erro ? <div className="horas-hint">⚠️ {erro}</div> : null}

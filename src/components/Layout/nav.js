@@ -9,7 +9,7 @@ import { isHorasExtrasDp } from '../../config/horasExtras';
 // Fica fora do Sidebar.jsx para não quebrar o fast refresh.
 //
 // Horas Extras: só o TRATAMENTO do DP mora aqui. Pedir, acompanhar e aprovar
-// ficam no Controle de Horas. Não entra por perfil porque quem enxerga é quem
+// ficam na Gestão de Horas. Não entra por perfil porque quem enxerga é quem
 // passa em isHorasExtrasDp — inclusive um gestor com rh_dp, que continua
 // com o perfil 'gestor'.
 const grupoHorasExtras = {

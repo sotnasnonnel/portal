@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, BarChart3, Clock, CreditCard, Headset, Sparkles, Boxes, ShieldCheck, LogOut, ArrowRight, Lock, Hourglass, Blocks, MessageSquarePlus } from 'lucide-react';
+import { Users, BarChart3, Clock, CreditCard, Headset, Sparkles, Boxes, ShieldCheck, LogOut, ArrowRight, Lock, Hourglass, Blocks, MessageSquarePlus, Megaphone } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { isSuperAdmin } from '../../config/superAdmin';
 import { podeAcessarAdm } from '../../config/administrativo';
@@ -8,10 +8,13 @@ import { podeAcessarProgramas } from '../../config/programas';
 import { podeAcessarEstoque } from '../../config/estoque';
 import { areasFinanceiroDe } from '../../config/financeiro';
 import { FALE_CONOSCO_OPEN_EVENT, SLA_HORAS } from '../../config/suporte';
+import { NOVIDADES, ULTIMA_NOVIDADE, novidadesNaoVistas } from '../../config/novidades';
 import FaleConoscoModal from '../../components/FaleConosco/FaleConoscoModal';
 import SolucoesModal from './SolucoesModal';
 import ProgramasModal from './ProgramasModal';
 import FinanceiroModal from './FinanceiroModal';
+import HorasModal from './HorasModal';
+import NovidadesModal from '../../components/Novidades/NovidadesModal';
 import AvatarUsuario from '../../components/UI/AvatarUsuario';
 import { nomeCurto } from '../../utils/formatters';
 import './Home.css';
@@ -27,11 +30,28 @@ function iniciais(nome) {
 }
 
 export default function Home() {
-  const { user, modules, logout } = useAuth();
+  const { user, modules, logout, marcarNovidadesVistas } = useAuth();
   const saudacao = nomeCurto(user?.nome);
   const [solucoesAbertas, setSolucoesAbertas] = useState(false);
   const [programasAbertos, setProgramasAbertos] = useState(false);
   const [financeiroAberto, setFinanceiroAberto] = useState(false);
+  const [horasAberto, setHorasAberto] = useState(false);
+
+  // "O que mudou na plataforma": a Home é a primeira tela depois do login, e é
+  // aqui que o aviso aparece — uma vez por versão, por pessoa (o carimbo vai
+  // para o banco em marcarNovidadesVistas). Fora isso, o botão da barra reabre
+  // o histórico quando a pessoa quiser.
+  const naoVistas = useMemo(() => novidadesNaoVistas(user?.novidadesVistoId), [user?.novidadesVistoId]);
+  // Estado inicial e não efeito: a Home só monta com o usuário já carregado
+  // (ProtectedRoute), então o que abre sozinho se decide no primeiro render.
+  const [novidades, setNovidades] = useState(() => (naoVistas.length ? { itens: naoVistas, historico: false } : null));
+
+  const fecharNovidades = () => {
+    setNovidades(null);
+    // Carimba sempre a versão mais recente: quem fechou viu o que havia de novo,
+    // e reabrir pelo botão não deve ressuscitar o aviso automático.
+    if (naoVistas.length) marcarNovidadesVistas(ULTIMA_NOVIDADE.id);
+  };
 
   // Com as duas áreas liberadas, a escolha (Cartões / Reembolso) vem antes de
   // entrar, como no card "Programas". Com uma só, o popup teria um botão
@@ -53,7 +73,7 @@ export default function Home() {
       to: '/solic/dashboard',
       icon: BarChart3,
       tone: 'teal',
-      title: 'PMO',
+      title: 'Dados',
       desc: 'Demandas de BI e acompanhamento',
       // Aberto a todo cadastrado: o perfil é auto-provisionado no login.
       // Sem perfil (caso raro), o card aparece com cadeado em vez de sumir.
@@ -61,14 +81,17 @@ export default function Home() {
     },
     {
       // Módulo aberto a todos: card sempre visível, sem gate de permissão.
-      to: '/horas/apontar',
+      // Apontamento e Horas Extras se resolvem em telas diferentes, então o
+      // card abre a escolha em popup (ver AREAS_HORAS em config/horas.js) —
+      // mesmo desenho do card "Financeiro".
+      acao: () => setHorasAberto(true),
       icon: Clock,
       tone: 'teal',
-      title: 'Controle de Horas',
-      desc: 'Apontamento de horas por projeto e atividade',
+      title: 'Gestão de Horas',
+      desc: 'Apontamento por projeto e solicitação de horas extras',
     },
     {
-      // Módulo aberto a todos, como o Controle de Horas — mas ainda não lançado:
+      // Módulo aberto a todos, como a Gestão de Horas — mas ainda não lançado:
       // fica visível e travado, exceto para quem está testando
       // (ver ADM_LIBERADOS em config/administrativo.js).
       to: '/administrativo/novo',
@@ -80,7 +103,7 @@ export default function Home() {
       emBreve: !podeAcessarAdm(user),
     },
     {
-      // Aberto a todos os logados, como o Controle de Horas (lançado em
+      // Aberto a todos os logados, como a Gestão de Horas (lançado em
       // 2026-08-28; a trava está em PROGRAMAS_EM_BREVE, config/programas.js).
       // Não navega: abre a escolha de programa em popup, e o programa
       // escolhido é que leva para dentro do módulo.
@@ -139,6 +162,18 @@ export default function Home() {
         <div className="home-user">
           {/* O canal também na Home: é a tela em que a pessoa está quando o que
               ela quer dizer é sobre o portal inteiro, e não sobre um módulo. */}
+          {/* Histórico de novidades. O ponto acende quando há versão que esta
+              pessoa ainda não viu — some assim que ela fecha o aviso. */}
+          <button
+            type="button"
+            className="home-novidades"
+            onClick={() => setNovidades({ itens: NOVIDADES, historico: true })}
+            title="O que mudou na plataforma"
+          >
+            <Megaphone size={16} />
+            Novidades
+            {naoVistas.length > 0 && <span className="home-novidades-dot" aria-hidden="true" />}
+          </button>
           <button
             type="button"
             className="home-fale"
@@ -252,6 +287,14 @@ export default function Home() {
       {solucoesAbertas && <SolucoesModal onClose={() => setSolucoesAbertas(false)} />}
       {programasAbertos && <ProgramasModal onClose={() => setProgramasAbertos(false)} />}
       {financeiroAberto && <FinanceiroModal onClose={() => setFinanceiroAberto(false)} />}
+      {horasAberto && <HorasModal onClose={() => setHorasAberto(false)} />}
+      {novidades && (
+        <NovidadesModal
+          novidades={novidades.itens}
+          historico={novidades.historico}
+          onClose={fecharNovidades}
+        />
+      )}
     </div>
   );
 }

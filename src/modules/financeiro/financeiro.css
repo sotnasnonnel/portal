@@ -1,6 +1,6 @@
 /* ==========================================================================
    Módulo Financeiro — estilos escopados em .finRoot. Não vazam para o resto
-   do portal. Segue a estrutura do Controle de Horas, com acento próprio (teal).
+   do portal. Segue a estrutura da Gestão de Horas, com acento próprio (teal).
    ========================================================================== */
 .finRoot {
   /* acento consumido pela sidebar compartilhada (ModuleSidebar) */

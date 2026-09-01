@@ -16,7 +16,7 @@ export const FILIAIS = {
 
 export const DEPARTAMENTOS = [
   'Administrativo', 'Comercial', 'Dados', 'Departamento Pessoal', 'Financeiro',
-  'Gente e Cultura / RH', 'Marketing', 'PMO', 'Planejamento', 'BIM', 'Lean',
+  'Gente e Cultura / RH', 'Marketing', 'Dados', 'Planejamento', 'BIM', 'Lean',
   'Qualidade', 'Medição', 'Topografia', 'Operações',
 ];
 

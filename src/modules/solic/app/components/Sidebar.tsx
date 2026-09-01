@@ -4,7 +4,7 @@ import { clearSupabaseCache } from "@/lib/supabaseCache";
 import { clearSolicIdentity } from "@/lib/identity";
 import ModuleSidebar from "../../../../components/Layout/ModuleSidebar";
 
-// Sidebar do PMO — estrutura no componente compartilhado ModuleSidebar, o mesmo
+// Sidebar do Dados — estrutura no componente compartilhado ModuleSidebar, o mesmo
 // dos outros módulos (padrão do Financeiro: grupos colapsáveis + seções).
 // collapsed/onToggle recolhem no desktop; aberto/onFechar controlam o drawer no
 // mobile (o ☰ do PortalHeader — ver src/hooks/useDrawerMobile.js).
@@ -60,7 +60,7 @@ export function Sidebar({
   return (
     <ModuleSidebar
       moduloKey="solic"
-      titulo="PMO"
+      titulo="Dados"
       Icon={BarChart3}
       secoes={secoes}
       papelLabel={isAdmin ? "Administrador" : "Usuário"}

@@ -1,4 +1,4 @@
-// Papéis do Controle de Horas — DERIVADOS do perfil da Gestão de Pessoas
+// Papéis da Gestão de Horas — DERIVADOS do perfil da Gestão de Pessoas
 // (colaboradores.perfil), com a coluna horas_role como ELEVAÇÃO só-do-Horas
 // (torna alguém gestor/coordenador apenas aqui, sem abrir a Gestão de Pessoas —
 // ver horasRoleFromPerfil no AuthContext e app_private.my_horas_role no banco):
@@ -36,7 +36,7 @@ export const isGestao = (role) => role === 'gestor' || role === 'coordenador';
 export const isHorasAdmin = (user) =>
   user?.perfil === 'admin' || user?.horasRole === 'admin' || isSuperAdmin(user);
 
-// Quem configura o Controle de Horas centralmente — hoje duas telas:
+// Quem configura a Gestão de Horas centralmente — hoje duas telas:
 //   /horas/config/apontamento -> os campos de QUALQUER equipe
 //   /horas/config/projetos    -> quem enxerga cada projeto no seletor
 // É curadoria central, mais restrita que a configuração de projetos por área

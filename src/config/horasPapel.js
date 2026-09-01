@@ -1,4 +1,4 @@
-// Papel de uma pessoa no Controle de Horas.
+// Papel de uma pessoa na Gestão de Horas.
 //
 // O papel BASE deriva da hierarquia da Gestão de Pessoas (perfil): gestor e
 // coordenador enxergam a própria equipe, o resto vê só o próprio tempo. A

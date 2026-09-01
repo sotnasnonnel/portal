@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 // PortalHeader mostra o botao de menu). Fica fora das Sidebars porque quem abre
 // o drawer e o PortalHeader, renderizado pelos shells — e porque varios shells
 // compartilham esta logica: AppShell do Financeiro, AppLayout do Reembolso e
-// AppShell do Controle de Horas.
+// AppShell da Gestão de Horas.
 export function useDrawerMobile() {
   const [aberto, setAberto] = useState(false);
 

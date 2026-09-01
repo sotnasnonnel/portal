@@ -100,7 +100,7 @@ function RouteFallback() {
   return <div style={{ padding: 'var(--space-3xl)', textAlign: 'center' }}>Carregando...</div>;
 }
 
-// Índice do Controle de Horas: usuário/gerente caem em "Apontar", a diretoria
+// Índice da Gestão de Horas: usuário/gerente caem em "Apontar", a diretoria
 // (que não aponta) cai no Dashboard Geral.
 function HorasIndex() {
   const { modules } = useAuth();
@@ -285,7 +285,7 @@ export default function AppRoutes() {
           />
 
           {/* Horas Extras — tratamento do DP. O pedido, o acompanhamento e a
-              aprovação ficam no Controle de Horas (/horas/extras). */}
+              aprovação ficam na Gestão de Horas (/horas/extras). */}
           <Route
             path="/admin/horas-extras"
             element={
@@ -633,7 +633,7 @@ export default function AppRoutes() {
         </Route>
 
         {/* Programas: os programas internos da PHD (Campo de Ideias e Alavanca).
-            Aberto a todos os logados, como o Controle de Horas — só o painel da
+            Aberto a todos os logados, como a Gestão de Horas — só o painel da
             Alavanca tem dono (o time comercial), e o gate dele fica na própria
             página. Enquanto está em construção, a rota inteira devolve para a
             Home, exceto para quem está testando. */}

@@ -1,4 +1,4 @@
-// Utilidades de tempo/formatação do módulo de Controle de Horas.
+// Utilidades de tempo/formatação do módulo de Gestão de Horas.
 // Portadas do protótipo (referencia/controle-horas.html), sem dependências.
 
 export function fmtDur(ms) {

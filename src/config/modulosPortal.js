@@ -19,8 +19,8 @@ export function modulosVisiveis(user, modules) {
   const nomes = [MODULO_PORTAL];
 
   if (modules?.dp) nomes.push('Gestão de Pessoas');
-  if (modules?.solic) nomes.push('PMO');
-  nomes.push('Controle de Horas');                       // aberto a todos
+  if (modules?.solic) nomes.push('Dados');
+  nomes.push('Gestão de Horas');                       // aberto a todos
   if (podeAcessarAdm(user)) nomes.push('Administrativo');
   if (podeAcessarProgramas(user)) nomes.push('Programas');
   if (podeAcessarEstoque(user)) nomes.push('Estoque');

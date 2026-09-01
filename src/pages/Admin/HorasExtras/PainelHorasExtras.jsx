@@ -19,7 +19,7 @@ import './HorasExtras.css';
 // Painel DP das horas extras (módulo Gestão de Pessoas).
 // O DP vê todas as solicitações da empresa, altera o destino da hora, cancela,
 // marca o banco de horas como compensado e exporta para a folha. O pedido, o
-// acompanhamento e a aprovação ficam no Controle de Horas.
+// acompanhamento e a aprovação ficam na Gestão de Horas.
 // A RLS (app_private.is_horas_extras_dp) é quem garante o acesso de verdade.
 export default function PainelHorasExtras() {
   const [list, setList] = useState([]);

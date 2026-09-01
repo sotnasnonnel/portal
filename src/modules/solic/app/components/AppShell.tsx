@@ -69,7 +69,7 @@ export default function AppShell() {
     <div className={`solicRoot solicShell ${collapsed ? "isCollapsed" : ""}`.trim()}>
       <Sidebar collapsed={collapsed} onToggle={toggleCollapsed} aberto={aberto} onFechar={fechar} />
       <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
-        <PortalHeader modulo="PMO" onMenuToggle={alternar} />
+        <PortalHeader modulo="Dados" onMenuToggle={alternar} />
         <main className="solicMain">
           <div style={{ width: "100%", minWidth: 0 }}>
             <Outlet />

@@ -5,8 +5,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import AvatarUsuario from '../UI/AvatarUsuario';
 import './ModuleSidebar.css';
 
-// Sidebar única dos módulos do portal (Controle de Horas, Administrativo,
-// Financeiro, Programas, PMO/Solicitações). Antes cada módulo tinha a sua cópia,
+// Sidebar única dos módulos do portal (Gestão de Horas, Administrativo,
+// Financeiro, Programas, Dados/Solicitações). Antes cada módulo tinha a sua cópia,
 // e elas foram divergindo — o padrão adotado é o do Financeiro: menu DIVIDIDO
 // em grupos colapsáveis (cabeçalho com ícone + seta, filhos recuados) e seções
 // simples com rótulo em caixa alta.

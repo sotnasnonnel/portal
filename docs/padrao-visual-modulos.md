@@ -4,7 +4,7 @@ Fonte da verdade dos tokens: **`src/styles/ui.css`** (carregado em `main.jsx`
 depois de `theme.css` e `index.css`, portanto vale sobre os dois).
 
 Vale para: **Gestão de Pessoas** (`src/pages/**` + `src/components/**`),
-**PMO — Controle de Horas** (`src/modules/horas`), **Administrativo**
+**PMO — Gestão de Horas** (`src/modules/horas`), **Administrativo**
 (`src/modules/administrativo`), **Financeiro** (`src/modules/financeiro`) e
 **Programas** (`src/modules/programas`).
 
@@ -84,7 +84,7 @@ Cobre `.form-input`/`.form-select`/`.btn*` (GP + Financeiro),
 ## 6. Sidebar (uma só para todos os módulos)
 
 Componente único: **`src/components/Layout/ModuleSidebar.jsx`** + `ModuleSidebar.css`.
-Usado por Controle de Horas, Administrativo, Financeiro, Programas e PMO. A
+Usado por Gestão de Horas, Administrativo, Financeiro, Programas e PMO. A
 divisão é a do Financeiro:
 
 - **Grupo colapsável** (`group: true`): cabeçalho com ícone + rótulo + seta,

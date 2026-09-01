@@ -9,7 +9,7 @@ import { carregarFotoMicrosoft, fotoEmCache, limparFotoMicrosoft } from '../serv
 
 const AuthContext = createContext(null);
 
-// Papéis do Controle de Horas — DERIVADOS do perfil da Gestão de Pessoas
+// Papéis da Gestão de Horas — DERIVADOS do perfil da Gestão de Pessoas
 // (colaboradores.perfil), a mesma hierarquia do módulo de Pessoas: quem é
 // gestor/admin lá é "gestor" aqui, coordenador é "coordenador", o resto é
 // "usuario". A visibilidade (subárvore) é da RLS. A regra do papel efetivo
@@ -144,6 +144,8 @@ export function AuthProvider({ children }) {
         perfil: perfilEfetivo,
         rhDp,
         solicVistoEm: colab.solic_visto_em || null,
+        // Última versão de "Novidades" que a pessoa já viu (config/novidades.js).
+        novidadesVistoId: colab.novidades_visto_id || null,
         funcao: colab.funcao || null,
         dataAdmissao: colab.data_admissao || null,
         horasGerenciaId: colab.horas_gerencia_id || null,  // gerência p/ ver projetos ao apontar
@@ -214,7 +216,17 @@ export function AuthProvider({ children }) {
     window.dispatchEvent(new Event('solicitacoes_rh_atualizadas'));
   }, []);
 
-  // Recarrega o perfil/gerência do Controle de Horas sem exigir logout: o papel
+  // Carimba a versão de novidades que a pessoa acabou de ver, para o aviso da
+  // Home não voltar no próximo login (nem no outro computador — por isso vai
+  // para o banco, e não para o localStorage). O estado local anda junto para o
+  // popup fechar na hora, sem esperar a ida ao banco.
+  const marcarNovidadesVistas = useCallback(async (id) => {
+    if (!session?.user || !id) return;
+    setUser((u) => (u ? { ...u, novidadesVistoId: id } : u));
+    await supabase.rpc('novidades_marcar_visto', { p_id: id });
+  }, [session]);
+
+  // Recarrega o perfil/gerência da Gestão de Horas sem exigir logout: o papel
   // agora DERIVA de colaboradores.perfil (Gestão de Pessoas). Quem for promovido
   // a gestor/coordenador lá passa a ver a equipe aqui sem relogar. Chamado pelo
   // shell do módulo ao abrir e ao focar a aba.
@@ -247,7 +259,7 @@ export function AuthProvider({ children }) {
     // sem cadastro lá — enxerga todos os pedidos e gera o PDF com as notas.
     reembolso: reembolsoProfile?.role ?? (user?.financeiroRole === 'admin' ? 'admin' : null), // user | admin
     solic: solicProfile?.role ?? null,         // user | admin
-    // Controle de Horas: aberto a todos os logados. O papel DERIVA do perfil da
+    // Gestão de Horas: aberto a todos os logados. O papel DERIVA do perfil da
     // Gestão de Pessoas (mesma hierarquia); quem enxerga a equipe são os
     // superiores da árvore (garantido pela RLS). O super-admin também tem passe
     // livre no banco.
@@ -261,7 +273,7 @@ export function AuthProvider({ children }) {
     // de ninguém. 'admin' = time do Financeiro (executa/configura fluxos), via
     // financeiro_role (Gerenciar acessos), e continua restrito.
     financeiro: user ? (user.financeiroRole || 'user') : null,
-    // Administrativo: aberto a todos os logados (como o Controle de Horas) —
+    // Administrativo: aberto a todos os logados (como a Gestão de Horas) —
     // qualquer um abre chamado. 'atendente'/'admin' são o time do Adm, que
     // enxerga a fila; vêm de administrativo_role (Gerenciar acessos).
     administrativo: user ? (user.administrativoRole || 'user') : null,
@@ -275,8 +287,10 @@ export function AuthProvider({ children }) {
     user, session, modules, reembolsoProfile, solicProfile, fotoUrl,
     blocked, loading, error,
     signInWithMicrosoft, logout, refreshReembolsoProfile, markSolicVisto, refreshHorasIdentity,
+    marcarNovidadesVistas,
   }), [user, session, modules, reembolsoProfile, solicProfile, fotoUrl, blocked, loading, error,
-       signInWithMicrosoft, logout, refreshReembolsoProfile, markSolicVisto, refreshHorasIdentity]);
+       signInWithMicrosoft, logout, refreshReembolsoProfile, markSolicVisto, refreshHorasIdentity,
+       marcarNovidadesVistas]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

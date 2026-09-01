@@ -2,7 +2,7 @@ import { supabase } from './supabase';
 
 // ============================================================================
 // Camada de dados da Gestão de HORAS EXTRAS, compartilhada pelos DOIS módulos
-// que usam a ferramenta: o Controle de Horas (pedir, acompanhar, aprovar) e a
+// que usam a ferramenta: a Gestão de Horas (pedir, acompanhar, aprovar) e a
 // Gestão de Pessoas (painel do DP, exceções de prazo, auditoria). As regras
 // puras ficam em src/config/horasExtras.js.
 // As LEITURAS passam por RPCs SECURITY DEFINER (horas_extras_listar,

@@ -27,7 +27,7 @@ const MODULO_LABEL = {
   reembolso: 'Reembolso',
   administrativo: 'Administrativo',
   dp: 'Gestão de Pessoas',
-  horas: 'Controle de Horas',
+  horas: 'Gestão de Horas',
   programas: 'Programas',
   estoque: 'Estoque',
 };

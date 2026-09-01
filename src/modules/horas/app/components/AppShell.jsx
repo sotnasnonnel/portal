@@ -27,7 +27,7 @@ export default function AppShell() {
     <div className="horasRoot">
       <Sidebar aberto={aberto} onFechar={fechar} />
       <div className="horasCol">
-        <PortalHeader modulo="Controle de Horas" onMenuToggle={alternar} />
+        <PortalHeader modulo="Gestão de Horas" onMenuToggle={alternar} />
         <main className="horasMain">
           <Outlet />
         </main>

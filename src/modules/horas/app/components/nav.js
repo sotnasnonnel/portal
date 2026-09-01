@@ -24,9 +24,27 @@ import { isGestao, podeConfigurarHoras } from '../../lib/roles';
 // A seção "Horas Extras" aqui é só a ponta do fluxo que o colaborador e o gestor
 // usam (pedir, acompanhar, aprovar). O tratamento do DP — painel, exceções de
 // prazo e auditoria — vive no módulo Gestão de Pessoas.
+//
+// O módulo tem DUAS ÁREAS (ver AREAS_HORAS em config/horas.js), e o menu mostra
+// só a área em que se está — mesma mecânica do Financeiro: dentro do
+// Apontamento aparece o apontamento (e a gestão/configuração que vive dele);
+// dentro das Horas Extras, só o fluxo de hora extra. Trocar de área é decisão
+// que se toma no card "Gestão de Horas" da Home, não no meio do menu.
 // (Fica fora do Sidebar.jsx para não quebrar o fast refresh: um arquivo de
 // componente só deve exportar componentes.)
-export function navSections(role, user) {
+
+/**
+ * Qual área a rota atual pertence — mesma mecânica do areaDaRota do Financeiro.
+ * Tudo que não é /horas/extras é apontamento: o apontamento é o corpo do
+ * módulo (apontar, dashboard, registros, equipe e as telas de configuração).
+ */
+export function areaDaRota(pathname = '') {
+  return pathname.startsWith('/horas/extras') ? 'extras' : 'apontamento';
+}
+
+export function navSections(role, user, area = null) {
+  // `null` (sem rota conhecida) lista tudo — é o que o rotaInicial usa.
+  const mostra = (a) => !area || area === a;
   const extras = [
     { label: 'Nova Solicitação', href: '/horas/extras/nova', Icon: FilePlus2 },
     { label: 'Minhas Solicitações', href: '/horas/extras/minhas', Icon: FileClock },
@@ -45,16 +63,27 @@ export function navSections(role, user) {
       ]
     : [];
 
-  if (isGestao(role)) {
-    const secoes = [
-      {
-        label: 'Apontamento',
-        group: true,
-        key: 'apontamento',
-        Icon: Clock,
-        items: [{ label: 'Apontar', href: '/horas/apontar', Icon: Clock }],
-      },
-      {
+  const secoes = [];
+
+  if (mostra('apontamento')) {
+    // A gestão também aponta, mas o resto do apontamento (dashboard, registros)
+    // vem no grupo "Gestão", com o escopo da equipe.
+    secoes.push({
+      label: 'Apontamento',
+      group: true,
+      key: 'apontamento',
+      Icon: Clock,
+      items: isGestao(role)
+        ? [{ label: 'Apontar', href: '/horas/apontar', Icon: Clock }]
+        : [
+            { label: 'Apontar', href: '/horas/apontar', Icon: Clock },
+            { label: 'Meu Dashboard', href: '/horas/dashboard', Icon: BarChart3 },
+            { label: 'Meus Registros', href: '/horas/registros', Icon: ListChecks },
+          ],
+    });
+
+    if (isGestao(role)) {
+      secoes.push({
         label: 'Gestão',
         group: true,
         key: 'gestao',
@@ -64,53 +93,42 @@ export function navSections(role, user) {
           { label: 'Equipe', href: '/horas/equipe', Icon: Users },
           { label: 'Registros', href: '/horas/registros', Icon: ListChecks },
         ],
-      },
-      {
-        label: 'Horas Extras',
-        group: true,
-        key: 'extras',
-        Icon: FileClock,
-        items: extras,
-      },
-    ];
-    secoes.push({
-      label: 'Administração',
-      key: 'admin',
-      items: [
-        // `exato`: /horas/config é prefixo de /horas/config/apontamento — sem
-        // isso os dois acendiam juntos.
-        { label: 'Configuração', href: '/horas/config', Icon: Settings, exato: true },
-        ...configHoras,
-      ],
-    });
-    return secoes;
+      });
+    }
   }
 
-  // Quem configura o apontamento sem ter papel de gestão (não é o caso hoje, mas
-  // a lista é nominal e independe do papel) também precisa do atalho.
-  const secoes = [
-    {
-      label: 'Apontamento',
-      group: true,
-      key: 'apontamento',
-      Icon: Clock,
-      items: [
-        { label: 'Apontar', href: '/horas/apontar', Icon: Clock },
-        { label: 'Meu Dashboard', href: '/horas/dashboard', Icon: BarChart3 },
-        { label: 'Meus Registros', href: '/horas/registros', Icon: ListChecks },
-      ],
-    },
-    {
+  if (mostra('extras')) {
+    secoes.push({
       label: 'Horas Extras',
       group: true,
       key: 'extras',
       Icon: FileClock,
       items: extras,
-    },
-  ];
-  if (configHoras.length) {
-    secoes.push({ label: 'Administração', key: 'admin', Icon: UserCog, items: configHoras });
+    });
   }
+
+  // Administração é do apontamento: configura projetos, campos e visibilidade
+  // do que se aponta. A gestão configura os projetos da própria área; a
+  // curadoria central é da lista nominal (podeConfigurarHoras).
+  if (mostra('apontamento')) {
+    if (isGestao(role)) {
+      secoes.push({
+        label: 'Administração',
+        key: 'admin',
+        items: [
+          // `exato`: /horas/config é prefixo de /horas/config/apontamento — sem
+          // isso os dois acendiam juntos.
+          { label: 'Configuração', href: '/horas/config', Icon: Settings, exato: true },
+          ...configHoras,
+        ],
+      });
+    } else if (configHoras.length) {
+      // Quem configura o apontamento sem ter papel de gestão (não é o caso hoje,
+      // mas a lista é nominal e independe do papel) também precisa do atalho.
+      secoes.push({ label: 'Administração', key: 'admin', Icon: UserCog, items: configHoras });
+    }
+  }
+
   return secoes;
 }
 

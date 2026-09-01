@@ -5,7 +5,7 @@ import {
 import { useMediaQuery } from '../../../../hooks/useMediaQuery';
 
 /**
- * Gráficos do Estoque. Segue o padrão do Controle de Horas
+ * Gráficos do Estoque. Segue o padrão da Gestão de Horas
  * (modules/horas/app/components/Charts.jsx) — mesma mecânica de eixos, corte de
  * rótulo e comportamento no celular — sem importar aquele arquivo, que é
  * acoplado a milissegundos e a fmtHoras.

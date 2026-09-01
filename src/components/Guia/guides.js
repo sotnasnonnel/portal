@@ -88,7 +88,7 @@ const TROCAR_APP = {
   icon: Home,
   titulo: "Troque de app quando quiser",
   texto:
-    'No menu lateral, "Início" leva de volta à tela inicial do Portal PHD, onde ficam os cards de todos os sistemas a que você tem acesso (Gestão de Pessoas, PMO, Controle de Horas, Administrativo, Financeiro, Programas e Estoque). Clicar na marca da PHD, no topo do menu, faz o mesmo.',
+    'No menu lateral, "Início" leva de volta à tela inicial do Portal PHD, onde ficam os cards de todos os sistemas a que você tem acesso (Gestão de Pessoas, Dados, Gestão de Horas, Administrativo, Financeiro, Programas e Estoque). Clicar na marca da PHD, no topo do menu, faz o mesmo.',
 };
 
 // ============================ Gestão de Pessoas (DP) ============================
@@ -292,9 +292,9 @@ export const REEMBOLSO_GUIA = {
   },
 };
 
-// ============================== PMO ==============================
+// ============================== Dados ==============================
 export const SOLIC_GUIA = {
-  appName: "PMO",
+  appName: "Dados",
   fallbackRole: "user",
   roleLabels: { admin: "Administrador(a)", user: "Usuário(a)" },
   contentByRole: {
@@ -337,7 +337,7 @@ export const SOLIC_GUIA = {
       {
         icon: Users,
         titulo: "Usuários",
-        texto: 'Em "Usuários" você controla quem acessa o app de PMO e o nível de cada um.',
+        texto: 'Em "Usuários" você controla quem acessa o app de Dados e o nível de cada um.',
       },
       NOTIFICACOES,
       TROCAR_APP,
@@ -345,7 +345,7 @@ export const SOLIC_GUIA = {
   },
 };
 
-// ============================= Controle de Horas =============================
+// ============================= Gestão de Horas =============================
 // Passos comuns a quem administra a equipe (gestor e coordenador). O que muda
 // entre eles é só o alcance: o gestor no topo vê a empresa toda; o coordenador,
 // a sua subárvore — a RLS do banco cuida disso, então o texto fala em "equipe".
@@ -402,7 +402,7 @@ const HORAS_GESTAO_STEPS = [
 ];
 
 export const HORAS_GUIA = {
-  appName: "Controle de Horas",
+  appName: "Gestão de Horas",
   fallbackRole: "usuario",
   roleLabels: { gestor: "Gestor(a)", coordenador: "Coordenador(a)", usuario: "Colaborador(a)" },
   contentByRole: {

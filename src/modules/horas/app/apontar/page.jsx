@@ -309,7 +309,7 @@ export default function ApontarPage() {
       {!campos.length && isGestao(role) && !podeConfigurarHoras(user) ? (
         <div className="horas-hint">
           A sua equipe ainda não tem campos de apontamento configurados — dá para apontar só com
-          projeto e descrição. Peça a configuração ao administrador do Controle de Horas.
+          projeto e descrição. Peça a configuração ao administrador da Gestão de Horas.
         </div>
       ) : null}
 

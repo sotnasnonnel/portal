@@ -268,7 +268,7 @@
   }
 }
 
-/* Papel efetivo no Controle de Horas, abaixo do select da elevação. O select
+/* Papel efetivo na Gestão de Horas, abaixo do select da elevação. O select
    diz o que foi CONFIGURADO; esta linha diz o que a pessoa tem hoje. */
 .pa-efetivo {
   display: block;

@@ -22,7 +22,7 @@ import { Boxes, Lightbulb, Rocket, Wrench } from 'lucide-react';
  * Enquanto `true`, o módulo aparece como "Em breve" para a empresa: o card da
  * Home fica travado e a rota /programas devolve para lá.
  *
- * LANÇADO em 2026-08-28: aberto a todos os logados, como o Controle de Horas.
+ * LANÇADO em 2026-08-28: aberto a todos os logados, como a Gestão de Horas.
  * A lista abaixo deixa de valer com a trava desligada — fica porque é o que
  * volta a funcionar se alguém precisar fechar o módulo de novo.
  *

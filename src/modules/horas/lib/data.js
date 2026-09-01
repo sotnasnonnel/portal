@@ -2,7 +2,7 @@ import { supabase } from './supabase';
 import { camposDoApontamento, normalizarCampo, paraBanco } from './camposEquipe';
 
 // ============================================================================
-// Camada de dados do Controle de Horas.
+// Camada de dados da Gestão de Horas.
 // Pessoas vêm de `colaboradores`. O papel do módulo (horas_role) e a gerência
 // (horas_gerencia_id) vivem lá e são editados em /portal-admin e /horas/equipe.
 // Cada GERÊNCIA (equipe) tem os seus projetos E os seus CAMPOS de apontamento
