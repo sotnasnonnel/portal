@@ -278,3 +278,44 @@
     flex-basis: 100%;
   }
 }
+
+/* Botão do "Fale conosco" na barra da Home.
+   Terracota cheio, e não translúcido sobre branco: o fundo da Home é a imagem
+   clara (fundo_home.png), e o botão branco desaparecia dentro dela. A cor é a
+   da marca — a mesma da logo ao lado —, o que também o distingue do "Sair",
+   que é o botão neutro da barra. */
+.home-fale {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 9999px;
+  border: 1px solid var(--color-primary, #c35e1e);
+  background: var(--color-primary, #c35e1e);
+  color: #fff;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+
+.home-fale:hover {
+  background: #a94f19;
+  border-color: #a94f19;
+}
+
+.home-fale:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(195, 94, 30, 0.35);
+}
+
+@media (max-width: 640px) {
+  /* No celular fica só o ícone — o rótulo empurrava o "Sair" para fora da
+     barra. `font-size: 0` esconde o texto; o ícone tem tamanho próprio (prop
+     do lucide) e não é afetado. */
+  .home-fale {
+    font-size: 0;
+    gap: 0;
+    padding: 8px 11px;
+  }
+}

@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, BarChart3, Clock, CreditCard, Headset, Sparkles, Boxes, ShieldCheck, LogOut, ArrowRight, Lock, Hourglass, Blocks } from 'lucide-react';
+import { Users, BarChart3, Clock, CreditCard, Headset, Sparkles, Boxes, ShieldCheck, LogOut, ArrowRight, Lock, Hourglass, Blocks, MessageSquarePlus } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { isSuperAdmin } from '../../config/superAdmin';
 import { podeAcessarAdm } from '../../config/administrativo';
 import { podeAcessarProgramas } from '../../config/programas';
 import { podeAcessarEstoque } from '../../config/estoque';
 import { areasFinanceiroDe } from '../../config/financeiro';
+import { FALE_CONOSCO_OPEN_EVENT, SLA_HORAS } from '../../config/suporte';
+import FaleConoscoModal from '../../components/FaleConosco/FaleConoscoModal';
 import SolucoesModal from './SolucoesModal';
 import ProgramasModal from './ProgramasModal';
 import FinanceiroModal from './FinanceiroModal';
@@ -129,11 +131,23 @@ export default function Home() {
 
   return (
     <div className="home-hero">
+      <FaleConoscoModal modulo="Portal" />
       <header className="home-topbar">
         <div className="home-brand">
           <span className="home-logo-brand" role="img" aria-label="PHD Engenharia" />
         </div>
         <div className="home-user">
+          {/* O canal também na Home: é a tela em que a pessoa está quando o que
+              ela quer dizer é sobre o portal inteiro, e não sobre um módulo. */}
+          <button
+            type="button"
+            className="home-fale"
+            onClick={() => window.dispatchEvent(new Event(FALE_CONOSCO_OPEN_EVENT))}
+            title={`Fale conosco — bug, melhoria ou elogio (resposta em até ${SLA_HORAS}h)`}
+          >
+            <MessageSquarePlus size={16} />
+            Fale conosco
+          </button>
           <AvatarUsuario className="home-avatar" iniciais={iniciais(user?.nome)} title={user?.nome} />
           <button type="button" className="home-logout" onClick={logout}>
             <LogOut size={16} />

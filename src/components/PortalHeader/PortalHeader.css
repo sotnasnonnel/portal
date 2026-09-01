@@ -116,3 +116,44 @@
     font-size: var(--font-size-md);
   }
 }
+
+/* "Fale conosco" na cor da marca, e não no cinza do "?" ao lado: são coisas
+   diferentes — um é ajuda passiva, o outro é um convite a falar. Sem a cor,
+   viravam dois ícones cinzas indistinguíveis um do outro. */
+.portal-header .portal-header-fale {
+  color: var(--terracotta);
+}
+
+.portal-header .portal-header-fale:hover {
+  background: var(--terracotta-light);
+  color: var(--terracotta);
+}
+
+/* O botão vira âncora do contador. */
+.portal-header .portal-header-fale {
+  position: relative;
+}
+
+/* Contador de itens esperando resposta (só quem atende vê). Fica sobre o
+   ícone, no mesmo canto do contador do sino, para os dois avisos se lerem da
+   mesma forma. */
+.portal-header .fc-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--terracotta);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.portal-header .fc-badge.is-late {
+  background: var(--status-reprovado-fg, #b91c1c);
+}

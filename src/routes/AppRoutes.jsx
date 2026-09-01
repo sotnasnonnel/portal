@@ -19,6 +19,7 @@ import { podeAcessarEstoque } from '../config/estoque';
 const Login = lazy(() => import('../pages/Login/Login'));
 const Home = lazy(() => import('../pages/Home/Home'));
 const PortalAdmin = lazy(() => import('../pages/PortalAdmin/PortalAdmin'));
+const FaleConoscoCaixa = lazy(() => import('../pages/FaleConosco/FaleConoscoCaixa'));
 const AdminCadastro = lazy(() => import('../pages/Admin/AdminCadastro'));
 const AdminListagem = lazy(() => import('../pages/Admin/AdminListagem'));
 const GestorDashboard = lazy(() => import('../pages/Gestor/GestorDashboard'));
@@ -196,6 +197,19 @@ export default function AppRoutes() {
             <ProtectedRoute>
               <LazyPage>
                 <Home />
+              </LazyPage>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Fale conosco: aberto a todo logado. A RLS decide o que cada um vê —
+            quem atende enxerga a fila inteira, os demais só o que enviaram. */}
+        <Route
+          path="/fale-conosco"
+          element={
+            <ProtectedRoute>
+              <LazyPage>
+                <FaleConoscoCaixa />
               </LazyPage>
             </ProtectedRoute>
           }

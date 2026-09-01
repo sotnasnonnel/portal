@@ -1,0 +1,303 @@
+/* Caixa do Fale conosco (/fale-conosco). Reusa .fc-textarea e .fc-btn do
+   modal — é o mesmo canal, e dois estilos de botão para a mesma coisa fariam
+   parecer duas telas de origens diferentes. */
+
+.fcx-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+}
+
+.fcx-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 12px);
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.fcx-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted, #6b7280);
+  text-decoration: none;
+}
+
+.fcx-titles {
+  flex: 1 1 260px;
+}
+
+.fcx-titles h1 {
+  margin: 0;
+  font-size: 22px;
+  color: var(--ink, #111827);
+}
+
+.fcx-titles p {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--muted, #6b7280);
+}
+
+.fcx-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border, #e5e7eb);
+  background: #fff;
+  color: var(--ink-soft, #4b5563);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.fcx-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3, 12px);
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.fcx-filtros {
+  display: flex;
+  gap: 6px;
+}
+
+.fcx-filtro {
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border, #e5e7eb);
+  background: #fff;
+  color: var(--ink-soft, #4b5563);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fcx-filtro.is-on {
+  border-color: var(--terracotta, #c2410c);
+  background: var(--status-analise-bg, #fff7ed);
+  color: var(--terracotta, #c2410c);
+}
+
+/* Filtro por tipo: menor que o de status, porque é um recorte secundário. */
+.fcx-filtro-tipo {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px;
+  font-size: 12px;
+}
+
+.fcx-busca {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 220px;
+  min-width: 180px;
+  padding: 7px 12px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--muted, #6b7280);
+}
+
+.fcx-busca input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink, #111827);
+  background: transparent;
+}
+
+/* O contador de atrasados é clicável: ver o número e não poder ir até eles é
+   a parte irritante de um alerta. */
+.fcx-vencidos {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--status-reprovado-fg, #b91c1c);
+  background: var(--status-reprovado-bg, #fee2e2);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--status-reprovado-fg, #b91c1c);
+  cursor: pointer;
+}
+
+.fcx-erro {
+  font-size: 13px;
+  color: var(--status-reprovado-fg, #b91c1c);
+}
+
+.fcx-vazio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 0;
+  font-size: 14px;
+  color: var(--muted, #6b7280);
+}
+
+/* Vazio com explicação: "nada aqui" sozinho não diz se é fila limpa, filtro
+   apertado ou tela quebrada. */
+.fcx-vazio-bloco {
+  flex-direction: column;
+  text-align: center;
+  gap: 6px;
+  padding: 48px 20px;
+  border: 1px dashed var(--border, #e5e7eb);
+  border-radius: 12px;
+}
+
+.fcx-vazio-bloco strong {
+  font-size: 15px;
+  color: var(--ink, #111827);
+}
+
+.fcx-vazio-bloco span {
+  font-size: 13px;
+  max-width: 380px;
+}
+
+.fcx-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fcx-item {
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 12px;
+  background: #fff;
+  padding: 14px 16px;
+}
+
+/* Fora do prazo ganha a borda vermelha: numa fila, o que está atrasado tem de
+   se distinguir sem precisar ler a data de cada linha. */
+.fcx-item.is-late {
+  border-color: var(--status-reprovado-fg, #b91c1c);
+}
+
+.fcx-item-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.fcx-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.fcx-tag-bug {
+  background: var(--status-reprovado-bg, #fee2e2);
+  color: var(--status-reprovado-fg, #b91c1c);
+}
+
+.fcx-tag-melhoria {
+  background: var(--status-analise-bg, #fff7ed);
+  color: var(--status-analise-fg, #c2410c);
+}
+
+.fcx-tag-elogio {
+  background: var(--status-aprovado-bg, #dcfce7);
+  color: var(--status-aprovado-fg, #15803d);
+}
+
+.fcx-autor {
+  font-size: 13px;
+  color: var(--ink, #111827);
+}
+
+.fcx-meta {
+  font-size: 12px;
+  color: var(--muted, #6b7280);
+}
+
+.fcx-prazo {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft, #4b5563);
+}
+
+.fcx-prazo.is-late {
+  color: var(--status-reprovado-fg, #b91c1c);
+}
+
+.fcx-prazo.is-done {
+  color: var(--status-aprovado-fg, #15803d);
+}
+
+.fcx-msg {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink, #111827);
+  white-space: pre-wrap;
+}
+
+.fcx-resposta {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--status-aprovado-fg, #15803d);
+  background: var(--bg-soft, #f9fafb);
+  border-radius: 0 8px 8px 0;
+}
+
+.fcx-resposta span {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+  color: var(--muted, #6b7280);
+  margin-bottom: 4px;
+}
+
+.fcx-resposta p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink, #111827);
+  white-space: pre-wrap;
+}
+
+.fcx-responder {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.fcx-responder .fc-textarea {
+  flex: 1;
+}
+
+.fcx-aguardando {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--muted, #6b7280);
+}
