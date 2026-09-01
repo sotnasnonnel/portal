@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, ClipboardCheck, Workflow, Receipt, CreditCard, HandCoins,
+  LayoutDashboard, ClipboardCheck, Workflow, Receipt, CreditCard,
 } from 'lucide-react';
 import { SOLICITACOES_FIN } from '../../../../config/financeiro';
 
@@ -20,13 +20,36 @@ import { SOLICITACOES_FIN } from '../../../../config/financeiro';
 //   navega por aqui, então a área de Cartões não pode aparecer para ele.
 // - temReembolso: acesso ao módulo de Reembolsos, que tem gate próprio
 //   (reembolso_profiles) independente do acesso ao Financeiro.
+// - area: qual das duas o menu mostra. Ver areaDaRota, abaixo.
+
+/**
+ * Qual área a rota atual pertence — mesma mecânica do programaDaRota dos
+ * Programas. `null` fora das duas, e aí o menu lista tudo (nenhuma rota deste
+ * shell cai nesse caso hoje; é o padrão seguro se alguma surgir).
+ *
+ * Adiantamento é reembolso: reaproveita o fluxo inteiro e mora na mesma tabela
+ * (ver lib/kind.js), então a prestação de contas não pode trocar o menu no meio.
+ */
+export function areaDaRota(pathname = '') {
+  if (pathname.startsWith('/reembolsos') || pathname.startsWith('/adiantamentos')) {
+    return 'reembolsos';
+  }
+  if (pathname.startsWith('/financeiro')) return 'cartoes';
+  return null;
+}
+
 export function navSections({
   canAbrir = false, isAdmin = false, temFinanceiro = false, temReembolso = false,
-  vePainelReembolso = false,
+  vePainelReembolso = false, area = null,
 } = {}) {
   const secoes = [];
 
-  if (temFinanceiro) {
+  // O menu mostra SÓ A ÁREA EM QUE SE ESTÁ. Com as duas listadas, metade dele
+  // era de uma rotina que a pessoa não estava usando — e a escolha entre elas
+  // já acontece antes, no popup do card "Financeiro" da Home.
+  const mostra = (a) => !area || area === a;
+
+  if (temFinanceiro && mostra('cartoes')) {
     secoes.push({
       label: 'Cartões',
       group: true,
@@ -45,7 +68,7 @@ export function navSections({
     });
   }
 
-  if (temReembolso) {
+  if (temReembolso && mostra('reembolsos')) {
     secoes.push({
       label: 'Reembolsos',
       group: true,
@@ -54,12 +77,14 @@ export function navSections({
       items: [
         ...(vePainelReembolso ? [{ label: 'Dashboard', href: '/reembolsos/dashboard', Icon: LayoutDashboard }] : []),
         { label: 'Reembolsos', href: '/reembolsos', Icon: Receipt },
-        { label: 'Adiantamentos', href: '/adiantamentos', Icon: HandCoins },
       ],
     });
   }
 
-  if (isAdmin) {
+  // Os fluxos configurados aqui são os das solicitações de cartão (/financeiro/
+  // fluxos), então a seção acompanha os Cartões — no Reembolso ela apontaria
+  // para uma tela que não decide nada do que está na frente da pessoa.
+  if (isAdmin && mostra('cartoes')) {
     secoes.push({ label: 'Administração', items: [{ label: 'Fluxos de Aprovação', href: '/financeiro/fluxos', Icon: Workflow }] });
   }
   return secoes;

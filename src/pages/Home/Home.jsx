@@ -6,8 +6,10 @@ import { isSuperAdmin } from '../../config/superAdmin';
 import { podeAcessarAdm } from '../../config/administrativo';
 import { podeAcessarProgramas } from '../../config/programas';
 import { podeAcessarEstoque } from '../../config/estoque';
+import { areasFinanceiroDe } from '../../config/financeiro';
 import SolucoesModal from './SolucoesModal';
 import ProgramasModal from './ProgramasModal';
+import FinanceiroModal from './FinanceiroModal';
 import AvatarUsuario from '../../components/UI/AvatarUsuario';
 import { nomeCurto } from '../../utils/formatters';
 import './Home.css';
@@ -27,6 +29,12 @@ export default function Home() {
   const saudacao = nomeCurto(user?.nome);
   const [solucoesAbertas, setSolucoesAbertas] = useState(false);
   const [programasAbertos, setProgramasAbertos] = useState(false);
+  const [financeiroAberto, setFinanceiroAberto] = useState(false);
+
+  // Com as duas áreas liberadas, a escolha (Cartões / Reembolso) vem antes de
+  // entrar, como no card "Programas". Com uma só, o popup teria um botão
+  // sozinho — um clique a mais para não escolher nada —, então vai direto.
+  const areasFin = areasFinanceiroDe(modules);
 
   const cards = [
     {
@@ -95,16 +103,20 @@ export default function Home() {
       emBreve: !podeAcessarEstoque(user),
     },
     {
-      // Reembolsos deixou de ser card próprio: virou um grupo na sidebar do
-      // Financeiro. Quem tem só o Reembolso entra por aqui — sem isto, ficaria
-      // sem nenhuma porta de acesso.
-      to: modules.financeiro ? '/financeiro' : '/reembolsos',
+      // Cartões e Reembolso são duas rotinas sem relação uma com a outra, então
+      // o card abre a escolha em popup (ver AREAS_FINANCEIRO em
+      // config/financeiro.js). Com acesso a uma só, navega direto para ela —
+      // é também o que garante porta de entrada para quem tem só o Reembolso,
+      // que deixou de ser card próprio e virou grupo na sidebar do Financeiro.
+      ...(areasFin.length > 1
+        ? { acao: () => setFinanceiroAberto(true) }
+        : { to: areasFin[0]?.href || '/financeiro' }),
       icon: CreditCard,
       tone: 'blue',
       title: 'Financeiro',
       desc: 'Cartões virtuais, limites e reembolsos',
       // Sem acesso: card aparece esmaecido/com cadeado. Liberação em "Gerenciar acessos".
-      locked: !modules.financeiro && !modules.reembolso,
+      locked: areasFin.length === 0,
     },
     isSuperAdmin(user) && {
       to: '/portal-admin',
@@ -225,6 +237,7 @@ export default function Home() {
 
       {solucoesAbertas && <SolucoesModal onClose={() => setSolucoesAbertas(false)} />}
       {programasAbertos && <ProgramasModal onClose={() => setProgramasAbertos(false)} />}
+      {financeiroAberto && <FinanceiroModal onClose={() => setFinanceiroAberto(false)} />}
     </div>
   );
 }
