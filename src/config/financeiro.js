@@ -1,4 +1,4 @@
-import { CreditCard, TrendingUp } from 'lucide-react';
+import { CreditCard, Receipt, TrendingUp } from 'lucide-react';
 
 /**
  * Fonte única das solicitações do módulo Financeiro (espelha src/config/requisicoes.js).
@@ -27,6 +27,13 @@ export const modalidadeCartaoLabel = (v) => (v === 'fisico' ? 'Cartão físico' 
 
 /** Aviso de prazo mostrado (e repetido ao aprovador) quando o cartão é físico. */
 export const PRAZO_CARTAO_FISICO = 'Estimativa de 10 dias úteis para entrega.';
+
+/**
+ * O mesmo aviso para o virtual. Existe porque a ausência dele fazia o prazo
+ * parecer resposta só do físico: quem pedia virtual não tinha ideia se era na
+ * hora ou na mesma semana, e perguntava ao Financeiro.
+ */
+export const PRAZO_CARTAO_VIRTUAL = 'Liberado em até 48h.';
 
 export const getSolicitacaoFin = (slug) => SOLICITACOES_FIN.find((s) => s.slug === slug);
 export const getSolicitacaoFinPorTipo = (tipoDb) => SOLICITACOES_FIN.find((s) => s.tipoDb === tipoDb);
@@ -62,3 +69,43 @@ export const APLICACOES = [
   'Serviços profissionais',
   'Outros',
 ];
+
+// ============================ Áreas do Financeiro ============================
+
+/**
+ * As duas rotinas do módulo, na escolha que o card "Financeiro" da Home abre
+ * (FinanceiroModal.jsx) — mesmo desenho do card "Programas".
+ *
+ * São duas coisas diferentes, e é por isso que a escolha vem antes de entrar:
+ * CARTÃO é dinheiro da empresa adiantado num cartão; REEMBOLSO é dinheiro que
+ * a pessoa já gastou do próprio bolso e quer de volta. Quem chega no card sabe
+ * qual das duas quer — o que não sabia era em qual metade do módulo ela mora.
+ *
+ * `modulo` é a chave do acesso em `modules`: cada área tem gate próprio
+ * (reembolso_profiles é independente do acesso ao Financeiro), então o modal
+ * mostra só o que a pessoa pode abrir.
+ */
+export const AREAS_FINANCEIRO = [
+  {
+    slug: 'cartoes',
+    modulo: 'financeiro',
+    label: 'Cartões Clara',
+    icon: CreditCard,
+    desc: 'Peça um cartão, acompanhe limites e veja os cartões que já são seus.',
+    href: '/financeiro',
+    cta: 'Abrir cartões',
+  },
+  {
+    slug: 'reembolsos',
+    modulo: 'reembolso',
+    label: 'Reembolso',
+    icon: Receipt,
+    desc: 'Peça de volta o que você gastou do próprio bolso e acompanhe o pagamento.',
+    href: '/reembolsos',
+    cta: 'Abrir reembolsos',
+  },
+];
+
+/** Só as áreas que a pessoa pode abrir. Vazio = card travado na Home. */
+export const areasFinanceiroDe = (modules) =>
+  AREAS_FINANCEIRO.filter((a) => Boolean(modules?.[a.modulo]));

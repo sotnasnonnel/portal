@@ -1,22 +1,23 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { AlertCircle, Loader2, Target, Trash2, Trophy } from 'lucide-react';
+import { AlertCircle, Loader2, Pencil, Target, Trash2, Trophy } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import {
   ELEGIBILIDADE_LABEL, STATUS_ALAVANCA, STATUS_ALAVANCA_LABEL,
-  calcularPremio, ehAdminProgramas, ehComercial,
+  ehAdminProgramas, ehComercial,
 } from '../../../../config/programas';
 import { COR_BARRA } from '../../lib/paleta';
 import { ConfirmarExclusao, DetalheIndicacao } from '../components/Detalhe';
 import { listarIndicacoes, atualizarIndicacao, excluirIndicacao } from '../../lib/alavanca';
 import { resumoAlavanca } from '../../lib/indicadores';
-import ConcluirIndicacao from './ConcluirIndicacao';
 
 /**
  * Painel da Alavanca — "**Apenas para o time comercial" (planilha).
  *
- * Reúne o funil, a premiação, quem está indicando, o mapa geral (onde o status
- * e o comentário são editados) e o mapa de vencedores.
+ * Reúne o funil, o que ficou fora dele, a premiação, o mapa geral e o mapa de
+ * vencedores. A tabela é só leitura: avaliar uma indicação (status, comentário
+ * e valores) abre o diálogo em AvaliarIndicacao.jsx, que grava as três coisas
+ * de uma vez e manda um e-mail só para quem indicou.
  *
  * Mesma gramática do Painel da Inovação: contagem em cards compactos, número
  * escrito sempre que houver cor, e as tabelas longas rolando por dentro. Os
@@ -29,15 +30,46 @@ const dinheiro = (n) => (n == null
   ? '—'
   : Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }));
 
+/**
+ * Valor abreviado para os três números do card de premiação: "R$ 1,2M" no lugar
+ * de "R$ 1.200.000,00".
+ *
+ * Eles ficam lado a lado em fonte grande, e por extenso um contrato de sete
+ * dígitos ou quebrava a linha ou espremia as três colunas da grade. O valor
+ * exato não se perde: fica no `title` de cada um, e o mapa de vencedores — que
+ * é onde alguém confere pagamento — continua mostrando tudo, centavo a centavo.
+ *
+ * Só para totais. Na coluna da tabela o prêmio sai inteiro: lá o número é de
+ * UMA indicação, e "R$ 4,9K" no lugar de "R$ 4.850,00" seria esconder o que a
+ * pessoa vai receber.
+ */
+const dinheiroCurto = (n) => {
+  const v = Number(n || 0);
+  // Abaixo de mil não há o que encurtar, e "R$ 0,9K" esconderia os centavos de
+  // um valor que cabia inteiro.
+  if (Math.abs(v) < 1_000) return dinheiro(v);
+
+  // A unidade sai do valor JÁ ARREDONDADO, e não do cru: 999.999 arredonda para
+  // 1.000 mil, que impresso vira "R$ 1.000K" — um milhão escrito da forma mais
+  // confusa possível.
+  const emMil = v / 1_000;
+  const [valor, sufixo] = Math.abs(Math.round(emMil * 10) / 10) >= 1_000
+    ? [v / 1_000_000, 'M']
+    : [emMil, 'K'];
+  return `R$ ${valor.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}${sufixo}`;
+};
+
 export default function PainelAlavanca() {
   const { user, modules } = useAuth();
   const [linhas, setLinhas] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
-  const [salvando, setSalvando] = useState('');
-  const [concluindo, setConcluindo] = useState(null);
+  // "Salvando" é do popup, que tem o botão: o spinner precisa ficar no lugar em
+  // que o clique aconteceu, e não numa linha da tabela atrás dele.
+  // Uma indicação aberta e a aba em que ela abriu: o popup é o mesmo para ler e
+  // para avaliar, e o lápis da linha só escolhe por onde entrar.
   const [detalhe, setDetalhe] = useState(null);
-  const [rascunhos, setRascunhos] = useState({});   // comentário em edição, por id
+  const [abaDetalhe, setAbaDetalhe] = useState('detalhes');
   const [excluindo, setExcluindo] = useState('');
   const [confirmando, setConfirmando] = useState(null);   // indicação na fila de exclusão
   const [fStatus, setFStatus] = useState('');
@@ -74,49 +106,26 @@ export default function PainelAlavanca() {
     // Atenção só aqui: é a única nota que cobra uma decisão de quem está lendo.
     r.emAnalise > 0 ? { texto: `+ ${r.emAnalise} dependendo da sua confirmação`, alerta: true } : null,
     null,
-    r.premioTotal > 0 ? { texto: `${dinheiro(r.premioTotal)} em premiação` } : null,
+    // Também abreviado: é um total, e o pé da etapa é uma linha estreita.
+    r.premioTotal > 0 ? { texto: `${dinheiroCurto(r.premioTotal)} em premiação` } : null,
   ];
 
   // Gate de UI. Quem não é do comercial não perde nada: a RLS já esconderia as
   // indicações alheias, e a tela sem dados seria mais confusa que a Alavanca.
   if (!ehComercial(modules)) return <Navigate to="/programas/alavanca" replace />;
 
+  // Deixa a exceção SUBIR: quem chama é o popup, e é lá que o erro precisa
+  // aparecer — junto do formulário que o causou e com o popup ainda aberto.
+  // Engolir aqui e devolver `false` mandava a mensagem para o topo do painel,
+  // atrás do popup, onde ninguém a via.
   const aplicar = async (indicacao, mudancas) => {
-    setSalvando(indicacao.id);
-    setErro('');
-    try {
-      const nova = await atualizarIndicacao(indicacao, mudancas, user.id);
-      setLinhas((atual) => atual.map((l) => (l.id === indicacao.id ? nova : l)));
-      return true;
-    } catch (e) {
-      setErro(e.message);
-      return false;
-    } finally {
-      setSalvando('');
-    }
+    const nova = await atualizarIndicacao(indicacao, mudancas, user.id);
+    setLinhas((atual) => atual.map((l) => (l.id === indicacao.id ? nova : l)));
   };
 
-  // Concluir exige o valor do prêmio (regra do programa e CHECK do banco), então
-  // sai do <select> e vai para um diálogo próprio, em vez de gravar pela metade.
-  const trocarStatus = (indicacao, novo) => {
-    if (novo === 'concluida') return setConcluindo(indicacao);
-    return aplicar(indicacao, { status: novo });
-  };
-
-  // A célula do comentário nasce como TEXTO. A caixa de edição em toda linha
-  // punia as indicações que ninguém vai comentar: a tabela inteira virava
-  // formulário e cada linha ganhava a altura do campo.
-  const editarComentario = (indicacao) =>
-    setRascunhos((a) => ({ ...a, [indicacao.id]: indicacao.comentario || '' }));
-
-  const cancelarComentario = (indicacao) =>
-    setRascunhos((a) => ({ ...a, [indicacao.id]: undefined }));
-
-  const salvarComentario = async (indicacao) => {
-    const texto = rascunhos[indicacao.id];
-    if (texto === undefined) return;
-    const ok = await aplicar(indicacao, { comentario: texto });
-    if (ok) setRascunhos((a) => ({ ...a, [indicacao.id]: undefined }));
+  const abrir = (indicacao, aba = 'detalhes') => {
+    setAbaDetalhe(aba);
+    setDetalhe(indicacao);
   };
 
   // Excluir sai na própria linha, e só para o admin do módulo — é a regra da
@@ -189,7 +198,7 @@ export default function PainelAlavanca() {
               <span>
                 <strong>{r.emAnalise}</strong> indicação(ões) caíram em empresa já cadastrada com
                 contato novo. Pelas regras, valem se a oportunidade ainda não tiver sido mapeada —
-                confirme o status de cada uma abaixo.
+                abra cada uma e decida a elegibilidade na aba <strong>Avaliação</strong>.
               </span>
             </div>
           )}
@@ -226,34 +235,62 @@ export default function PainelAlavanca() {
                 );
               })}
             </ol>
-            {(r.naoElegiveis > 0 || r.pendentes > 0 || r.canceladas > 0) && (
-              <p className="pg-campo-dica">
-                Fora do funil:{' '}
-                {[
-                  r.naoElegiveis > 0 ? `${r.naoElegiveis} barrada(s) por não elegibilidade` : null,
-                  r.canceladas > 0 ? `${r.canceladas} cancelada(s) pelo comercial` : null,
-                  r.pendentes > 0 ? `${r.pendentes} sem verificação automática` : null,
-                ].filter(Boolean).join(' · ')}.
-              </p>
-            )}
           </div>
 
           <div className="pg-graficos">
+            {/* Fora do funil, em card e não mais numa linha de rodapé do funil.
+                As encerradas viraram a maior fatia da base (a maioria das
+                indicações não vira contrato — é o normal do programa), e uma
+                frase em cinza embaixo do gráfico escondia isso. Card também
+                separa as três saídas, que têm donos diferentes: encerrada é
+                decisão do comercial, não elegível é a checagem contra a base,
+                pendente é trabalho que ninguém fez ainda. */}
+            <div className="pg-card">
+              <h2 className="pg-card-tit">Fora do funil</h2>
+              <p className="pg-campo-dica">
+                Indicações que não seguem para contrato — por isso não aparecem nas etapas acima.
+                Cada uma conta num motivo só.
+              </p>
+              <dl className="pg-valores">
+                <div>
+                  <dt>Encerradas pelo comercial</dt>
+                  <dd>{r.encerradas}</dd>
+                </div>
+                <div>
+                  <dt>Barradas por não elegibilidade</dt>
+                  <dd>{r.naoElegiveis}</dd>
+                </div>
+                <div>
+                  <dt>Sem verificação automática</dt>
+                  <dd className={r.pendentes > 0 ? 'tom-atencao' : ''}>{r.pendentes}</dd>
+                </div>
+              </dl>
+            </div>
+
             <div className="pg-card">
               <h2 className="pg-card-tit">Premiação</h2>
               <p className="pg-campo-dica">0,5% do contrato, teto de R$ 10.000 por indicação.</p>
+              {/* `title` com o valor cheio em cada um: o número curto é para
+                  ler de longe, o exato para quem precisa conferir. */}
               <dl className="pg-valores">
                 <div>
                   <dt>Contratos fechados pelo programa</dt>
-                  <dd>{dinheiro(r.contratoTotal)}</dd>
+                  <dd title={dinheiro(r.contratoTotal)}>{dinheiroCurto(r.contratoTotal)}</dd>
                 </div>
                 <div>
                   <dt>Premiação já paga</dt>
-                  <dd className="tom-alta">{dinheiro(r.premioPago)}</dd>
+                  <dd className="tom-alta" title={dinheiro(r.premioPago)}>
+                    {dinheiroCurto(r.premioPago)}
+                  </dd>
                 </div>
                 <div>
                   <dt>A pagar</dt>
-                  <dd className={r.premioAPagar > 0 ? 'tom-atencao' : ''}>{dinheiro(r.premioAPagar)}</dd>
+                  <dd
+                    className={r.premioAPagar > 0 ? 'tom-atencao' : ''}
+                    title={dinheiro(r.premioAPagar)}
+                  >
+                    {dinheiroCurto(r.premioAPagar)}
+                  </dd>
                 </div>
               </dl>
             </div>
@@ -263,8 +300,8 @@ export default function PainelAlavanca() {
           <div className="pg-card">
             <h2 className="pg-card-tit">Mapa de indicações</h2>
             <p className="pg-campo-dica">
-              Mudar o status ou deixar um comentário já conta como evolução — e quem indicou recebe
-              o retorno por e-mail a cada mudança de status.
+              Status, comentário e premiação se editam juntos no lápis de cada linha. Ao salvar,
+              quem indicou recebe um e-mail com o status e o comentário.
             </p>
 
             {filtradas.length === 0 ? (
@@ -284,135 +321,90 @@ export default function PainelAlavanca() {
                       <th>Status</th>
                       <th>Comentário</th>
                       <th>Premiação</th>
-                      {souAdmin && <th className="col-acoes">Ações</th>}
+                      <th className="col-acoes">Ações</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filtradas.map((i) => {
-                      const rascunho = rascunhos[i.id];
-                      const emEdicao = rascunho !== undefined;
-                      return (
-                        <tr key={i.id}>
-                          <td className="num">#{i.numero}</td>
-                          <td>
-                            <button type="button" className="pg-link" onClick={() => setDetalhe(i)}>
-                              {i.oportunidade}
-                            </button>
-                            <span className="pg-motivo">{i.descricao}</span>
-                          </td>
-                          <td>
-                            {i.empresa}
-                            <span className="pg-motivo">
-                              {i.contato_nome} — {i.contato_cargo}<br />
-                              {i.contato_telefone} · {i.contato_email}
-                            </span>
-                          </td>
-                          <td>
-                            {i.indicadorNome || '—'}
-                            <span className="pg-motivo">{data(i.criado_em)}</span>
-                          </td>
-                          <td>
-                            <span className={`pg-badge tom-${i.elegibilidade}`}>
-                              {ELEGIBILIDADE_LABEL[i.elegibilidade] || i.elegibilidade}
-                            </span>
-                            {i.elegibilidade_motivo && <span className="pg-motivo">{i.elegibilidade_motivo}</span>}
-                          </td>
-                          <td>
-                            <select
-                              className="pg-select"
-                              value={i.status}
-                              disabled={salvando === i.id}
-                              onChange={(e) => trocarStatus(i, e.target.value)}
-                              aria-label={`Status da indicação ${i.numero}`}
-                            >
-                              {STATUS_ALAVANCA.map((s) => (
-                                <option key={s.valor} value={s.valor}>{s.label}</option>
-                              ))}
-                            </select>
-                          </td>
-                          <td className="col-coment">
-                            {emEdicao ? (
-                              <>
-                                <textarea
-                                  className="pg-textarea"
-                                  // Foco na caixa que acabou de abrir: quem clicou já quer digitar.
-                                  autoFocus
-                                  value={rascunho}
-                                  onChange={(e) => setRascunhos((a) => ({ ...a, [i.id]: e.target.value }))}
-                                  placeholder="Anote o andamento…"
-                                  aria-label={`Comentário da indicação ${i.numero}`}
-                                />
-                                <div className="pg-cel-acao pg-cel-acoes">
-                                  <button
-                                    type="button"
-                                    className="pg-btn pg-btn-primary pg-btn-sm"
-                                    disabled={salvando === i.id}
-                                    onClick={() => salvarComentario(i)}
-                                  >
-                                    Salvar
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="pg-btn pg-btn-ghost pg-btn-sm"
-                                    disabled={salvando === i.id}
-                                    onClick={() => cancelarComentario(i)}
-                                  >
-                                    Cancelar
-                                  </button>
-                                </div>
-                              </>
-                            ) : (
-                              // Botão, e não div com onClick: a célula é editável e
-                              // precisa receber foco e abrir com Enter.
-                              <button
-                                type="button"
-                                className="pg-coment"
-                                onClick={() => editarComentario(i)}
-                                aria-label={`Editar comentário da indicação ${i.numero}`}
-                              >
-                                <span className={i.comentario ? '' : 'is-vazio'}>
-                                  {i.comentario || '—'}
-                                </span>
-                              </button>
-                            )}
-                          </td>
-                          <td className="num">
-                            {/* O próprio valor abre a edição, como o comentário
-                                ao lado: um botão embaixo de cada linha concluída
-                                dobrava a altura dela para repetir o que o clique
-                                no número já diz. */}
-                            {i.status === 'concluida' ? (
-                              <button
-                                type="button"
-                                className="pg-valor-edit"
-                                onClick={() => setConcluindo(i)}
-                                title="Editar premiação"
-                              >
-                                {dinheiro(i.valor_premio)}
-                              </button>
-                            ) : (
-                              dinheiro(i.valor_premio)
-                            )}
-                            {i.valor_contrato != null && (
-                              <span className="pg-motivo">Contrato: {dinheiro(i.valor_contrato)}</span>
-                            )}
-                          </td>
-                          {souAdmin && (
-                            <td className="col-acoes">
-                              <button
-                                type="button"
-                                className="pg-icone-acao"
-                                onClick={() => setConfirmando(i)}
-                                title="Excluir indicação"
-                                aria-label={`Excluir ${i.oportunidade}`}
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </td>
+                    {filtradas.map((i) => (
+                      /* A linha inteira abre a indicação: o alvo de clique era
+                         só o nome, e errar por uma célula não fazia nada. O
+                         botão do nome CONTINUA existindo — é por ele que se
+                         chega aqui pelo teclado, coisa que <tr onClick> não
+                         resolve. */
+                      <tr key={i.id} className="is-clicavel" onClick={() => abrir(i)}>
+                        <td className="num">#{i.numero}</td>
+                        <td>
+                          <button type="button" className="pg-link" onClick={() => abrir(i)}>
+                            {i.oportunidade}
+                          </button>
+                          <span className="pg-motivo">{i.descricao}</span>
+                        </td>
+                        <td>
+                          {i.empresa}
+                          <span className="pg-motivo">
+                            {i.contato_nome} — {i.contato_cargo}<br />
+                            {i.contato_telefone} · {i.contato_email}
+                          </span>
+                        </td>
+                        <td>
+                          {i.indicadorNome || '—'}
+                          <span className="pg-motivo">{data(i.criado_em)}</span>
+                        </td>
+                        <td>
+                          <span className={`pg-badge tom-${i.elegibilidade}`}>
+                            {ELEGIBILIDADE_LABEL[i.elegibilidade] || i.elegibilidade}
+                          </span>
+                          {i.elegibilidade_motivo && <span className="pg-motivo">{i.elegibilidade_motivo}</span>}
+                        </td>
+                        {/* Status, comentário e premiação são LEITURA na tabela:
+                            os três se editam juntos no diálogo, que é o que
+                            dispara um e-mail só para quem indicou. */}
+                        <td>
+                          <span className={`pg-badge tom-${i.status}`}>
+                            {STATUS_ALAVANCA_LABEL[i.status] || i.status}
+                          </span>
+                        </td>
+                        <td className="col-coment">
+                          <span className={`pg-cel-texto ${i.comentario ? '' : 'is-vazio'}`}>
+                            {i.comentario || '—'}
+                          </span>
+                        </td>
+                        <td className="num">
+                          {dinheiro(i.valor_premio)}
+                          {i.valor_contrato != null && (
+                            <span className="pg-motivo">Contrato: {dinheiro(i.valor_contrato)}</span>
                           )}
-                        </tr>
-                      );
-                    })}
+                        </td>
+                        {/* stopPropagation em cada ação: sem isso o clique
+                            subiria para a linha e o popup abriria por baixo da
+                            confirmação de exclusão. */}
+                        <td className="col-acoes">
+                          {/* Avaliar é a ação da linha, e vale para todo o
+                              comercial. Excluir continua só do admin — é a regra
+                              da RLS, não uma escolha da tela. */}
+                          <button
+                            type="button"
+                            className="pg-icone-acao"
+                            onClick={(e) => { e.stopPropagation(); abrir(i, 'avaliacao'); }}
+                            title="Avaliar indicação"
+                            aria-label={`Avaliar ${i.oportunidade}`}
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          {souAdmin && (
+                            <button
+                              type="button"
+                              className="pg-icone-acao is-perigo"
+                              onClick={(e) => { e.stopPropagation(); setConfirmando(i); }}
+                              title="Excluir indicação"
+                              aria-label={`Excluir ${i.oportunidade}`}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -469,22 +461,27 @@ export default function PainelAlavanca() {
         />
       )}
 
-      <DetalheIndicacao indicacao={detalhe} onFechar={() => setDetalhe(null)} />
-
-      {concluindo && (
-        <ConcluirIndicacao
-          indicacao={concluindo}
-          salvando={salvando === concluindo.id}
-          onFechar={() => setConcluindo(null)}
-          onConfirmar={async (valores) => {
-            const ok = await aplicar(concluindo, {
-              status: 'concluida',
-              valor_contrato: valores.valorContrato,
-              valor_premio: valores.valorPremio ?? calcularPremio(valores.valorContrato),
-              pago_em: valores.pagoEm,
-            });
-            if (ok) setConcluindo(null);
-          }}
+      {/* `key` por indicação E por aba de entrada: o popup guarda a aba num
+          estado seu, e sem remontar a segunda indicação abriria na aba em que a
+          primeira foi deixada — clicar no nome cairia direto no formulário. */}
+      {detalhe && (
+        <DetalheIndicacao
+          key={`${detalhe.id}-${abaDetalhe}`}
+          indicacao={detalhe}
+          abaInicial={abaDetalhe}
+          onFechar={() => setDetalhe(null)}
+          onAvaliar={(indicacao, valores) => aplicar(indicacao, {
+            status: valores.status,
+            elegibilidade: valores.elegibilidade,
+            elegibilidade_motivo: valores.motivo,
+            comentario: valores.comentario,
+            valor_contrato: valores.valorContrato,
+            // Sem recalcular por cima: o formulário já aplicou a regra dos 0,5%
+            // e o que chega aqui é a decisão do comercial. Recalcular fazia um
+            // prêmio apagado de propósito voltar sozinho no salvamento.
+            valor_premio: valores.valorPremio,
+            pago_em: valores.pagoEm,
+          })}
         />
       )}
     </div>

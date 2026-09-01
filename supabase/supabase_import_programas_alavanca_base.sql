@@ -3,6 +3,12 @@
 -- Fonte: "Base - Alavanca.xlsx" (export da lista do SharePoint, 105 linhas).
 -- (Aplicada no portal_phd em 2026-08-28.)
 --
+-- NÃO RODA MAIS COMO ESTÁ: em 2026-08-31 'cancelada' e 'em_evolucao' viraram
+-- 'encerrada' e o CHECK deixou de aceitar 'cancelada'
+-- (supabase_migration_alavanca_encerrada.sql). Reaplicar esta carga exige
+-- traduzir os status abaixo antes -- o arquivo fica como registro do que foi
+-- lido da planilha, e é assim que ele deve ser lido.
+--
 -- O ARQUIVO VEM DESALINHADO: o exportador gravou só as células preenchidas, em
 -- sequência, então de "Data / Hora" em diante os valores caem na coluna errada
 -- (39 linhas trazem "Item", que é do Item Type, na coluna Status). A leitura

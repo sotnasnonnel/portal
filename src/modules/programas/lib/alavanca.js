@@ -118,12 +118,13 @@ export async function criarIndicacao(valores, autorId) {
 }
 
 /**
- * Atualização do "mapa geral" pelo time comercial: status, comentário e, na
- * conclusão, a premiação.
+ * Atualização do "mapa geral" pelo time comercial: status, comentário e
+ * premiação.
  *
- * Um método só para as três coisas porque elas viajam juntas na tela (a linha
- * do mapa é editada de uma vez) e porque o CHECK do banco exige o valor do
- * prêmio junto da conclusão — em chamadas separadas, uma delas quebraria.
+ * Um método só para as três coisas porque elas viajam juntas na tela — o
+ * diálogo de avaliação grava as três de uma vez — e porque o CHECK do banco
+ * exige o valor do prêmio junto da conclusão: em chamadas separadas, uma delas
+ * quebraria.
  */
 export async function atualizarIndicacao(indicacao, mudancas, autorId) {
   const patch = { updated_at: new Date().toISOString() };
@@ -132,9 +133,25 @@ export async function atualizarIndicacao(indicacao, mudancas, autorId) {
   if (mudancas.valor_contrato !== undefined) patch.valor_contrato = mudancas.valor_contrato ?? null;
   if (mudancas.valor_premio !== undefined) patch.valor_premio = mudancas.valor_premio ?? null;
   if (mudancas.pago_em !== undefined) patch.pago_em = mudancas.pago_em || null;
+  // Elegibilidade é automática (ver elegibilidade.js), mas o comercial pode
+  // sobrepor: "Depende do comercial" existe justamente porque a máquina não
+  // sabe se a oportunidade já tinha sido mapeada, e sem esta escrita a
+  // indicação ficava presa nesse estado para sempre. O trigger do banco já
+  // deixava a coluna fora das duas travas, à espera disto.
+  if (mudancas.elegibilidade !== undefined) patch.elegibilidade = mudancas.elegibilidade;
+  if (mudancas.elegibilidade_motivo !== undefined) {
+    patch.elegibilidade_motivo = (mudancas.elegibilidade_motivo || '').trim() || null;
+  }
 
   const concluindo = patch.status === 'concluida' && indicacao.status !== 'concluida';
   if (concluindo) patch.concluida_em = new Date().toISOString();
+
+  // Carimbo de QUANDO a elegibilidade foi decidida. Sem isto a linha do tempo
+  // continuaria mostrando a data da checagem automática que o comercial acabou
+  // de contrariar.
+  if (patch.elegibilidade !== undefined && patch.elegibilidade !== indicacao.elegibilidade) {
+    patch.elegibilidade_em = new Date().toISOString();
+  }
 
   const { data, error } = await supabase
     .from('programas_alavanca')
@@ -145,29 +162,70 @@ export async function atualizarIndicacao(indicacao, mudancas, autorId) {
   if (error) throw new Error(`Não foi possível atualizar a indicação: ${error.message}`);
   if (!data) throw new Error('Só o time comercial pode atualizar o mapa de indicações.');
 
+  // O que mudou de fato. Comparado campo a campo contra a indicação que veio da
+  // tela, e não pelo "o campo foi enviado?": o diálogo manda os cinco campos
+  // sempre, inclusive os que o comercial só olhou.
+  const mudou = (campo, comparar = (a, b) => a !== b) =>
+    patch[campo] !== undefined && comparar(patch[campo], indicacao[campo]);
+  const comoNumero = (a, b) => Number(a || 0) !== Number(b || 0);
+
+  const mudouStatus = mudou('status');
+  const mudouComentario = mudou('comentario');
+  const mudouPremio = mudou('valor_premio', comoNumero);
+  const mudouContrato = mudou('valor_contrato', comoNumero);
+  const mudouPagamento = mudou('pago_em');
+  // O motivo entra junto: é ele que o e-mail mostra como "Motivo:", então
+  // corrigir só a explicação — mantendo o veredito — também é notícia.
+  const mudouElegibilidade = mudou('elegibilidade') || mudou('elegibilidade_motivo');
+
   const eventos = [];
-  if (patch.status && patch.status !== indicacao.status) {
+  if (mudouElegibilidade) {
+    eventos.push({
+      indicacao_id: indicacao.id, tipo: 'elegibilidade', autor_id: autorId,
+      de: indicacao.elegibilidade, para: patch.elegibilidade ?? indicacao.elegibilidade,
+      texto: `Decidida pelo comercial. ${patch.elegibilidade_motivo ?? indicacao.elegibilidade_motivo ?? ''}`.trim(),
+    });
+  }
+  if (mudouStatus) {
     eventos.push({
       indicacao_id: indicacao.id, tipo: 'status', autor_id: autorId,
       de: indicacao.status, para: patch.status,
     });
   }
-  if (patch.comentario !== undefined && patch.comentario !== indicacao.comentario) {
+  if (mudouComentario) {
     eventos.push({
       indicacao_id: indicacao.id, tipo: 'comentario', autor_id: autorId, texto: patch.comentario,
     });
   }
-  if (concluindo) {
+  // Premiação vira evento sempre que o valor muda, e não só na conclusão: o
+  // valor passou a ser editável em qualquer status, e uma correção de prêmio
+  // sem registro é exatamente o tipo de mudança que ninguém consegue explicar
+  // depois. A data de pagamento entra no mesmo evento — é o outro lado do
+  // dinheiro, e um evento por campo encheria a linha do tempo de ruído.
+  if (concluindo || mudouPremio || mudouContrato || mudouPagamento) {
+    const premio = Number(patch.valor_premio ?? indicacao.valor_premio ?? 0)
+      .toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    const quando = patch.pago_em ?? indicacao.pago_em;
     eventos.push({
       indicacao_id: indicacao.id, tipo: 'premiacao', autor_id: autorId,
-      texto: `Prêmio de R$ ${Number(patch.valor_premio || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      texto: `Prêmio de R$ ${premio}${quando ? ` · pagamento em ${quando}` : ''}`,
     });
   }
   if (eventos.length) await supabase.from('programas_alavanca_eventos').insert(eventos);
 
-  // Só avisa quando algo mudou de verdade para quem indicou. Comentário interno
-  // sem troca de status não gera e-mail — viraria ruído.
-  if (patch.status && patch.status !== indicacao.status) {
+  // O retorno sai a cada salvamento do diálogo de avaliação, e não só na troca
+  // de status. O comentário é o que EXPLICA a decisão: com o e-mail preso ao
+  // status, quem indicou recebia "Em evolução" sem uma linha de contexto, e o
+  // comentário escrito em seguida não chegava nunca.
+  //
+  // Vale para os valores também. Presa ao status, a data de pagamento era
+  // preenchida em silêncio — e ela é justamente a notícia que quem indicou está
+  // esperando. Salvar sem mexer em nada continua não mandando nada.
+  //
+  // O ruído que a regra antiga evitava morreu junto com a edição em três
+  // lugares: agora é uma sentada de trabalho, um salvar, um e-mail — e o
+  // diálogo avisa que ele vai sair (ver AvaliarIndicacao.jsx).
+  if (eventos.length) {
     notificarPrograma('alavanca_retorno', { indicacao_id: indicacao.id });
   }
 

@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Loader2, Check, Infinity as InfinityIcon, Truck } from 'lucide-react';
+import { Loader2, Check, Infinity as InfinityIcon, Truck, Clock } from 'lucide-react';
 import CurrencyInput from '../../../../../components/CurrencyInput';
 import { parseCurrency } from '../../../../../utils/currencyMask';
 import { mascaraTelefone, telefoneValido } from '../../../../../utils/phoneMask';
-import { APLICACOES, MODALIDADES_CARTAO, PRAZO_CARTAO_FISICO } from '../../../../../config/financeiro';
+import {
+  APLICACOES, MODALIDADES_CARTAO, PRAZO_CARTAO_FISICO, PRAZO_CARTAO_VIRTUAL,
+} from '../../../../../config/financeiro';
 import {
   ENDERECO_VAZIO, UFS, mascaraCep, faltasEndereco, enderecoCompleto, formatarEnderecoEntrega,
 } from '../endereco';
@@ -197,12 +199,12 @@ export default function FormCartaoVirtual({ sol }) {
               </label>
             ))}
           </div>
-          {fisico && (
-            <div className="alc-modificador">
-              <Truck size={13} />
-              {PRAZO_CARTAO_FISICO}
-            </div>
-          )}
+          {/* Cada modalidade responde "e quando chega?" na hora em que a pessoa
+              escolhe — o prazo só do físico fazia o virtual parecer sem prazo. */}
+          <div className="alc-modificador">
+            {fisico ? <Truck size={13} /> : <Clock size={13} />}
+            {fisico ? PRAZO_CARTAO_FISICO : PRAZO_CARTAO_VIRTUAL}
+          </div>
         </div>
 
         {/* Endereço em campos separados: no campo único o pedido chegava ao
