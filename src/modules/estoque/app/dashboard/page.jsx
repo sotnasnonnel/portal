@@ -5,11 +5,11 @@ import { useAuth } from '../../../../contexts/AuthContext';
 import { ehOperadorEstoque } from '../../../../config/estoque';
 import { listarPosicao, listarMovimentos, listarChamadosElegiveis } from '../../lib/estoque';
 import {
-  resumoPosicao, topDeficit, consumoMensal, entradaSaidaMensal,
+  resumoPosicao, consumoMensal, entradaSaidaMensal,
   topConsumidos, entregasPorColaborador, valorPorCategoria,
 } from '../../lib/indicadores';
 import {
-  GraficoDeficit, GraficoConsumo, GraficoRanking, GraficoEntradaSaida, GraficoValor,
+  GraficoConsumo, GraficoRanking, GraficoEntradaSaida, GraficoValor,
 } from '../components/Charts';
 import ListaSituacao from '../components/ListaSituacao';
 
@@ -63,7 +63,6 @@ export default function DashboardEstoque() {
     const ref = new Date().toISOString();
     return {
       resumo: resumoPosicao(posicao),
-      deficit: topDeficit(posicao, 10),
       consumo: consumoMensal(movs, ref, MESES),
       giro: entradaSaidaMensal(movs, ref, MESES),
       itens: topConsumidos(movs, 10),
@@ -94,12 +93,18 @@ export default function DashboardEstoque() {
       {erro && <div className="est-aviso tom-erro"><AlertCircle size={16} /> {erro}</div>}
 
       <div className="est-tiles">
-        <Link className="est-tile est-tile-link" to="/estoque/posicao">
-          <strong>{resumo.skus}</strong><span>variações ativas</span>
-        </Link>
-        <div className="est-tile">
-          <strong>{resumo.pecas}</strong><span>peças em estoque</span>
-        </div>
+        {/* O que há de cada categoria, separando peça nova de usada — a leitura
+            que o almoxarifado faz primeiro. Levam à Posição já filtrada. */}
+        {resumo.porCategoria.map((c) => (
+          <Link key={c.categoria} className="est-tile est-tile-link"
+            to={`/estoque/posicao?categoria=${c.categoria}`}>
+            <strong>{c.pecas}</strong>
+            <span>{c.categoria === 'epi' ? 'peças de EPI' : 'peças de uniforme'}</span>
+            <span className="est-tile-quebra">
+              {c.novas} nova{c.novas === 1 ? '' : 's'} · {c.usadas} usada{c.usadas === 1 ? '' : 's'}
+            </span>
+          </Link>
+        ))}
         {/* Os três indicadores de situação abrem a lista por trás do número:
             saber QUAIS são é o passo seguinte imediato de quem olha o painel. */}
         <button type="button"
@@ -174,12 +179,6 @@ export default function DashboardEstoque() {
       )}
 
       <div className="est-graficos">
-        <div className="est-grafico">
-          <h3>Reposição urgente</h3>
-          <p>Os 10 itens com maior diferença entre o saldo e o mínimo.</p>
-          <div className="est-grafico-area"><GraficoDeficit data={ind.deficit} /></div>
-        </div>
-
         <div className="est-grafico">
           <h3>Consumo mensal</h3>
           <p>Peças entregues por mês, separadas por categoria.</p>

@@ -50,26 +50,20 @@ export function resumoPosicao(posicao) {
     // referência não trazia essas colunas, então no começo é o caso de todos.
     semMinimo: ativos.filter((v) => !Number(v.estoque_minimo)).length,
     semMaximo: ativos.filter((v) => v.estoque_maximo === null || v.estoque_maximo === undefined).length,
+    // Quanto há de cada categoria, separando peça nova de usada — é a leitura
+    // que o almoxarifado faz primeiro ("tenho quantos EPIs?"), e a que a
+    // planilha dava de graça nas colunas USADO e NOVO.
+    porCategoria: ['epi', 'uniforme'].map((categoria) => {
+      const doTipo = ativos.filter((v) => v.categoria === categoria);
+      return {
+        categoria,
+        variacoes: doTipo.length,
+        novas: doTipo.reduce((s2, v) => s2 + (Number(v.saldo_novo) || 0), 0),
+        usadas: doTipo.reduce((s2, v) => s2 + (Number(v.saldo_usado) || 0), 0),
+        pecas: doTipo.reduce((s2, v) => s2 + (Number(v.saldo) || 0), 0),
+      };
+    }),
   };
-}
-
-/**
- * O que repor primeiro. Ordena pelo DÉFICIT (mínimo − saldo), não pelo saldo:
- * um item com mínimo 20 e saldo 3 é mais urgente que outro zerado cujo mínimo
- * é 1. Item sem mínimo cadastrado e zerado entra com déficit 1, senão sumiria
- * da lista justamente quando acabou.
- */
-export function topDeficit(posicao, n = 10) {
-  return (posicao || [])
-    .filter((v) => v.ativo !== false && EM_ALERTA.has(v.situacao))
-    .map((v) => ({
-      name: rotuloVariante(v),
-      saldo: Number(v.saldo) || 0,
-      minimo: Number(v.estoque_minimo) || 0,
-      deficit: Math.max(1, (Number(v.estoque_minimo) || 0) - (Number(v.saldo) || 0)),
-    }))
-    .sort((a, b) => b.deficit - a.deficit || a.saldo - b.saldo)
-    .slice(0, n);
 }
 
 const ehSaida = (m) => m.tipo === 'saida';
@@ -145,7 +139,7 @@ export function valorPorCategoria(posicao) {
  * Ordena pelo que decide a ação, não pelo nome: em falta, quem tem o maior
  * buraco a preencher; em excesso, quem tem mais peça parada. Item sem mínimo
  * cadastrado e zerado entra com déficit 1, senão sumiria justamente quando
- * acabou (mesma regra de topDeficit).
+ * acabou.
  */
 export function listaPorSituacao(posicao, situacao) {
   const num = (v) => Number(v) || 0;

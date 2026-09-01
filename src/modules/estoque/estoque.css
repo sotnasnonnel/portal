@@ -391,3 +391,6 @@
   .est-modal-overlay { padding: 0; align-items: flex-end; }
   .est-modal { max-height: 88vh; width: 100%; border-radius: var(--card-radius) var(--card-radius) 0 0; }
 }
+
+/* Terceira linha do tile: a quebra do número de cima (nova/usada). */
+.est-tile-quebra { font-size: var(--font-size-2xs); color: var(--e-muted); }

@@ -39,26 +39,6 @@ export function Vazio({ children = 'Sem dados no período.' }) {
 const semDados = (data, chaves) =>
   !data?.length || data.every((d) => chaves.every((k) => !d[k]));
 
-/** Reposição: barra do saldo contra a linha do mínimo, item a item. */
-export function GraficoDeficit({ data }) {
-  const estreito = useMediaQuery(ESTREITO);
-  if (!data?.length) return <Vazio>Nada abaixo do mínimo. Estoque em dia.</Vazio>;
-  return (
-    <ResponsiveContainer width="100%" height="100%">
-      <BarChart data={data} layout="vertical" margin={{ top: 4, right: 16, left: 4, bottom: 4 }}>
-        <CartesianGrid stroke={GRID} horizontal={false} />
-        <XAxis type="number" tick={tickStyle} tickLine={false} axisLine={{ stroke: GRID }} allowDecimals={false} />
-        <YAxis type="category" dataKey="name" tick={tickStyle} tickLine={false} axisLine={false}
-          width={estreito ? 96 : 168} tickFormatter={cortaTick} />
-        <Tooltip cursor={{ fill: 'rgba(109, 40, 217, .06)' }} />
-        <Legend wrapperStyle={{ fontSize: 12, color: TICK }} />
-        <Bar dataKey="saldo" name="Saldo" fill={VERMELHO} radius={[0, 5, 5, 0]} minPointSize={2} />
-        <Bar dataKey="minimo" name="Mínimo" fill={GRID} radius={[0, 5, 5, 0]} />
-      </BarChart>
-    </ResponsiveContainer>
-  );
-}
-
 /** Consumo mês a mês, uma linha por categoria. */
 export function GraficoConsumo({ data }) {
   if (semDados(data, ['epi', 'uniforme'])) return <Vazio />;

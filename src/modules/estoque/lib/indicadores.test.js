@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  mesDe, janelaDeMeses, resumoPosicao, topDeficit, consumoMensal,
+  mesDe, janelaDeMeses, resumoPosicao, consumoMensal,
   entradaSaidaMensal, topConsumidos, entregasPorColaborador, valorPorCategoria,
   listaPorSituacao,
 } from './indicadores.js';
@@ -49,6 +49,25 @@ test('resumoPosicao ignora inativos e conta o que falta custo', () => {
   assert.equal(r.semCusto, 2);
 });
 
+test('resumoPosicao quebra por categoria, separando nova de usada', () => {
+  const p = [
+    { categoria: 'epi', saldo_novo: 5, saldo_usado: 2, saldo: 7, situacao: 'ok', ativo: true },
+    { categoria: 'epi', saldo_novo: 0, saldo_usado: 3, saldo: 3, situacao: 'ok', ativo: true },
+    { categoria: 'uniforme', saldo_novo: 10, saldo_usado: 0, saldo: 10, situacao: 'ok', ativo: true },
+    { categoria: 'epi', saldo_novo: 99, saldo_usado: 99, saldo: 198, situacao: 'ok', ativo: false },
+  ];
+  const [epi, uni] = resumoPosicao(p).porCategoria;
+  assert.deepEqual(epi, { categoria: 'epi', variacoes: 2, novas: 5, usadas: 5, pecas: 10 });
+  assert.deepEqual(uni, { categoria: 'uniforme', variacoes: 1, novas: 10, usadas: 0, pecas: 10 });
+});
+
+// Categoria sem nenhum item precisa aparecer zerada, não sumir do painel.
+test('resumoPosicao devolve as duas categorias mesmo vazias', () => {
+  const [epi, uni] = resumoPosicao([]).porCategoria;
+  assert.equal(epi.pecas, 0);
+  assert.equal(uni.pecas, 0);
+});
+
 test('listaPorSituacao devolve o que o indicador está contando', () => {
   assert.deepEqual(listaPorSituacao(POSICAO, 'sem_estoque').map((v) => v.id), ['a']);
   assert.deepEqual(listaPorSituacao(POSICAO, 'abaixo_minimo').map((v) => v.id), ['b']);
@@ -81,21 +100,6 @@ test('listaPorSituacao ordena pelo que decide a ação', () => {
 test('listaPorSituacao dá déficit 1 ao zerado sem mínimo', () => {
   const p = [{ id: 'z', descricao: 'MOCHILA', saldo: 0, estoque_minimo: 0, situacao: 'sem_estoque', ativo: true }];
   assert.equal(listaPorSituacao(p, 'sem_estoque')[0].deficit, 1);
-});
-
-// Ordenar por saldo poria o capacete zerado (mínimo 2) à frente da botina
-// (mínimo 20, saldo 3), quando faltam 17 botinas e 2 capacetes.
-test('topDeficit ordena pelo que falta, não pelo saldo', () => {
-  const t = topDeficit(POSICAO);
-  assert.equal(t.length, 2);
-  assert.match(t[0].name, /BOTINA/);
-  assert.equal(t[0].deficit, 17);
-  assert.equal(t[1].deficit, 2);
-});
-
-test('topDeficit não some com item zerado sem mínimo cadastrado', () => {
-  const p = [{ id: 'z', categoria: 'epi', descricao: 'MOCHILA', saldo: 0, estoque_minimo: 0, situacao: 'sem_estoque', ativo: true }];
-  assert.equal(topDeficit(p)[0].deficit, 1);
 });
 
 test('consumoMensal separa por categoria e ignora entrada e ajuste', () => {
@@ -153,7 +157,6 @@ test('valorPorCategoria só conta quem tem custo e omite categoria zerada', () =
 
 test('as agregações aguentam lista vazia ou nula', () => {
   assert.equal(resumoPosicao(null).skus, 0);
-  assert.deepEqual(topDeficit(null), []);
   assert.deepEqual(topConsumidos(null), []);
   assert.equal(consumoMensal(null, REF, 2).length, 2);
 });

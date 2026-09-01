@@ -28,20 +28,25 @@ export default function PosicaoEstoque() {
   const [ocupado, setOcupado] = useState('');
 
   const [termo, setTermo] = useState('');
-  const [categoria, setCategoria] = useState('');
   const [apenasAlerta, setApenasAlerta] = useState(false);
   const [verInativas, setVerInativas] = useState(false);
 
   // O painel manda para cá com a situação na URL ao clicar num indicador
   // (/estoque/posicao?situacao=acima_maximo). Fica na URL, e não no estado, para
   // o link ser compartilhável e o voltar do navegador funcionar.
+  // Situação e categoria vêm na URL: é assim que o painel manda a pessoa para
+  // cá ao clicar num indicador ou num cartão de categoria. Na URL, e não no
+  // estado, para o link ser compartilhável e o voltar do navegador funcionar.
   const [params, setParams] = useSearchParams();
   const situacao = params.get('situacao') || '';
-  const trocarSituacao = (nova) => {
+  const categoria = params.get('categoria') || '';
+  const trocarParam = (chave, valor) => {
     const p = new URLSearchParams(params);
-    if (nova) p.set('situacao', nova); else p.delete('situacao');
+    if (valor) p.set(chave, valor); else p.delete(chave);
     setParams(p, { replace: true });
   };
+  const trocarSituacao = (nova) => trocarParam('situacao', nova);
+  const setCategoria = (nova) => trocarParam('categoria', nova);
 
   const [editando, setEditando] = useState(null);   // id da variante em edição
   const [rascunho, setRascunho] = useState({});
