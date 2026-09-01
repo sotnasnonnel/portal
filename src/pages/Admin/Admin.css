@@ -575,3 +575,39 @@
   .aus-marcacao-acoes { justify-content: flex-end; }
   .aus-form-actions { margin-left: 0; }
 }
+
+/* Busca da lista de solicitações. Fica na mesma barra dos chips de tipo:
+   filtrar por tipo ainda deixa dezenas de cartões, e quem procura uma
+   requisição específica já sabe o nome de quem ela trata. */
+.sol-busca {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.sol-busca svg {
+  position: absolute;
+  left: 9px;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+.sol-busca input {
+  height: 32px;
+  width: 220px;
+  padding: 0 10px 0 30px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full, 999px);
+  background: var(--color-bg-white);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+}
+.sol-busca input::placeholder { color: var(--color-text-muted); }
+.sol-busca input:focus {
+  outline: none;
+  border-color: var(--color-secondary);
+  box-shadow: 0 0 0 3px rgba(38, 64, 93, 0.12);
+}
+
+@media (max-width: 640px) {
+  .sol-busca, .sol-busca input { width: 100%; }
+}
