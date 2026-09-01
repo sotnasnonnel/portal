@@ -34,6 +34,14 @@ export const ESTOQUE_LIBERADOS = [
   'marcus.guimaraes@phdengenharia.eng.br',
   'andre.guimaraes@phdengenharia.eng.br',
   'lennon.santos@phdengenharia.eng.br',
+  // Time do Administrativo que vai operar o almoxarifado. Todos já têm
+  // administrativo_role, então entram como OPERADORES (movimentam), não só
+  // como consulta — a liberação aqui é só de visibilidade do módulo.
+  'jarbas.junior@phdengenharia.eng.br',      // coordenador adm — admin
+  'alessandra.sobral@phdengenharia.eng.br',  // analista adm
+  'perla.passos@phdengenharia.eng.br',       // técnica de segurança do trabalho
+  'daniela.sebrian@phdengenharia.eng.br',    // gerente financeiro
+  'mauricio.silva@phdengenharia.eng.br',
 ];
 
 export const podeAcessarEstoque = (user) => !ESTOQUE_EM_BREVE
