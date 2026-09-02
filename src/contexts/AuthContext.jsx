@@ -152,6 +152,9 @@ export function AuthProvider({ children }) {
         horasRole: colab.horas_role || null,               // elevação só-do-Horas (ver horasRoleFromPerfil)
         financeiroRole: colab.financeiro_role || null,     // acesso ao módulo Financeiro
         administrativoRole: colab.administrativo_role || null, // time do Adm (atendente/admin)
+        // Capacidade avulsa: trocar o responsável de um chamado do Adm. Não é
+        // papel — quem a tem pode ser admin ou atendente. O banco também barra.
+        admReatribui: colab.administrativo_reatribui === true,
         programasRole: colab.programas_role || null,           // time comercial dos Programas
         authId: authUser.id,
       });
