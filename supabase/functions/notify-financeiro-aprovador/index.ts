@@ -149,6 +149,9 @@ Deno.serve(async (req) => {
         .select("id, nome, email")
         .eq("financeiro_role", "admin")
         .eq("ativo", true)
+        // Quem pediu para sair da lista continua admin, com a tela inteira; só
+        // não recebe o aviso de execução aberta, que vai para o time todo.
+        .eq("recebe_email_listas", true)
         .not("email", "is", null);
       destinatarios = (data ?? []) as Dest[];
     }

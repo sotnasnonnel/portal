@@ -242,7 +242,8 @@ Deno.serve(async (req) => {
       // porque `funcao` é texto livre e acentuado: um ilike '%GERENTE%' deixaria
       // "Gerente" e "GERÊNCIA" de fora conforme quem digitou.
       const { data: todos, error: eTodos } = await supabase
-        .from("colaboradores").select("email, funcao").eq("ativo", true).not("email", "is", null);
+        .from("colaboradores").select("email, funcao")
+        .eq("ativo", true).eq("recebe_email_listas", true).not("email", "is", null);
       if (eTodos) return json({ error: eTodos.message }, 500);
       destinatarios = [...new Set(
         (todos ?? [])
@@ -310,7 +311,7 @@ Deno.serve(async (req) => {
         const { data: todos, error: eTodos } = await supabase
           .from("colaboradores")
           .select("email, funcao, programas_role")
-          .eq("ativo", true).not("email", "is", null);
+          .eq("ativo", true).eq("recebe_email_listas", true).not("email", "is", null);
         if (eTodos) return json({ error: eTodos.message }, 500);
         destinatarios = [...new Set(
           (todos ?? [])
@@ -410,6 +411,7 @@ Deno.serve(async (req) => {
         // (programas_role = 'admin'), lido aqui para não sair do navegador.
         const { data: admins, error: eAdmins } = await supabase
           .from("colaboradores").select("email").eq("ativo", true)
+          .eq("recebe_email_listas", true)
           .eq("programas_role", "admin").not("email", "is", null);
         if (eAdmins) return json({ error: eAdmins.message }, 500);
         destinatarios = [...new Set((admins ?? []).map((c) => (c.email ?? "").trim()).filter(Boolean))];
