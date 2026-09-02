@@ -2,19 +2,21 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Loader2, AlertCircle, Send, Paperclip, FileText, Lock, UserCheck,
-  CheckCircle2, RotateCcw, Star, CircleDot,
+  CheckCircle2, RotateCcw, Star, CircleDot, Users, X,
 } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { getClasse, getServico } from '../../../../config/administrativo';
+import { getClasse, getServico, podeReatribuirAdm } from '../../../../config/administrativo';
 import { contextoDoChamado } from '../../lib/rotulos';
 import { rotuloDoCampo, formatarValorCampo, CAMPOS_OCULTOS } from '../novo/formularios/schemas';
 import {
   buscarChamado, listarInteracoes, listarEventos, listarEtapas, responder, marcarLidas,
   assumirChamado, fecharChamado, fecharChamadoComBaixa, reabrirChamado, avaliarChamado, urlDoAnexo,
+  listarTimeAdm, definirResponsavel,
 } from '../../lib/chamados';
 import FluxoAprovacao from './FluxoAprovacao';
 import BaixaEstoque from './BaixaEstoque';
 import { montarLinhaDoTempo, textoDoEvento } from '../../lib/linhaDoTempo';
+import { ehEncerrado } from '../../lib/statusChamado';
 import {
   chamadoDeEstoque, chamadoUsaEstoque, categoriaDoChamado, montarLinhasDeBaixa, validarLinhasDeBaixa,
   linhasComQuantidade,
@@ -56,6 +58,12 @@ export default function ChamadoAdm() {
   const [erro, setErro] = useState('');
   const [ocupado, setOcupado] = useState('');
 
+  // Troca de responsável: só coordenação usa, então o time só é buscado
+  // quando o painel abre — quem nunca clica não paga a consulta.
+  const [trocando, setTrocando] = useState(false);
+  const [timeAdm, setTimeAdm] = useState([]);
+  const [novoResponsavel, setNovoResponsavel] = useState('');
+
   const [mensagem, setMensagem] = useState('');
   const [interna, setInterna] = useState(false);
   const [resolucao, setResolucao] = useState('');
@@ -95,6 +103,17 @@ export default function ChamadoAdm() {
   }, [id, user?.id]);
 
   useEffect(() => { carregar(); }, [carregar]);
+
+  // Time do Adm para o seletor de responsável. Buscado só quando o painel de
+  // troca abre: é ação de coordenação, usada por duas pessoas.
+  useEffect(() => {
+    if (!trocando || timeAdm.length) return undefined;
+    let cancelado = false;
+    listarTimeAdm()
+      .then((t) => { if (!cancelado) setTimeAdm(t); })
+      .catch((e) => { if (!cancelado) setErro(e.message); });
+    return () => { cancelado = true; };
+  }, [trocando, timeAdm.length]);
 
   /**
    * SALDO, para o time do Adm — em QUALQUER status do chamado.
@@ -203,6 +222,7 @@ export default function ChamadoAdm() {
       && !(Array.isArray(v) && v.length === 0));
 
   const linhaDoTempo = montarLinhaDoTempo({ eventos, mensagens: interacoes });
+  const podeTrocarResponsavel = podeReatribuirAdm(user) && !ehEncerrado(chamado.status);
   const emAndamento = ['aberto', 'em_atendimento', 'aguardando_solicitante'].includes(chamado.status);
   const podeAssumir = souAdm && chamado.atendente_id !== user?.id && emAndamento;
   const podeFechar = (souAdm || chamado.atendente_id === user?.id) && emAndamento;
@@ -399,6 +419,14 @@ export default function ChamadoAdm() {
               <UserCheck size={16} /> Assumir chamado
             </button>
           )}
+          {/* Assumir é pegar para si; isto é colocar no nome de outra pessoa,
+              para quando o responsável não registrou que pegou o chamado. */}
+          {podeTrocarResponsavel && !trocando && (
+            <button type="button" className="adm-btn adm-btn-ghost" disabled={!!ocupado}
+              onClick={() => { setTrocando(true); setNovoResponsavel(chamado.atendente_id || ''); }}>
+              <Users size={16} /> Alterar responsável
+            </button>
+          )}
           {podeReabrir && (
             <button type="button" className="adm-btn adm-btn-ghost" disabled={!!ocupado}
               onClick={() => acao('reabrir', () => reabrirChamado(chamado.id, chamado.reaberturas))}>
@@ -406,6 +434,50 @@ export default function ChamadoAdm() {
             </button>
           )}
         </div>
+
+        {podeTrocarResponsavel && trocando && (
+          <div className="adm-trocar-resp">
+            <label htmlFor="adm-novo-resp">Responsável pelo atendimento</label>
+            <div className="adm-linha">
+              <select
+                id="adm-novo-resp"
+                className="adm-select"
+                value={novoResponsavel}
+                onChange={(e) => setNovoResponsavel(e.target.value)}
+                disabled={!timeAdm.length || !!ocupado}
+              >
+                {/* Sem responsável é opção legítima: devolve o chamado à fila
+                    para quem estiver livre assumir. */}
+                <option value="">— Sem responsável —</option>
+                {timeAdm.map((p) => (
+                  <option key={p.id} value={p.id}>{p.nome}</option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="adm-btn adm-btn-primary"
+                disabled={!!ocupado || novoResponsavel === (chamado.atendente_id || '')}
+                onClick={() => acao('reatribuir', async () => {
+                  await definirResponsavel(chamado.id, novoResponsavel);
+                  setTrocando(false);
+                })}
+              >
+                {ocupado === 'reatribuir'
+                  ? <Loader2 size={16} className="adm-spin" />
+                  : <CheckCircle2 size={16} />} Salvar
+              </button>
+              <button type="button" className="adm-btn adm-btn-ghost" disabled={!!ocupado}
+                onClick={() => setTrocando(false)}>
+                <X size={16} /> Cancelar
+              </button>
+            </div>
+            <span className="adm-campo-dica">
+              {timeAdm.length
+                ? 'A troca fica registrada no histórico do chamado.'
+                : 'Carregando o time do Administrativo…'}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Saber se TEM o item antes de prometer a entrega, sem trocar de módulo.

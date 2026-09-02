@@ -43,6 +43,25 @@ export const ADM_LIBERADOS = [
   'lennon.santos@phdengenharia.eng.br',
 ];
 
+/**
+ * Quem pode trocar o responsável de um chamado.
+ *
+ * Mais restrito que "time do Adm": assumir é pegar para si, e qualquer
+ * atendente pode; trocar o responsável é mexer na fila alheia, e é decisão de
+ * coordenação. Fica por e-mail porque não há papel no banco que separe estas
+ * duas pessoas do resto do time — Jarbas é admin e Daniela é atendente.
+ *
+ * Isto é um gate de TELA. A RLS deixa qualquer um do time do Adm gravar o
+ * campo; se a restrição precisar valer de verdade, tem que virar policy.
+ */
+export const ADM_PODE_REATRIBUIR = [
+  'jarbas.junior@phdengenharia.eng.br',
+  'daniela.sebrian@phdengenharia.eng.br',
+];
+
+export const podeReatribuirAdm = (user) =>
+  ADM_PODE_REATRIBUIR.includes((user?.email || '').trim().toLowerCase());
+
 export const podeAcessarAdm = (user) => !ADM_EM_BREVE
   || ADM_LIBERADOS.includes((user?.email || '').trim().toLowerCase());
 

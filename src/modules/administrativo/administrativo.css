@@ -1012,3 +1012,17 @@
   .adm-fila-periodo { width: 100%; }
   .adm-fila-periodo input { flex: 1; }
 }
+
+/* Painel de troca de responsável. Nasce fechado e fica logo abaixo das ações,
+   para a mudança acontecer no mesmo lugar em que se decide por ela. */
+.adm-trocar-resp {
+  display: flex; flex-direction: column; gap: 6px;
+  margin-top: 12px; padding: 12px 14px;
+  background: var(--a-gray-50); border: 1px solid var(--a-border); border-radius: 10px;
+}
+.adm-trocar-resp > label {
+  font-size: var(--font-size-2xs); font-weight: 700; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--a-muted);
+}
+.adm-trocar-resp .adm-linha { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.adm-trocar-resp .adm-select { flex: 1 1 220px; min-width: 0; }

@@ -62,6 +62,19 @@ export async function listarPessoas() {
   return data || [];
 }
 
+/**
+ * Time do Adm — os únicos que podem ser responsáveis por um chamado.
+ *
+ * Separado de `listarPessoas`, que devolve a empresa inteira: aquilo serve
+ * para escolher aprovador, mas atribuir o chamado a alguém de fora do time o
+ * tiraria da fila, e ele só reapareceria para essa pessoa.
+ */
+export async function listarTimeAdm() {
+  const { data, error } = await supabase.rpc('chamados_adm_time');
+  if (error) throw new Error(`Não foi possível carregar o time do Administrativo: ${error.message}`);
+  return data || [];
+}
+
 /** Grava (ou cria) a configuração do serviço. Só admin do Adm passa pela RLS. */
 export async function salvarConfigServico(classe, servico, dados) {
   const { error } = await supabase
@@ -935,12 +948,25 @@ const exigirLinha = (data, erro, mensagem) => {
 
 /** O atendente puxa o chamado para si (ou o admin reatribui). */
 export async function assumirChamado(chamadoId, atendenteId) {
+  return definirResponsavel(chamadoId, atendenteId, 'Não foi possível assumir o chamado');
+}
+
+/**
+ * Troca o responsável pelo atendimento. `atendenteId` nulo devolve o chamado à
+ * fila sem dono.
+ *
+ * Mesma gravação de `assumirChamado` — o que muda é a mensagem quando a RLS
+ * recusa: "não foi possível assumir" seria enganoso para quem está colocando o
+ * chamado no nome de outra pessoa. O histórico registra a troca sozinho, por
+ * gatilho no banco.
+ */
+export async function definirResponsavel(chamadoId, atendenteId, msg = 'Não foi possível trocar o responsável') {
   const { data, error } = await supabase
     .from('chamados_adm')
-    .update({ atendente_id: atendenteId, updated_at: new Date().toISOString() })
+    .update({ atendente_id: atendenteId || null, updated_at: new Date().toISOString() })
     .eq('id', chamadoId)
     .select('id');
-  exigirLinha(data, error, 'Não foi possível assumir o chamado');
+  exigirLinha(data, error, msg);
 }
 
 /** Fechamento com a "Resolução da solicitação" do passo 9 do POP. */
