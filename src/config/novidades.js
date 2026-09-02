@@ -11,6 +11,10 @@ import { BarChart3, Clock, FileClock } from 'lucide-react';
  * id que decide quem já viu o quê — mudar o id de uma versão antiga faz o aviso
  * dela voltar para todo mundo, então não reaproveite.
  *
+ * A versão não tem título: o aviso se apresenta pela data e pela contagem
+ * ("3 mudanças"), e o que mudou fica por conta dos itens. Uma manchete tentando
+ * resumir a lista inteira ou repetia os itens ou generalizava até não dizer nada.
+ *
  * Cada item fala de UMA mudança, na voz de quem usa ("o card mudou de nome"),
  * não na de quem programou ("refatoramos o módulo"). `modulo` é o rótulo do
  * chip; use o nome que aparece no card da Home.
@@ -31,7 +35,6 @@ export const NOVIDADES = [
   {
     id: '2026-09-01-dados-horas',
     data: '2026-09-01',
-    titulo: 'Dois cards mudaram de nome (e um mudou de jeito)',
     itens: [
       {
         icon: BarChart3,

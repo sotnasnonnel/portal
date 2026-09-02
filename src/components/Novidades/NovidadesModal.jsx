@@ -33,9 +33,10 @@ export default function NovidadesModal({ novidades = [], historico = false, onCl
 
   if (!novidades.length) return null;
 
-  // Com UMA versão (o caso normal), o título dela é o assunto do aviso e sobe
-  // para o hero. Com várias (histórico), o hero fica genérico e cada versão
-  // mantém o seu título no corpo, senão a primeira roubaria a manchete.
+  // Com UMA versão (o caso normal), a data dela é a manchete: resumir num
+  // título o que a lista logo abaixo já mostra era dizer a mesma coisa duas
+  // vezes. Com várias (histórico), o hero fica genérico e cada versão leva a
+  // sua data no corpo.
   const unica = novidades.length === 1 ? novidades[0] : null;
   const totalItens = novidades.reduce((n, v) => n + v.itens.length, 0);
 
@@ -54,32 +55,33 @@ export default function NovidadesModal({ novidades = [], historico = false, onCl
           </button>
 
           <span className="novid-hero-icon">
-            <Megaphone size={26} />
+            <Megaphone size={17} />
           </span>
 
-          <span className="novid-eyebrow">
-            Novidades
-            {unica && <span className="novid-eyebrow-sep">·</span>}
-            {unica && formatarData(unica.data)}
-          </span>
-
-          <h2 id="novid-titulo">{unica ? unica.titulo : 'O que mudou por aqui'}</h2>
-
-          {/* Só a contagem: o hero já diz o assunto, e explicar a ordem da
-              lista era uma frase para descrever o que se vê logo abaixo. */}
-          <p className="novid-hero-sub">
-            {totalItens} {totalItens === 1 ? 'mudança' : 'mudanças'}
-          </p>
+          {/* Data e contagem na MESMA linha: são duas etiquetas do mesmo fato,
+              e empilhadas viravam três alturas de cabeçalho antes da primeira
+              mudança — que é o que a pessoa abriu o aviso para ler. */}
+          <div className="novid-hero-txt">
+            <span className="novid-eyebrow">Novidades</span>
+            <div className="novid-hero-linha">
+              <h2 id="novid-titulo">{unica ? formatarData(unica.data) : 'O que mudou por aqui'}</h2>
+              <span className="novid-hero-sub">
+                {totalItens} {totalItens === 1 ? 'mudança' : 'mudanças'}
+              </span>
+            </div>
+          </div>
         </header>
 
         <div className="novid-body">
           {novidades.map((versao) => (
             <section key={versao.id} className="novid-versao">
-              {/* Só no histórico: com uma versão só, o título já está no hero. */}
+              {/* Só no histórico: com uma versão só, a data já está no hero. */}
               {!unica && (
                 <div className="novid-versao-head">
-                  <h3>{versao.titulo}</h3>
-                  <span className="novid-data">{formatarData(versao.data)}</span>
+                  <h3>{formatarData(versao.data)}</h3>
+                  <span className="novid-data">
+                    {versao.itens.length} {versao.itens.length === 1 ? 'mudança' : 'mudanças'}
+                  </span>
                 </div>
               )}
 
