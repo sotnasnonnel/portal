@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, Loader2, RefreshCw, Send, AlertTriangle, CheckCircle2, Search, Inbox } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../services/supabase';
+import { notificarFaleConoscoRespondido } from '../../services/notificarFaleConosco';
 import {
   SLA_HORAS,
   TIPOS_FALE_CONOSCO,
@@ -99,6 +100,8 @@ export default function FaleConoscoCaixa() {
       return;
     }
     setRascunho((r) => ({ ...r, [item.id]: '' }));
+    // A resposta chega por e-mail também: o sino só alcança quem volta ao portal.
+    notificarFaleConoscoRespondido(item.id);
     carregar();
   }
 
