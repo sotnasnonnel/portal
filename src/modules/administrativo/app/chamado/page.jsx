@@ -7,7 +7,9 @@ import {
 import { useAuth } from '../../../../contexts/AuthContext';
 import { getClasse, getServico, podeReatribuirAdm } from '../../../../config/administrativo';
 import { contextoDoChamado } from '../../lib/rotulos';
-import { rotuloDoCampo, formatarValorCampo, CAMPOS_OCULTOS } from '../novo/formularios/schemas';
+import {
+  rotuloDoCampo, formatarValorCampo, CAMPOS_OCULTOS, chavesDePessoa,
+} from '../novo/formularios/schemas';
 import {
   buscarChamado, listarInteracoes, listarEventos, listarEtapas, responder, marcarLidas,
   assumirChamado, fecharChamado, fecharChamadoComBaixa, reabrirChamado, avaliarChamado, urlDoAnexo,
@@ -228,6 +230,7 @@ export default function ChamadoAdm() {
 
   const linhaDoTempo = montarLinhaDoTempo({ eventos, mensagens: interacoes });
   const podeTrocarResponsavel = podeReatribuirAdm(user) && !ehEncerrado(chamado.status);
+  const chavesPessoa = new Set(chavesDePessoa(chamado.classe, chamado.servico));
   const emAndamento = ['aberto', 'em_atendimento', 'aguardando_solicitante'].includes(chamado.status);
   const podeAssumir = souAdm && chamado.atendente_id !== user?.id && emAndamento;
   const podeFechar = (souAdm || chamado.atendente_id === user?.id) && emAndamento;
@@ -316,7 +319,13 @@ export default function ChamadoAdm() {
           {campos.map(([chave, valor]) => (
             <div key={chave}>
               <dt>{rotuloDoCampo(chamado.classe, chamado.servico, chave)}</dt>
-              <dd>{formatarValorCampo(chamado.classe, chamado.servico, chave, valor)}</dd>
+              {/* Campo de pessoa guarda o id; o nome vem resolvido do banco.
+                  Sem o mapa, cairia o UUID na tela. */}
+              <dd>
+                {chavesPessoa.has(chave)
+                  ? (chamado.nomesDosCampos?.[valor] || valor)
+                  : formatarValorCampo(chamado.classe, chamado.servico, chave, valor)}
+              </dd>
             </div>
           ))}
         </dl>

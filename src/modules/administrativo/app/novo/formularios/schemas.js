@@ -79,6 +79,10 @@ export const SCHEMAS = {
   ],
   'frota/reserva-veiculos': [
     cc(),
+    // Quem vai dirigir. Sem isso o Adm não conseguia fechar a reserva com a
+    // locadora e tinha que perguntar por fora, chamado a chamado.
+    { chave: 'condutor_principal', rotulo: 'Condutor principal', tipo: 'pessoa', obrigatorio: true },
+    { chave: 'condutor_adicional', rotulo: 'Condutor adicional (se houver)', tipo: 'pessoa' },
     { chave: 'local_retirada', rotulo: 'Local de retirada', tipo: 'texto', obrigatorio: true },
     { chave: 'retirada_em', rotulo: 'Data e horário de retirada', tipo: 'datahora', obrigatorio: true },
     { chave: 'local_devolucao', rotulo: 'Local da devolução', tipo: 'texto', obrigatorio: true },
@@ -311,7 +315,26 @@ export function formatarValorCampo(classe, servico, chave, valor) {
  * "[object Object]". A tela do chamado o renderiza numa tabela própria, com
  * quantidade e saldo.
  */
-export const CAMPOS_OCULTOS = new Set(['profissional_id', 'pessoa_id', 'itens']);
+/** Chaves do serviço que guardam uma PESSOA — o valor é o id, não o nome. */
+export function chavesDePessoa(classe, servico) {
+  return (schemaDoServico(classe, servico) || [])
+    .filter((c) => c.tipo === 'pessoa')
+    .map((c) => c.chave);
+}
+
+/**
+ * Campos que a tela de detalhe não desenha.
+ *
+ * `itens` é um array de objetos e sairia como "[object Object]" — tem bloco
+ * próprio. `profissional_id` fica de fora porque a mobilização já grava o NOME
+ * em `profissional`, e mostrar os dois seria a mesma informação duas vezes.
+ *
+ * `pessoa_id` saiu daqui: agora `buscarChamado` resolve o nome, então o campo
+ * mostra quem foi escolhido em vez de um UUID. Enquanto estava escondido, a
+ * escolha do solicitante simplesmente sumia da tela, e as pessoas passaram a
+ * repetir o nome na observação para contornar.
+ */
+export const CAMPOS_OCULTOS = new Set(['profissional_id', 'itens']);
 
 export const usaDescricao = (classe, servico) => COM_DESCRICAO.has(`${classe}/${servico}`);
 export const usaAnexo = (classe, servico) => !SEM_ANEXO.has(`${classe}/${servico}`);
