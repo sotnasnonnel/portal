@@ -14,7 +14,7 @@ import {
   updateReimbursementStatus,
 } from "../services/reimbursements.js";
 import { reconcileAdvance } from "../lib/advanceAccountability.js";
-import { formatCurrency, formatDate } from "../lib/format.js";
+import { formatBillable, formatCurrency, formatDate } from "../lib/format.js";
 import { evaluatePolicyOverage, REGRAS_VALOR_ATIVAS } from "../lib/reimbursementPolicy.js";
 import { kindMeta } from "../lib/kind.js";
 import StatusBadge from "../components/StatusBadge.jsx";
@@ -473,6 +473,8 @@ export default function ReembolsoDetail() {
             <dd>{formatDate(reembolso.request_date)}</dd>
             <dt>Cliente / Obra</dt>
             <dd>{reembolso.client_obra}</dd>
+            <dt>Reembolsável pelo cliente</dt>
+            <dd>{formatBillable(reembolso.billable_to_client, { long: true })}</dd>
             {reembolso.manager_name && (
               <>
                 <dt>Gestor imediato</dt>

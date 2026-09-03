@@ -46,3 +46,11 @@ export function todayIso() {
   const local = new Date(d.getTime() - off * 60 * 1000);
   return local.toISOString().slice(0, 10);
 }
+
+// "Reembolsável pelo cliente?" — true: o cliente reembolsa; false: custo da
+// empresa; null: pedido anterior ao campo (não perguntava).
+export function formatBillable(value, { long = false } = {}) {
+  if (value == null) return "—";
+  if (long) return value ? "Sim, o cliente reembolsa" : "Não, custo da empresa";
+  return value ? "Sim" : "Não";
+}

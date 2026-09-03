@@ -1,7 +1,7 @@
 /* Aviso de novidades da plataforma, aberto pela Home.
    Casca do Guia (overlay escuro + cartão branco arredondado) com um hero
-   próprio: este popup abre SOZINHO, uma vez por versão, e precisa se anunciar
-   antes de ser lido — daí o cabeçalho grande em vez de uma barra de título.
+   próprio: este popup abre SOZINHO, uma vez por versão, e a faixa terracota o
+   identifica em um olhar — sem roubar a altura da lista, que é o conteúdo.
    Rampa neutra do ui.css + acento terracota do portal; medidas em px, como o
    Guia, para não depender da escala de cada módulo. */
 .novid-overlay {
@@ -49,10 +49,17 @@
 
 /* ------------------------------- Hero ---------------------------------- */
 
+/* Faixa, não pódio: o cabeçalho identifica o aviso e sai da frente. O que a
+   pessoa abriu para ler são as mudanças, logo abaixo — cabeçalho alto demais
+   empurrava a primeira delas para fora da primeira tela. */
 .novid-hero {
   position: relative;
-  padding: 28px 28px 24px;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  /* Folga à direita para o texto não passar por baixo do botão de fechar. */
+  padding: 14px 56px 14px 20px;
+  text-align: left;
   color: #fff;
   /* Único bloco colorido do popup. O resto é a neutra do portal: se o corpo
      também fosse terracota, nada dentro dele teria destaque. */
@@ -79,56 +86,64 @@
 .novid-hero-icon {
   display: grid;
   place-items: center;
-  width: 60px;
-  height: 60px;
-  margin: 0 auto 14px;
-  border-radius: 20px;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
   background: rgba(255, 255, 255, 0.18);
   border: 1px solid rgba(255, 255, 255, 0.35);
   color: #fff;
 }
 
+.novid-hero-txt {
+  min-width: 0;
+}
+
 .novid-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  display: block;
   font-size: var(--font-size-2xs, 11px);
   font-weight: 700;
   letter-spacing: var(--ls-wide, 0.06em);
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.88);
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.2;
 }
 
-.novid-eyebrow-sep {
-  opacity: 0.6;
+/* Data e contagem lado a lado; quebram juntas em tela estreita. */
+.novid-hero-linha {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 2px;
 }
 
 .novid-hero h2 {
-  margin: 6px 0 0;
-  font-size: var(--font-size-2xl, 22px);
+  margin: 0;
+  font-size: var(--font-size-base, 16px);
   font-weight: var(--fw-bold, 700);
-  line-height: var(--lh-tight, 1.25);
+  line-height: 1.3;
   letter-spacing: var(--ls-tight, -0.02em);
 }
 
-/* Só a contagem — vira selo, não frase: duas palavras soltas no meio do hero
-   pareciam uma linha que ficou pela metade. */
+/* A contagem vira selo, não frase: ao lado da data, ela se lê como etiqueta. */
 .novid-hero-sub {
   display: inline-block;
-  margin: 12px auto 0;
-  padding: 4px 12px;
+  margin: 0;
+  padding: 2px 9px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.18);
   border: 1px solid rgba(255, 255, 255, 0.28);
-  font-size: var(--font-size-xs, 12px);
+  font-size: var(--font-size-2xs, 11px);
   font-weight: var(--fw-semibold, 600);
-  line-height: var(--lh-normal, 1.5);
+  line-height: 1.5;
   color: #fff;
 }
 
 .novid-close {
   position: absolute;
-  top: 14px;
+  top: 50%;
+  transform: translateY(-50%);
   right: 14px;
   z-index: 2;
   display: grid;

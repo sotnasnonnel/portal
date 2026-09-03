@@ -135,6 +135,8 @@ export async function createReimbursement({ header, items, nfImages }) {
       manager_name: header.manager_name ?? null,
       request_date: header.request_date,
       client_obra: header.client_obra,
+      // reembolsável pelo cliente? (obrigatório no formulário)
+      billable_to_client: header.billable_to_client ?? null,
       pix_key: header.pix_key ?? null,
       notes: header.notes ?? null,
       // só envia kind quando for adiantamento (reembolso usa o default da coluna,
@@ -278,6 +280,7 @@ export async function updateReimbursement(id, { header, items, nfImages, removed
     .update({
       request_date: header.request_date,
       client_obra: header.client_obra,
+      billable_to_client: header.billable_to_client ?? null,
       manager_id: header.manager_id ?? null,
       manager_name: header.manager_name ?? null,
       pix_key: header.pix_key ?? null,
