@@ -5,7 +5,7 @@
 
 import { jsPDF } from "jspdf";
 import { autoTable } from "jspdf-autotable";
-import { formatCurrency, formatDate } from "../lib/format.js";
+import { formatBillable, formatCurrency, formatDate } from "../lib/format.js";
 import { computePaymentDate } from "../lib/reimbursementPolicy.js";
 import { STATUS_LABEL } from "./reimbursements.js";
 import { refToDataUrl } from "./nfStorage.js";
@@ -126,6 +126,8 @@ export async function generateReembolsoPdf(r) {
   field(dataLabel, formatDate(r.request_date), col1, y);
   const payDate = effectivePaymentDate(r);
   field("Data de pagamento", payDate ? formatDate(payDate) : "—", col2, y);
+  y += lineH;
+  field("Reembolsável pelo cliente", formatBillable(r.billable_to_client, { long: true }), col1, y);
   y += lineH;
 
   // Valor solicitado x aprovado (mostra o desconto quando houver)

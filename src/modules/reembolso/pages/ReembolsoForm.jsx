@@ -60,6 +60,8 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
   // adiantamento: data em que o solicitante precisa do valor (vira a data de pagamento)
   const [neededDate, setNeededDate] = useState("");
   const [clientObra, setClientObra] = useState("");
+  // Reembolsável pelo cliente? "sim" | "nao" | "" (obrigatório escolher).
+  const [billable, setBillable] = useState("");
   const [pixKey, setPixKey] = useState(profile?.pix_key ?? "");
   const [gestores, setGestores] = useState([]);
   const [managerId, setManagerId] = useState(profile?.manager_id ?? "");
@@ -140,6 +142,7 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
       setRequestDate(data.request_date ?? todayIso());
       setNeededDate(data.payment_date ?? "");
       setClientObra(data.client_obra ?? "");
+      setBillable(data.billable_to_client == null ? "" : data.billable_to_client ? "sim" : "nao");
       setPixKey(data.pix_key ?? "");
       setManagerId(data.manager_id ?? "");
       setNotes(data.notes ?? "");
@@ -313,6 +316,10 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
       setError("Informe o Cliente/Obra.");
       return;
     }
+    if (billable !== "sim" && billable !== "nao") {
+      setError("Informe se a despesa é reembolsável pelo cliente.");
+      return;
+    }
     if (isAdiantamento && !neededDate) {
       setError("Informe a data em que você precisa do valor.");
       return;
@@ -334,6 +341,7 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
     }
 
     const manager = gestores.find((g) => g.id === managerId);
+    const billableToClient = billable === "sim";
 
     const mappedItems = validItems.map((it, idx) => ({
       qty: Number(it.qty || 1),
@@ -356,6 +364,7 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
         header: {
           request_date: requestDate,
           client_obra: clientObra.trim(),
+          billable_to_client: billableToClient,
           manager_id: managerId,
           manager_name: manager?.display_name || manager?.full_name || null,
           pix_key: pixKey.trim() || null,
@@ -386,6 +395,7 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
         requester_name: profile?.display_name || profile?.full_name || "Convidado",
         request_date: requestDate,
         client_obra: clientObra.trim(),
+        billable_to_client: billableToClient,
         manager_id: selfApprove ? null : managerId,
         manager_name: selfApprove ? null : manager?.display_name || manager?.full_name || null,
         pix_key: pixKey.trim() || null,
@@ -538,6 +548,21 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
                   <option value={OBRA_OUTRA}>Outro (digitar)</option>
                 </select>
               )}
+            </label>
+            <label className="field">
+              <span>Reembolsável pelo cliente?</span>
+              <select
+                value={billable}
+                onChange={(e) => setBillable(e.target.value)}
+                required
+              >
+                <option value="">Selecione…</option>
+                <option value="sim">Sim — o cliente reembolsa</option>
+                <option value="nao">Não — custo da empresa</option>
+              </select>
+              <small className="field-hint">
+                Diz ao Financeiro se esta despesa será cobrada do cliente da obra.
+              </small>
             </label>
             {selfApprove ? (
               <label className="field">

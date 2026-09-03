@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AlertCircle, CalendarCheck, Clock, FileText, Loader2, Plus, RefreshCw } from "lucide-react";
 import { listReimbursements, paidAmount, STATUS, STATUS_LABEL } from "../services/reimbursements.js";
-import { formatCurrency, formatDate, relativeDays } from "../lib/format.js";
+import { formatBillable, formatCurrency, formatDate, relativeDays } from "../lib/format.js";
 import { kindMeta } from "../lib/kind.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import StatusBadge from "../components/StatusBadge.jsx";
@@ -207,6 +207,7 @@ export default function Reembolsos({ kind = "reembolso" }) {
               <tr>
                 <th>Solicitante</th>
                 <th>Cliente / Obra</th>
+                <th title="Reembolsável pelo cliente?">Cliente reembolsa</th>
                 <th>Data</th>
                 <th className="num">Total</th>
                 <th>Status</th>
@@ -230,6 +231,7 @@ export default function Reembolsos({ kind = "reembolso" }) {
                 >
                   <td data-label="Solicitante">{row.requester_name}</td>
                   <td data-label="Cliente / Obra">{row.client_obra}</td>
+                  <td data-label="Cliente reembolsa">{formatBillable(row.billable_to_client)}</td>
                   <td data-label="Data">{formatDate(row.request_date)}</td>
                   <td className="num" data-label="Total">
                     {formatCurrency(
