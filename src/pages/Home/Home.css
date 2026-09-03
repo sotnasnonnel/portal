@@ -284,31 +284,35 @@
    clara (fundo_home.png), e o botão branco desaparecia dentro dela. A cor é a
    da marca — a mesma da logo ao lado —, o que também o distingue do "Sair",
    que é o botão neutro da barra. */
-/* "Novidades" fica ao lado do "Fale conosco", mas em versão fantasma: o botão
-   laranja cheio é a ação da barra (falar com a gente); este aqui é consulta.
-   Dois botões preenchidos lado a lado disputariam a mesma atenção. */
-.home-novidades {
+/* Botões redondos só de ícone da barra: "Novidades" e o sino de notificações.
+   Ficam ao lado do "Fale conosco" em versão fantasma: o botão laranja cheio é
+   a ação da barra (falar com a gente); estes são consulta. O sino vem do
+   PortalHeader, cujo estilo é escopado a `.portal-header`, então aqui ele
+   recebe o mesmo desenho do Novidades. */
+.home-iconbtn,
+.home-user .notif-btn {
   position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  border-radius: 9999px;
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
   border: 1px solid var(--border, #e5e7eb);
   background: #fff;
   color: var(--text, #1b2735);
-  font-size: var(--font-size-sm);
-  font-weight: 600;
   cursor: pointer;
   transition: background 150ms ease, border-color 150ms ease;
 }
 
-.home-novidades:hover {
+.home-iconbtn:hover,
+.home-user .notif-btn:hover {
   background: var(--bg-soft, #f2f2f2);
   border-color: #d1d5db;
 }
 
-.home-novidades:focus-visible {
+.home-iconbtn:focus-visible,
+.home-user .notif-btn:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px rgba(195, 94, 30, 0.35);
 }
@@ -316,13 +320,19 @@
 /* Ponto de "tem coisa nova". Fica na borda do botão, como o badge do sino. */
 .home-novidades-dot {
   position: absolute;
-  top: 6px;
-  right: 8px;
-  width: 8px;
-  height: 8px;
+  top: 4px;
+  right: 4px;
+  width: 9px;
+  height: 9px;
   border-radius: 999px;
   background: var(--color-primary, #c35e1e);
   box-shadow: 0 0 0 2px #fff;
+}
+
+/* O contador do sino, no botão redondo, sobe para a borda como o ponto. */
+.home-user .notif-contador {
+  top: -3px;
+  right: -3px;
 }
 
 .home-fale {
@@ -354,15 +364,9 @@
   /* No celular fica só o ícone — o rótulo empurrava o "Sair" para fora da
      barra. `font-size: 0` esconde o texto; o ícone tem tamanho próprio (prop
      do lucide) e não é afetado. */
-  .home-fale,
-  .home-novidades {
+  .home-fale {
     font-size: 0;
     gap: 0;
     padding: 8px 11px;
-  }
-
-  .home-novidades-dot {
-    top: 4px;
-    right: 5px;
   }
 }

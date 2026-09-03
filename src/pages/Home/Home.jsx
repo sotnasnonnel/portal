@@ -15,6 +15,7 @@ import ProgramasModal from './ProgramasModal';
 import FinanceiroModal from './FinanceiroModal';
 import HorasModal from './HorasModal';
 import NovidadesModal from '../../components/Novidades/NovidadesModal';
+import SinoNotificacoes from '../../components/Notificacoes/SinoNotificacoes';
 import AvatarUsuario from '../../components/UI/AvatarUsuario';
 import { nomeCurto } from '../../utils/formatters';
 import './Home.css';
@@ -162,18 +163,22 @@ export default function Home() {
         <div className="home-user">
           {/* O canal também na Home: é a tela em que a pessoa está quando o que
               ela quer dizer é sobre o portal inteiro, e não sobre um módulo. */}
-          {/* Histórico de novidades. O ponto acende quando há versão que esta
-              pessoa ainda não viu — some assim que ela fecha o aviso. */}
+          {/* Histórico de novidades. Só o ícone, como o sino ao lado: o ponto
+              acende quando há versão que esta pessoa ainda não viu — some
+              assim que ela fecha o aviso. */}
           <button
             type="button"
-            className="home-novidades"
+            className="home-iconbtn home-novidades"
             onClick={() => setNovidades({ itens: NOVIDADES, historico: true })}
-            title="O que mudou na plataforma"
+            aria-label={naoVistas.length > 0 ? 'Novidades (tem coisa nova)' : 'Novidades'}
+            title="Novidades — o que mudou na plataforma"
           >
-            <Megaphone size={16} />
-            Novidades
+            <Megaphone size={18} />
             {naoVistas.length > 0 && <span className="home-novidades-dot" aria-hidden="true" />}
           </button>
+          {/* A central de notificações é uma só; na Home ela fica no mesmo
+              formato do botão de Novidades. */}
+          <SinoNotificacoes />
           <button
             type="button"
             className="home-fale"
