@@ -982,6 +982,34 @@ export async function fecharChamado(chamadoId, resolucao) {
 }
 
 /**
+ * Cancela o chamado — o pedido não vai ser atendido, e não porque foi resolvido.
+ *
+ * O status `cancelado` já existia no vocabulário e já contava como encerrado em
+ * toda parte, mas nada no sistema o gravava: quem pedia cancelamento escrevia
+ * na conversa e o chamado ficava aberto para sempre, ou era fechado como se
+ * tivesse sido atendido — o que suja o indicador de SLA.
+ *
+ * O motivo é obrigatório: é o que o solicitante lê para saber que o pedido dele
+ * morreu e por quê. Vai no mesmo campo da resolução, e a tela troca o rótulo.
+ *
+ * Grava `fechado_em` porque é quando o chamado terminou. Não contamina o SLA:
+ * `fechouNoPrazo` só julga status 'fechado'. E não trava a abertura de novos
+ * chamados, porque a exigência de avaliação também olha só 'fechado'.
+ */
+export async function cancelarChamado(chamadoId, motivo) {
+  const agora = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('chamados_adm')
+    .update({
+      status: 'cancelado', fechado_em: agora, resolucao: motivo.trim(), updated_at: agora,
+    })
+    .eq('id', chamadoId)
+    .select('id');
+  exigirLinha(data, error, 'Não foi possível cancelar o chamado');
+  notificarChamadoAdm(chamadoId, 'fechado');
+}
+
+/**
  * Fechamento de chamado de EPI/uniforme COM baixa no estoque, na mesma
  * transação (RPC estoque_baixa_chamado). Ou os dois acontecem, ou nenhum:
  * fechar sem baixar deixa o saldo mentindo, e baixar sem fechar entrega o

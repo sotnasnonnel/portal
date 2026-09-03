@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Loader2, AlertCircle, Send, Paperclip, FileText, Lock, UserCheck,
-  CheckCircle2, RotateCcw, Star, CircleDot, Users, X,
+  CheckCircle2, RotateCcw, Star, CircleDot, Users, X, Ban,
 } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { getClasse, getServico, podeReatribuirAdm } from '../../../../config/administrativo';
@@ -11,7 +11,7 @@ import { rotuloDoCampo, formatarValorCampo, CAMPOS_OCULTOS } from '../novo/formu
 import {
   buscarChamado, listarInteracoes, listarEventos, listarEtapas, responder, marcarLidas,
   assumirChamado, fecharChamado, fecharChamadoComBaixa, reabrirChamado, avaliarChamado, urlDoAnexo,
-  listarTimeAdm, definirResponsavel,
+  listarTimeAdm, definirResponsavel, cancelarChamado,
 } from '../../lib/chamados';
 import FluxoAprovacao from './FluxoAprovacao';
 import BaixaEstoque from './BaixaEstoque';
@@ -67,6 +67,11 @@ export default function ChamadoAdm() {
   const [mensagem, setMensagem] = useState('');
   const [interna, setInterna] = useState(false);
   const [resolucao, setResolucao] = useState('');
+  // Cancelamento: pedido que não vai ser atendido, diferente de resolvido.
+  // Nasce fechado para não competir com o fechamento normal, que é o caminho
+  // de todos os dias.
+  const [cancelando, setCancelando] = useState(false);
+  const [motivoCancelo, setMotivoCancelo] = useState('');
   const [nota, setNota] = useState(0);
   const [comentario, setComentario] = useState('');
 
@@ -226,6 +231,9 @@ export default function ChamadoAdm() {
   const emAndamento = ['aberto', 'em_atendimento', 'aguardando_solicitante'].includes(chamado.status);
   const podeAssumir = souAdm && chamado.atendente_id !== user?.id && emAndamento;
   const podeFechar = (souAdm || chamado.atendente_id === user?.id) && emAndamento;
+  // Quem pode fechar pode cancelar: as duas encerram o chamado, e é o time do
+  // Adm que recebe o pedido de cancelamento do solicitante.
+  const podeCancelar = podeFechar;
 
   // EPI e uniforme descontam do estoque ao fechar; os demais serviços não têm
   // item nenhum e seguem pelo caminho de sempre (fecharChamado).
@@ -407,7 +415,12 @@ export default function ChamadoAdm() {
 
         {chamado.resolucao && (
           <>
-            <h2 className="adm-card-tit" style={{ marginTop: 18 }}>Resolução</h2>
+            {/* Mesmo campo, dois significados: o que foi feito, ou por que o
+                pedido não vai ser atendido. Chamar de "Resolução" num chamado
+                cancelado diria o contrário do que aconteceu. */}
+            <h2 className="adm-card-tit" style={{ marginTop: 18 }}>
+              {chamado.status === 'cancelado' ? 'Motivo do cancelamento' : 'Resolução'}
+            </h2>
             <p className="adm-aprov-desc">{chamado.resolucao}</p>
           </>
         )}
@@ -433,7 +446,58 @@ export default function ChamadoAdm() {
               <RotateCcw size={16} /> Reabrir chamado
             </button>
           )}
+          {/* O solicitante pede o cancelamento pela conversa; sem este botão o
+              chamado ficava aberto para sempre, ou era fechado como se tivesse
+              sido atendido — o que sujaria o indicador de prazo. */}
+          {podeCancelar && !cancelando && (
+            <button type="button" className="adm-btn adm-btn-recusa" disabled={!!ocupado}
+              onClick={() => setCancelando(true)}>
+              <Ban size={16} /> Cancelar chamado
+            </button>
+          )}
         </div>
+
+        {podeCancelar && cancelando && (
+          <div className="adm-trocar-resp">
+            <label htmlFor="adm-motivo-cancelo">
+              Motivo do cancelamento<span className="req">*</span>
+            </label>
+            <textarea
+              id="adm-motivo-cancelo"
+              className="adm-textarea adm-textarea-curto"
+              value={motivoCancelo}
+              onChange={(e) => setMotivoCancelo(e.target.value)}
+              placeholder="Por que o pedido não vai ser atendido. Ex.: solicitante pediu o cancelamento, aberto em duplicidade."
+              disabled={!!ocupado}
+            />
+            <div className="adm-linha">
+              <button
+                type="button"
+                className="adm-btn adm-btn-recusa"
+                disabled={!motivoCancelo.trim() || !!ocupado}
+                onClick={() => acao('cancelar', async () => {
+                  await cancelarChamado(chamado.id, motivoCancelo);
+                  setCancelando(false);
+                  setMotivoCancelo('');
+                })}
+              >
+                {ocupado === 'cancelar'
+                  ? <Loader2 size={16} className="adm-spin" />
+                  : <Ban size={16} />} Confirmar cancelamento
+              </button>
+              <button type="button" className="adm-btn adm-btn-ghost" disabled={!!ocupado}
+                onClick={() => { setCancelando(false); setMotivoCancelo(''); }}>
+                <X size={16} /> Voltar
+              </button>
+            </div>
+            {/* Cancelar não é resolver: o chamado sai da fila sem entrar na
+                conta de prazo cumprido, e não pede avaliação ao solicitante. */}
+            <span className="adm-campo-dica">
+              O solicitante é avisado por e-mail e o motivo fica no chamado.
+              Cancelado não conta como atendido nos indicadores.
+            </span>
+          </div>
+        )}
 
         {podeTrocarResponsavel && trocando && (
           <div className="adm-trocar-resp">
