@@ -1,5 +1,5 @@
 import {
-  LayoutGrid, ListChecks, FolderKanban, BarChart3, Settings2, Radar, FilePlus2, Route,
+  LayoutGrid, ListChecks, FolderKanban, BarChart3, Settings2, Radar, Building2, Route,
 } from 'lucide-react';
 
 // Navegação da sidebar da Mobilização, na divisão padrão do portal (mesma do
@@ -28,8 +28,9 @@ export function navSections({ isTime = false, isAdmin = false } = {}) {
     },
   ];
 
-  // Abrir processo é do time: mobilização de pessoa nasce do chamado do Adm, e
-  // a da empresa é decisão de quem controla o contrato.
+  // Só a mobilização de EMPRESA se abre à mão — as de pessoa nascem do chamado
+  // do Adm, e um segundo caminho para a mesma coisa criaria dois processos para
+  // a mesma pessoa, sem nada que os ligasse.
   if (isTime) {
     secoes[0].items.push({ label: 'Torre de controle', href: '/mobilizacao/torre', Icon: Radar });
     secoes.push({
@@ -38,7 +39,7 @@ export function navSections({ isTime = false, isAdmin = false } = {}) {
       key: 'processos',
       Icon: Route,
       items: [
-        { label: 'Abrir processo', href: '/mobilizacao/nova', Icon: FilePlus2 },
+        { label: 'Mobilizar empresa', href: '/mobilizacao/nova', Icon: Building2 },
       ],
     });
   }

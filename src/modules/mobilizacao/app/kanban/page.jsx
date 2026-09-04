@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { LayoutGrid, Loader2, AlertCircle, Inbox, User, X, Lock } from 'lucide-react';
+import {
+  LayoutGrid, Loader2, AlertCircle, Inbox, User, X, Lock, AlertTriangle, CalendarClock,
+} from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { ehTimeMobilizacao, FLUXOS, rotuloFluxoCurto } from '../../../../config/mobilizacao';
 import { semaforoDias } from '../../../../utils/semaforo';
 import { listarEtapasDoQuadro, moverEtapa, listarEtapasDoProcesso } from '../../lib/mobilizacao';
 import {
   agruparEmColunas, statusAoSoltar, podeMover, podeEditar, iniciais,
+  estaAtrasada, venceHoje,
 } from '../../lib/painelEtapas';
 
 const dataBr = (iso) => (iso ? iso.split('-').reverse().join('/') : 'sem prazo');
@@ -31,6 +34,9 @@ export default function KanbanMob() {
   const [erro, setErro] = useState('');
   const [apenasMinhas, setApenasMinhas] = useState(!souTime);
   const [fFluxo, setFFluxo] = useState('');
+  // '' | 'atrasadas' | 'hoje'. Os dois se excluem: uma etapa que ja venceu nao
+  // vence hoje, entao liga-los juntos devolveria lista vazia sempre.
+  const [fPrazo, setFPrazo] = useState('');
   // A etapa em movimento, para saber quais colunas recusar o drop.
   const [arrastando, setArrastando] = useState(null);
 
@@ -48,7 +54,12 @@ export default function KanbanMob() {
 
   useEffect(() => { carregar(); }, [carregar]);
 
-  const visiveis = apenasMinhas ? etapas.filter((e) => e.responsavel_id === user?.id) : etapas;
+  const porDono = apenasMinhas ? etapas.filter((e) => e.responsavel_id === user?.id) : etapas;
+  const visiveis = porDono.filter((e) => {
+    if (fPrazo === 'atrasadas') return estaAtrasada(e);
+    if (fPrazo === 'hoje') return venceHoje(e);
+    return true;
+  });
   const colunas = agruparEmColunas(visiveis);
 
   /**
@@ -97,7 +108,10 @@ export default function KanbanMob() {
     }
   };
 
-  const filtrando = !!fFluxo || apenasMinhas;
+  const filtrando = !!fFluxo || apenasMinhas || !!fPrazo;
+  // Clicar de novo no filtro ligado desliga: sem isso a unica saida seria o
+  // botao de limpar, que tambem zera fluxo e aba.
+  const alternarPrazo = (v) => setFPrazo((atual) => (atual === v ? '' : v));
 
   return (
     <div className="mob-page mob-page-full mob-page-quadro">
@@ -126,13 +140,29 @@ export default function KanbanMob() {
             {FLUXOS.map((f) => <option key={f.slug} value={f.slug}>{f.label}</option>)}
           </select>
         </div>
+        <button type="button"
+          className={`mob-btn mob-btn-sm mob-filtro-limpa ${fPrazo === 'atrasadas' ? 'mob-btn-primary' : 'mob-btn-ghost'}`}
+          onClick={() => alternarPrazo('atrasadas')}>
+          <AlertTriangle size={15} /> Em atraso
+        </button>
+
+        <button type="button"
+          className={`mob-btn mob-btn-sm mob-filtro-limpa ${fPrazo === 'hoje' ? 'mob-btn-primary' : 'mob-btn-ghost'}`}
+          onClick={() => alternarPrazo('hoje')}>
+          <CalendarClock size={15} /> Vence hoje
+        </button>
+
         {filtrando && (
           <button type="button" className="mob-btn mob-btn-ghost mob-btn-sm mob-filtro-limpa"
-            onClick={() => { setFFluxo(''); setApenasMinhas(false); }}>
+            onClick={() => { setFFluxo(''); setApenasMinhas(false); setFPrazo(''); }}>
             <X size={15} /> Limpar filtros
           </button>
         )}
       </div>
+
+      {filtrando && !carregando && (
+        <p className="mob-campo-dica">Mostrando {visiveis.length} de {etapas.length} etapas.</p>
+      )}
 
       {erro && <div className="mob-aviso tom-erro"><AlertCircle size={16} /> {erro}</div>}
 

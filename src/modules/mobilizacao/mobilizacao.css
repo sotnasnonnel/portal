@@ -353,3 +353,48 @@
   .mob-etapa { grid-template-columns: 26px 1fr; }
   .mob-etapa-acoes { grid-column: 1 / -1; justify-content: flex-start; }
 }
+
+/* ============================ popup de detalhe ============================ */
+/* O detalhe por trás dos cards de indicador. Um número num card só vira ação
+   quando dá para responder "quais?". */
+.mob-modal-fundo {
+  position: fixed; inset: 0; z-index: 60;
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+  background: rgba(15, 23, 42, 0.45);
+  animation: mobFade 0.15s ease;
+}
+.mob-modal {
+  background: var(--neutral-surface); border-radius: var(--card-radius);
+  box-shadow: var(--m-shadow-md);
+  width: 100%; max-width: var(--shell-page-max);
+  display: flex; flex-direction: column;
+  /* Teto em dvh e rolo interno: a lista pode ter dezenas de linhas, e um popup
+     mais alto que a janela esconderia o próprio botão de fechar. */
+  max-height: 84dvh;
+}
+.mob-modal-cab {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+  padding: 18px 20px; border-bottom: 1px solid var(--m-border); flex-shrink: 0;
+}
+.mob-modal-tit { font-size: var(--font-size-lg); font-weight: var(--fw-bold); margin: 0; color: var(--m-ink); }
+.mob-modal-sub { font-size: var(--font-size-xs); color: var(--m-muted); margin: 3px 0 0; }
+.mob-modal-corpo { padding: 16px 20px 20px; overflow-y: auto; min-height: 0; }
+.mob-modal-corpo .mob-tabela-scroll { border: none; border-radius: 0; }
+
+/* Card de indicador que abre detalhe. É <button>, então precisa desfazer o
+   visual de botão e recuperar o alinhamento à esquerda do <article>. */
+.mob-ind-tile.is-clicavel {
+  font: inherit; text-align: left; cursor: pointer; width: 100%;
+  transition: border-color 0.15s, transform 0.15s;
+}
+.mob-ind-tile.is-clicavel:hover:not(:disabled) {
+  border-color: var(--m-primary); transform: translateY(-1px);
+}
+.mob-ind-tile.is-clicavel:focus-visible { outline: 2px solid var(--m-primary); outline-offset: 2px; }
+/* Zero atrasados: o card continua informando, só não tem o que abrir. */
+.mob-ind-tile.is-clicavel:disabled { cursor: default; }
+
+@media (max-width: 768px) {
+  .mob-modal-fundo { padding: 12px; align-items: flex-end; }
+  .mob-modal { max-height: 90dvh; }
+}

@@ -3,7 +3,10 @@ import { BarChart3, Loader2, AlertCircle, Info } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { ehTimeMobilizacao, rotuloFluxo } from '../../../../config/mobilizacao';
 import { listarParaIndicadores } from '../../lib/mobilizacao';
-import { resumoIndicadores, faixaPct, formatarPct } from '../../lib/indicadoresMob';
+import {
+  resumoIndicadores, faixaPct, formatarPct, etapasVencidas, processosTravados,
+} from '../../lib/indicadoresMob';
+import DetalheIndicador from './DetalheIndicador';
 import { rotuloStatus } from '../../lib/statusEtapa';
 
 export default function DashboardMob() {
@@ -13,6 +16,8 @@ export default function DashboardMob() {
   const [dados, setDados] = useState(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
+  // null | 'processos' | 'etapas' — qual card foi aberto.
+  const [detalhe, setDetalhe] = useState(null);
 
   useEffect(() => {
     listarParaIndicadores()
@@ -30,6 +35,8 @@ export default function DashboardMob() {
 
   const r = resumoIndicadores(dados.etapas, dados.processos);
   const maxFluxo = Math.max(1, ...r.abertasPorFluxo.map((x) => x.total));
+  const vencidas = etapasVencidas(dados.etapas);
+  const travados = processosTravados(dados.etapas, dados.processos);
 
   return (
     <div className="mob-page mob-page-wide">
@@ -52,21 +59,31 @@ export default function DashboardMob() {
           <span className="mob-ind-pe">{r.processos.finalizados} finalizados · {r.processos.cancelados} cancelados</span>
         </article>
 
-        <article className="mob-ind-tile">
+        {/* Clicavel: o numero sozinho nao diz QUAIS, e sem isso a pessoa ia
+            refazer o filtro a mao na lista de Etapas para chegar nos mesmos. */}
+        <button type="button" className="mob-ind-tile is-clicavel"
+          onClick={() => setDetalhe('processos')}
+          disabled={!r.processos.atrasados}>
           <span className="mob-ind-rot">Processos travados</span>
           <span className={`mob-ind-num ${r.processos.atrasados ? 'tom-baixa' : 'tom-alta'}`}>
             {r.processos.atrasados}
           </span>
-          <span className="mob-ind-pe">com ao menos uma etapa vencida</span>
-        </article>
+          <span className="mob-ind-pe">
+            {r.processos.atrasados ? 'com ao menos uma etapa vencida · ver quais' : 'com ao menos uma etapa vencida'}
+          </span>
+        </button>
 
-        <article className="mob-ind-tile">
+        <button type="button" className="mob-ind-tile is-clicavel"
+          onClick={() => setDetalhe('etapas')}
+          disabled={!r.etapas.atrasadas}>
           <span className="mob-ind-rot">Etapas vencidas</span>
           <span className={`mob-ind-num ${r.etapas.atrasadas ? 'tom-baixa' : 'tom-alta'}`}>
             {r.etapas.atrasadas}
           </span>
-          <span className="mob-ind-pe">de {r.etapas.abertas} em aberto</span>
-        </article>
+          <span className="mob-ind-pe">
+            de {r.etapas.abertas} em aberto{r.etapas.atrasadas ? ' · ver quais' : ''}
+          </span>
+        </button>
 
         <article className="mob-ind-tile">
           <span className="mob-ind-rot">Concluídas no prazo</span>
@@ -161,6 +178,26 @@ export default function DashboardMob() {
           </div>
         )}
       </section>
+
+      {detalhe === 'processos' && (
+        <DetalheIndicador
+          titulo="Processos travados"
+          descricao="Mobilizações com pelo menos um passo vencido, do pior atraso para o menor."
+          tipo="processos"
+          itens={travados}
+          onFechar={() => setDetalhe(null)}
+        />
+      )}
+
+      {detalhe === 'etapas' && (
+        <DetalheIndicador
+          titulo="Etapas vencidas"
+          descricao="Passos que já passaram da data prevista e ainda não foram concluídos."
+          tipo="etapas"
+          itens={vencidas}
+          onFechar={() => setDetalhe(null)}
+        />
+      )}
 
       <section className="mob-card">
         <h2 className="mob-card-tit">Etapas em aberto por situação</h2>

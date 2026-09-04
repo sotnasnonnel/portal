@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   COLUNAS_KANBAN, statusAoSoltar, agruparEmColunas, podeMover, podeEditar,
   progresso, iniciais, filtrarFila, opcoesDaFila,
+  estaAtrasada, venceHoje, processoAtrasado, filtrarProcessos,
 } from './painelEtapas.js';
 
 const etapa = (over = {}) => ({
@@ -137,4 +138,90 @@ test('opções saem do que está na fila, não do cadastro', () => {
   assert.deepEqual(o.responsaveis.map((r) => r.label), ['Edijane', 'Ivone'], 'em ordem alfabética');
   assert.deepEqual(o.fluxos, ['mobilizacao_empresa', 'mobilizacao_pessoa']);
   assert.equal(o.temSemResponsavel, true);
+});
+
+// ---------------------------------------------------------------------------
+// Filtros de prazo do quadro e da lista de processos
+// ---------------------------------------------------------------------------
+
+test('atrasada e vence hoje separam o vermelho do amarelo', () => {
+  assert.equal(estaAtrasada(etapa({ dias_atraso: 3 })), true);
+  assert.equal(estaAtrasada(etapa({ dias_atraso: 0 })), false, 'vence hoje ainda não venceu');
+  assert.equal(venceHoje(etapa({ dias_atraso: 0 })), true);
+  assert.equal(venceHoje(etapa({ dias_atraso: 3 })), false, 'já venceu, não vence hoje');
+  assert.equal(venceHoje(etapa({ dias_atraso: -1 })), false, 'vence amanhã');
+});
+
+test('etapa sem prazo não é atrasada nem vence hoje', () => {
+  assert.equal(estaAtrasada(etapa({ dias_atraso: null })), false);
+  assert.equal(venceHoje(etapa({ dias_atraso: null })), false);
+});
+
+// Concluída com atraso já entrou no indicador de cumprimento de prazo.
+test('etapa encerrada fica fora dos dois filtros', () => {
+  for (const st of ['concluida', 'dispensada']) {
+    assert.equal(estaAtrasada(etapa({ status: st, dias_atraso: 9 })), false, st);
+    assert.equal(venceHoje(etapa({ status: st, dias_atraso: 0 })), false, st);
+  }
+});
+
+test('a fila filtra por vence hoje', () => {
+  const lista = [
+    etapa({ id: 'a', dias_atraso: 5 }),
+    etapa({ id: 'b', dias_atraso: 0 }),
+    etapa({ id: 'c', dias_atraso: -3 }),
+  ];
+  assert.deepEqual(filtrarFila(lista, { venceHoje: true }).map((e) => e.id), ['b']);
+  assert.deepEqual(filtrarFila(lista, { atrasadas: true }).map((e) => e.id), ['a']);
+});
+
+const proc = (over = {}) => ({
+  id: 'p1', titulo: 'FULANO DE TAL', status: 'em_andamento',
+  prazo_em: '2026-09-30', fluxo: 'mobilizacao_pessoa', ...over,
+});
+
+test('processo atrasado é o que ainda anda e já passou do prazo', () => {
+  assert.equal(processoAtrasado(proc({ prazo_em: '2026-09-01' }), '2026-09-10'), true);
+  assert.equal(processoAtrasado(proc({ prazo_em: '2026-09-10' }), '2026-09-10'), false,
+    'vence hoje ainda não venceu');
+  assert.equal(processoAtrasado(proc({ prazo_em: '2026-09-20' }), '2026-09-10'), false);
+});
+
+test('processo encerrado nunca está atrasado', () => {
+  for (const st of ['finalizado', 'cancelado']) {
+    assert.equal(processoAtrasado(proc({ status: st, prazo_em: '2020-01-01' }), '2026-09-10'), false, st);
+  }
+  assert.equal(processoAtrasado(proc({ prazo_em: null }), '2026-09-10'), false, 'sem prazo');
+});
+
+test('a busca de processos varre pessoa, cliente e código de projeto', () => {
+  const lista = [
+    proc({ id: 'a', titulo: 'GUILHERME DE ASSIS', cliente_phd: 'IMC SASTE', cod_ct: 'IMCS-CT09' }),
+    proc({ id: 'b', titulo: 'MARIA SOUZA', cliente_phd: 'GERDAU', cod_ct: 'GERD-CT23' }),
+  ];
+  assert.deepEqual(filtrarProcessos(lista, { busca: 'guilherme' }).map((p) => p.id), ['a']);
+  assert.deepEqual(filtrarProcessos(lista, { busca: 'gerdau' }).map((p) => p.id), ['b']);
+  assert.deepEqual(filtrarProcessos(lista, { busca: 'IMCS-CT09' }).map((p) => p.id), ['a']);
+  assert.equal(filtrarProcessos(lista, { busca: '' }).length, 2, 'busca vazia é "todos"');
+});
+
+test('a busca de processos ignora acento e caixa', () => {
+  const lista = [proc({ id: 'a', cliente_phd: 'ELEVAÇÃO' })];
+  assert.equal(filtrarProcessos(lista, { busca: 'elevacao' }).length, 1);
+});
+
+test('filtros de processo se somam', () => {
+  const lista = [
+    proc({ id: 'a', titulo: 'ANA', prazo_em: '2026-09-01' }),
+    proc({ id: 'b', titulo: 'ANA', prazo_em: '2026-12-01' }),
+    proc({ id: 'c', titulo: 'BRUNO', prazo_em: '2026-09-01', fluxo: 'mobilizacao_empresa' }),
+  ];
+  assert.deepEqual(
+    filtrarProcessos(lista, { busca: 'ana', atrasados: true }, '2026-09-10').map((p) => p.id),
+    ['a'],
+  );
+  assert.deepEqual(
+    filtrarProcessos(lista, { fluxo: 'mobilizacao_empresa' }, '2026-09-10').map((p) => p.id),
+    ['c'],
+  );
 });

@@ -17,6 +17,8 @@ import EstoqueShell from '../modules/estoque/app/components/AppShell';
 import { podeAcessarEstoque } from '../config/estoque';
 import MobilizacaoShell from '../modules/mobilizacao/app/components/AppShell';
 import { podeAcessarMobilizacao } from '../config/mobilizacao';
+import TorreShell from '../modules/torre/app/components/AppShell';
+import { podeVerTorre } from '../config/torre';
 
 const Login = lazy(() => import('../pages/Login/Login'));
 const Home = lazy(() => import('../pages/Home/Home'));
@@ -107,6 +109,9 @@ const DashboardMob = lazy(() => import('../modules/mobilizacao/app/dashboard/pag
 const CatalogoMob = lazy(() => import('../modules/mobilizacao/app/catalogo/page'));
 const TorreMob = lazy(() => import('../modules/mobilizacao/app/torre/page'));
 
+const QuadroTorre = lazy(() => import('../modules/torre/app/quadro/page'));
+const EtapasTorre = lazy(() => import('../modules/torre/app/etapas/page'));
+
 function RouteFallback() {
   return <div style={{ padding: 'var(--space-3xl)', textAlign: 'center' }}>Carregando...</div>;
 }
@@ -177,6 +182,15 @@ function EstoqueEmBreveRoute({ children }) {
 // Mobilização em construção: mesma trava do Administrativo e do Estoque. Gate
 // de UI — quem controla o processo é decidido pela RLS, que reusa o papel do
 // Adm (app_private.is_adm_time).
+// Torre de Controle: consulta para coordenação, gerência e diretoria. O gate
+// olha o PERFIL (config/torre.js) — e, enquanto em construção, também a lista
+// de liberados. A RLS é quem limita o conteúdo: cada um vê o que é seu.
+function TorreRoute({ children }) {
+  const { user, modules } = useAuth();
+  if (!podeVerTorre(user, modules)) return <Navigate to="/home" replace />;
+  return children;
+}
+
 function MobilizacaoEmBreveRoute({ children }) {
   const { user } = useAuth();
   if (!podeAcessarMobilizacao(user)) return <Navigate to="/home" replace />;
@@ -676,6 +690,25 @@ export default function AppRoutes() {
           <Route path="dashboard" element={<LazyPage><DashboardMob /></LazyPage>} />
           <Route path="catalogo" element={<LazyPage><CatalogoMob /></LazyPage>} />
           <Route path="torre" element={<LazyPage><TorreMob /></LazyPage>} />
+        </Route>
+
+        {/* Torre de Controle: a mesma visão da torre da Mobilização, servida
+            como módulo próprio para quem não trabalha dentro dela. SÓ LEITURA —
+            existe para a reunião de torre, onde o Adm apresenta e cada
+            responsável confere o que é seu. */}
+        <Route
+          path="/torre"
+          element={(
+            <ProtectedRoute>
+              <TorreRoute>
+                <TorreShell />
+              </TorreRoute>
+            </ProtectedRoute>
+          )}
+        >
+          <Route index element={<Navigate to="/torre/quadro" replace />} />
+          <Route path="quadro" element={<LazyPage><QuadroTorre /></LazyPage>} />
+          <Route path="etapas" element={<LazyPage><EtapasTorre /></LazyPage>} />
         </Route>
 
         {/* Programas: os programas internos da PHD (Campo de Ideias e Alavanca).

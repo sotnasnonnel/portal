@@ -75,6 +75,18 @@ export default function FormMobilizacao({ valores, onChange, pessoas = [] }) {
                 onChange={(e) => mexer({ devolucao_descricao: e.target.value })} />
             </div>
           )}
+
+          {/* Data-base do processo de desmobilização. Sem ela nenhum passo
+              ganha prazo, e o quadro nasce inteiro sem semáforo. */}
+          <div className="adm-campo">
+            <label htmlFor="mob-data-desmob">Data da desmobilização<span className="req">*</span></label>
+            <input id="mob-data-desmob" type="date" className="adm-input"
+              value={valores.data_desmobilizacao}
+              onChange={(e) => mexer({ data_desmobilizacao: e.target.value })} />
+            <span className="adm-campo-dica">
+              Quando o profissional deixa a obra. É dela que partem os prazos do processo.
+            </span>
+          </div>
         </>
       )}
 
@@ -86,6 +98,29 @@ export default function FormMobilizacao({ valores, onChange, pessoas = [] }) {
         <input id="mob-gestor" className="adm-input" value={valores.gestor}
           onChange={(e) => mexer({ gestor: e.target.value })}
           placeholder="Preenchido pelo organograma ao escolher o profissional" />
+      </div>
+
+      {/* Cliente e empresa alimentam o processo de Mobilização que nasce deste
+          chamado — é por eles que o time filtra o quadro e a torre. */}
+      <div className="adm-campo">
+        <label htmlFor="mob-cliente">Cliente<span className="req">*</span></label>
+        <input id="mob-cliente" className="adm-input" value={valores.cliente}
+          onChange={(e) => mexer({ cliente: e.target.value })}
+          placeholder="Quem nos contratou (ex.: IMC SASTE)" />
+      </div>
+
+      <div className="adm-campo">
+        <label htmlFor="mob-cliente-final">Cliente final</label>
+        <input id="mob-cliente-final" className="adm-input" value={valores.cliente_final}
+          onChange={(e) => mexer({ cliente_final: e.target.value })}
+          placeholder="O dono da obra, quando é outro (ex.: VALE)" />
+      </div>
+
+      <div className="adm-campo">
+        <label htmlFor="mob-empresa">Empresa PHD</label>
+        <input id="mob-empresa" className="adm-input" value={valores.empresa_phd}
+          onChange={(e) => mexer({ empresa_phd: e.target.value })}
+          placeholder="PHD ENGENHARIA, PHD ASSESSORIA ou PJ" />
       </div>
 
       <div className="adm-campo">

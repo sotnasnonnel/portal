@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { FilePlus2, Loader2, AlertCircle, Check, Info } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Building2, Loader2, AlertCircle, Check, Info, Headset } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { ehTimeMobilizacao, FLUXOS, rotuloFluxo } from '../../../../config/mobilizacao';
+import { ehTimeMobilizacao, rotuloFluxo } from '../../../../config/mobilizacao';
 import { listarCatalogo, abrirProcesso } from '../../lib/mobilizacao';
 import { etapasPrevistas } from '../../lib/catalogo';
 import { projetarDatas } from '../../lib/prazoEtapa';
@@ -10,8 +10,19 @@ import { hojeIso } from '../../../../utils/diasUteis';
 
 const dataBr = (iso) => (iso ? iso.split('-').reverse().join('/') : '—');
 
+/**
+ * Esta tela abre SÓ mobilização de empresa.
+ *
+ * Os fluxos de PESSOA (mobilização e desmobilização) nascem do chamado do
+ * Administrativo, por gatilho no banco. Oferecê-los aqui criaria um segundo
+ * caminho para a mesma coisa — e o resultado seria um processo à mão e outro do
+ * chamado para a mesma pessoa, sem nada que os ligasse. A mobilização de
+ * empresa é a única sem chamado que a dispare, e por isso é a única manual.
+ */
+const FLUXO = 'mobilizacao_empresa';
+
 const VAZIO = {
-  titulo: '', profissional_nome: '', empresa_phd: '', cliente_phd: '', cliente_final: '',
+  cliente_phd: '', titulo: '', cliente_final: '', empresa_phd: '',
   local_obra: '', cod_ct: '', cod_phd: '', contrato: '', coo_phd: '', ger_phd: '',
   data_base: '', observacoes: '',
 };
@@ -21,10 +32,6 @@ export default function NovaMob() {
   const navigate = useNavigate();
   const souTime = ehTimeMobilizacao(modules);
 
-  // Empresa primeiro: é o único fluxo sem gatilho, e por isso a razão de esta
-  // tela existir. Os de pessoa nascem do chamado do Adm; abrir um aqui é a
-  // exceção (o processo que ficou de fora, o chamado antigo).
-  const [fluxo, setFluxo] = useState('mobilizacao_empresa');
   const [v, setV] = useState({ ...VAZIO, data_base: hojeIso() });
   const [catalogo, setCatalogo] = useState([]);
   const [carregando, setCarregando] = useState(true);
@@ -44,27 +51,18 @@ export default function NovaMob() {
   // Mostrar os passos e as datas antes de gravar é o que evita descobrir o
   // catálogo vazio depois do processo criado.
   const previa = useMemo(() => {
-    const etapas = etapasPrevistas(catalogo, fluxo, v);
+    const etapas = etapasPrevistas(catalogo, FLUXO, v);
     const datas = projetarDatas(etapas, v.data_base || null);
     return etapas.map((e) => ({ ...e, prevista: datas[e.codigo] }));
-  }, [catalogo, fluxo, v]);
-
-  const ehEmpresa = fluxo === 'mobilizacao_empresa';
-  const identidade = ehEmpresa ? v.cliente_phd : v.profissional_nome;
+  }, [catalogo, v]);
 
   const salvar = async (ev) => {
     ev.preventDefault();
-    if (!identidade.trim()) {
-      setErro(ehEmpresa ? 'Informe o cliente.' : 'Informe o profissional.');
-      return;
-    }
+    if (!v.cliente_phd.trim()) { setErro('Informe o cliente.'); return; }
     setSalvando(true);
     setErro('');
     try {
-      const id = await abrirProcesso(fluxo, {
-        ...v,
-        titulo: v.titulo.trim() || identidade.trim(),
-      });
+      const id = await abrirProcesso(FLUXO, { ...v, titulo: v.titulo.trim() || v.cliente_phd.trim() });
       navigate(`/mobilizacao/processo/${id}`);
     } catch (e) {
       setErro(e.message);
@@ -75,7 +73,7 @@ export default function NovaMob() {
   if (!souTime) {
     return (
       <div className="mob-page">
-        <h1 className="mob-title"><FilePlus2 size={24} /> Abrir processo</h1>
+        <h1 className="mob-title"><Building2 size={24} /> Mobilizar empresa</h1>
         <div className="mob-aviso tom-info">
           <Info size={16} />
           Abrir um processo é do time do Administrativo. Se você precisa mobilizar alguém,
@@ -87,47 +85,36 @@ export default function NovaMob() {
 
   return (
     <div className="mob-page mob-page-wide">
-      <h1 className="mob-title"><FilePlus2 size={24} /> Abrir processo</h1>
+      <h1 className="mob-title"><Building2 size={24} /> Mobilizar empresa</h1>
       <p className="mob-sub">
-        A mobilização e a desmobilização de PESSOAS nascem sozinhas do chamado do Administrativo.
-        Use esta tela para a mobilização da EMPRESA, que não tem chamado que a dispare — ou para
-        um processo que ficou de fora.
+        A mobilização de uma empresa num contrato novo é a única que não tem chamado que a dispare,
+        e por isso é aberta aqui.
       </p>
+
+      {/* Sem isto, alguém do time procuraria por "onde abro a mobilização do
+          fulano" e não acharia — e a resposta não está nesta tela. */}
+      <div className="mob-aviso tom-info">
+        <Headset size={16} />
+        <span>
+          <strong>Mobilização e desmobilização de PESSOAS não se abrem aqui.</strong>{' '}
+          Elas nascem sozinhas do chamado de Mobilização do Administrativo, e aparecem no{' '}
+          <Link to="/mobilizacao/kanban">Quadro</Link> como &quot;A fazer&quot;. Se um chamado foi
+          aberto e o processo não apareceu, a{' '}
+          <Link to="/mobilizacao/torre">Torre de controle</Link> lista as falhas com um botão de
+          reprocessar.
+        </span>
+      </div>
 
       {erro && <div className="mob-aviso tom-erro"><AlertCircle size={16} /> {erro}</div>}
 
       <form onSubmit={salvar}>
         <section className="mob-card">
-          <h2 className="mob-card-tit">Fluxo</h2>
-          <div className="mob-tabs">
-            {FLUXOS.map((f) => (
-              <button key={f.slug} type="button"
-                className={`mob-tab ${fluxo === f.slug ? 'is-active' : ''}`}
-                onClick={() => setFluxo(f.slug)}>
-                <f.Icon size={15} /> {f.label}
-              </button>
-            ))}
-          </div>
-          <p className="mob-campo-dica">{FLUXOS.find((f) => f.slug === fluxo)?.descricao}</p>
-        </section>
-
-        <section className="mob-card">
           <h2 className="mob-card-tit">Identificação</h2>
           <div className="mob-grid2">
-            {ehEmpresa ? (
-              <div className="mob-campo">
-                <label htmlFor="mob-n-cliente">Cliente PHD *</label>
-                <input id="mob-n-cliente" type="text" value={v.cliente_phd} onChange={trocar('cliente_phd')} required />
-              </div>
-            ) : (
-              <div className="mob-campo">
-                <label htmlFor="mob-n-prof">Profissional *</label>
-                <input id="mob-n-prof" type="text" value={v.profissional_nome} onChange={trocar('profissional_nome')} required />
-                <span className="mob-campo-dica">
-                  Texto livre: a planilha traz gente que ainda não está cadastrada no portal.
-                </span>
-              </div>
-            )}
+            <div className="mob-campo">
+              <label htmlFor="mob-n-cliente">Cliente PHD *</label>
+              <input id="mob-n-cliente" type="text" value={v.cliente_phd} onChange={trocar('cliente_phd')} required />
+            </div>
 
             <div className="mob-campo">
               <label htmlFor="mob-n-data">Data-base *</label>
@@ -138,15 +125,8 @@ export default function NovaMob() {
             <div className="mob-campo">
               <label htmlFor="mob-n-titulo">Título do processo</label>
               <input id="mob-n-titulo" type="text" value={v.titulo} onChange={trocar('titulo')}
-                placeholder={identidade || 'Usa a identificação acima'} />
+                placeholder={v.cliente_phd || 'Usa o cliente acima'} />
             </div>
-
-            {!ehEmpresa && (
-              <div className="mob-campo">
-                <label htmlFor="mob-n-cliente2">Cliente PHD</label>
-                <input id="mob-n-cliente2" type="text" value={v.cliente_phd} onChange={trocar('cliente_phd')} />
-              </div>
-            )}
 
             <div className="mob-campo">
               <label htmlFor="mob-n-cfinal">Cliente final</label>
@@ -154,7 +134,8 @@ export default function NovaMob() {
             </div>
             <div className="mob-campo">
               <label htmlFor="mob-n-empresa">Empresa PHD</label>
-              <input id="mob-n-empresa" type="text" value={v.empresa_phd} onChange={trocar('empresa_phd')} />
+              <input id="mob-n-empresa" type="text" value={v.empresa_phd} onChange={trocar('empresa_phd')}
+                placeholder="PHD ENGENHARIA, PHD ASSESSORIA ou PJ" />
             </div>
             <div className="mob-campo">
               <label htmlFor="mob-n-obra">Local da obra</label>
@@ -196,7 +177,7 @@ export default function NovaMob() {
           ) : !previa.length ? (
             <div className="mob-aviso tom-alerta">
               <AlertCircle size={16} />
-              O catálogo de {rotuloFluxo(fluxo)} está vazio. O processo seria criado sem passo nenhum —
+              O catálogo de {rotuloFluxo(FLUXO)} está vazio. O processo seria criado sem passo nenhum —
               cadastre as etapas em Catálogo e SLAs antes.
             </div>
           ) : (
@@ -229,7 +210,7 @@ export default function NovaMob() {
 
         <button type="submit" className="mob-btn mob-btn-primary" disabled={salvando || !previa.length}>
           {salvando ? <Loader2 size={16} className="mob-spin" /> : <Check size={16} />}
-          {salvando ? 'Abrindo…' : 'Abrir processo'}
+          {salvando ? 'Abrindo…' : 'Abrir mobilização de empresa'}
         </button>
       </form>
     </div>

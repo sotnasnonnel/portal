@@ -11,6 +11,24 @@
  * Lógica pura, testável — sem Supabase e sem React.
  */
 import { STATUS_ENCERRADOS, ehEncerrada } from './statusEtapa.js';
+import { hojeIso } from '../../../utils/diasUteis.js';
+
+/**
+ * As duas perguntas de prazo que o quadro e a fila fazem o tempo todo.
+ *
+ * Ambas leem dias_atraso, que o BANCO ja calculou (mob_recalcular). Comparar
+ * datas aqui daria erro de fuso: AAAA-MM-DD virado em Date e UTC e, no nosso
+ * fuso, uma etapa que vence hoje apareceria vencida desde as 21h de ontem.
+ *
+ * So conta o que ainda esta em jogo: etapa concluida com atraso ja entrou no
+ * indicador de cumprimento de prazo, e soma-la aqui contaria duas vezes.
+ */
+export const estaAtrasada = (e) => !ehEncerrada(e?.status) && Number(e?.dias_atraso) > 0;
+// Number(null) e 0, entao a etapa SEM prazo passaria por "vence hoje" se a
+// comparacao fosse so === 0. Sem prazo nao vence nunca.
+export const temPrazo = (e) => e?.dias_atraso !== null && e?.dias_atraso !== undefined
+  && Number.isFinite(Number(e.dias_atraso));
+export const venceHoje = (e) => !ehEncerrada(e?.status) && temPrazo(e) && Number(e.dias_atraso) === 0;
 
 /**
  * Colunas do quadro, na ordem em que a etapa caminha.
@@ -114,7 +132,8 @@ export function filtrarFila(etapas = [], f = {}) {
     // '' no filtro = "todos"; 'sem' = as que ninguém assumiu ainda.
     if (f.responsavelId === 'sem' && e.responsavel_id) return false;
     if (f.responsavelId && f.responsavelId !== 'sem' && e.responsavel_id !== f.responsavelId) return false;
-    if (f.atrasadas && !(Number(e.dias_atraso) > 0 && !ehEncerrada(e.status))) return false;
+    if (f.atrasadas && !estaAtrasada(e)) return false;
+    if (f.venceHoje && !venceHoje(e)) return false;
     // Sem filtro de situação, as encerradas ficam fora: a fila é o que falta.
     if (!f.status && !f.incluirEncerradas && STATUS_ENCERRADOS.includes(e.status)) return false;
     return true;
@@ -141,4 +160,39 @@ export function opcoesDaFila(etapas = []) {
     status: [...status].sort(),
     temSemResponsavel: etapas.some((e) => !e.responsavel_id),
   };
+}
+
+/**
+ * Processo atrasado: ainda em andamento e com o prazo ja vencido.
+ *
+ * prazo_em e o MAIOR prazo entre as etapas que faltam (mob_recalcular), entao
+ * um processo so e atrasado quando o ultimo passo pendente ja passou da data.
+ * A comparacao e entre TEXTOS AAAA-MM-DD, que ordena igual a cronologia e nao
+ * passa por Date — mesmo motivo de estaAtrasada acima.
+ */
+export function processoAtrasado(p, hoje = hojeIso()) {
+  if (!p?.prazo_em || p.status !== 'em_andamento') return false;
+  return String(p.prazo_em).slice(0, 10) < hoje;
+}
+
+/**
+ * Filtros da lista de processos. Mesma convencao do resto do portal: filtro
+ * vazio e "todos", nunca "nenhum".
+ *
+ * A busca varre titulo, profissional, cliente e codigos de projeto: quem
+ * procura "IMCS-CT09" esta atras da obra, e quem digita um sobrenome esta
+ * atras da pessoa — os dois caem na mesma caixa.
+ */
+export function filtrarProcessos(processos = [], f = {}, hoje = hojeIso()) {
+  const termo = semAcento(f.busca).trim();
+  return processos.filter((p) => {
+    if (termo) {
+      const alvo = [p.titulo, p.profissional_nome, p.cliente_phd, p.cliente_final,
+        p.local_obra, p.cod_ct, p.cod_phd, p.responsavelNome].filter(Boolean).join(' ');
+      if (!semAcento(alvo).includes(termo)) return false;
+    }
+    if (f.fluxo && p.fluxo !== f.fluxo) return false;
+    if (f.atrasados && !processoAtrasado(p, hoje)) return false;
+    return true;
+  });
 }

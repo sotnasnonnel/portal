@@ -1014,3 +1014,54 @@ export const MOBILIZACAO_GUIA = {
     ],
   },
 };
+
+// ============================ Torre de Controle ============================
+// Módulo de CONSULTA: a mesma visão da torre da Mobilização, sem nenhuma ação.
+// Um papel só, porque todo mundo aqui faz a mesma coisa — olhar.
+export const TORRE_GUIA = {
+  appName: "Torre de Controle",
+  fallbackRole: "user",
+  roleLabels: { user: "Consulta" },
+  contentByRole: {
+    user: [
+      {
+        icon: LayoutDashboard,
+        titulo: "Bem-vindo à Torre de Controle",
+        texto:
+          "Aqui ficam, num quadro só, os chamados do Administrativo e as etapas de mobilização. É a tela da reunião de torre: o Administrativo apresenta e cada responsável confere o que é seu.",
+      },
+      {
+        icon: Users,
+        titulo: "Filtre pelo seu nome",
+        texto:
+          'Nas duas telas, o filtro "Responsável" tem a opção "Eu" no topo. Selecione e o quadro passa a mostrar só os seus chamados e as suas etapas — é assim que cada um apresenta a própria parte na reunião.',
+      },
+      {
+        icon: AlertTriangle,
+        titulo: "O que já venceu",
+        texto:
+          'O prazo em vermelho é item vencido. O botão "Só os vencidos" (no Quadro) e "Só as atrasadas" (em Etapas) reduzem a lista ao que precisa de decisão agora.',
+      },
+      {
+        icon: ListChecks,
+        titulo: "Quadro e Etapas mostram o mesmo, de dois jeitos",
+        texto:
+          "O Quadro agrupa por situação — a fazer, em andamento, aguardando terceiro, concluído — e serve para a visão geral. Etapas é a mesma informação em lista, com data prevista, data real e dias de atraso, e serve para conferir item a item.",
+      },
+      {
+        icon: ShieldCheck,
+        titulo: "Só leitura, de propósito",
+        texto:
+          "Nada aqui pode ser alterado. Quem precisa mexer num chamado usa o Administrativo, e quem responde por uma etapa a atualiza no módulo de Mobilização. A torre existe para acompanhar, não para operar — assim ninguém muda um processo no meio da apresentação.",
+      },
+      {
+        icon: Search,
+        titulo: "Você vê o que é seu",
+        texto:
+          "A lista já vem recortada: aparecem os chamados e as mobilizações em que você está envolvido, como solicitante, aprovador ou responsável. Se algo que você esperava não aparece, é sinal de que você não está registrado como responsável por aquilo.",
+      },
+      NOTIFICACOES,
+      TROCAR_APP,
+    ],
+  },
+};

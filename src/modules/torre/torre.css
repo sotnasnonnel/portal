@@ -1,0 +1,35 @@
+/* ==========================================================================
+   Módulo Torre de Controle.
+
+   NÃO redefine as classes .mob-*: o módulo reusa a folha da Mobilização, porque
+   as telas SÃO as mesmas (quadro e etapas), só que sem ação nenhuma. Duplicar
+   400 linhas de CSS aqui faria os dois quadros divergirem no primeiro ajuste de
+   espaçamento — e é o mesmo quadro.
+
+   O que muda é o acento, e ele muda por TOKEN: as variáveis são redeclaradas
+   na raiz e todo o resto da folha as consome. O grafite é o único ainda livre
+   (azul = Portal/Adm, teal = Financeiro, terracota = Horas/Programas,
+   violeta = Estoque, índigo = Mobilização) e combina com um módulo que só lê.
+   ========================================================================== */
+.mobRoot.torRoot {
+  --mod-accent: #334155;
+  --mod-accent-soft: #f1f5f9;
+  --mod-accent-ink: #1e293b;
+
+  --m-primary: #334155;
+  --m-primary-soft: #f1f5f9;
+  --m-primary-line: #cbd5e1;
+}
+
+/* Sem ação: o cartão informa e não leva a lugar nenhum. Sem isto ele herdaria
+   o cursor de mão e o realce de hover da Mobilização, prometendo um clique que
+   não existe. */
+.torRoot .mob-cartao { cursor: default; }
+.torRoot .mob-cartao:hover { border-color: var(--m-border); transform: none; }
+
+/* Aviso de "só leitura" no topo das duas telas. */
+.tor-nota {
+  display: flex; align-items: center; gap: 8px;
+  font-size: var(--font-size-xs); color: var(--m-muted);
+  margin: 0 0 16px;
+}

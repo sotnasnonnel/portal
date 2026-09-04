@@ -9,6 +9,9 @@ const mobilizacaoCheia = () => ({
   profissional_id: 'p1',
   profissional: 'Fulano',
   gestor: 'Beltrano',
+  cliente: 'IMC SASTE',
+  cliente_final: 'VALE',
+  empresa_phd: 'PHD ASSESSORIA',
   cc: 'CC-100',
   local_obra: 'Obra X',
   data_inicio_cliente: '2026-09-01',
@@ -46,23 +49,40 @@ test('eDesmobilizacao distingue o ramo', () => {
   assert.equal(eDesmobilizacao({ movimento: 'Nova mobilização' }), false);
 });
 
-test('mobilização exige profissional, CC, obra e data', () => {
+// O cliente entrou na lista quando o modulo de Mobilizacao passou a nascer
+// deste chamado: sem ele o processo nascia com o cliente em branco, enquanto
+// as 125 linhas vindas da planilha tinham todos preenchidos.
+test('mobilização exige profissional, cliente, CC, obra e data', () => {
+  const mob = (extra) => validarMobilizacao({ movimento: 'Nova mobilização', profissional_id: 'p1', ...extra });
   assert.match(validarMobilizacao(inicialMobilizacao()), /profissional/i);
-  assert.match(validarMobilizacao({ movimento: 'Nova mobilização', profissional_id: 'p1' }), /centro de custo/i);
-  assert.match(validarMobilizacao({ movimento: 'Nova mobilização', profissional_id: 'p1', cc: 'x' }), /obra/i);
-  assert.match(validarMobilizacao({ movimento: 'Nova mobilização', profissional_id: 'p1', cc: 'x', local_obra: 'y' }), /data/i);
+  assert.match(mob({}), /cliente/i);
+  assert.match(mob({ cliente: 'IMC SASTE' }), /centro de custo/i);
+  assert.match(mob({ cliente: 'IMC SASTE', cc: 'x' }), /obra/i);
+  assert.match(mob({ cliente: 'IMC SASTE', cc: 'x', local_obra: 'y' }), /data/i);
   assert.equal(validarMobilizacao(mobilizacaoCheia()), '');
 });
 
-// Desmobilização não pode herdar as exigências da mobilização.
-test('desmobilização cobra só profissional e o que devolve', () => {
-  assert.equal(validarMobilizacao({ movimento: 'Desmobilização', profissional_id: 'p1' }), '');
+// Desmobilização não pode herdar as exigências da mobilização: nada de CC,
+// obra ou data de início. O que ela cobra é a data em que a pessoa SAI, que é
+// a data-base do processo de desmobilização — sem ela nenhum passo tem prazo.
+test('desmobilização cobra profissional, data de saída e o que devolve', () => {
+  const desmob = (extra) => validarMobilizacao({ movimento: 'Desmobilização', profissional_id: 'p1', ...extra });
+
+  assert.match(desmob({}), /data da desmobiliza/i);
+  assert.equal(desmob({ data_desmobilizacao: '2026-09-30' }), '');
+
   assert.match(
-    validarMobilizacao({ movimento: 'Desmobilização', profissional_id: 'p1', devolucao: true, devolucao_descricao: '  ' }),
+    desmob({ data_desmobilizacao: '2026-09-30', devolucao: true, devolucao_descricao: '  ' }),
     /devolvido/i,
   );
   assert.equal(
-    validarMobilizacao({ movimento: 'Desmobilização', profissional_id: 'p1', devolucao: true, devolucao_descricao: 'notebook' }),
+    desmob({ data_desmobilizacao: '2026-09-30', devolucao: true, devolucao_descricao: 'notebook' }),
     '',
   );
+});
+
+// A desmobilizacao nao pode passar a exigir o que e da mobilizacao.
+test('desmobilização não cobra CC, obra nem data de início', () => {
+  const erro = validarMobilizacao({ movimento: 'Desmobilização', profissional_id: 'p1', data_desmobilizacao: '2026-09-30' });
+  assert.equal(erro, '');
 });

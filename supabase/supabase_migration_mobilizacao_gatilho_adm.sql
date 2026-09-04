@@ -63,16 +63,24 @@ returns jsonb language sql immutable set search_path = '' as $$
     'local_obra',        nullif(btrim(coalesce(p_campos ->> 'local_obra', '')), ''),
     'cod_ct',            nullif(btrim(coalesce(p_campos ->> 'cc', '')), ''),
     'ger_phd',           nullif(btrim(coalesce(p_campos ->> 'gestor', '')), ''),
+    'cliente_phd',       nullif(btrim(coalesce(p_campos ->> 'cliente', '')), ''),
+    'cliente_final',     nullif(btrim(coalesce(p_campos ->> 'cliente_final', '')), ''),
+    'empresa_phd',       nullif(btrim(coalesce(p_campos ->> 'empresa_phd', '')), ''),
     -- Não tem coluna própria (só a mobilização de pessoa o coleta), então vai
     -- para o jsonb de campos em vez de ser descartado calado.
     'campos',            case when nullif(btrim(coalesce(p_campos ->> 'contato_cliente', '')), '') is null
                               then null
                               else jsonb_build_object('contato_cliente', btrim(p_campos ->> 'contato_cliente'))
                          end,
-    -- A data de início no cliente é a data-base: é dela que partem as etapas
-    -- raiz. Desmobilização não tem essa data, e aí o processo nasce sem prazo
-    -- até alguém informar a data-base — que é honesto, e visível na tela.
-    'data_base',         nullif(p_campos ->> 'data_inicio_cliente', ''),
+    -- A data-base sai de campos DIFERENTES conforme o movimento: mobilização
+    -- usa a data de início no cliente, desmobilização usa a data em que a
+    -- pessoa sai. Antes só existia a primeira, e por isso a desmobilização
+    -- nascia sem prazo em passo NENHUM. Espelha dataBaseDoChamado em
+    -- src/modules/mobilizacao/lib/gatilho.js.
+    'data_base',         coalesce(
+                           nullif(p_campos ->> 'data_desmobilizacao', ''),
+                           nullif(p_campos ->> 'data_inicio_cliente', '')
+                         ),
     'solicitante_id',    p_solicitante::text,
     -- O movimento não vira coluna, mas precisa viajar: é o que a `condicao` do
     -- catálogo consulta para decidir quais etapas nascem.

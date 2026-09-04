@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   estaAtrasada, concluiuNoPrazo, resumoIndicadores, gargalosPorEtapa,
-  faixaPct, formatarPct,
+  faixaPct, formatarPct, etapasVencidas, processosTravados,
 } from './indicadoresMob.js';
 
 const et = (over = {}) => ({
@@ -141,4 +141,66 @@ test('lista vazia não quebra nada', () => {
   assert.equal(r.etapas.total, 0);
   assert.equal(r.prazo.pct, null);
   assert.deepEqual(r.gargalos, []);
+});
+
+// ---------------------------------------------------------------------------
+// Detalhe por trás dos cards clicáveis
+// ---------------------------------------------------------------------------
+
+test('etapas vencidas vêm da pior para a menos pior', () => {
+  const r = etapasVencidas([
+    et({ id: 'a', titulo: 'ASO', dias_atraso: 3 }),
+    et({ id: 'b', titulo: 'Exames', dias_atraso: 12 }),
+    et({ id: 'c', titulo: 'Dossiê', dias_atraso: -2 }),
+    et({ id: 'd', titulo: 'Crachá', dias_atraso: 20, status: 'concluida' }),
+  ]);
+  assert.deepEqual(r.map((e) => e.titulo), ['Exames', 'ASO'],
+    'só o que ainda está em jogo, e em ordem de atraso');
+});
+
+// O card conta PROCESSOS; listar etapas soltas faria o detalhe não bater com o
+// número que a pessoa clicou.
+test('processos travados agrupam as etapas do mesmo processo', () => {
+  const etapas = [
+    et({ id: '1', processo_id: 'p1', titulo: 'Exames', dias_atraso: 4 }),
+    et({ id: '2', processo_id: 'p1', titulo: 'ASO', dias_atraso: 9 }),
+    et({ id: '3', processo_id: 'p2', titulo: 'Dossiê', dias_atraso: 2 }),
+    et({ id: '4', processo_id: 'p3', titulo: 'Crachá', dias_atraso: -5 }),
+  ];
+  const processos = [
+    { id: 'p1', numero: 7, titulo: 'FULANO', fluxo: 'mobilizacao_pessoa' },
+    { id: 'p2', numero: 8, titulo: 'BELTRANO', fluxo: 'mobilizacao_pessoa' },
+  ];
+  const r = processosTravados(etapas, processos);
+
+  assert.equal(r.length, 2, 'p3 não tem etapa vencida');
+  assert.equal(r[0].id, 'p1', 'o pior atraso vem primeiro');
+  assert.equal(r[0].numero, 7);
+  assert.equal(r[0].titulo, 'FULANO');
+  assert.equal(r[0].etapas.length, 2);
+  assert.equal(r[0].piorAtraso, 9);
+  assert.equal(r[1].piorAtraso, 2);
+});
+
+// O detalhe tem de bater com o card, senão a pessoa clica em "3" e vê 5 linhas.
+test('o detalhe bate com o número do card', () => {
+  const etapas = [
+    et({ id: '1', processo_id: 'p1', dias_atraso: 4 }),
+    et({ id: '2', processo_id: 'p1', dias_atraso: 9 }),
+    et({ id: '3', processo_id: 'p2', dias_atraso: 2 }),
+  ];
+  const r = resumoIndicadores(etapas, []);
+  assert.equal(processosTravados(etapas, []).length, r.processos.atrasados);
+  assert.equal(etapasVencidas(etapas).length, r.etapas.atrasadas);
+});
+
+test('processo sem cadastro na lista ainda aparece no detalhe', () => {
+  const r = processosTravados([et({ processo_id: 'orfao', dias_atraso: 3 })], []);
+  assert.equal(r.length, 1, 'melhor uma linha sem título do que sumir do detalhe');
+  assert.equal(r[0].id, 'orfao');
+});
+
+test('sem etapa vencida, os dois detalhes são vazios', () => {
+  assert.deepEqual(etapasVencidas([]), []);
+  assert.deepEqual(processosTravados([], []), []);
 });

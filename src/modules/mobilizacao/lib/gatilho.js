@@ -53,8 +53,20 @@ export const CAMPOS_DO_CHAMADO = {
   cc: 'cod_ct',
   gestor: 'ger_phd',
   contato_cliente: 'contato_cliente',
+  cliente: 'cliente_phd',
+  cliente_final: 'cliente_final',
+  empresa_phd: 'empresa_phd',
   data_inicio_cliente: 'data_base',
 };
+
+/**
+ * A data-base sai de campos DIFERENTES conforme o movimento: mobilizacao usa
+ * a data de inicio no cliente, desmobilizacao usa a data em que a pessoa sai.
+ * Sem esse desvio, o processo de desmobilizacao nascia sem prazo em passo
+ * nenhum — o formulario simplesmente nao tem "data de inicio".
+ */
+export const dataBaseDoChamado = (campos = {}) =>
+  campos.data_desmobilizacao || campos.data_inicio_cliente || '';
 
 /** Traduz `chamados_adm.campos` para o `p_dados` de mobilizacao_abrir. */
 export function dadosDoChamado(campos = {}) {
@@ -66,5 +78,8 @@ export function dadosDoChamado(campos = {}) {
   // O movimento não vira coluna, mas precisa viajar: é o que a `condicao` do
   // catálogo consulta para decidir quais etapas nascem.
   if (campos.movimento) dados.movimento = campos.movimento;
+
+  const base = dataBaseDoChamado(campos);
+  if (base) dados.data_base = base;
   return dados;
 }

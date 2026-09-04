@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FolderKanban, Loader2, AlertCircle, FilePlus2 } from 'lucide-react';
+import {
+  FolderKanban, Loader2, AlertCircle, FilePlus2, AlertTriangle, X,
+} from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import {
   ehTimeMobilizacao, FLUXOS, rotuloFluxoCurto, STATUS_PROCESSO,
 } from '../../../../config/mobilizacao';
 import { semaforoPrazo } from '../../../../utils/semaforo';
 import { listarProcessos } from '../../lib/mobilizacao';
-import { progresso } from '../../lib/painelEtapas';
+import { progresso, filtrarProcessos, processoAtrasado } from '../../lib/painelEtapas';
 
 const dataBr = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : '—');
 
@@ -20,6 +22,8 @@ export default function ProcessosMob() {
   const [erro, setErro] = useState('');
   const [fFluxo, setFFluxo] = useState('');
   const [apenasAbertos, setApenasAbertos] = useState(true);
+  const [busca, setBusca] = useState('');
+  const [atrasados, setAtrasados] = useState(false);
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -35,6 +39,11 @@ export default function ProcessosMob() {
 
   useEffect(() => { carregar(); }, [carregar]);
 
+  // Busca e atraso filtram o que JA veio; fluxo e situacao vao na consulta,
+  // porque mudam o RECORTE (encerrados sao muitos e nao se traz a toa).
+  const visiveis = filtrarProcessos(processos, { busca, atrasados });
+  const filtrando = !!busca || atrasados;
+
   return (
     <div className="mob-page mob-page-wide">
       <h1 className="mob-title"><FolderKanban size={24} /> Processos</h1>
@@ -43,6 +52,12 @@ export default function ProcessosMob() {
       </p>
 
       <div className="mob-filtros">
+        <div className="mob-filtro" style={{ minWidth: 240 }}>
+          <label htmlFor="mob-p-busca">Buscar</label>
+          <input id="mob-p-busca" type="text" value={busca} onChange={(e) => setBusca(e.target.value)}
+            placeholder="Pessoa, cliente, obra ou código" />
+        </div>
+
         <div className="mob-filtro">
           <label htmlFor="mob-p-fluxo">Fluxo</label>
           <select id="mob-p-fluxo" value={fFluxo} onChange={(e) => setFFluxo(e.target.value)}>
@@ -62,9 +77,22 @@ export default function ProcessosMob() {
           </select>
         </div>
 
+        <button type="button"
+          className={`mob-btn mob-btn-sm mob-filtro-limpa ${atrasados ? 'mob-btn-primary' : 'mob-btn-ghost'}`}
+          onClick={() => setAtrasados((a) => !a)}>
+          <AlertTriangle size={15} /> Só os atrasados
+        </button>
+
+        {filtrando && (
+          <button type="button" className="mob-btn mob-btn-ghost mob-btn-sm mob-filtro-limpa"
+            onClick={() => { setBusca(''); setAtrasados(false); }}>
+            <X size={15} /> Limpar
+          </button>
+        )}
+
         {souTime && (
           <Link to="/mobilizacao/nova" className="mob-btn mob-btn-primary mob-btn-sm mob-filtro-limpa">
-            <FilePlus2 size={15} /> Abrir processo
+            <FilePlus2 size={15} /> Mobilizar empresa
           </Link>
         )}
       </div>
@@ -73,8 +101,10 @@ export default function ProcessosMob() {
 
       {carregando ? (
         <div className="mob-vazio"><Loader2 size={20} className="mob-spin" /> Carregando…</div>
-      ) : !processos.length ? (
-        <div className="mob-vazio">Nenhum processo por aqui.</div>
+      ) : !visiveis.length ? (
+        <div className="mob-vazio">
+          {filtrando ? 'Nenhum processo com esses filtros.' : 'Nenhum processo por aqui.'}
+        </div>
       ) : (
         <div className="mob-tabela-scroll">
           <table className="mob-tabela">
@@ -91,8 +121,9 @@ export default function ProcessosMob() {
               </tr>
             </thead>
             <tbody>
-              {processos.map((p) => {
+              {visiveis.map((p) => {
                 const pr = progresso(p);
+                const atrasado = processoAtrasado(p);
                 const tom = semaforoPrazo(p.prazo_em);
                 return (
                   <tr key={p.id}>
@@ -111,7 +142,7 @@ export default function ProcessosMob() {
                     <td>{p.responsavelNome || <span className="mob-cartao-sem-dono">sem responsável</span>}</td>
                     <td className="num">
                       {p.prazo_em
-                        ? <span className={`mob-prazo tom-${tom}`}>{dataBr(p.prazo_em)}</span>
+                        ? <span className={`mob-prazo tom-${atrasado ? 'vencido' : tom}`}>{dataBr(p.prazo_em)}</span>
                         : '—'}
                     </td>
                     <td><span className={`mob-pill tom-${p.status}`}>{STATUS_PROCESSO[p.status] || p.status}</span></td>

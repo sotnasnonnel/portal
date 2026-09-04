@@ -188,3 +188,44 @@ virar um quarto fluxo.
   "Não se aplica" fora do quadro). Se pesar, a próxima alavanca é filtrar por fluxo antes
   de carregar.
 - **Confirmar o e-mail em `MOBILIZACAO_LIBERADOS`** antes de testar em produção.
+
+---
+
+## Ajustes da revisão preliminar (04/09/2026)
+
+Sete comentários do time depois de ver o módulo. O que mudou:
+
+1. **Quadro** — filtros "Em atraso" e "Vence hoje". São excludentes: uma etapa
+   que já venceu não vence hoje, então ligar os dois devolveria lista vazia.
+2. **Processos** — busca (pessoa, cliente, obra ou código de projeto) e filtro
+   "Só os atrasados". Busca e atraso filtram o que já veio; fluxo e situação
+   continuam na consulta, porque mudam o recorte.
+3. **Abrir processo virou "Mobilizar empresa"** e só aceita esse fluxo. Os de
+   pessoa nascem do chamado do Adm; um segundo caminho para a mesma coisa
+   criaria dois processos para a mesma pessoa, sem nada que os ligasse. A tela
+   diz isso em destaque, com atalho para o Quadro e para a Torre.
+4. **Campos novos no formulário do Adm** (era a nota "checar se precisa"):
+   `cliente` (obrigatório), `cliente_final`, `empresa_phd` e, na
+   desmobilização, `data_desmobilizacao` (obrigatória). O processo nascido do
+   chamado vinha sem cliente nenhum, enquanto as 125 linhas da planilha tinham
+   todos preenchidos — e a **desmobilização nascia sem prazo em passo algum**,
+   porque o formulário não tem "data de início no cliente" e não havia outra
+   data para servir de base.
+5. **Indicadores** — "Processos travados" e "Etapas vencidas" viraram botões que
+   abrem o detalhe. Um teste garante que o detalhe bate com o número do card.
+6. **Torre de Controle virou módulo próprio** (`/torre`), só leitura, com Quadro
+   e Etapas. Gate por perfil: `coordenador`, `gestor` e `admin`. **Não existe
+   perfil "gerente" nem "diretor"** — como diz `config/perfis.js`, a liderança
+   toda é `gestor`; diretoria se distingue por `formato = 'Diretoria'`, que é
+   dado de contrato, não de acesso. O módulo reusa a folha de estilo e as libs
+   da Mobilização (só troca o acento por token); os cartões não são links,
+   porque quem abre a torre normalmente não tem acesso ao módulo de Mobilização
+   e um link que devolve para a Home é pior que nenhum.
+
+### Ainda pendente, por decisão
+
+**Centro de custo na Torre**: alguns processos trazem o CC por nome de equipe e
+outros pelo código do projeto, então o filtro por centro de custo mistura as
+duas convenções. Resolver isso pede uma base de-para (projeto → responsável) que
+ainda não existe — está com o Lennon. Até lá o filtro funciona, mas quem escolhe
+"CT08" não vê o que estiver gravado como nome de equipe.

@@ -352,8 +352,8 @@ export async function listarParaIndicadores() {
   const [etapas, processos] = await Promise.all([
     supabase
       .from('mobilizacao_etapas')
-      .select('id, processo_id, codigo, titulo, status, dias_atraso, responsavel_id, processo:mobilizacao_processos!inner(fluxo, status)'),
-    supabase.from('mobilizacao_processos').select('id, fluxo, status'),
+      .select('id, processo_id, codigo, titulo, status, dias_atraso, data_prevista, responsavel_id, processo:mobilizacao_processos!inner(numero, titulo, fluxo, status)'),
+    supabase.from('mobilizacao_processos').select('id, numero, titulo, fluxo, status, prazo_em'),
   ]);
   if (etapas.error) throw new Error(`Não foi possível carregar os indicadores: ${etapas.error.message}`);
   if (processos.error) throw new Error(`Não foi possível carregar os indicadores: ${processos.error.message}`);
@@ -364,6 +364,8 @@ export async function listarParaIndicadores() {
     etapas: lista.map((e) => ({
       ...e,
       fluxo: e.processo?.fluxo,
+      processoNumero: e.processo?.numero,
+      processoTitulo: e.processo?.titulo,
       responsavelNome: nomes.get(e.responsavel_id) || '',
     })),
     processos: processos.data || [],

@@ -18,6 +18,16 @@ export const inicialMobilizacao = () => ({
   cc: '',
   local_obra: '',
   data_inicio_cliente: '',
+  // Os tres campos abaixo existem para o modulo de Mobilizacao: o processo
+  // que nasce deste chamado precisa saber PARA QUEM a pessoa vai e por qual
+  // empresa. Sem eles o processo nascia com cliente em branco, enquanto as
+  // 125 linhas vindas da planilha tinham todos preenchidos.
+  cliente: '',
+  cliente_final: '',
+  empresa_phd: '',
+  // Desmobilizacao nao tem "data de inicio no cliente", e sem data nenhuma o
+  // processo nascia sem prazo em NENHUM passo. Esta e a data-base dele.
+  data_desmobilizacao: '',
   equipamentos: [],
   softwares: [],
   epis: [],
@@ -42,7 +52,7 @@ export function aoTrocarMovimento(valores, movimento) {
       equipamentos: [], softwares: [], epis: [], uniforme: '', contato_cliente: '',
     };
   }
-  return { ...base, devolucao: false, devolucao_descricao: '' };
+  return { ...base, devolucao: false, devolucao_descricao: '', data_desmobilizacao: '' };
 }
 
 export function validarMobilizacao(v) {
@@ -52,9 +62,13 @@ export function validarMobilizacao(v) {
   if (eDesmobilizacao(v)) {
     // Marcar devolução sem dizer o que será devolvido não ajuda ninguém do Adm.
     if (v.devolucao && !v.devolucao_descricao?.trim()) return 'Descreva o que será devolvido.';
+    // É a data-base do processo de desmobilização: sem ela nenhum passo tem
+    // prazo, e o quadro nasce todo sem semáforo.
+    if (!v.data_desmobilizacao) return 'Informe a data da desmobilização.';
     return '';
   }
 
+  if (!v.cliente?.trim()) return 'Informe o cliente.';
   if (!v.cc?.trim()) return 'Informe o centro de custo.';
   if (!v.local_obra?.trim()) return 'Informe o local da obra.';
   if (!v.data_inicio_cliente) return 'Informe a data de início no cliente.';

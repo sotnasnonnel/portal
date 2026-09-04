@@ -1,4 +1,5 @@
 import { ehEncerrada, estaAberta } from './statusEtapa.js';
+import { estaAtrasada } from './painelEtapas.js';
 
 /**
  * Indicadores da Mobilização.
@@ -18,10 +19,12 @@ import { ehEncerrada, estaAberta } from './statusEtapa.js';
  * dizer isso.
  */
 
-/** Etapa vencida AGORA. Só do que ainda está em jogo: uma etapa concluída com
- *  atraso já é contada pelo indicador de cumprimento, e somar as duas contaria
- *  o mesmo problema duas vezes. */
-export const estaAtrasada = (e) => estaAberta(e) && Number(e?.dias_atraso) > 0;
+/**
+ * Etapa vencida AGORA — vem de painelEtapas, que e onde o quadro e a fila
+ * tambem a consultam. Duas definicoes de "esta atrasada" fariam o card do
+ * indicador discordar do que o quadro pinta de vermelho.
+ */
+export { estaAtrasada } from './painelEtapas.js';
 
 /**
  * Concluiu dentro do prazo?
@@ -159,3 +162,47 @@ export const formatarPct = (pct) => (pct === null || pct === undefined ? '—' :
 export const porOrdem = (etapas = []) => [...etapas].sort((a, b) => a.ordem - b.ordem);
 
 export { ehEncerrada };
+
+/**
+ * Detalhe do card "Etapas vencidas": as etapas em atraso, da pior para a menos
+ * pior. Um numero num card so vira acao quando da para responder "quais?" — e
+ * o ranking por atraso e a ordem em que alguem vai atacar a lista.
+ */
+export function etapasVencidas(etapas = []) {
+  return etapas.filter(estaAtrasada)
+    .sort((a, b) => (Number(b.dias_atraso) - Number(a.dias_atraso))
+      || String(a.titulo || '').localeCompare(String(b.titulo || ''), 'pt-BR'));
+}
+
+/**
+ * Detalhe do card "Processos travados": um processo por linha, com quantas
+ * etapas dele estao vencidas e qual o pior atraso.
+ *
+ * Agrupa por processo de proposito: o card conta PROCESSOS, e uma mobilizacao
+ * travada em tres passos continua sendo uma mobilizacao. Listar as etapas soltas
+ * aqui faria o detalhe nao bater com o numero do card.
+ */
+export function processosTravados(etapas = [], processos = []) {
+  const porId = new Map(processos.map((p) => [p.id, p]));
+  const mapa = new Map();
+
+  for (const e of etapasVencidas(etapas)) {
+    if (!mapa.has(e.processo_id)) {
+      const p = porId.get(e.processo_id) || {};
+      mapa.set(e.processo_id, {
+        id: e.processo_id,
+        numero: p.numero ?? e.processo?.numero,
+        titulo: p.titulo || e.processo?.titulo || e.processoTitulo,
+        fluxo: p.fluxo || e.fluxo,
+        etapas: [],
+        piorAtraso: 0,
+      });
+    }
+    const linha = mapa.get(e.processo_id);
+    linha.etapas.push(e);
+    linha.piorAtraso = Math.max(linha.piorAtraso, Number(e.dias_atraso) || 0);
+  }
+
+  return [...mapa.values()].sort((a, b) => (b.piorAtraso - a.piorAtraso)
+    || (b.etapas.length - a.etapas.length));
+}
