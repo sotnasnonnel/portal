@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, BarChart3, Clock, CreditCard, Headset, Sparkles, Boxes, ShieldCheck, LogOut, ArrowRight, Lock, Hourglass, Blocks, MessageSquarePlus, Megaphone } from 'lucide-react';
+import { Users, BarChart3, Clock, CreditCard, Headset, Sparkles, Boxes, ShieldCheck, LogOut, ArrowRight, Lock, Hourglass, Blocks, MessageSquarePlus, Megaphone, Route } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { isSuperAdmin } from '../../config/superAdmin';
 import { podeAcessarAdm } from '../../config/administrativo';
 import { podeAcessarProgramas } from '../../config/programas';
 import { podeAcessarEstoque } from '../../config/estoque';
+import { podeAcessarMobilizacao } from '../../config/mobilizacao';
 import { areasFinanceiroDe } from '../../config/financeiro';
 import { FALE_CONOSCO_OPEN_EVENT, SLA_HORAS } from '../../config/suporte';
 import { NOVIDADES, ULTIMA_NOVIDADE, novidadesNaoVistas } from '../../config/novidades';
@@ -127,6 +128,19 @@ export default function Home() {
       desc: 'Almoxarifado de EPIs e uniformes',
       locked: !podeAcessarEstoque(user),
       emBreve: !podeAcessarEstoque(user),
+    },
+    {
+      // O passo a passo da mobilização, que era planilha. Acompanhar é aberto a
+      // todos os logados (a RLS mostra a cada um os processos em que está
+      // envolvido); controlar é do time do Adm. Ainda não lançado (ver
+      // MOBILIZACAO_LIBERADOS em config/mobilizacao.js).
+      to: '/mobilizacao/kanban',
+      icon: Route,
+      tone: 'blue',
+      title: 'Mobilização',
+      desc: 'Mobilização e desmobilização de pessoas e da empresa',
+      locked: !podeAcessarMobilizacao(user),
+      emBreve: !podeAcessarMobilizacao(user),
     },
     {
       // Cartões e Reembolso são duas rotinas sem relação uma com a outra, então

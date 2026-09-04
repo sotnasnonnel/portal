@@ -15,6 +15,8 @@ import ProgramasShell from '../modules/programas/app/components/AppShell';
 import { podeAcessarProgramas } from '../config/programas';
 import EstoqueShell from '../modules/estoque/app/components/AppShell';
 import { podeAcessarEstoque } from '../config/estoque';
+import MobilizacaoShell from '../modules/mobilizacao/app/components/AppShell';
+import { podeAcessarMobilizacao } from '../config/mobilizacao';
 
 const Login = lazy(() => import('../pages/Login/Login'));
 const Home = lazy(() => import('../pages/Home/Home'));
@@ -96,6 +98,15 @@ const AjusteEstoque = lazy(() => import('../modules/estoque/app/ajuste/page'));
 const MovimentosEstoque = lazy(() => import('../modules/estoque/app/movimentos/page'));
 const DashboardEstoque = lazy(() => import('../modules/estoque/app/dashboard/page'));
 
+const KanbanMob = lazy(() => import('../modules/mobilizacao/app/kanban/page'));
+const FilaMob = lazy(() => import('../modules/mobilizacao/app/fila/page'));
+const ProcessosMob = lazy(() => import('../modules/mobilizacao/app/processos/page'));
+const ProcessoMob = lazy(() => import('../modules/mobilizacao/app/processo/page'));
+const NovaMob = lazy(() => import('../modules/mobilizacao/app/nova/page'));
+const DashboardMob = lazy(() => import('../modules/mobilizacao/app/dashboard/page'));
+const CatalogoMob = lazy(() => import('../modules/mobilizacao/app/catalogo/page'));
+const TorreMob = lazy(() => import('../modules/mobilizacao/app/torre/page'));
+
 function RouteFallback() {
   return <div style={{ padding: 'var(--space-3xl)', textAlign: 'center' }}>Carregando...</div>;
 }
@@ -160,6 +171,15 @@ function ProgramasEmBreveRoute({ children }) {
 function EstoqueEmBreveRoute({ children }) {
   const { user } = useAuth();
   if (!podeAcessarEstoque(user)) return <Navigate to="/home" replace />;
+  return children;
+}
+
+// Mobilização em construção: mesma trava do Administrativo e do Estoque. Gate
+// de UI — quem controla o processo é decidido pela RLS, que reusa o papel do
+// Adm (app_private.is_adm_time).
+function MobilizacaoEmBreveRoute({ children }) {
+  const { user } = useAuth();
+  if (!podeAcessarMobilizacao(user)) return <Navigate to="/home" replace />;
   return children;
 }
 
@@ -630,6 +650,32 @@ export default function AppRoutes() {
           <Route path="ajuste" element={<LazyPage><AjusteEstoque /></LazyPage>} />
           <Route path="movimentos" element={<LazyPage><MovimentosEstoque /></LazyPage>} />
           <Route path="dashboard" element={<LazyPage><DashboardEstoque /></LazyPage>} />
+        </Route>
+
+        {/* Mobilização: o passo a passo que a planilha controlava. Acompanhar é
+            de todos os logados, como no Adm — a RLS mostra a cada um os
+            processos em que ele está envolvido; abrir processo e configurar o
+            catálogo são do time do Adm. Enquanto está em construção, a rota
+            inteira devolve para a Home, exceto para quem está testando. */}
+        <Route
+          path="/mobilizacao"
+          element={
+            <ProtectedRoute>
+              <MobilizacaoEmBreveRoute>
+                <MobilizacaoShell />
+              </MobilizacaoEmBreveRoute>
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="/mobilizacao/kanban" replace />} />
+          <Route path="kanban" element={<LazyPage><KanbanMob /></LazyPage>} />
+          <Route path="fila" element={<LazyPage><FilaMob /></LazyPage>} />
+          <Route path="processos" element={<LazyPage><ProcessosMob /></LazyPage>} />
+          <Route path="processo/:id" element={<LazyPage><ProcessoMob /></LazyPage>} />
+          <Route path="nova" element={<LazyPage><NovaMob /></LazyPage>} />
+          <Route path="dashboard" element={<LazyPage><DashboardMob /></LazyPage>} />
+          <Route path="catalogo" element={<LazyPage><CatalogoMob /></LazyPage>} />
+          <Route path="torre" element={<LazyPage><TorreMob /></LazyPage>} />
         </Route>
 
         {/* Programas: os programas internos da PHD (Campo de Ideias e Alavanca).

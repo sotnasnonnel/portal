@@ -1,6 +1,6 @@
 import {
   FilePlus2, ClipboardList, ClipboardCheck, Inbox, LayoutGrid, Settings2, Workflow, Star,
-  BarChart3, Headset,
+  BarChart3, Headset, Radar,
 } from 'lucide-react';
 
 // Navegação da sidebar do Administrativo, na divisão padrão do portal (mesma do
@@ -38,6 +38,9 @@ export function navSections({ isAdmin = false } = {}) {
         { label: 'Aprovações', href: '/administrativo/aprovacoes', Icon: ClipboardCheck },
         { label: 'Fila', href: '/administrativo/fila', Icon: Inbox },
         { label: 'Indicadores', href: '/administrativo/dashboard', Icon: BarChart3 },
+        // Mora no módulo de Mobilização (o novo é que pode depender do velho),
+        // mas o atalho fica aqui porque é o mesmo pessoal que toca os dois.
+        { label: 'Torre de controle', href: '/mobilizacao/torre', Icon: Radar },
       ],
     },
   ];

@@ -898,3 +898,119 @@ export const ESTOQUE_GUIA = {
     ],
   },
 };
+
+// ============================ Gestão de Mobilização ============================
+// O papel vem do Administrativo: quem controla a mobilização é o mesmo time que
+// atende o chamado que a dispara.
+const MOB_QUADRO = {
+  icon: LayoutDashboard,
+  titulo: "O quadro é de ETAPAS, não de processos",
+  texto:
+    'Cada cartão é um PASSO de uma mobilização ("Emissão do ASO", "Envio do dossiê"), com o processo no topo e o prazo embaixo. Arraste o cartão entre as colunas para atualizar o passo — é assim que a planilha deixa de precisar ser preenchida à mão. Você só consegue arrastar os passos que pode gravar.',
+};
+
+const MOB_PRAZO = {
+  icon: CalendarClock,
+  titulo: "Como o prazo de cada passo é calculado",
+  texto:
+    'Cada passo tem um predecessor e um SLA em dias úteis. A data prevista é o prazo do passo anterior mais o SLA — e quando o passo anterior é concluído DE VERDADE, o prazo dos seguintes se reajusta sozinho a partir da data real. Sábado e domingo não contam; feriado ainda não é tratado.',
+};
+
+const MOB_ATRASO = {
+  icon: AlertTriangle,
+  titulo: "Vermelho é passo vencido",
+  texto:
+    'O semáforo do cartão fica vermelho quando a data prevista já passou e o passo não foi concluído, e amarelo quando vence hoje ou amanhã. Em "Indicadores" o card "Etapas vencidas" e o ranking "onde o processo mais trava" respondem qual passo atrasa sempre.',
+};
+
+export const MOBILIZACAO_GUIA = {
+  appName: "Mobilização",
+  fallbackRole: "user",
+  roleLabels: {
+    admin: "Administrador(a)",
+    atendente: "Controle de mobilização",
+    user: "Responsável de etapa",
+  },
+  contentByRole: {
+    user: [
+      {
+        icon: Workflow,
+        titulo: "Bem-vindo à Gestão de Mobilização",
+        texto:
+          "Aqui acompanhamos, passo a passo, a mobilização e a desmobilização de pessoas e a mobilização da empresa em cada contrato — no lugar da planilha. Você enxerga os processos em que está envolvido e atualiza os passos que são seus.",
+      },
+      MOB_QUADRO,
+      MOB_PRAZO,
+      {
+        icon: ListChecks,
+        titulo: "Suas etapas em lista",
+        texto:
+          'Em "Etapas" fica a mesma informação do quadro em forma de lista, com filtro por processo, responsável e situação, e um atalho para "só as atrasadas". É a tela para quando você quer conferir o que está pendente sem arrastar nada.',
+      },
+      NOTIFICACOES,
+      TROCAR_APP,
+    ],
+    atendente: [
+      {
+        icon: Workflow,
+        titulo: "Seu papel: controle de mobilização",
+        texto:
+          "Você enxerga todos os processos, assume e distribui etapas, abre mobilização de empresa e acompanha os indicadores. As mobilizações e desmobilizações de pessoas chegam sozinhas, pelo chamado do Administrativo.",
+      },
+      MOB_QUADRO,
+      MOB_PRAZO,
+      MOB_ATRASO,
+      {
+        icon: Headset,
+        titulo: "O chamado do Adm é o gatilho",
+        texto:
+          'Quando alguém abre um chamado de Mobilização no Administrativo, o processo nasce aqui automaticamente com todos os passos do fluxo certo — "Nova mobilização" e "Movimentação" viram mobilização de pessoa, "Desmobilização" vira o fluxo de desmobilização. Se o chamado tinha aprovação, o processo só nasce depois dela; se o chamado for reprovado ou cancelado, o processo é cancelado junto.',
+      },
+      {
+        icon: Building2,
+        titulo: "Mobilização da empresa é manual",
+        texto:
+          'Não existe chamado no Adm que dispare a mobilização de uma empresa num contrato novo, então ela é aberta à mão em "Abrir processo". Informe cliente, contrato e a data-base, e os passos entram com os prazos já calculados.',
+      },
+      {
+        icon: Users,
+        titulo: "Assumir e distribuir etapas",
+        texto:
+          'No detalhe do processo cada passo tem "Assumir" (põe no seu nome) e a troca de responsável. Passo sem dono aparece destacado no quadro — é o que ninguém está olhando. Quem é responsável de um passo consegue atualizá-lo mesmo sem ser do time.',
+      },
+      {
+        icon: Check,
+        titulo: "Torre de controle",
+        texto:
+          'A "Torre de controle" junta, num quadro só, os chamados do Administrativo e as etapas de mobilização. É a visão de quem toca os dois: o que está aberto, com quem, e o que já venceu.',
+      },
+      NOTIFICACOES,
+      TROCAR_APP,
+    ],
+    admin: [
+      {
+        icon: Workflow,
+        titulo: "Seu papel: administrador(a)",
+        texto:
+          "Além de tudo que o time faz, você define o catálogo de etapas de cada fluxo e o SLA de cada passo.",
+      },
+      MOB_QUADRO,
+      MOB_PRAZO,
+      MOB_ATRASO,
+      {
+        icon: Settings,
+        titulo: "Catálogo e SLAs",
+        texto:
+          'Em "Catálogo e SLAs" ficam os passos de cada um dos três fluxos: nome, ordem, de qual passo ele depende, quantos dias úteis leva e quem responde por ele. Mudança aqui vale para processos NOVOS — os que já estão rodando guardam os prazos com que nasceram, para não reescrever o passado.',
+      },
+      {
+        icon: FileSpreadsheet,
+        titulo: "A planilha e o portal convivendo",
+        texto:
+          "Enquanto a planilha continuar em uso, a recarga dela atualiza só os passos que ninguém tocou pelo portal — o que foi feito aqui nunca é sobrescrito. O contrário não é verdade: quem atualizar só no portal deixa a planilha desatualizada.",
+      },
+      NOTIFICACOES,
+      TROCAR_APP,
+    ],
+  },
+};

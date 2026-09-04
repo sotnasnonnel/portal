@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft, Loader2, AlertCircle, Send, Paperclip, FileText, Lock, UserCheck,
-  CheckCircle2, RotateCcw, Star, CircleDot, Users, X, Ban,
+  CheckCircle2, RotateCcw, Star, CircleDot, Users, X, Ban, Workflow,
 } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { getClasse, getServico, podeReatribuirAdm } from '../../../../config/administrativo';
@@ -23,6 +23,10 @@ import {
   chamadoDeEstoque, chamadoUsaEstoque, categoriaDoChamado, montarLinhasDeBaixa, validarLinhasDeBaixa,
   linhasComQuantidade,
 } from '../../lib/estoqueDoChamado';
+// O processo de mobilização que este chamado abriu. Só LEITURA, e a
+// dependência é de mão única, como a do Estoque: o Administrativo importa do
+// módulo mais novo, nunca o contrário.
+import { processoDoChamado } from '../../../mobilizacao/lib/mobilizacao';
 // Consulta e catálogo vêm do módulo de Estoque — dependência de mão única.
 import ConsultaEstoque from '../../../estoque/app/components/ConsultaEstoque';
 import { listarPosicao, listarPessoasEstoque, movimentosDoChamado } from '../../../estoque/lib/estoque';
@@ -42,6 +46,11 @@ const ROTULO_STATUS = {
   fechado: 'Fechado', reprovado: 'Reprovado', cancelado: 'Cancelado',
 };
 
+// A Mobilização guarda prazo como DATA pura ('AAAA-MM-DD'), sem hora. Passar
+// isso por new Date() a leria como UTC e, no nosso fuso, mostraria o dia
+// anterior — o mesmo erro que dataHora evita por já receber timestamp.
+const dataDia = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : '');
+
 const dataHora = (iso) => (iso
   ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
   : '—');
@@ -56,6 +65,7 @@ export default function ChamadoAdm() {
   const [nomesEventos, setNomesEventos] = useState({});
   const [etapas, setEtapas] = useState([]);
   const [nomesEtapas, setNomesEtapas] = useState({});
+  const [processoMob, setProcessoMob] = useState(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
   const [ocupado, setOcupado] = useState('');
@@ -110,6 +120,16 @@ export default function ChamadoAdm() {
   }, [id, user?.id]);
 
   useEffect(() => { carregar(); }, [carregar]);
+
+  // Processo de mobilização nascido deste chamado. Silencioso de propósito: a
+  // ausência é o caso normal (todo chamado que não é de mobilização), e uma
+  // falha aqui não pode atrapalhar a tela do chamado.
+  useEffect(() => {
+    if (!chamado || chamado.classe !== 'mobilizacao') { setProcessoMob(null); return undefined; }
+    let cancelado = false;
+    processoDoChamado(chamado.id).then((p) => { if (!cancelado) setProcessoMob(p); });
+    return () => { cancelado = true; };
+  }, [chamado]);
 
   // Time do Adm para o seletor de responsável. Buscado só quando o painel de
   // troca abre: é ação de coordenação, usada por duas pessoas.
@@ -552,6 +572,23 @@ export default function ChamadoAdm() {
           </div>
         )}
       </div>
+
+      {/* O que aconteceu DEPOIS do chamado. Quem abre uma mobilização quer
+          saber em que passo ela está, e sem isto o chamado morre em si mesmo —
+          era exatamente o buraco que a planilha preenchia à mão. */}
+      {processoMob && (
+        <div className="adm-card">
+          <h2 className="adm-card-tit"><Workflow size={14} /> Processo de mobilização</h2>
+          <p style={{ margin: 0, fontSize: 'var(--font-size-sm)' }}>
+            <Link to={`/mobilizacao/processo/${processoMob.id}`}>
+              Processo #{processoMob.numero}
+            </Link>
+            {' — '}
+            {processoMob.etapas_concluidas} de {processoMob.etapas_total} passos concluídos
+            {processoMob.prazo_em && `, previsto para ${dataDia(processoMob.prazo_em)}`}.
+          </p>
+        </div>
+      )}
 
       {/* Saber se TEM o item antes de prometer a entrega, sem trocar de módulo.
           Nasce fechado e só consulta o estoque quando aberto. */}

@@ -23,17 +23,13 @@ export function agruparEmColunas(chamados = []) {
 }
 
 /**
- * Semáforo do prazo. Sem vencimento não há o que semaforizar — chamado
- * aguardando aprovação ainda não teve o relógio ligado, e pintar de verde
- * sugeriria folga que não existe.
+ * Semáforo do prazo — mudou para src/utils/semaforo.js, porque a Mobilização
+ * pinta os cartões dela com a mesma régua e duas definições de "está apertado"
+ * fariam os dois quadros discordarem sobre a mesma pergunta.
+ *
+ * Re-export para não mexer em quem já importa daqui.
  */
-export function semaforoPrazo(slaVenceEm, agora = Date.now()) {
-  if (!slaVenceEm) return 'sem-prazo';
-  const faltam = new Date(slaVenceEm).getTime() - agora;
-  if (faltam < 0) return 'vencido';
-  if (faltam <= 24 * 3600 * 1000) return 'perto';
-  return 'ok';
-}
+export { semaforoPrazo } from '../../../utils/semaforo.js';
 
 /**
  * Mensagens ainda não lidas por MIM neste chamado.

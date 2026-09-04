@@ -1,6 +1,7 @@
 import { podeAcessarAdm } from './administrativo';
 import { podeAcessarProgramas } from './programas';
 import { podeAcessarEstoque } from './estoque';
+import { podeAcessarMobilizacao } from './mobilizacao';
 import { areasFinanceiroDe } from './financeiro';
 
 // Os módulos que uma pessoa ENXERGA no portal, em uma lista só.
@@ -24,6 +25,7 @@ export function modulosVisiveis(user, modules) {
   if (podeAcessarAdm(user)) nomes.push('Administrativo');
   if (podeAcessarProgramas(user)) nomes.push('Programas');
   if (podeAcessarEstoque(user)) nomes.push('Estoque');
+  if (podeAcessarMobilizacao(user)) nomes.push('Mobilização');
 
   // O card "Financeiro" cobre duas rotinas sem relação uma com a outra, e quem
   // relata pensa em uma delas — não no card. Por isso entram separadas, e só a
