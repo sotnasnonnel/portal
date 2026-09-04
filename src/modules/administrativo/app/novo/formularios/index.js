@@ -40,7 +40,11 @@ export const FORMS_SERVICO = {
   // Um serviço só cobre nova mobilização, movimentação e desmobilização — o
   // seletor dentro do formulário decide quais campos aparecem.
   'mobilizacao/mobilizacao': {
-    Componente: FormMobilizacao, estadoInicial: inicialMob, validar: validarMob, precisaPessoas: true,
+    Componente: FormMobilizacao,
+    estadoInicial: inicialMob,
+    validar: validarMob,
+    precisaPessoas: true,
+    precisaProjetos: true,
   },
   'saude-seguranca/epi': saudeSeguranca('epi'),
   'saude-seguranca/uniforme': saudeSeguranca('uniforme'),

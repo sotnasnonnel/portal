@@ -8,7 +8,7 @@ import { getClasse, getServico, assuntoDoServico } from '../../../../config/admi
 import { useAuth } from '../../../../contexts/AuthContext';
 import {
   criarChamado, criarMobilizacaoComAdicionais, buscarConfigServico, listarPessoas,
-  buscarAvaliacaoPendente, buscarCentroDeCusto,
+  listarProjetos, buscarAvaliacaoPendente, buscarCentroDeCusto,
 } from '../../lib/chamados';
 import { desdobrarMobilizacao } from '../../lib/desdobramento';
 import { validarCamposExtras, limparValores, mesclarComExtras } from '../../lib/camposExtras';
@@ -49,6 +49,7 @@ export default function NovoChamadoAdm() {
   const [sucesso, setSucesso] = useState(null);   // { numero, atendenteNome, aguardandoAprovacao }
   const [config, setConfig] = useState(null);     // null = ainda carregando
   const [pessoas, setPessoas] = useState([]);
+  const [projetos, setProjetos] = useState([]);
   const [pendente, setPendente] = useState(null); // avaliação que trava a abertura
   // Centro de custo do aprovador. '' = ninguém acima com gerência; null = carregando.
   const [centroCusto, setCentroCusto] = useState(null);
@@ -86,6 +87,20 @@ export default function NovoChamadoAdm() {
       .catch((e) => { if (!cancelado) setErro(e.message); });
     return () => { cancelado = true; };
   }, [form?.precisaPessoas]);
+
+  // Projetos do portal (os mesmos do módulo Horas) para o formulário que
+  // precisa dizer ONDE a pessoa vai trabalhar. Leitura livre, mas só o
+  // formulário que pede paga a consulta.
+  useEffect(() => {
+    if (!form?.precisaProjetos) return undefined;
+    let cancelado = false;
+    listarProjetos()
+      .then((lista) => { if (!cancelado) setProjetos(lista); })
+      // Silencioso: sem a lista o campo continua aceitando o nome digitado,
+      // que é melhor do que travar a abertura do chamado por causa dela.
+      .catch(() => {});
+    return () => { cancelado = true; };
+  }, [form?.precisaProjetos]);
 
   // A trava do POP 9.1 é da RLS, mas descobri-la só no envio faz a pessoa
   // preencher o formulário inteiro para levar um "não" — e sem saber qual
@@ -350,6 +365,7 @@ export default function NovoChamadoAdm() {
           {/* Campos do serviço: no mesmo cartão, na sequência natural. */}
           {form && (
             <form.Componente valores={extras} onChange={setExtras} pessoas={pessoas}
+              projetos={projetos} eu={user}
               classe={classe} servico={servico} travarCc={!!centroCusto} />
           )}
 

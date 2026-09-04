@@ -10,6 +10,8 @@ const mobilizacaoCheia = () => ({
   profissional: 'Fulano',
   gestor: 'Beltrano',
   cc: 'CC-100',
+  projeto_id: 'proj-1',
+  projeto: 'Obra Norte',
   local_obra: 'Obra X',
   data_inicio_cliente: '2026-09-01',
   epis: ['Capacete'],
@@ -26,6 +28,8 @@ test('as três situações vivem no mesmo seletor', () => {
 test('trocar para desmobilização descarta os campos que não se aplicam', () => {
   const v = aoTrocarMovimento(mobilizacaoCheia(), 'Desmobilização');
   assert.equal(v.cc, '');
+  assert.equal(v.projeto, '', 'projeto é da mobilização, não de quem sai');
+  assert.equal(v.projeto_id, '');
   assert.equal(v.local_obra, '');
   assert.equal(v.data_inicio_cliente, '');
   assert.deepEqual(v.epis, []);
@@ -46,12 +50,25 @@ test('eDesmobilizacao distingue o ramo', () => {
   assert.equal(eDesmobilizacao({ movimento: 'Nova mobilização' }), false);
 });
 
-test('mobilização exige profissional, CC, obra e data', () => {
+test('mobilização exige profissional, CC, projeto, obra e data', () => {
+  const base = { movimento: 'Nova mobilização', profissional_id: 'p1' };
   assert.match(validarMobilizacao(inicialMobilizacao()), /profissional/i);
-  assert.match(validarMobilizacao({ movimento: 'Nova mobilização', profissional_id: 'p1' }), /centro de custo/i);
-  assert.match(validarMobilizacao({ movimento: 'Nova mobilização', profissional_id: 'p1', cc: 'x' }), /obra/i);
-  assert.match(validarMobilizacao({ movimento: 'Nova mobilização', profissional_id: 'p1', cc: 'x', local_obra: 'y' }), /data/i);
+  assert.match(validarMobilizacao(base), /centro de custo/i);
+  assert.match(validarMobilizacao({ ...base, cc: 'x' }), /projeto/i);
+  assert.match(validarMobilizacao({ ...base, cc: 'x', projeto: 'Obra Norte' }), /obra/i);
+  assert.match(
+    validarMobilizacao({ ...base, cc: 'x', projeto: 'Obra Norte', local_obra: 'y' }),
+    /data/i,
+  );
   assert.equal(validarMobilizacao(mobilizacaoCheia()), '');
+});
+
+// O nome digitado vale tanto quanto o escolhido da lista: obra recém-fechada
+// ainda não está cadastrada, e travar a mobilização por isso seria pior.
+test('projeto fora da lista passa pela validação com o nome digitado', () => {
+  const v = { ...mobilizacaoCheia(), projeto_id: 'outro', projeto: 'Obra que não está no portal' };
+  assert.equal(validarMobilizacao(v), '');
+  assert.match(validarMobilizacao({ ...v, projeto: '   ' }), /projeto/i);
 });
 
 // Desmobilização não pode herdar as exigências da mobilização.

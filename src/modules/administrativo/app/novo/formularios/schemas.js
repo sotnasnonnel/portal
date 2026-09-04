@@ -38,6 +38,26 @@ const deslocamento = () => [
   { chave: 'justificativa', rotulo: 'Justificativa', tipo: 'texto_longo', obrigatorio: true },
 ];
 
+/**
+ * Quem vai dirigir o carro alugado.
+ *
+ * Nome e e-mail o portal conhece (é o cadastro de colaboradores) e o botão
+ * "Sou eu mesmo" preenche; CPF e CNH ninguém tem guardado, então continuam
+ * digitados — prometer preenchimento automático deles seria mentira.
+ *
+ * Não é seletor de pessoas: a lista de colaboradores só é liberada para o time
+ * do Adm, e quem abre o chamado é justamente quem não a enxerga.
+ */
+const condutor = () => [
+  { chave: 'condutor_nome', rotulo: 'Condutor — nome completo', tipo: 'texto', obrigatorio: true, grupo: 'condutor' },
+  { chave: 'condutor_cpf', rotulo: 'Condutor — CPF', tipo: 'texto', obrigatorio: true, grupo: 'condutor' },
+  { chave: 'condutor_cnh', rotulo: 'Condutor — número da CNH', tipo: 'texto', obrigatorio: true, grupo: 'condutor' },
+  // Validade é o que a locadora confere no balcão: vencida, a retirada não sai.
+  { chave: 'condutor_cnh_validade', rotulo: 'Condutor — validade da CNH', tipo: 'data', obrigatorio: true, grupo: 'condutor' },
+  { chave: 'condutor_telefone', rotulo: 'Condutor — telefone', tipo: 'texto', obrigatorio: true, grupo: 'condutor' },
+  { chave: 'condutor_email', rotulo: 'Condutor — e-mail', tipo: 'texto', obrigatorio: false, grupo: 'condutor' },
+];
+
 // Passagem e hospedagem repetem o bloco de identificação do viajante.
 const viajante = (rotuloPessoa) => [
   { chave: 'pessoa_id', rotulo: rotuloPessoa, tipo: 'pessoa', obrigatorio: true },
@@ -77,12 +97,17 @@ export const SCHEMAS = {
     { chave: 'motivo', rotulo: 'Motivo', tipo: 'texto_longo', obrigatorio: true },
     dataNecessidade(),
   ],
+  // Quem vai dirigir é dado do contrato de locação, não detalhe: a locadora
+  // emite o contrato no nome do condutor e a CNH tem de estar válida na
+  // retirada. Sem esses campos o Adm abria o chamado e voltava perguntando.
+  // `grupo` faz o formulário desenhar o bloco junto, com o atalho "Sou eu mesmo".
   'frota/reserva-veiculos': [
     cc(),
     { chave: 'local_retirada', rotulo: 'Local de retirada', tipo: 'texto', obrigatorio: true },
     { chave: 'retirada_em', rotulo: 'Data e horário de retirada', tipo: 'datahora', obrigatorio: true },
     { chave: 'local_devolucao', rotulo: 'Local da devolução', tipo: 'texto', obrigatorio: true },
     { chave: 'devolucao_em', rotulo: 'Data e horário da devolução', tipo: 'datahora', obrigatorio: true },
+    ...condutor(),
     observacao(),
   ],
 
@@ -243,7 +268,7 @@ const SEM_ANEXO = new Set([
  */
 const ROTULOS_CODIFICADOS = {
   movimento: 'Movimentação', profissional: 'Profissional', gestor: 'Gestor',
-  cc: 'Centro de custo', local_obra: 'Local da obra',
+  cc: 'Centro de custo', projeto: 'Projeto', local_obra: 'Local da obra',
   data_inicio_cliente: 'Data de início no cliente', equipamentos: 'Equipamento e acessórios',
   softwares: 'Software', epis: 'EPI', uniforme: 'Uniforme',
   contato_cliente: 'Contato do setor do cliente', devolucao: 'Há devolução',
@@ -311,7 +336,9 @@ export function formatarValorCampo(classe, servico, chave, valor) {
  * "[object Object]". A tela do chamado o renderiza numa tabela própria, com
  * quantidade e saldo.
  */
-export const CAMPOS_OCULTOS = new Set(['profissional_id', 'pessoa_id', 'itens']);
+// `projeto_id` é uuid (ou 'outro', quando a obra não está cadastrada): quem lê
+// o chamado quer o NOME, que é gravado em `projeto` ao lado.
+export const CAMPOS_OCULTOS = new Set(['profissional_id', 'pessoa_id', 'projeto_id', 'itens']);
 
 export const usaDescricao = (classe, servico) => COM_DESCRICAO.has(`${classe}/${servico}`);
 export const usaAnexo = (classe, servico) => !SEM_ANEXO.has(`${classe}/${servico}`);

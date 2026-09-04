@@ -182,6 +182,25 @@
 }
 
 .adm-campo { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+
+/* Subtítulo de um bloco de campos do mesmo assunto (hoje: o condutor da
+   reserva de veículo). O fio separa do campo de cima sem virar outro cartão —
+   o formulário do chamado é um só. */
+.adm-grupo-cab {
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 12px;
+  margin: 20px 0 14px; padding-top: 14px; border-top: 1px solid var(--a-border);
+}
+.adm-grupo-cab h3 {
+  margin: 0; font-size: var(--font-size-sm); font-weight: 600; color: var(--a-ink);
+}
+.adm-grupo-cab p { margin: 3px 0 0; font-size: var(--font-size-xs); color: var(--a-muted); }
+/* O botão não encolhe: "Sou eu mesmo" quebrado em duas linhas parece erro. */
+.adm-grupo-cab .adm-btn { flex: none; }
+
+@media (max-width: 560px) {
+  /* Empilhado: lado a lado, o botão espremia a dica em três linhas. */
+  .adm-grupo-cab { flex-direction: column; align-items: stretch; }
+}
 .adm-campo:last-child { margin-bottom: 0; }
 .adm-campo label { font-size: var(--font-size-xs); font-weight: 600; color: var(--a-gray-600); }
 .adm-campo label .req { color: var(--a-red); margin-left: 2px; }
@@ -740,6 +759,41 @@
 
 @media (max-width: 560px) {
   .adm-prazos-corpo { padding: 4px 16px 14px; max-height: 68vh; }
+}
+
+/* ---- lista por trás do indicador "Vencidos agora" ----
+   Mesma casca do GuiaModal, só mais larga: aqui o corpo é tabela, e apertá-la
+   em 620px jogaria o assunto para duas linhas em todo chamado. */
+.adm-atrasados-modal { max-width: 860px; }
+.adm-atrasados-corpo {
+  padding: 4px 24px 18px; overflow-y: auto; max-height: min(64vh, 560px);
+}
+.adm-atrasados-corpo h3 {
+  display: flex; align-items: center; gap: 8px;
+  margin: 0 0 4px; font-size: var(--font-size-lg); color: var(--a-ink);
+}
+.adm-atrasados-corpo h3 svg { color: #b91c1c; flex: none; }
+.adm-atrasados-corpo .adm-campo-dica { margin-bottom: 12px; }
+/* O rodapé do guia empilha; aqui são duas ações lado a lado (fechar e ir para
+   a fila), com a ação de saída na ponta direita. */
+.adm-atrasados-modal .guia-footer { display: flex; align-items: center; gap: 10px; }
+.adm-atrasados-modal .guia-footer .adm-btn { margin-left: auto; }
+
+/* Cartão do painel que abre uma lista. Herda .adm-card/.adm-ind-tile e só
+   desfaz o que o <button> traz de fábrica (fundo, borda, alinhamento). */
+.adm-ind-tile-btn {
+  text-align: left; font: inherit; cursor: pointer; width: 100%;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+.adm-ind-tile-btn:hover { border-color: #fca5a5; box-shadow: 0 2px 10px rgba(185, 28, 28, 0.12); }
+.adm-ind-tile-btn:active { transform: translateY(1px); }
+.adm-ind-tile-btn:focus-visible { outline: 2px solid var(--a-primary); outline-offset: 2px; }
+/* O convite fica no pé do cartão, na cor do número, para dizer que ali se
+   clica sem precisar de mais um botão dentro do cartão. */
+.adm-ind-acao { color: #b91c1c; font-weight: 600; }
+
+@media (max-width: 560px) {
+  .adm-atrasados-corpo { padding: 4px 16px 14px; max-height: 68vh; }
 }
 
 /* ---- filtros do quadro ---- */

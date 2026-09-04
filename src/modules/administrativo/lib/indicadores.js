@@ -66,6 +66,8 @@ function contarPor(chamados, chave) {
  * @returns {{
  *   total, abertos, encerrados (fechado + reprovado + cancelado),
  *   atendidos (só os de fato atendidos), reprovados, atrasados,
+ *   listaAtrasados (os mesmos chamados que o número conta, do mais vencido
+ *     para o menos — é o que a tela abre quando clicam no cartão),
  *   sla: { medidos: number, noPrazo: number, fora: number, semPrazo: number, pct: number|null },
  *   abertosPorClasse: Array<{nome, total}>,
  *   abertosPorStatus: Array<{nome, total}>,
@@ -74,6 +76,11 @@ function contarPor(chamados, chave) {
  */
 export function resumoIndicadores(chamados = [], agora = Date.now()) {
   const abertos = chamados.filter(estaAberto);
+  // Lista e contagem saem da mesma filtragem: dois cálculos separados
+  // acabariam divergindo no dia em que a regra de atraso mudasse.
+  const atrasados = chamados
+    .filter((c) => estaAtrasado(c, agora))
+    .sort((a, b) => t(a.sla_vence_em) - t(b.sla_vence_em));
   const encerrados = chamados.filter(estaEncerrado);
   // Só o que foi de fato atendido entra na conta de SLA: reprovado nunca teve
   // atendimento, então julgá-lo por prazo não diria nada.
@@ -99,7 +106,8 @@ export function resumoIndicadores(chamados = [], agora = Date.now()) {
     encerrados: encerrados.length,
     atendidos: atendidos.length,
     reprovados: chamados.filter((c) => c.status === 'reprovado').length,
-    atrasados: chamados.filter((c) => estaAtrasado(c, agora)).length,
+    atrasados: atrasados.length,
+    listaAtrasados: atrasados,
     sla: {
       medidos,
       noPrazo,

@@ -2,6 +2,7 @@
  * Regras de exibição do painel do Adm (fila, quadro e listas).
  * Lógica pura, testável — sem Supabase e sem React.
  */
+import { estaAtrasado } from './indicadores.js';
 
 /** Colunas do quadro, na ordem em que o chamado caminha. */
 export const COLUNAS_KANBAN = [
@@ -48,18 +49,39 @@ export function contarNaoLidas(interacoes = [], { meuId, souSolicitante }) {
 }
 
 /**
- * Filtra o quadro por solicitante e por centro de custo.
+ * Filtra o quadro por solicitante, centro de custo e prazo.
  *
  * Serve ao caso "como está tudo de um projeto crítico": o CC é o que amarra os
  * chamados de um mesmo projeto, mesmo espalhados por classes diferentes.
  * Filtro vazio significa "todos" — nunca "nenhum".
+ *
+ * `atrasado` usa a mesma régua do indicador (estaAtrasado): só está atrasado o
+ * que ainda está em jogo e passou do prazo. Assim o cartão que o Quadro pinta
+ * de vermelho e o número "Vencidos agora" contam a mesma coisa. Por isso a
+ * coluna Concluído fica vazia com o filtro ligado — o que já acabou não está
+ * mais atrasado, está fechado.
  */
-export function filtrarQuadro(chamados = [], { solicitanteId = '', cc = '' } = {}) {
+export function filtrarQuadro(chamados = [], { solicitanteId = '', cc = '', atrasado = '' } = {}, agora = Date.now()) {
   return chamados.filter((c) => {
     if (solicitanteId && c.solicitante_id !== solicitanteId) return false;
     if (cc && (c.cc || '') !== cc) return false;
+    if (atrasado && !casaComPrazo(c, atrasado, agora)) return false;
     return true;
   });
+}
+
+/**
+ * Régua compartilhada pelos filtros de prazo da fila e do quadro.
+ *
+ * 'sim' = atrasado; 'nao' = tudo o que não está atrasado, incluindo o que nem
+ * tem prazo definido — quem escolhe "dentro do prazo" quer o que não está
+ * pegando fogo, e esconder o sem-prazo faria chamado sumir da tela sem
+ * explicação.
+ */
+export function casaComPrazo(chamado, escolha, agora = Date.now()) {
+  if (!escolha) return true;
+  const atrasado = estaAtrasado(chamado, agora);
+  return escolha === 'sim' ? atrasado : !atrasado;
 }
 
 /**
@@ -98,10 +120,13 @@ export function iniciais(nome) {
  * comparação é feita sobre os 10 primeiros caracteres do ISO, não convertendo
  * para Date: `new Date('2026-08-21')` é UTC e, no nosso fuso, jogaria o
  * chamado aberto de manhã para o dia anterior.
+ *
+ * `atrasado` ('sim'/'nao') é o mesmo critério do indicador "Vencidos agora":
+ * aberto e passado do prazo.
  */
 const semAcento = (s) => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
-export function filtrarFila(chamados = [], f = {}) {
+export function filtrarFila(chamados = [], f = {}, agora = Date.now()) {
   const termo = semAcento(f.assunto).trim();
   return chamados.filter((c) => {
     if (termo && !semAcento(c.assunto).includes(termo)) return false;
@@ -110,6 +135,7 @@ export function filtrarFila(chamados = [], f = {}) {
     // '' no filtro = "todos"; 'sem' = os que ninguém assumiu ainda.
     if (f.atendenteId === 'sem' && c.atendente_id) return false;
     if (f.atendenteId && f.atendenteId !== 'sem' && c.atendente_id !== f.atendenteId) return false;
+    if (f.atrasado && !casaComPrazo(c, f.atrasado, agora)) return false;
     const dia = (c.criado_em || '').slice(0, 10);
     if (f.criadoDe && dia < f.criadoDe) return false;
     if (f.criadoAte && dia > f.criadoAte) return false;
@@ -121,7 +147,7 @@ export function filtrarFila(chamados = [], f = {}) {
  * Opções dos filtros, montadas do que está NA FILA — não do cadastro inteiro.
  * Oferecer um responsável sem chamado nenhum só gera lista vazia.
  */
-export function opcoesDaFila(chamados = []) {
+export function opcoesDaFila(chamados = [], agora = Date.now()) {
   const solicitantes = new Map();
   const responsaveis = new Map();
   const status = new Set();
@@ -139,5 +165,6 @@ export function opcoesDaFila(chamados = []) {
     // Só oferece "sem responsável" quando existe algum — filtro que nunca
     // devolve nada é ruído na tela.
     temSemResponsavel: chamados.some((c) => !c.atendente_id),
+    atrasados: chamados.filter((c) => estaAtrasado(c, agora)).length,
   };
 }

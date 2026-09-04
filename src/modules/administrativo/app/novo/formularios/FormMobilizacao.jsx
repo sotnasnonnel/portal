@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import SearchSelect from '../../../../../components/UI/SearchSelect';
 import Marcador from './Marcador';
-import { MOVIMENTOS, eDesmobilizacao, aoTrocarMovimento } from './mobilizacao';
+import { MOVIMENTOS, OUTRO_PROJETO, eDesmobilizacao, aoTrocarMovimento } from './mobilizacao';
 import { OPCOES_EQUIPAMENTO, OPCOES_SOFTWARE, OPCOES_EPI } from './opcoes';
 
-export default function FormMobilizacao({ valores, onChange, pessoas = [] }) {
+export default function FormMobilizacao({ valores, onChange, pessoas = [], projetos = [] }) {
   const [aberto, setAberto] = useState('');
   const mexer = (patch) => onChange({ ...valores, ...patch });
   const desmob = eDesmobilizacao(valores);
@@ -21,6 +21,21 @@ export default function FormMobilizacao({ valores, onChange, pessoas = [] }) {
   };
 
   const opcoesPessoas = pessoas.map((p) => ({ value: p.id, label: p.nome }));
+  // Cliente junto do nome: várias obras se chamam parecido e o cliente é o que
+  // separa uma da outra na hora de escolher.
+  const opcoesProjetos = [
+    ...projetos.map((p) => ({ value: p.id, label: p.cliente ? `${p.nome} — ${p.cliente}` : p.nome })),
+    // Obra recém-fechada que ainda não está cadastrada não pode travar a
+    // mobilização: quem não acha na lista escreve o nome.
+    { value: OUTRO_PROJETO, label: 'Não está na lista — digitar o nome' },
+  ];
+  const projetoForaDaLista = valores.projeto_id === OUTRO_PROJETO;
+
+  const escolherProjeto = (id) => {
+    if (id === OUTRO_PROJETO) return mexer({ projeto_id: OUTRO_PROJETO, projeto: '' });
+    const p = projetos.find((x) => x.id === id);
+    return mexer({ projeto_id: id, projeto: p?.nome || '' });
+  };
   const alternar = (chave) => setAberto((a) => (a === chave ? '' : chave));
 
   // Sem cartão próprio: os campos entram no mesmo cartão do resto do chamado,
@@ -93,6 +108,28 @@ export default function FormMobilizacao({ valores, onChange, pessoas = [] }) {
         <input id="mob-cc" className="adm-input" value={valores.cc}
           onChange={(e) => mexer({ cc: e.target.value })} />
       </div>
+
+      <div className="adm-campo">
+        <label>Projeto<span className="req">*</span></label>
+        <SearchSelect
+          value={valores.projeto_id}
+          onChange={escolherProjeto}
+          options={opcoesProjetos}
+          placeholder="Busque pelo projeto ou cliente…"
+          ariaLabel="Projeto em que o profissional será alocado"
+        />
+        <span className="adm-campo-dica">
+          Onde o profissional vai trabalhar. A lista é a mesma dos projetos do portal.
+        </span>
+      </div>
+
+      {projetoForaDaLista && (
+        <div className="adm-campo">
+          <label htmlFor="mob-projeto-nome">Nome do projeto<span className="req">*</span></label>
+          <input id="mob-projeto-nome" className="adm-input" value={valores.projeto}
+            onChange={(e) => mexer({ projeto: e.target.value })} />
+        </div>
+      )}
 
       <div className="adm-campo">
         <label htmlFor="mob-obra">Local da obra<span className="req">*</span></label>

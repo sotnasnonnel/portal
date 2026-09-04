@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { BarChart3, Loader2, AlertCircle, Info } from 'lucide-react';
+import ListaAtrasados from '../components/ListaAtrasados';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { listarParaIndicadores } from '../../lib/chamados';
 import { resumoIndicadores } from '../../lib/indicadores';
@@ -12,6 +13,7 @@ export default function DashboardAdm() {
   const [chamados, setChamados] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
+  const [verAtrasados, setVerAtrasados] = useState(false);
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -27,7 +29,8 @@ export default function DashboardAdm() {
 
   useEffect(() => { carregar(); }, [carregar]);
 
-  const r = resumoIndicadores(chamados);
+  const agora = Date.now();
+  const r = resumoIndicadores(chamados, agora);
   const souDoTime = modules?.administrativo === 'admin' || modules?.administrativo === 'atendente';
   const maiorClasse = Math.max(1, ...r.abertosPorClasse.map((c) => c.total));
 
@@ -79,11 +82,28 @@ export default function DashboardAdm() {
                 {r.sla.medidos ? `${r.sla.noPrazo} de ${r.sla.medidos} medidos` : 'nada medido ainda'}
               </span>
             </div>
-            <div className="adm-card adm-ind-tile">
-              <span className="adm-ind-rot">Vencidos agora</span>
-              <strong className={`adm-ind-num ${r.atrasados ? 'tom-baixa' : ''}`}>{r.atrasados}</strong>
-              <span className="adm-ind-pe">abertos que passaram do prazo</span>
-            </div>
+            {/* Só vira botão quando há o que abrir: um cartão clicável que
+                revela lista vazia é promessa quebrada. */}
+            {r.atrasados > 0 ? (
+              <button
+                type="button"
+                className="adm-card adm-ind-tile adm-ind-tile-btn"
+                onClick={() => setVerAtrasados(true)}
+                aria-haspopup="dialog"
+              >
+                <span className="adm-ind-rot">Vencidos agora</span>
+                <strong className="adm-ind-num tom-baixa">{r.atrasados}</strong>
+                <span className="adm-ind-pe adm-ind-acao">
+                  abertos que passaram do prazo — ver quais
+                </span>
+              </button>
+            ) : (
+              <div className="adm-card adm-ind-tile">
+                <span className="adm-ind-rot">Vencidos agora</span>
+                <strong className="adm-ind-num">0</strong>
+                <span className="adm-ind-pe">abertos que passaram do prazo</span>
+              </div>
+            )}
           </div>
 
           <div className="adm-card">
@@ -176,6 +196,15 @@ export default function DashboardAdm() {
             </div>
           </div>
         </>
+      )}
+
+      {verAtrasados && (
+        <ListaAtrasados
+          chamados={r.listaAtrasados}
+          agora={agora}
+          souDoTime={souDoTime}
+          onFechar={() => setVerAtrasados(false)}
+        />
       )}
     </div>
   );

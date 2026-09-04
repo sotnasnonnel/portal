@@ -23,6 +23,7 @@ export default function KanbanAdm() {
   const [erro, setErro] = useState('');
   const [fSolicitante, setFSolicitante] = useState('');
   const [fCc, setFCc] = useState('');
+  const [fAtrasado, setFAtrasado] = useState('');
 
   const souAdm = modules?.administrativo === 'admin' || modules?.administrativo === 'atendente';
 
@@ -45,9 +46,11 @@ export default function KanbanAdm() {
   // Filtro do Adm: "como está tudo do projeto crítico". O CC é o que amarra os
   // chamados de um mesmo projeto, mesmo espalhados por classes diferentes.
   const { solicitantes, ccs } = opcoesDoQuadro(chamados);
-  const visiveis = souAdm ? filtrarQuadro(chamados, { solicitanteId: fSolicitante, cc: fCc }) : chamados;
+  const visiveis = souAdm
+    ? filtrarQuadro(chamados, { solicitanteId: fSolicitante, cc: fCc, atrasado: fAtrasado }, agora)
+    : chamados;
   const colunas = agruparEmColunas(visiveis);
-  const filtrando = !!(fSolicitante || fCc);
+  const filtrando = !!(fSolicitante || fCc || fAtrasado);
 
   return (
     <div className="adm-page adm-page-full">
@@ -86,9 +89,20 @@ export default function KanbanAdm() {
                 options={[{ value: '', label: 'Todos' }, ...ccs.map((v) => ({ value: v, label: v }))]}
                 placeholder="Todos" ariaLabel="Filtrar por centro de custo" />
             </div>
+            {/* Prazo é <select> puro, e não SearchSelect: são três opções
+                fixas, não uma lista para procurar dentro. */}
+            <div className="adm-filtro">
+              <label htmlFor="adm-quadro-prazo">Prazo</label>
+              <select id="adm-quadro-prazo" className="adm-select" value={fAtrasado}
+                onChange={(e) => setFAtrasado(e.target.value)}>
+                <option value="">Todos</option>
+                <option value="sim">Só atrasados</option>
+                <option value="nao">Dentro do prazo</option>
+              </select>
+            </div>
             {filtrando && (
               <button type="button" className="adm-btn adm-btn-ghost adm-filtro-limpa"
-                onClick={() => { setFSolicitante(''); setFCc(''); }}>
+                onClick={() => { setFSolicitante(''); setFCc(''); setFAtrasado(''); }}>
                 <X size={15} /> Limpar filtros
               </button>
             )}
@@ -97,6 +111,8 @@ export default function KanbanAdm() {
           {filtrando && (
             <p className="adm-campo-dica">
               Mostrando {visiveis.length} de {chamados.length} chamados.
+              {/* Sem esta frase, a coluna Concluído vazia pareceria bug. */}
+              {fAtrasado === 'sim' && ' Atrasado é o que ainda está em jogo e passou do prazo — por isso a coluna Concluído fica vazia.'}
             </p>
           )}
         </>

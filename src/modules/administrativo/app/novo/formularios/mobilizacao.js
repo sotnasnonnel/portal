@@ -7,6 +7,9 @@ export const MOVIMENTOS = ['Nova mobilização', 'Movimentação de profissional
 
 export const DESMOBILIZACAO = 'Desmobilização';
 
+/** Valor do seletor de projeto para "não está na lista" — o nome vai digitado. */
+export const OUTRO_PROJETO = 'outro';
+
 /** Desmobilização pede outra coisa: quem sai e o que devolve. */
 export const eDesmobilizacao = (v) => v?.movimento === DESMOBILIZACAO;
 
@@ -16,6 +19,10 @@ export const inicialMobilizacao = () => ({
   profissional: '',
   gestor: '',
   cc: '',
+  // Projeto guarda o NOME sempre, e o id só quando veio da lista: o chamado é
+  // lido por gente, e um uuid solto no corpo não diz obra nenhuma.
+  projeto_id: '',
+  projeto: '',
   local_obra: '',
   data_inicio_cliente: '',
   equipamentos: [],
@@ -38,7 +45,7 @@ export function aoTrocarMovimento(valores, movimento) {
   if (movimento === DESMOBILIZACAO) {
     return {
       ...base,
-      gestor: '', cc: '', local_obra: '', data_inicio_cliente: '',
+      gestor: '', cc: '', projeto_id: '', projeto: '', local_obra: '', data_inicio_cliente: '',
       equipamentos: [], softwares: [], epis: [], uniforme: '', contato_cliente: '',
     };
   }
@@ -56,6 +63,9 @@ export function validarMobilizacao(v) {
   }
 
   if (!v.cc?.trim()) return 'Informe o centro de custo.';
+  // Obrigatório: mobilizar sem dizer para qual projeto deixa o Adm sem saber o
+  // que provisionar, e é a primeira pergunta que ele faria de volta.
+  if (!v.projeto?.trim()) return 'Informe o projeto em que o profissional será alocado.';
   if (!v.local_obra?.trim()) return 'Informe o local da obra.';
   if (!v.data_inicio_cliente) return 'Informe a data de início no cliente.';
   return '';
