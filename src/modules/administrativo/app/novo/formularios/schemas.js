@@ -39,23 +39,21 @@ const deslocamento = () => [
 ];
 
 /**
- * Quem vai dirigir o carro alugado.
+ * Documentos de quem vai dirigir.
  *
- * Nome e e-mail o portal conhece (é o cadastro de colaboradores) e o botão
- * "Sou eu mesmo" preenche; CPF e CNH ninguém tem guardado, então continuam
- * digitados — prometer preenchimento automático deles seria mentira.
+ * QUEM é o condutor já sai do seletor de pessoa acima — não se digita nome
+ * aqui. O que falta é o que a locadora confere no balcão e o portal não guarda
+ * de ninguém: CPF, CNH e a validade dela. Sem esses dados o Adm fechava a
+ * reserva e voltava perguntando por fora, chamado a chamado.
  *
- * Não é seletor de pessoas: a lista de colaboradores só é liberada para o time
- * do Adm, e quem abre o chamado é justamente quem não a enxerga.
+ * `grupo` faz o formulário desenhar os quatro juntos, sob um subtítulo.
  */
-const condutor = () => [
-  { chave: 'condutor_nome', rotulo: 'Condutor — nome completo', tipo: 'texto', obrigatorio: true, grupo: 'condutor' },
-  { chave: 'condutor_cpf', rotulo: 'Condutor — CPF', tipo: 'texto', obrigatorio: true, grupo: 'condutor' },
-  { chave: 'condutor_cnh', rotulo: 'Condutor — número da CNH', tipo: 'texto', obrigatorio: true, grupo: 'condutor' },
-  // Validade é o que a locadora confere no balcão: vencida, a retirada não sai.
-  { chave: 'condutor_cnh_validade', rotulo: 'Condutor — validade da CNH', tipo: 'data', obrigatorio: true, grupo: 'condutor' },
-  { chave: 'condutor_telefone', rotulo: 'Condutor — telefone', tipo: 'texto', obrigatorio: true, grupo: 'condutor' },
-  { chave: 'condutor_email', rotulo: 'Condutor — e-mail', tipo: 'texto', obrigatorio: false, grupo: 'condutor' },
+const documentosDoCondutor = () => [
+  { chave: 'condutor_cpf', rotulo: 'CPF do condutor', tipo: 'texto', obrigatorio: true, grupo: 'condutor' },
+  { chave: 'condutor_cnh', rotulo: 'Número da CNH', tipo: 'texto', obrigatorio: true, grupo: 'condutor' },
+  // Validade é o que decide a retirada: CNH vencida, o carro não sai.
+  { chave: 'condutor_cnh_validade', rotulo: 'Validade da CNH', tipo: 'data', obrigatorio: true, grupo: 'condutor' },
+  { chave: 'condutor_telefone', rotulo: 'Telefone do condutor', tipo: 'texto', obrigatorio: true, grupo: 'condutor' },
 ];
 
 // Passagem e hospedagem repetem o bloco de identificação do viajante.
@@ -103,11 +101,15 @@ export const SCHEMAS = {
   // `grupo` faz o formulário desenhar o bloco junto, com o atalho "Sou eu mesmo".
   'frota/reserva-veiculos': [
     cc(),
+    // Quem vai dirigir. Sem isso o Adm não conseguia fechar a reserva com a
+    // locadora e tinha que perguntar por fora, chamado a chamado.
+    { chave: 'condutor_principal', rotulo: 'Condutor principal', tipo: 'pessoa', obrigatorio: true },
+    { chave: 'condutor_adicional', rotulo: 'Condutor adicional (se houver)', tipo: 'pessoa' },
     { chave: 'local_retirada', rotulo: 'Local de retirada', tipo: 'texto', obrigatorio: true },
     { chave: 'retirada_em', rotulo: 'Data e horário de retirada', tipo: 'datahora', obrigatorio: true },
     { chave: 'local_devolucao', rotulo: 'Local da devolução', tipo: 'texto', obrigatorio: true },
     { chave: 'devolucao_em', rotulo: 'Data e horário da devolução', tipo: 'datahora', obrigatorio: true },
-    ...condutor(),
+    ...documentosDoCondutor(),
     observacao(),
   ],
 
@@ -336,9 +338,28 @@ export function formatarValorCampo(classe, servico, chave, valor) {
  * "[object Object]". A tela do chamado o renderiza numa tabela própria, com
  * quantidade e saldo.
  */
-// `projeto_id` é uuid (ou 'outro', quando a obra não está cadastrada): quem lê
-// o chamado quer o NOME, que é gravado em `projeto` ao lado.
-export const CAMPOS_OCULTOS = new Set(['profissional_id', 'pessoa_id', 'projeto_id', 'itens']);
+/** Chaves do serviço que guardam uma PESSOA — o valor é o id, não o nome. */
+export function chavesDePessoa(classe, servico) {
+  return (schemaDoServico(classe, servico) || [])
+    .filter((c) => c.tipo === 'pessoa')
+    .map((c) => c.chave);
+}
+
+/**
+ * Campos que a tela de detalhe não desenha.
+ *
+ * `itens` é um array de objetos e sairia como "[object Object]" — tem bloco
+ * próprio. `profissional_id` fica de fora porque a mobilização já grava o NOME
+ * em `profissional`, e mostrar os dois seria a mesma informação duas vezes.
+ * `projeto_id` sai pela mesma razão: é uuid (ou 'outro', quando a obra ainda
+ * não está cadastrada) e o nome vai gravado em `projeto` ao lado.
+ *
+ * `pessoa_id` saiu daqui: agora `buscarChamado` resolve o nome, então o campo
+ * mostra quem foi escolhido em vez de um UUID. Enquanto estava escondido, a
+ * escolha do solicitante simplesmente sumia da tela, e as pessoas passaram a
+ * repetir o nome na observação para contornar.
+ */
+export const CAMPOS_OCULTOS = new Set(['profissional_id', 'projeto_id', 'itens']);
 
 export const usaDescricao = (classe, servico) => COM_DESCRICAO.has(`${classe}/${servico}`);
 export const usaAnexo = (classe, servico) => !SEM_ANEXO.has(`${classe}/${servico}`);

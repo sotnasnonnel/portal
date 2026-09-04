@@ -14,6 +14,7 @@ import { contarNaoLidas } from './painel';
 import { temAvaliacao } from './satisfacao';
 import { desdobrarMobilizacao } from './desdobramento';
 import { getClasse, getServico } from '../../../config/administrativo';
+import { chavesDePessoa } from '../app/novo/formularios/schemas';
 import { notificarChamadoAdm } from '../../../services/notificarChamadoAdm';
 // Baixa de estoque no fechamento. A dependência é de mão única — o
 // Administrativo importa do Estoque, nunca o contrário.
@@ -78,6 +79,19 @@ export async function listarProjetos() {
     .eq('arquivado', false)
     .order('nome');
   if (error) throw new Error(`Não foi possível carregar os projetos: ${error.message}`);
+  return data || [];
+}
+
+/**
+ * Time do Adm — os únicos que podem ser responsáveis por um chamado.
+ *
+ * Separado de `listarPessoas`, que devolve a empresa inteira: aquilo serve
+ * para escolher aprovador, mas atribuir o chamado a alguém de fora do time o
+ * tiraria da fila, e ele só reapareceria para essa pessoa.
+ */
+export async function listarTimeAdm() {
+  const { data, error } = await supabase.rpc('chamados_adm_time');
+  if (error) throw new Error(`Não foi possível carregar o time do Administrativo: ${error.message}`);
   return data || [];
 }
 
@@ -701,7 +715,17 @@ export async function buscarChamado(id) {
   if (error) throw new Error(`Não foi possível abrir o chamado: ${error.message}`);
   if (!data) return null;
 
-  const ids = [data.solicitante_id, data.atendente_id].filter(Boolean);
+  // Campo do tipo 'pessoa' guarda só o id. Sem resolver o nome aqui, o detalhe
+  // mostraria um UUID — foi por isso que esses campos acabaram escondidos, e o
+  // efeito era a escolha do solicitante sumir da tela. Vai na MESMA consulta
+  // dos nomes do solicitante e do responsável.
+  const idsDePessoa = chavesDePessoa(data.classe, data.servico)
+    .map((chave) => data.campos?.[chave])
+    .filter(Boolean);
+
+  const ids = [...new Set(
+    [data.solicitante_id, data.atendente_id, ...idsDePessoa].filter(Boolean),
+  )];
   const nomes = new Map();
   if (ids.length) {
     const { data: pessoas } = await supabase.rpc('nomes_colaboradores', { p_ids: ids });
@@ -714,6 +738,8 @@ export async function buscarChamado(id) {
     ...data,
     solicitanteNome: nomes.get(data.solicitante_id) || '',
     atendenteNome: nomes.get(data.atendente_id) || '',
+    // id -> nome, para a tela trocar o UUID pelo nome de quem foi escolhido.
+    nomesDosCampos: Object.fromEntries(nomes),
     avaliacao: avaliacao || null,
   };
 }
@@ -956,12 +982,25 @@ const exigirLinha = (data, erro, mensagem) => {
 
 /** O atendente puxa o chamado para si (ou o admin reatribui). */
 export async function assumirChamado(chamadoId, atendenteId) {
+  return definirResponsavel(chamadoId, atendenteId, 'Não foi possível assumir o chamado');
+}
+
+/**
+ * Troca o responsável pelo atendimento. `atendenteId` nulo devolve o chamado à
+ * fila sem dono.
+ *
+ * Mesma gravação de `assumirChamado` — o que muda é a mensagem quando a RLS
+ * recusa: "não foi possível assumir" seria enganoso para quem está colocando o
+ * chamado no nome de outra pessoa. O histórico registra a troca sozinho, por
+ * gatilho no banco.
+ */
+export async function definirResponsavel(chamadoId, atendenteId, msg = 'Não foi possível trocar o responsável') {
   const { data, error } = await supabase
     .from('chamados_adm')
-    .update({ atendente_id: atendenteId, updated_at: new Date().toISOString() })
+    .update({ atendente_id: atendenteId || null, updated_at: new Date().toISOString() })
     .eq('id', chamadoId)
     .select('id');
-  exigirLinha(data, error, 'Não foi possível assumir o chamado');
+  exigirLinha(data, error, msg);
 }
 
 /** Fechamento com a "Resolução da solicitação" do passo 9 do POP. */
@@ -973,6 +1012,34 @@ export async function fecharChamado(chamadoId, resolucao) {
     .eq('id', chamadoId)
     .select('id');
   exigirLinha(data, error, 'Não foi possível fechar o chamado');
+  notificarChamadoAdm(chamadoId, 'fechado');
+}
+
+/**
+ * Cancela o chamado — o pedido não vai ser atendido, e não porque foi resolvido.
+ *
+ * O status `cancelado` já existia no vocabulário e já contava como encerrado em
+ * toda parte, mas nada no sistema o gravava: quem pedia cancelamento escrevia
+ * na conversa e o chamado ficava aberto para sempre, ou era fechado como se
+ * tivesse sido atendido — o que suja o indicador de SLA.
+ *
+ * O motivo é obrigatório: é o que o solicitante lê para saber que o pedido dele
+ * morreu e por quê. Vai no mesmo campo da resolução, e a tela troca o rótulo.
+ *
+ * Grava `fechado_em` porque é quando o chamado terminou. Não contamina o SLA:
+ * `fechouNoPrazo` só julga status 'fechado'. E não trava a abertura de novos
+ * chamados, porque a exigência de avaliação também olha só 'fechado'.
+ */
+export async function cancelarChamado(chamadoId, motivo) {
+  const agora = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('chamados_adm')
+    .update({
+      status: 'cancelado', fechado_em: agora, resolucao: motivo.trim(), updated_at: agora,
+    })
+    .eq('id', chamadoId)
+    .select('id');
+  exigirLinha(data, error, 'Não foi possível cancelar o chamado');
   notificarChamadoAdm(chamadoId, 'fechado');
 }
 

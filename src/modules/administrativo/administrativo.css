@@ -187,20 +187,12 @@
    reserva de veículo). O fio separa do campo de cima sem virar outro cartão —
    o formulário do chamado é um só. */
 .adm-grupo-cab {
-  display: flex; align-items: flex-end; justify-content: space-between; gap: 12px;
   margin: 20px 0 14px; padding-top: 14px; border-top: 1px solid var(--a-border);
 }
 .adm-grupo-cab h3 {
   margin: 0; font-size: var(--font-size-sm); font-weight: 600; color: var(--a-ink);
 }
 .adm-grupo-cab p { margin: 3px 0 0; font-size: var(--font-size-xs); color: var(--a-muted); }
-/* O botão não encolhe: "Sou eu mesmo" quebrado em duas linhas parece erro. */
-.adm-grupo-cab .adm-btn { flex: none; }
-
-@media (max-width: 560px) {
-  /* Empilhado: lado a lado, o botão espremia a dica em três linhas. */
-  .adm-grupo-cab { flex-direction: column; align-items: stretch; }
-}
 .adm-campo:last-child { margin-bottom: 0; }
 .adm-campo label { font-size: var(--font-size-xs); font-weight: 600; color: var(--a-gray-600); }
 .adm-campo label .req { color: var(--a-red); margin-left: 2px; }
@@ -1066,3 +1058,17 @@
   .adm-fila-periodo { width: 100%; }
   .adm-fila-periodo input { flex: 1; }
 }
+
+/* Painel de troca de responsável. Nasce fechado e fica logo abaixo das ações,
+   para a mudança acontecer no mesmo lugar em que se decide por ela. */
+.adm-trocar-resp {
+  display: flex; flex-direction: column; gap: 6px;
+  margin-top: 12px; padding: 12px 14px;
+  background: var(--a-gray-50); border: 1px solid var(--a-border); border-radius: 10px;
+}
+.adm-trocar-resp > label {
+  font-size: var(--font-size-2xs); font-weight: 700; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--a-muted);
+}
+.adm-trocar-resp .adm-linha { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.adm-trocar-resp .adm-select { flex: 1 1 220px; min-width: 0; }

@@ -43,6 +43,20 @@ export const ADM_LIBERADOS = [
   'lennon.santos@phdengenharia.eng.br',
 ];
 
+/**
+ * Quem pode trocar o responsável de um chamado.
+ *
+ * Mais restrito que "time do Adm": assumir é pegar para si, e qualquer
+ * atendente pode; trocar o responsável é mexer na fila alheia, e é decisão de
+ * coordenação. Nenhum papel separa esse grupo — Jarbas é admin e Daniela é
+ * atendente —, então é capacidade própria: colaboradores.administrativo_reatribui.
+ *
+ * O banco é quem manda: um gatilho em chamados_adm barra a troca de
+ * atendente_id para quem não tem a capacidade. Isto aqui só decide se o botão
+ * aparece, e lê o MESMO campo, para não haver duas listas divergindo.
+ */
+export const podeReatribuirAdm = (user) => user?.admReatribui === true;
+
 export const podeAcessarAdm = (user) => !ADM_EM_BREVE
   || ADM_LIBERADOS.includes((user?.email || '').trim().toLowerCase());
 

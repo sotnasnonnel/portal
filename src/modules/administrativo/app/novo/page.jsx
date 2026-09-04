@@ -365,7 +365,7 @@ export default function NovoChamadoAdm() {
           {/* Campos do serviço: no mesmo cartão, na sequência natural. */}
           {form && (
             <form.Componente valores={extras} onChange={setExtras} pessoas={pessoas}
-              projetos={projetos} eu={user}
+              projetos={projetos}
               classe={classe} servico={servico} travarCc={!!centroCusto} />
           )}
 
