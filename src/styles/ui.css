@@ -78,6 +78,27 @@
   --shell-page-max-narrow: 900px;
   --shell-page-max-wide: 1600px;
 
+  /* ---- Quadros (kanban) -------------------------------------------------
+     Três módulos desenham quadro (Administrativo, Mobilização e Dados), e a
+     regra é a mesma nos três: coluna de largura FIXA, altura igual à dos
+     vizinhos, e o rolo acontece DENTRO da coluna.
+
+     A largura fixa é o ponto. Com colunas elásticas (1fr), acrescentar uma
+     coluna estreitava todas as outras e o cartão passava a quebrar em quatro
+     linhas; e a altura livre fazia uma coluna cheia empurrar o rodapé do
+     quadro para fora da tela, obrigando a rolar a página inteira só para
+     alcançar a coluna do lado.
+
+     --kanban-h é a altura útil dentro do <main>: a janela menos a barra
+     superior e o respiro do main. Quem usa põe isso no elemento de página e
+     deixa o quadro com flex:1 — assim o cabeçalho da página (título, abas,
+     filtros) é medido pelo navegador e não precisa virar número mágico aqui. */
+  --kanban-col-w: 300px;
+  --kanban-col-w-mobile: 82vw;
+  --kanban-gap: 12px;
+  --kanban-h: calc(100dvh - var(--shell-topbar-h) - var(--shell-main-pad-y) - var(--shell-main-pad-bottom));
+  --kanban-h-min: 320px;
+
   /* ---- Tabelas (densidade única no portal) ---- */
   --table-fs: var(--font-size-sm);
   --table-head-fs: var(--font-size-2xs);

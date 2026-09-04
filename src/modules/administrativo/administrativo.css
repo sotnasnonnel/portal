@@ -394,21 +394,30 @@
    ficam estreitas demais para o assunto do chamado. */
 .adm-page-full { max-width: 1600px; }
 
-/* minmax(0, 1fr) e não minmax(220px, 1fr): com um mínimo fixo, cinco colunas
-   somam mais que a área útil em telas médias e a última fica cortada para fora
-   da página. Assim elas encolhem juntas, e abaixo de 1200px o quadro vira faixa
-   rolável — onde estreitar demais deixaria de ajudar. */
-.adm-quadro {
-  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 12px; align-items: start; max-width: 100%;
+/* A página do quadro é uma coluna que ocupa a altura útil da janela: o
+   cabeçalho (título, abas, filtros) toma o que precisa e o quadro fica com o
+   resto. Assim a altura das colunas não depende de nenhum número mágico. */
+.adm-page-quadro {
+  display: flex; flex-direction: column;
+  height: var(--kanban-h); min-height: var(--kanban-h-min);
 }
-/* min-width: 0 impede que o conteúdo do cartão force a coluna a crescer. */
+/* Colunas de largura FIXA, e faixa rolável quando as cinco não couberem.
+   Antes eram cinco frações elásticas: em tela média cada uma ficava com ~200px
+   e o assunto do chamado quebrava em quatro linhas. Vale mais rolar de lado do
+   que espremer. */
+.adm-quadro {
+  display: flex; gap: var(--kanban-gap); align-items: stretch;
+  overflow-x: auto; padding-bottom: 8px;
+  flex: 1; min-height: 0;   /* min-height:0 é o que deixa o filho rolar */
+  scroll-snap-type: x proximity;
+}
 .adm-col {
-  min-width: 0;
+  flex: 0 0 var(--kanban-col-w); min-width: 0; scroll-snap-align: start;
+  display: flex; flex-direction: column; min-height: 0;
   background: var(--a-gray-50); border: 1px solid var(--a-border); border-radius: 14px;
 }
 .adm-col-cab {
-  display: flex; align-items: center; gap: 8px;
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
   padding: 12px 14px; border-bottom: 1px solid var(--a-border);
 }
 .adm-col-cab h2 {
@@ -420,17 +429,17 @@
   background: #fff; border: 1px solid var(--a-border);
   font-size: var(--font-size-2xs); font-weight: 700; color: var(--a-muted); text-align: center;
 }
-/* A coluna rola por dentro em vez de esticar a página.
-   O corte é o MENOR entre ~10 cartões (1100px) e o que sobra da janela: dez
-   cartões dão mais de 1000px e ainda estouram uma tela de 1080p, então em
-   monitor pequeno manda a janela e em monitor grande manda o limite de dez.
-   Sem isso, uma coluna cheia empurrava o rodapé do quadro para longe e obrigava
-   a rolar a página inteira para ver a coluna seguinte. */
+/* O rolo mora AQUI, e não na página: uma coluna cheia não pode empurrar o
+   rodapé do quadro para fora da tela e obrigar a rolar tudo só para alcançar a
+   coluna do lado.
+   O teto era `min(100dvh - 240px, 1100px)`; virou flex:1 porque os 240px eram
+   um chute do cabeçalho da página, e em monitor grande o limite de 1100px
+   deixava a coluna mais alta que a janela — o defeito que este bloco queria
+   evitar. overscroll-behavior impede que chegar ao fim da lista arraste a
+   página junto. */
 .adm-col-corpo {
-  padding: 10px; display: flex; flex-direction: column; gap: 8px; min-height: 60px;
-  max-height: min(calc(100dvh - 240px), 1100px);
-  overflow-y: auto;
-  overscroll-behavior: contain;   /* rolar até o fim não arrasta a página junto */
+  padding: 10px; display: flex; flex-direction: column; gap: 8px;
+  flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
 }
 .adm-col-vazia { margin: 6px 0; text-align: center; color: #cbd5e1; }
 
@@ -476,21 +485,14 @@
 .adm-prazo.tom-vencido { color: #b91c1c; font-weight: 800; }
 .adm-prazo.tom-sem-prazo { color: #94a3b8; }
 
-/* 1460px é onde as cinco colunas ainda cabem com ~220px cada (descontando a
-   sidebar de 256px e o respiro da página). Abaixo disso elas ficariam estreitas
-   demais para o assunto do chamado: melhor rolar de lado do que espremer. */
-@media (max-width: 1460px) {
-  .adm-quadro {
-    display: flex; overflow-x: auto; scroll-snap-type: x proximity;
-    padding-bottom: 8px;
-  }
-  .adm-col { flex: 0 0 260px; scroll-snap-align: start; }
-}
-
 @media (max-width: 620px) {
-  /* No celular, uma coluna por vez, com o encaixe ajudando a não parar no meio. */
+  /* No celular a altura da janela é curta e o teclado a encolhe mais ainda:
+     altura livre e uma coluna por vez, com o encaixe ajudando a não parar no
+     meio. O rolo continua dentro da coluna, com teto em vez de flex. */
+  .adm-page-quadro { height: auto; min-height: 0; }
   .adm-quadro { scroll-snap-type: x mandatory; }
-  .adm-col { flex: 0 0 82vw; }
+  .adm-col { flex: 0 0 var(--kanban-col-w-mobile); }
+  .adm-col-corpo { max-height: 62dvh; }
 }
 
 /* ======================= detalhe e fila ======================= */

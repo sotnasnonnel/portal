@@ -1,22 +1,38 @@
+/* Colunas de largura FIXA, e faixa rolável quando as quatro não couberem.
+   Eram 4 frações elásticas: em tela média cada uma ficava estreita demais e o
+   cartão quebrava. Mesma regra dos quadros do Administrativo e da Mobilização
+   (tokens --kanban-* em styles/ui.css). */
 .kanban{
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  display: flex;
+  gap: var(--kanban-gap);
+  align-items: stretch;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scroll-snap-type: x proximity;
 }
 
 .col{
+  flex: 0 0 var(--kanban-col-w);
+  min-width: 0;
+  scroll-snap-align: start;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  height: 560px; /* altura fixa: o bloco de cards rola por dentro */
+  /* Era `height: 560px`. O valor fixo sobrava numa tela de 1080p e faltava num
+     notebook, então virou "o que couber na janela", com piso para não espremer
+     o quadro a nada em tela baixa. O bloco de cards continua rolando por
+     dentro (.drop). */
+  height: min(var(--kanban-h), 720px);
+  min-height: var(--kanban-h-min);
   box-shadow: var(--shadow-sm);
 }
 
 .colHeader{
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
   padding: 14px 14px;
@@ -51,7 +67,8 @@
   gap: 10px;
   flex: 1;
   min-height: 0;        /* permite o overflow/scroll dentro do flex */
-  overflow-y: auto;     /* scrollbar quando os cards excedem a altura fixa */
+  overflow-y: auto;     /* scrollbar quando os cards excedem a altura da coluna */
+  overscroll-behavior: contain;  /* chegar ao fim não arrasta a página junto */
 }
 
 .cardItem{
@@ -177,16 +194,19 @@
   background: var(--blue-tint);
 }
 
-@media (max-width: 1100px){
-  .kanban{ grid-template-columns: 1fr 1fr; }
-}
-@media (max-width: 640px){
-  .kanban{ grid-template-columns: 1fr; }
+/* As duas media queries que existiam aqui mexiam em grid-template-columns
+   (2 colunas em 1100px, 1 coluna em 640px). Viraram código morto quando o
+   quadro deixou de ser grid: agora a faixa rola de lado em qualquer largura, e
+   é o snap que resolve o celular.
 
-  /* Empilhadas, 4 colunas de 560px fixos somavam ~2.300px de rolagem — e o
-     scroll interno do .drop capturava o dedo antes de a página rolar. Com
-     altura automática a coluna encolhe quando tem poucos cards, e o teto em vh
-     evita que uma coluna cheia tome a tela inteira. */
-  .col{ height: auto; }
-  .drop{ max-height: 60vh; }
+   O que a antiga guardava e continua valendo: empilhado, o scroll interno da
+   coluna capturava o dedo antes de a página rolar. Hoje isso é tratado por
+   overscroll-behavior: contain no .drop, e pelo teto em dvh abaixo — coluna
+   cheia não toma a tela inteira. */
+@media (max-width: 620px){
+  .kanban{ scroll-snap-type: x mandatory; }
+  .col{
+    flex: 0 0 var(--kanban-col-w-mobile);
+    height: auto; min-height: 0; max-height: 70dvh;
+  }
 }

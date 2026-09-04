@@ -100,7 +100,7 @@ export default function KanbanMob() {
   const filtrando = !!fFluxo || apenasMinhas;
 
   return (
-    <div className="mob-page mob-page-full">
+    <div className="mob-page mob-page-full mob-page-quadro">
       <h1 className="mob-title"><LayoutGrid size={24} /> Quadro</h1>
       <p className="mob-sub">
         Cada cartão é um PASSO de uma mobilização. Arraste para atualizar a situação —

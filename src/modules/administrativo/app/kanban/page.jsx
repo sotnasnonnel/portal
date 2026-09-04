@@ -50,7 +50,7 @@ export default function KanbanAdm() {
   const filtrando = !!(fSolicitante || fCc);
 
   return (
-    <div className="adm-page adm-page-full">
+    <div className="adm-page adm-page-full adm-page-quadro">
       <h1 className="adm-title"><LayoutGrid size={24} /> Quadro</h1>
       <p className="adm-sub">
         {souAdm

@@ -194,18 +194,29 @@
 .mob-prog-txt { font-size: var(--font-size-2xs); color: var(--m-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 /* ============================ quadro (kanban) ============================ */
-.mob-quadro {
-  display: flex; gap: 14px; align-items: flex-start;
-  overflow-x: auto; padding-bottom: 10px;
+/* A página do quadro é uma coluna que ocupa a altura útil da janela: o
+   cabeçalho (título, abas, filtros) toma o que precisa e o quadro fica com o
+   resto. Assim a altura das colunas não depende de nenhum número mágico. */
+.mob-page-quadro {
+  display: flex; flex-direction: column;
+  height: var(--kanban-h); min-height: var(--kanban-h-min);
 }
+.mob-quadro {
+  display: flex; gap: var(--kanban-gap); align-items: stretch;
+  overflow-x: auto; padding-bottom: 10px;
+  flex: 1; min-height: 0;   /* min-height:0 é o que deixa o filho rolar */
+}
+/* Largura FIXA. Com 1fr, abrir uma coluna a mais espremia todas e o título da
+   etapa passava a quebrar em quatro linhas. */
 .mob-col {
-  flex: 1 1 0; min-width: 240px;
+  flex: 0 0 var(--kanban-col-w); min-width: 0;
+  display: flex; flex-direction: column; min-height: 0;
   background: var(--m-gray-50); border: 1px solid var(--m-border);
   border-radius: var(--card-radius); padding: 10px;
 }
 .mob-col.is-alvo { background: var(--m-primary-soft); border-color: var(--m-primary-line); }
 .mob-col.is-bloqueada { opacity: 0.5; }
-.mob-col-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.mob-col-cab { display: flex; flex-shrink: 0; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
 .mob-col-cab h2 {
   font-size: var(--font-size-2xs); font-weight: var(--fw-bold);
   text-transform: uppercase; letter-spacing: 0.06em; color: var(--m-muted); margin: 0;
@@ -215,7 +226,15 @@
   background: var(--neutral-surface); border: 1px solid var(--m-border);
   border-radius: 999px; padding: 1px 8px; color: var(--m-gray-600);
 }
-.mob-col-corpo { display: flex; flex-direction: column; gap: 8px; min-height: 60px; }
+/* O rolo mora AQUI, e não na página: uma coluna cheia não pode empurrar o
+   rodapé do quadro para fora da tela e obrigar a rolar tudo só para alcançar a
+   coluna do lado. overscroll-behavior impede que chegar ao fim da lista arraste
+   a página junto. */
+.mob-col-corpo {
+  display: flex; flex-direction: column; gap: 8px;
+  flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+  padding-right: 2px;   /* respiro para a barra de rolagem não colar no cartão */
+}
 .mob-col-vazia { margin: 6px 0; text-align: center; color: #cbd5e1; }
 
 .mob-cartao {
@@ -314,15 +333,20 @@
 
 /* ============================ responsivo ============================ */
 @media (max-width: 1024px) {
-  .mob-quadro { padding-bottom: 14px; }
-  .mob-col { flex: 0 0 260px; scroll-snap-align: start; }
+  .mob-quadro { padding-bottom: 14px; scroll-snap-type: x proximity; }
+  .mob-col { scroll-snap-align: start; }
 }
 @media (max-width: 768px) {
   .mobMain { padding: var(--shell-main-pad-mobile); }
   .mob-title { font-size: var(--font-size-xl); }
   .mob-card { padding: 16px 14px; }
+  /* No celular a altura da janela é curta e o teclado a encolhe mais ainda:
+     altura livre e uma coluna por vez, com o encaixe ajudando a não parar no
+     meio. O rolo continua dentro da coluna, com teto em vez de flex. */
+  .mob-page-quadro { height: auto; min-height: 0; }
   .mob-quadro { scroll-snap-type: x mandatory; }
-  .mob-col { flex: 0 0 82vw; }
+  .mob-col { flex: 0 0 var(--kanban-col-w-mobile); }
+  .mob-col-corpo { max-height: 62dvh; }
   .mob-btn { width: 100%; }
   .mob-btn-sm { width: auto; }
   .mob-evento { grid-template-columns: 1fr; gap: 2px; }

@@ -67,7 +67,7 @@ export default function TorreMob() {
   };
 
   return (
-    <div className="mob-page mob-page-full">
+    <div className="mob-page mob-page-full mob-page-quadro">
       <h1 className="mob-title"><Radar size={24} /> Torre de controle</h1>
       <p className="mob-sub">
         Os chamados do Administrativo e as etapas de Mobilização num quadro só. É visão —
