@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { LayoutGrid, Loader2, AlertCircle, X, AlertTriangle, Eye } from 'lucide-react';
+import { LayoutGrid, Loader2, AlertCircle, X, AlertTriangle, Eye, Headset } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { FLUXOS } from '../../../../config/mobilizacao';
 import { listarParaMatriz, listarCatalogo } from '../../../mobilizacao/lib/mobilizacao';
 import { montarMatriz, linhaEmAndamento } from '../../../mobilizacao/lib/matriz';
 import MatrizEtapas, { LegendaMatriz } from '../../../mobilizacao/app/components/MatrizEtapas';
+import { listarChamadosAbertos } from '../../lib/chamadosTorre';
+import { montarMatrizChamados } from '../../lib/matrizChamados';
+import MatrizChamados, { LegendaChamados } from '../components/MatrizChamados';
 
 const semAcento = (s) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
@@ -22,6 +25,7 @@ export default function MapaTorre() {
   const { user } = useAuth();
   const [dados, setDados] = useState({ processos: [], etapas: [] });
   const [catalogo, setCatalogo] = useState([]);
+  const [chamados, setChamados] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
 
@@ -34,9 +38,12 @@ export default function MapaTorre() {
     setCarregando(true);
     setErro('');
     try {
-      const [m, c] = await Promise.all([listarParaMatriz({}), listarCatalogo()]);
+      const [m, c, ch] = await Promise.all([
+        listarParaMatriz({}), listarCatalogo(), listarChamadosAbertos(),
+      ]);
       setDados(m);
       setCatalogo(c);
+      setChamados(ch);
     } catch (e) {
       setErro(e.message);
     } finally {
@@ -77,10 +84,27 @@ export default function MapaTorre() {
       .filter((b) => b.linhas.length);
   }, [dados, catalogo, busca, fFluxo, soMeus, soAtrasados, user?.id]);
 
+  // A matriz de chamados responde a BUSCA e ao "so os meus" (por atendente). Os
+  // outros dois filtros sao de mobilizacao — fluxo nao existe em chamado, e
+  // "so os travados" ja e o que a cor da celula diz.
+  const linhasChamados = useMemo(() => {
+    const termo = semAcento(busca).trim();
+    const visiveis = chamados.filter((c) => {
+      if (soMeus && c.atendente_id !== user?.id) return false;
+      if (termo && !semAcento(`${c.assunto || ''} ${c.numero || ''}`).includes(termo)) return false;
+      return true;
+    });
+    // O instante sai daqui e desce junto: cor das celulas e contagem do rodape
+    // tem de olhar o mesmo relogio.
+    const agora = Date.now();
+    return { linhas: montarMatrizChamados(visiveis, { agora }), agora };
+  }, [chamados, busca, soMeus, user?.id]);
+
   const filtrando = !!busca || !!fFluxo || soMeus || soAtrasados;
   const totalLinhas = blocos.reduce((s, b) => s + b.linhas.length, 0);
   const travadas = blocos.reduce((s, b) => s + b.linhas.filter((l) => l.vencidas > 0).length, 0);
   const concluindo = blocos.reduce((s, b) => s + b.linhas.filter((l) => !linhaEmAndamento(l)).length, 0);
+  const totalChamados = linhasChamados.linhas.reduce((s, l) => s + l.total, 0);
 
   return (
     <div className="mob-page mob-page-full">
@@ -143,6 +167,21 @@ export default function MapaTorre() {
 
           <LegendaMatriz />
           <MatrizEtapas blocos={blocos} />
+
+          {/* Os chamados do Adm na MESMA tela: o pedido era nao ter que trocar
+              de pagina no meio da reuniao. */}
+          <section className="mob-card mob-matriz-card">
+            <h2 className="mob-card-tit">
+              <Headset size={18} /> Chamados do Administrativo
+              <span className="mob-matriz-cont">{totalChamados}</span>
+            </h2>
+            <p className="mob-campo-dica">
+              Tipo de chamado na linha, situação na coluna. O número é quantos há ali, e a cor é o
+              pior caso entre eles — uma célula com nove em dia e um vencido é vermelha.
+            </p>
+            <LegendaChamados />
+            <MatrizChamados linhas={linhasChamados.linhas} agora={linhasChamados.agora} />
+          </section>
         </>
       )}
     </div>

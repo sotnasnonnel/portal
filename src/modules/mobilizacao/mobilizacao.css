@@ -526,3 +526,45 @@ button.mob-bolinha:focus-visible { outline: 2px solid var(--m-primary); outline-
   .mob-matriz-nome { min-width: 130px; max-width: 170px; }
   .mob-matriz-col { height: 128px; }
 }
+
+/* ---------------------------------------------------------------------------
+   Matriz de CHAMADOS (Torre) — mesma tabela, célula diferente.
+
+   Aqui a célula guarda VÁRIOS chamados, então ela mostra o número tingido em
+   vez de uma bolinha. A diferença de forma é o que impede a leitura errada: na
+   matriz de mobilização verde é etapa concluída, e aqui é chamado em dia. Se as
+   duas fossem bolinhas iguais, o olho traduziria uma pela outra.
+   --------------------------------------------------------------------------- */
+.mob-matriz-chamados .mob-matriz-nome { min-width: 190px; max-width: 260px; }
+
+/* Coluna mais larga que a da matriz de bolinhas: são 4 colunas em vez de 11, e
+   o número precisa de espaço que a bolinha não precisava. */
+.mob-matriz-col-larga { width: 62px; height: 126px; }
+.mob-matriz-chamados .mob-matriz-celula { width: 62px; padding: 4px 3px !important; }
+
+.mob-conta {
+  display: inline-block; min-width: 30px; padding: 3px 8px; border-radius: 6px;
+  font-size: var(--font-size-sm); font-weight: var(--fw-bold);
+  font-variant-numeric: tabular-nums; line-height: 1.35;
+  border: 1px solid transparent;
+}
+/* Régua: vermelho = algum vencido · amarelo = aperto ou bola com o solicitante
+   · verde = em dia · hachurado = relógio nem ligou (sem prazo). */
+.mob-conta.tom-vencido { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+.mob-conta.tom-atencao { background: #fef9c3; color: #854d0e; border-color: #fde047; }
+.mob-conta.tom-em-dia { background: #dcfce7; color: #166534; border-color: #86efac; }
+.mob-conta.tom-sem-prazo {
+  background: repeating-linear-gradient(45deg, #f1f5f9, #f1f5f9 4px, #fff 4px, #fff 8px);
+  color: var(--m-gray-600); border-color: var(--m-border);
+}
+.mob-conta-vazia { color: var(--m-border); font-size: var(--font-size-sm); }
+
+.mob-matriz-rodape-num {
+  font-size: var(--font-size-sm); color: var(--m-gray-600);
+  font-variant-numeric: tabular-nums; margin-right: 4px;
+}
+
+@media (max-width: 768px) {
+  .mob-matriz-chamados .mob-matriz-nome { min-width: 150px; max-width: 190px; }
+  .mob-matriz-col-larga { height: 112px; }
+}
