@@ -307,11 +307,28 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
     processFiles([file]);
   }
 
-  async function handleSubmit(event) {
+  // Enter num campo de texto dispara o submit nativo do form. Aqui isso criava
+  // o pedido inteiro — e, quando quem preenche é gestor, já aprovado (ver
+  // `selfApprove`) — antes da pessoa terminar de conferir, dando a impressão de
+  // que o reembolso salvava sozinho. Salvar é só pelo botão: o Enter só passa
+  // dentro de textarea, onde ele é quebra de linha e não envio.
+  function blockImplicitSubmit(event) {
+    if (event.key !== "Enter") return;
+    if (event.target?.tagName === "TEXTAREA") return;
     event.preventDefault();
+  }
+
+  async function handleSubmit(event) {
+    event?.preventDefault?.();
     if (submitting) return;
     setError("");
 
+    // Sem submit nativo não há mais a validação do `required` do navegador:
+    // cada campo obrigatório precisa da sua checagem aqui.
+    if (!requestDate) {
+      setError(`Informe a data do ${meta.singular}.`);
+      return;
+    }
     if (!clientObra.trim()) {
       setError("Informe o Cliente/Obra.");
       return;
@@ -468,7 +485,7 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
         </div>
       )}
 
-      <form className="reembolso-form" onSubmit={handleSubmit}>
+      <form className="reembolso-form" onSubmit={handleSubmit} onKeyDown={blockImplicitSubmit}>
         {/* regras de despesa (alimentação/proibidos) só valem ao gastar:
             no reembolso. No adiantamento elas aparecem na prestação de contas. */}
         {!isAdiantamento && <PolicyNotice />}
@@ -835,7 +852,13 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
           >
             Cancelar
           </button>
-          <button type="submit" className="btn btn-primary" disabled={submitting}>
+          {/* type="button" + onClick: o salvamento tem uma porta só, o clique. */}
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handleSubmit}
+            disabled={submitting}
+          >
             {isEdit ? <Send size={16} /> : <Save size={16} />}
             {isEdit
               ? submitting
