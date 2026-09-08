@@ -36,6 +36,9 @@ export const MOBILIZACAO_LIBERADOS = [
   // Já é administrativo_role = 'admin', então entra como administrador do
   // módulo: enxerga todos os processos e configura o catálogo e os SLAs.
   'andre.guimaraes@phdengenharia.eng.br',
+  // Também administrativo_role = 'admin'. Entra para o de-para de centro de
+  // custo da Torre, que depende da base comercial que ele mantém.
+  'lennon.santos@phdengenharia.eng.br',
 ];
 
 export const podeAcessarMobilizacao = (user) => !MOBILIZACAO_EM_BREVE
