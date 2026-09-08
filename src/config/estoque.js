@@ -41,7 +41,7 @@ export const ESTOQUE_LIBERADOS = [
   'alessandra.sobral@phdengenharia.eng.br',  // analista adm
   'perla.passos@phdengenharia.eng.br',       // técnica de segurança do trabalho
   'daniela.sebrian@phdengenharia.eng.br',    // gerente financeiro
-  'mauricio.silva@phdengenharia.eng.br',
+  'patrick.pereira@phdengenharia.eng.br',
 ];
 
 export const podeAcessarEstoque = (user) => !ESTOQUE_EM_BREVE
