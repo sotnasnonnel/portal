@@ -61,9 +61,12 @@ export function FeedbackProvider({ children }) {
 
   useEffect(() => {
     if (!dialog) return undefined;
+    // Escape cancela de qualquer lugar. Enter NÃO confirma pela janela: o botão
+    // de confirmar já nasce com autoFocus, então quem quer teclar confirma nele
+    // mesmo. Um Enter global aceitava a caixa — aprovar, excluir — vindo de um
+    // campo qualquer da tela, sem ninguém ter clicado no botão.
     const onKey = (e) => {
       if (e.key === "Escape") settle(false);
-      if (e.key === "Enter") settle(true);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
