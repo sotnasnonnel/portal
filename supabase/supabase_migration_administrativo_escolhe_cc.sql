@@ -24,6 +24,7 @@ comment on column public.colaboradores.administrativo_escolhe_cc is
 
 update public.colaboradores
    set administrativo_escolhe_cc = true
- where email = 'maicon.morais@phdengenharia.eng.br';
+ where email in ('maicon.morais@phdengenharia.eng.br',
+                 'anaclaudia.costa@phdengenharia.eng.br');
 
 notify pgrst, 'reload schema';
