@@ -398,3 +398,123 @@
   .mob-modal-fundo { padding: 12px; align-items: flex-end; }
   .mob-modal { max-height: 90dvh; }
 }
+
+/* ============================ matriz de etapas ============================ */
+/* Recria o visual da planilha: uma linha por processo, uma coluna por etapa,
+   uma bolinha por cruzamento. A leitura é VERTICAL — numa lista de 40 etapas
+   ninguém percebe que oito processos travaram no mesmo passo; numa coluna
+   inteira de vermelho, percebe. */
+.mob-matriz-card { padding: 16px 18px; }
+.mob-matriz-cont {
+  margin-left: 8px; padding: 1px 8px; border-radius: 999px;
+  background: var(--m-gray-100); color: var(--m-gray-600);
+  font-size: var(--font-size-2xs); font-weight: var(--fw-bold);
+}
+.mob-matriz-scroll { overflow-x: auto; overflow-y: visible; }
+
+.mob-matriz { border-collapse: separate; border-spacing: 0; font-size: var(--table-fs); }
+.mob-matriz th, .mob-matriz td { padding: 0; }
+
+/* Coluna do nome: gruda na rolagem horizontal. Sem isso, ao chegar na última
+   etapa a pessoa perde de vista de QUEM é a linha — metade da informação. */
+.mob-matriz-nome {
+  position: sticky; left: 0; z-index: 1;
+  background: var(--neutral-surface);
+  text-align: left; padding: 6px 12px 6px 4px;
+  min-width: 190px; max-width: 240px;
+  border-right: 1px solid var(--m-border);
+  font-weight: var(--fw-regular);
+}
+.mob-matriz thead .mob-matriz-nome {
+  font-size: var(--table-head-fs); text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--m-muted); font-weight: var(--fw-bold);
+  vertical-align: bottom; padding-bottom: 10px;
+}
+.mob-matriz-titulo {
+  display: block; font-size: var(--font-size-xs); font-weight: var(--fw-semibold);
+  color: var(--m-ink); line-height: var(--lh-tight);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mob-matriz-sub {
+  display: block; font-size: var(--font-size-2xs); color: var(--m-muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* Cabeçalho na vertical: onze rótulos deitados dariam uma tabela mais larga que
+   qualquer tela. O writing-mode gira o texto sem virar imagem, então continua
+   selecionável e legível por leitor de tela. */
+.mob-matriz-col {
+  writing-mode: vertical-rl; transform: rotate(180deg);
+  height: 132px; width: 30px; vertical-align: bottom;
+  padding: 6px 0 !important;
+  font-size: var(--font-size-2xs); font-weight: var(--fw-semibold);
+  color: var(--m-gray-600); text-align: left; white-space: nowrap;
+}
+.mob-matriz-col-txt { display: inline-block; }
+
+.mob-matriz-celula { text-align: center; padding: 3px 0 !important; width: 30px; }
+
+/* A bolinha. 15px é o menor tamanho em que as cores ainda se distinguem à
+   distância de uma sala de reunião, que é onde esta tela é usada. */
+.mob-bolinha {
+  display: inline-block; width: 15px; height: 15px; border-radius: 50%;
+  border: 1px solid rgba(15, 23, 42, 0.12); padding: 0;
+}
+button.mob-bolinha { cursor: pointer; }
+button.mob-bolinha:focus-visible { outline: 2px solid var(--m-primary); outline-offset: 2px; }
+
+/* A régua é a MESMA do semáforo do quadro (lib/matriz.js), para os dois nunca
+   discordarem sobre a mesma etapa. */
+.mob-bolinha.tom-concluida { background: #16a34a; }
+.mob-bolinha.tom-no-prazo { background: #eab308; }
+.mob-bolinha.tom-vencida { background: #dc2626; }
+/* Em aberto e sem prazo: cor própria, porque é falta de data-base e não folga.
+   Pintar de amarelo esconderia o processo que ninguém consegue acompanhar. */
+.mob-bolinha.tom-sem-prazo { background: repeating-linear-gradient(45deg, #cbd5e1, #cbd5e1 3px, #f8fafc 3px, #f8fafc 6px); }
+.mob-bolinha.tom-dispensada { background: var(--m-gray-100); }
+/* Etapa que não faz parte deste processo: contorno vazio, não bolinha cinza —
+   "não se aplica" e "não existe" são coisas diferentes. */
+.mob-bolinha.tom-ausente { background: none; border-style: dashed; border-color: var(--m-border); }
+
+.mob-matriz-falta {
+  text-align: center; padding: 0 8px !important; min-width: 54px;
+  font-size: var(--font-size-xs); color: var(--m-gray-600);
+  font-variant-numeric: tabular-nums;
+}
+.mob-matriz thead .mob-matriz-falta {
+  font-size: var(--table-head-fs); text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--m-muted); vertical-align: bottom; padding-bottom: 10px !important;
+}
+.mob-matriz-ok { color: var(--m-green); font-weight: var(--fw-bold); }
+
+.mob-matriz tbody tr:hover .mob-matriz-nome { background: var(--m-gray-50); }
+.mob-matriz tbody tr:hover td { background: var(--m-gray-50); }
+
+.mob-matriz tfoot td, .mob-matriz tfoot th { padding-top: 8px !important; border-top: 1px solid var(--m-border); }
+.mob-matriz-rodape-rot {
+  font-size: var(--font-size-2xs) !important; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--m-muted); font-weight: var(--fw-bold) !important;
+}
+.mob-matriz-vencidas {
+  display: inline-block; min-width: 18px; padding: 0 4px; border-radius: 999px;
+  background: #fef2f2; color: var(--m-red);
+  font-size: var(--font-size-2xs); font-weight: var(--fw-bold);
+}
+
+.mob-legenda {
+  display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0 0 16px;
+  font-size: var(--font-size-2xs); color: var(--m-muted);
+}
+.mob-legenda-item { display: inline-flex; align-items: center; gap: 6px; }
+
+/* Texto só para leitor de tela: a bolinha é cor pura, e cor sozinha não é
+   informação acessível. */
+.mob-so-leitor {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+@media (max-width: 768px) {
+  .mob-matriz-nome { min-width: 140px; }
+  .mob-matriz-col { height: 110px; }
+}

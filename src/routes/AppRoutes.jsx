@@ -109,6 +109,7 @@ const DashboardMob = lazy(() => import('../modules/mobilizacao/app/dashboard/pag
 const CatalogoMob = lazy(() => import('../modules/mobilizacao/app/catalogo/page'));
 const TorreMob = lazy(() => import('../modules/mobilizacao/app/torre/page'));
 
+const MapaTorre = lazy(() => import('../modules/torre/app/mapa/page'));
 const QuadroTorre = lazy(() => import('../modules/torre/app/quadro/page'));
 const EtapasTorre = lazy(() => import('../modules/torre/app/etapas/page'));
 
@@ -706,7 +707,8 @@ export default function AppRoutes() {
             </ProtectedRoute>
           )}
         >
-          <Route index element={<Navigate to="/torre/quadro" replace />} />
+          <Route index element={<Navigate to="/torre/mapa" replace />} />
+          <Route path="mapa" element={<LazyPage><MapaTorre /></LazyPage>} />
           <Route path="quadro" element={<LazyPage><QuadroTorre /></LazyPage>} />
           <Route path="etapas" element={<LazyPage><EtapasTorre /></LazyPage>} />
         </Route>

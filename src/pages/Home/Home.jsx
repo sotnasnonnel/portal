@@ -146,7 +146,7 @@ export default function Home() {
     {
       // Só consulta: o quadro e a lista de etapas, sem nenhuma edição. É a
       // tela da reunião de torre, para coordenação, gerência e diretoria.
-      to: '/torre/quadro',
+      to: '/torre/mapa',
       icon: Radar,
       tone: 'slate',
       title: 'Torre de Controle',
