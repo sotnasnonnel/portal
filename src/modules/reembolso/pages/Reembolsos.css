@@ -153,6 +153,33 @@
   flex-wrap: wrap;
 }
 
+/* Recorte por "reembolsável pelo cliente" (só admin). Segunda faixa, mais
+   baixa e com rótulo à esquerda, para ler como um refinamento da faixa de
+   status acima e não como outra lista de status. */
+.filters-billable {
+  align-items: center;
+  padding-top: var(--space-2);
+  padding-bottom: var(--space-2);
+  background: var(--bg-soft);
+}
+
+.filters-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-right: var(--space-2);
+}
+
+/* Total do recorte escolhido: a conta que o admin faz depois de separar. */
+.filters-total {
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
 .chip {
   padding: 6px 12px;
   border-radius: 999px;
@@ -189,6 +216,14 @@
   .chip {
     flex-shrink: 0;
     min-height: 36px;
+  }
+  /* No mobile a faixa rola na horizontal; o rótulo e o total acompanham. */
+  .filters-label,
+  .filters-total {
+    flex-shrink: 0;
+  }
+  .filters-total {
+    margin-left: var(--space-2);
   }
 }
 

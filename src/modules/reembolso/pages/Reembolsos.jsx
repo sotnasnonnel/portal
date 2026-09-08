@@ -19,6 +19,27 @@ const FILTERS = [
 // Filtro especial (não é um status): aprovados que ainda não têm pagamento agendado.
 const A_PAGAR = "a_pagar";
 
+// Recorte por "reembolsável pelo cliente", que é outra pergunta que não a do
+// status: um pedido aprovado pode ser custo da empresa ou conta que volta do
+// cliente da obra. Por isso é uma faixa separada, que se combina com o status
+// em vez de substituí-lo.
+//
+// "Não informado" existe porque o campo nasceu depois (migration
+// reembolso_cliente_reembolsavel): pedido antigo tem null, e sem esse chip ele
+// sumiria do "Sim" e do "Não" sem aparecer em lugar nenhum.
+const BILLABLE_FILTERS = [
+  { value: "", label: "Todos" },
+  { value: "sim", label: "Cliente reembolsa" },
+  { value: "nao", label: "Custo da empresa" },
+  { value: "sem", label: "Não informado" },
+];
+
+function matchBillable(row, filter) {
+  if (!filter) return true;
+  if (filter === "sem") return row.billable_to_client == null;
+  return row.billable_to_client === (filter === "sim");
+}
+
 // Rótulos da prestação de contas (só adiantamento)
 const ACC_LABEL = {
   pendente: "Pendente",
@@ -53,8 +74,13 @@ export default function Reembolsos({ kind = "reembolso" }) {
   // gestor em "Aguardando Aprovação", admin em "Aprovados" (a pagar/gerar PDF),
   // solicitante em "Todos". "" é uma escolha explícita do usuário.
   const [statusFilter, setStatusFilter] = useState(null);
+  // Só o admin vê e usa este: é ele que separa o que volta do cliente do que
+  // fica como custo da empresa. Começa em "Todos" — o recorte é uma pergunta
+  // que ele faz, não a fila em que ele trabalha.
+  const [billableFilter, setBillableFilter] = useState("");
   const roleDefault = isGestor ? STATUS.EM_ANALISE : isAdmin ? STATUS.APROVADO : "";
   const activeFilter = statusFilter ?? roleDefault;
+  const activeBillable = isAdmin ? billableFilter : "";
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -67,7 +93,7 @@ export default function Reembolsos({ kind = "reembolso" }) {
     load();
   }, [load]);
 
-  const filtered = useMemo(() => {
+  const byStatus = useMemo(() => {
     if (activeFilter === A_PAGAR) {
       return rows.filter((r) => r.status === STATUS.APROVADO && !r.payment_date);
     }
@@ -82,6 +108,11 @@ export default function Reembolsos({ kind = "reembolso" }) {
     return rows.filter((r) => r.status === activeFilter);
   }, [rows, activeFilter]);
 
+  const filtered = useMemo(
+    () => byStatus.filter((r) => matchBillable(r, activeBillable)),
+    [byStatus, activeBillable]
+  );
+
   const counts = useMemo(() => {
     const c = { "": rows.length };
     for (const r of rows) c[r.status] = (c[r.status] ?? 0) + 1;
@@ -94,6 +125,24 @@ export default function Reembolsos({ kind = "reembolso" }) {
     }
     return c;
   }, [rows]);
+
+  // Contagem do recorte por cliente sobre a lista JÁ filtrada por status: o
+  // número no chip é o que a pessoa vai ver ao clicar nele, não um total de
+  // outra tela. Some com ela o valor de cada recorte, que é a conta que o admin
+  // faz depois de separar — quanto volta do cliente, quanto fica com a empresa.
+  const billableStats = useMemo(() => {
+    const s = {};
+    for (const f of BILLABLE_FILTERS) s[f.value] = { count: 0, sum: 0 };
+    for (const r of byStatus) {
+      const valor = r.status === STATUS.APROVADO ? paidAmount(r) : Number(r.total || 0);
+      for (const f of BILLABLE_FILTERS) {
+        if (!matchBillable(r, f.value)) continue;
+        s[f.value].count += 1;
+        s[f.value].sum += valor;
+      }
+    }
+    return s;
+  }, [byStatus]);
 
   const totals = useMemo(
     () =>
@@ -188,6 +237,39 @@ export default function Reembolsos({ kind = "reembolso" }) {
           ))}
         </div>
 
+        {isAdmin && (
+          <div className="filters filters-billable">
+            <span className="filters-label">Cliente reembolsa</span>
+            {BILLABLE_FILTERS.map((f) => {
+              // "Não informado" só aparece quando existe pedido antigo sem o
+              // campo: chip zerado é convite para um clique que não leva a nada.
+              if (f.value === "sem" && billableStats.sem.count === 0) return null;
+              const stat = billableStats[f.value];
+              return (
+                <button
+                  type="button"
+                  key={f.value || "all"}
+                  onClick={() => setBillableFilter(f.value)}
+                  className={`chip${activeBillable === f.value ? " is-active" : ""}`}
+                  title={
+                    stat.count > 0
+                      ? `${stat.count} pedido(s) — ${formatCurrency(stat.sum)}`
+                      : undefined
+                  }
+                >
+                  {f.label}
+                  {stat.count > 0 && <span className="chip-count">{stat.count}</span>}
+                </button>
+              );
+            })}
+            {activeBillable && (
+              <span className="filters-total">
+                {formatCurrency(billableStats[activeBillable].sum)}
+              </span>
+            )}
+          </div>
+        )}
+
         {loading ? (
           <div className="list-empty" role="status" aria-live="polite">
             <Loader2 size={28} className="spin" aria-hidden="true" />
@@ -198,6 +280,7 @@ export default function Reembolsos({ kind = "reembolso" }) {
             role={role}
             canCreate={canCreate}
             activeFilter={activeFilter}
+            activeBillable={activeBillable}
             meta={meta}
             onCreate={() => navigate(`${meta.base}/novo`)}
           />
@@ -286,9 +369,22 @@ export default function Reembolsos({ kind = "reembolso" }) {
   );
 }
 
-function EmptyState({ role, canCreate, activeFilter, meta, onCreate }) {
+function EmptyState({ role, canCreate, activeFilter, activeBillable, meta, onCreate }) {
   const filtered = activeFilter !== "";
   const s = meta.singular;
+
+  // O recorte por cliente é o mais provável de zerar a lista (é o segundo
+  // filtro), e responder "tudo em dia!" a ele mentiria: não está vazio porque o
+  // trabalho acabou, e sim porque esse corte não tem ninguém.
+  if (activeBillable) {
+    const recorte = BILLABLE_FILTERS.find((f) => f.value === activeBillable)?.label;
+    return (
+      <div className="list-empty">
+        <FileText size={32} />
+        <p>{`Nenhum ${s} em “${recorte}” dentro deste filtro.`}</p>
+      </div>
+    );
+  }
   if (role === "gestor") {
     return (
       <div className="list-empty">
