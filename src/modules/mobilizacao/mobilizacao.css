@@ -426,17 +426,17 @@
   font-weight: var(--fw-regular);
 }
 .mob-matriz thead .mob-matriz-nome {
-  font-size: var(--table-head-fs); text-transform: uppercase;
+  font-size: var(--font-size-xs); text-transform: uppercase;
   letter-spacing: 0.06em; color: var(--m-muted); font-weight: var(--fw-bold);
   vertical-align: bottom; padding-bottom: 10px;
 }
 .mob-matriz-titulo {
-  display: block; font-size: var(--font-size-xs); font-weight: var(--fw-semibold);
+  display: block; font-size: var(--font-size-sm); font-weight: var(--fw-semibold);
   color: var(--m-ink); line-height: var(--lh-tight);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .mob-matriz-sub {
-  display: block; font-size: var(--font-size-2xs); color: var(--m-muted);
+  display: block; font-size: var(--font-size-xs); color: var(--m-muted);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
@@ -445,19 +445,22 @@
    selecionável e legível por leitor de tela. */
 .mob-matriz-col {
   writing-mode: vertical-rl; transform: rotate(180deg);
-  height: 132px; width: 30px; vertical-align: bottom;
+  height: 152px; width: 26px; vertical-align: bottom;
   padding: 6px 0 !important;
-  font-size: var(--font-size-2xs); font-weight: var(--fw-semibold);
+  font-size: var(--font-size-xs); font-weight: var(--fw-semibold);
   color: var(--m-gray-600); text-align: left; white-space: nowrap;
 }
 .mob-matriz-col-txt { display: inline-block; }
 
-.mob-matriz-celula { text-align: center; padding: 3px 0 !important; width: 30px; }
+.mob-matriz-celula { text-align: center; padding: 4px 0 !important; width: 26px; }
 
-/* A bolinha. 15px é o menor tamanho em que as cores ainda se distinguem à
-   distância de uma sala de reunião, que é onde esta tela é usada. */
+/* A bolinha. O que faz a matriz ler como um bloco contínuo (e não como pontos
+   soltos) é a RAZÃO entre ela e a célula: 18 em 26 preenche ~70% e as colunas
+   viram faixas de cor. Mexer numa das duas medidas sem a outra desmancha isso.
+   Abaixo de ~15px as cores param de se distinguir à distância de uma sala de
+   reunião, que é onde esta tela é usada. */
 .mob-bolinha {
-  display: inline-block; width: 15px; height: 15px; border-radius: 50%;
+  display: inline-block; width: 18px; height: 18px; border-radius: 50%;
   border: 1px solid rgba(15, 23, 42, 0.12); padding: 0;
 }
 button.mob-bolinha { cursor: pointer; }
@@ -477,12 +480,12 @@ button.mob-bolinha:focus-visible { outline: 2px solid var(--m-primary); outline-
 .mob-bolinha.tom-ausente { background: none; border-style: dashed; border-color: var(--m-border); }
 
 .mob-matriz-falta {
-  text-align: center; padding: 0 8px !important; min-width: 54px;
-  font-size: var(--font-size-xs); color: var(--m-gray-600);
+  text-align: center; padding: 0 8px !important; min-width: 48px;
+  font-size: var(--font-size-sm); color: var(--m-gray-600);
   font-variant-numeric: tabular-nums;
 }
 .mob-matriz thead .mob-matriz-falta {
-  font-size: var(--table-head-fs); text-transform: uppercase;
+  font-size: var(--font-size-xs); text-transform: uppercase;
   letter-spacing: 0.06em; color: var(--m-muted); vertical-align: bottom; padding-bottom: 10px !important;
 }
 .mob-matriz-ok { color: var(--m-green); font-weight: var(--fw-bold); }
@@ -492,18 +495,18 @@ button.mob-bolinha:focus-visible { outline: 2px solid var(--m-primary); outline-
 
 .mob-matriz tfoot td, .mob-matriz tfoot th { padding-top: 8px !important; border-top: 1px solid var(--m-border); }
 .mob-matriz-rodape-rot {
-  font-size: var(--font-size-2xs) !important; text-transform: uppercase;
+  font-size: var(--font-size-xs) !important; text-transform: uppercase;
   letter-spacing: 0.06em; color: var(--m-muted); font-weight: var(--fw-bold) !important;
 }
 .mob-matriz-vencidas {
   display: inline-block; min-width: 18px; padding: 0 4px; border-radius: 999px;
   background: #fef2f2; color: var(--m-red);
-  font-size: var(--font-size-2xs); font-weight: var(--fw-bold);
+  font-size: var(--font-size-xs); font-weight: var(--fw-bold);
 }
 
 .mob-legenda {
-  display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0 0 16px;
-  font-size: var(--font-size-2xs); color: var(--m-muted);
+  display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 0 0 16px;
+  font-size: var(--font-size-xs); color: var(--m-muted);
 }
 .mob-legenda-item { display: inline-flex; align-items: center; gap: 6px; }
 
@@ -515,6 +518,6 @@ button.mob-bolinha:focus-visible { outline: 2px solid var(--m-primary); outline-
 }
 
 @media (max-width: 768px) {
-  .mob-matriz-nome { min-width: 140px; }
-  .mob-matriz-col { height: 110px; }
+  .mob-matriz-nome { min-width: 150px; }
+  .mob-matriz-col { height: 128px; }
 }
