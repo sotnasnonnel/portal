@@ -71,6 +71,14 @@ export default function PolicyNotice({ compact = false }) {
           O local vem da nota anexada (cidade do estabelecimento). Sem cidade
           identificada, vale a coluna “{padrao.label}”.
         </p>
+        {/* Como o sistema escolhe a LINHA da tabela. Não estava escrito em lugar
+            nenhum, e era daí que vinha a sensação de teto errado. */}
+        <p className="policy-note">
+          A refeição sai do que está escrito no item (“café da manhã”, “almoço”,
+          “jantar”). Sem isso, vale o teto de almoço/jantar da coluna — o do café
+          da manhã só é cobrado quando a nota diz que foi café. Corrigir a
+          descrição da linha corrige o teto junto.
+        </p>
       </div>
 
       <div className="policy-block policy-block-forbidden">

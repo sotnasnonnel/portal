@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Camera, Loader2, Paperclip, Plus, Save, Send, Trash2, Upload, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Camera, Loader2, Paperclip, Plus, Save, Send, Trash2, Upload, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useToast } from "../context/FeedbackContext.jsx";
 import {
@@ -15,7 +15,12 @@ import { extractNfFromDataUrl } from "../services/nfExtraction.js";
 import { compressImageToDataUrl, ANEXO_ACCEPT } from "../lib/image.js";
 import { formatCurrency, todayIso } from "../lib/format.js";
 import { makeKey, newItem, itemsFromExtraction } from "../lib/nfCapture.js";
-import { evaluatePolicyOverage, detectForbiddenItems, REGRAS_VALOR_ATIVAS } from "../lib/reimbursementPolicy.js";
+import {
+  evaluatePolicyOverage,
+  detectForbiddenItems,
+  itensExcedentes,
+  REGRAS_VALOR_ATIVAS,
+} from "../lib/reimbursementPolicy.js";
 import { kindMeta } from "../lib/kind.js";
 // Mesma fonte de Cliente/Obra do CC das solicitações do Financeiro: o
 // organograma (projeto backoffice). Uma lista só, para os dois módulos
@@ -29,9 +34,13 @@ import ForbiddenItemsNotice from "../components/ForbiddenItemsNotice.jsx";
 import NfAnexoPreview from "../components/NfAnexoPreview.jsx";
 import "./ReembolsoForm.css";
 
+// As três primeiras são as refeições que a política reconhece por nome (ver
+// FOOD_LIMITS em reimbursementPolicy.js): a sugestão existe para a pessoa
+// escrever a palavra que faz o teto certo valer.
 const ITEM_SUGGESTIONS = [
-  "JANTA",
+  "CAFÉ DA MANHÃ",
   "ALMOÇO",
+  "JANTA",
   "UBER",
   "ESTACIONAMENTO",
   "COMBUSTÍVEL",
@@ -95,6 +104,15 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
 
   const total = useMemo(
     () => items.reduce((sum, it) => sum + Number(it.qty || 1) * Number(it.value || 0), 0),
+    [items]
+  );
+
+  // Linhas que entram em algum estouro de teto. Recalcula a cada tecla, então a
+  // linha acende e apaga junto com o valor e com a descrição que a pessoa
+  // corrige — é o mesmo cálculo do aviso logo abaixo da tabela, só que apontado
+  // para a linha, para ninguém ter de procurar qual das dez foi.
+  const overKeys = useMemo(
+    () => (REGRAS_VALOR_ATIVAS ? itensExcedentes(items, (it) => it._key) : new Set()),
     [items]
   );
 
@@ -732,9 +750,17 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
               <span />
             </div>
 
-            {items.map((it, idx) => (
-              <div className="items-row" key={it._key}>
+            {items.map((it, idx) => {
+              const acimaDoTeto = overKeys.has(it._key);
+              return (
+              <div className={`items-row${acimaDoTeto ? " is-over-limit" : ""}`} key={it._key}>
                 <span className="items-row-num" aria-hidden="true">{idx + 1}</span>
+                {acimaDoTeto && (
+                  <span className="items-row-flag" title="Acima do limite da política">
+                    <AlertTriangle size={13} aria-hidden="true" />
+                    <span>Acima do limite</span>
+                  </span>
+                )}
                 <label className="item-cell" data-field="QTD">
                   <span className="item-cell-label">QTD</span>
                   <input
@@ -823,7 +849,8 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
                   <Trash2 size={16} />
                 </button>
               </div>
-            ))}
+              );
+            })}
           </div>
 
           <datalist id="item-suggestions">

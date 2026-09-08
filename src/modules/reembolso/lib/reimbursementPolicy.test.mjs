@@ -6,6 +6,7 @@ import {
   detectForbiddenItems,
   evaluateFoodOverage,
   evaluatePolicyOverage,
+  itensExcedentes,
 } from "./reimbursementPolicy.js";
 
 // Local padrão dos testes: Belo Horizonte, a coluna mais apertada da tabela
@@ -137,4 +138,100 @@ test("excedente aponta a refeição e a região", () => {
   ]);
   assert.equal(r.over, 20); // teto de BH: 40
   assert.equal(r.exceeded[0].regiao, "Belo Horizonte — MG");
+});
+
+test("descrição corrigida manda no teto, não a categoria da IA", () => {
+  // A IA leu a nota como CAFÉ (teto 20 em BH). A pessoa corrige a linha para
+  // ALMOÇO: o teto tem de virar 40 junto, senão o almoço nasce estourado.
+  const r = evaluateFoodOverage([
+    item({ description: "ALMOÇO", meal_category: "CAFÉ", value: 38 }),
+  ]);
+  assert.equal(r.hasOverage, false);
+
+  const antes = evaluateFoodOverage([
+    item({ description: "CAFÉ DA MANHÃ", meal_category: "CAFÉ", value: 38 }),
+  ]);
+  assert.equal(antes.over, 18); // sem a correção, continua no teto do café
+});
+
+test("cafezinho no fim do almoço não rebaixa a nota ao teto do café", () => {
+  // Mesma nota (mesmo nf_ref) = uma refeição só. Entre descrições que nomeiam
+  // refeições diferentes vale o maior teto: a nota é o almoço.
+  const r = evaluateFoodOverage([
+    item({ description: "ALMOÇO EXECUTIVO", meal_category: "ALMOÇO", value: 34, nf_ref: "nf1" }),
+    item({ description: "CAFÉ", meal_category: "ALMOÇO", value: 6, nf_ref: "nf1" }),
+  ]);
+  assert.equal(r.hasOverage, false); // R$ 40, teto de almoço em BH
+});
+
+test("descrição genérica não derruba a categoria da nota", () => {
+  // "COMIDA" não nomeia refeição: quem classifica continua sendo a categoria
+  // que a IA deu à nota (almoço, teto 40).
+  const r = evaluateFoodOverage([
+    item({ description: "COMIDA", meal_category: "ALMOÇO", value: 38 }),
+  ]);
+  assert.equal(r.hasOverage, false);
+});
+
+test("excedente aponta os itens que o compõem", () => {
+  const r = evaluatePolicyOverage([
+    item({ id: "a", description: "ALMOÇO", meal_category: "ALMOÇO", value: 60 }),
+  ]);
+  assert.deepEqual(
+    r.exceeded[0].items.map((i) => i.id),
+    ["a"]
+  );
+  assert.deepEqual([...itensExcedentes(
+    [item({ id: "a", description: "ALMOÇO", meal_category: "ALMOÇO", value: 60 })],
+    (i) => i.id
+  )], ["a"]);
+});
+
+test("item dentro do teto fica de fora do realce", () => {
+  const chaves = itensExcedentes(
+    [
+      item({ id: "ok", description: "ALMOÇO", meal_category: "ALMOÇO", value: 30 }),
+      item({ id: "caro", description: "JANTAR", meal_category: "JANTAR", value: 90 }),
+    ],
+    (i) => i.id
+  );
+  assert.equal(chaves.has("ok"), false);
+  assert.equal(chaves.has("caro"), true);
+});
+
+test("refeição não classificada usa o teto de almoço, não o do café", () => {
+  // "COMIDA" é a categoria que a própria IA usa quando não dá para dizer se foi
+  // almoço ou jantar. Cobrar dela o teto do café era cobrar uma linha que não
+  // existe na tabela publicada.
+  const r = evaluateFoodOverage([
+    item({ description: "X-TUDO", meal_category: "COMIDA", value: 38 }),
+  ]);
+  assert.equal(r.hasOverage, false); // teto de almoço em BH: 40
+
+  const fora = evaluateFoodOverage([
+    item({
+      description: "X-TUDO",
+      meal_category: "COMIDA",
+      value: 45,
+      local: "RESTAURANTE, ITABIRA - MG",
+    }),
+  ]);
+  assert.equal(fora.hasOverage, false); // teto de almoço fora de BH: 50
+});
+
+test("café continua no teto do café quando a nota diz que foi café", () => {
+  const r = evaluateFoodOverage([
+    item({ description: "PÃO DE QUEIJO", meal_category: "CAFÉ", value: 38 }),
+  ]);
+  assert.equal(r.over, 18); // teto 20 em BH
+});
+
+test("teto do dia continua freando quem repete refeição não classificada", () => {
+  const r = evaluateFoodOverage([
+    item({ description: "X-TUDO", meal_category: "COMIDA", value: 40, nf_ref: "n1" }),
+    item({ description: "PRATO FEITO", meal_category: "COMIDA", value: 40, nf_ref: "n2" }),
+    item({ description: "MARMITA", meal_category: "COMIDA", value: 40, nf_ref: "n3" }),
+  ]);
+  assert.equal(r.over, 20); // R$ 120 no dia, teto de BH é R$ 100
+  assert.equal(r.allowed, 100);
 });
