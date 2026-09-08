@@ -12,7 +12,7 @@ import {
 //                   só os processos em que está envolvido.
 // PROCESSOS      -> abrir mobilização da empresa (gatilho manual) e a lista.
 // ADMINISTRAÇÃO  -> catálogo de etapas e SLAs. Só o admin do Adm.
-export function navSections({ isTime = false, isAdmin = false } = {}) {
+export function navSections({ isTime = false, isAdmin = false, podeTorre = false } = {}) {
   const secoes = [
     {
       label: 'Acompanhamento',
@@ -32,7 +32,6 @@ export function navSections({ isTime = false, isAdmin = false } = {}) {
   // do Adm, e um segundo caminho para a mesma coisa criaria dois processos para
   // a mesma pessoa, sem nada que os ligasse.
   if (isTime) {
-    secoes[0].items.push({ label: 'Torre de controle', href: '/mobilizacao/torre', Icon: Radar });
     secoes.push({
       label: 'Processos',
       group: true,
@@ -42,6 +41,12 @@ export function navSections({ isTime = false, isAdmin = false } = {}) {
         { label: 'Mobilizar empresa', href: '/mobilizacao/nova', Icon: Building2 },
       ],
     });
+  }
+
+  // Torre e modulo separado agora — o atalho aponta para la, e so para quem o
+  // gate dela deixa entrar.
+  if (podeTorre) {
+    secoes[0].items.push({ label: 'Torre de controle', href: '/torre/mapa', Icon: Radar });
   }
 
   if (isAdmin) {

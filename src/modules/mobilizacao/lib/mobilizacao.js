@@ -200,6 +200,29 @@ export async function cancelarProcesso(processoId, motivo) {
 // Etapas
 // ---------------------------------------------------------------------------
 
+/**
+ * Le a consulta INTEIRA, em paginas.
+ *
+ * O PostgREST corta a resposta em 1000 linhas e nao avisa: vem 1000, sem erro e
+ * sem sinal de que havia mais. Em 08/09/2026 isso fazia a lista de Etapas da
+ * Torre mostrar 7 das 25 etapas vencidas — o resto era cortado depois da
+ * ordenacao, e ninguem tinha como perceber, porque a tela dizia "1000 etapas" e
+ * 1000 etapas apareciam.
+ *
+ * Por que paginar em vez de filtrar mais: quem chama e que sabe o recorte, e um
+ * limite implicito no meio do caminho volta a morder assim que a tabela crescer
+ * de novo. Aqui o contrato passa a ser "veio tudo".
+ */
+async function lerTudo(montarQuery, { pagina = 1000 } = {}) {
+  const linhas = [];
+  for (let de = 0; ; de += pagina) {
+    const { data, error } = await montarQuery().range(de, de + pagina - 1);
+    if (error) return { data: null, error };
+    linhas.push(...(data || []));
+    if (!data || data.length < pagina) return { data: linhas, error: null };
+  }
+}
+
 const CAMPOS_ETAPA = `
   id, processo_id, codigo, ordem, titulo, descricao, depende_de, sla_dias_uteis,
   responsavel_id, status, data_prevista, data_real, dias_atraso, observacao,
@@ -231,18 +254,26 @@ export async function listarEtapasDoProcesso(processoId) {
 export async function listarEtapasDoQuadro({ diasConcluidas = 15, fluxo = '' } = {}) {
   const corte = new Date(Date.now() - diasConcluidas * 86400000).toISOString();
 
-  let q = supabase
-    .from('mobilizacao_etapas')
-    .select(`${CAMPOS_ETAPA}, processo:mobilizacao_processos!inner(id, numero, fluxo, titulo, status, profissional_nome, cliente_phd, cod_ct, local_obra)`)
-    .neq('processo.status', 'cancelado')
-    // O valor vai entre aspas porque o ISO tem pontos e dois-pontos, que são
-    // separadores na sintaxe de filtro do PostgREST.
-    .or(`status.neq.concluida,updated_at.gte."${corte}"`)
-    .order('data_prevista', { nullsFirst: false });
+  // Funcao, e nao um objeto de query: lerTudo remonta a consulta a cada pagina,
+  // porque o cliente do Supabase e encadeavel mas nao reutilizavel — chamar
+  // .range() duas vezes no mesmo objeto acumula os dois.
+  const montar = () => {
+    let q = supabase
+      .from('mobilizacao_etapas')
+      .select(`${CAMPOS_ETAPA}, processo:mobilizacao_processos!inner(id, numero, fluxo, titulo, status, profissional_nome, cliente_phd, cod_ct, local_obra)`)
+      .neq('processo.status', 'cancelado')
+      // O valor vai entre aspas porque o ISO tem pontos e dois-pontos, que são
+      // separadores na sintaxe de filtro do PostgREST.
+      .or(`status.neq.concluida,updated_at.gte."${corte}"`)
+      .order('data_prevista', { nullsFirst: false })
+      // Desempate estavel: sem ele, duas etapas com a mesma data_prevista podem
+      // trocar de lugar entre uma pagina e a seguinte, e uma delas se perde.
+      .order('id');
+    if (fluxo) q = q.eq('processo.fluxo', fluxo);
+    return q;
+  };
 
-  if (fluxo) q = q.eq('processo.fluxo', fluxo);
-
-  const { data, error } = await q;
+  const { data, error } = await lerTudo(montar);
   if (error) throw new Error(`Não foi possível carregar o quadro: ${error.message}`);
 
   const lista = data || [];
@@ -287,11 +318,16 @@ export async function listarParaMatriz({ apenasAbertos = true } = {}) {
   if (!processos.length) return { processos: [], etapas: [] };
 
   const ids = processos.map((p) => p.id);
-  const { data: etapas, error: erroE } = await supabase
+  // Paginado pela mesma razao da fila: sao ~11 etapas por processo, entao a
+  // matriz passa de 1000 linhas antes de passar de 100 mobilizacoes abertas — e
+  // o corte do PostgREST abriria BURACO na matriz, que e pior que na lista:
+  // celula vazia ali se le como "esta etapa nao existe neste processo".
+  const { data: etapas, error: erroE } = await lerTudo(() => supabase
     .from('mobilizacao_etapas')
     .select('id, processo_id, codigo, ordem, titulo, status, data_prevista, data_real, dias_atraso, responsavel_id')
     .in('processo_id', ids)
-    .order('ordem');
+    .order('processo_id')
+    .order('ordem'));
   if (erroE) throw new Error(`Não foi possível carregar as etapas: ${erroE.message}`);
 
   const lista = etapas || [];

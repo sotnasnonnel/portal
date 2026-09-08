@@ -13,7 +13,7 @@ import {
 // ACOMPANHAR-> onde os chamados estão (quadro, fila, aprovações, indicadores);
 //              a RLS é quem limita o conteúdo — quem não é do time do Adm
 //              enxerga só os próprios chamados.
-export function navSections({ isAdmin = false } = {}) {
+export function navSections({ isAdmin = false, podeTorre = false } = {}) {
   const secoes = [
     {
       label: 'Chamados',
@@ -38,12 +38,17 @@ export function navSections({ isAdmin = false } = {}) {
         { label: 'Aprovações', href: '/administrativo/aprovacoes', Icon: ClipboardCheck },
         { label: 'Fila', href: '/administrativo/fila', Icon: Inbox },
         { label: 'Indicadores', href: '/administrativo/dashboard', Icon: BarChart3 },
-        // Mora no módulo de Mobilização (o novo é que pode depender do velho),
-        // mas o atalho fica aqui porque é o mesmo pessoal que toca os dois.
-        { label: 'Torre de controle', href: '/mobilizacao/torre', Icon: Radar },
       ],
     },
   ];
+
+  // A Torre virou módulo proprio, com gate proprio (coordenador/gestor/admin).
+  // O atalho continua aqui porque e o mesmo pessoal que toca os dois — mas so
+  // aparece para quem o gate deixa entrar: link que devolve para a Home e pior
+  // que link nenhum.
+  if (podeTorre) {
+    secoes[1].items.push({ label: 'Torre de controle', href: '/torre/mapa', Icon: Radar });
+  }
   if (isAdmin) {
     secoes.push({
       label: 'Administração',

@@ -107,7 +107,6 @@ const ProcessoMob = lazy(() => import('../modules/mobilizacao/app/processo/page'
 const NovaMob = lazy(() => import('../modules/mobilizacao/app/nova/page'));
 const DashboardMob = lazy(() => import('../modules/mobilizacao/app/dashboard/page'));
 const CatalogoMob = lazy(() => import('../modules/mobilizacao/app/catalogo/page'));
-const TorreMob = lazy(() => import('../modules/mobilizacao/app/torre/page'));
 
 const MapaTorre = lazy(() => import('../modules/torre/app/mapa/page'));
 const QuadroTorre = lazy(() => import('../modules/torre/app/quadro/page'));
@@ -690,7 +689,11 @@ export default function AppRoutes() {
           <Route path="nova" element={<LazyPage><NovaMob /></LazyPage>} />
           <Route path="dashboard" element={<LazyPage><DashboardMob /></LazyPage>} />
           <Route path="catalogo" element={<LazyPage><CatalogoMob /></LazyPage>} />
-          <Route path="torre" element={<LazyPage><TorreMob /></LazyPage>} />
+          {/* A torre saiu daqui e virou modulo proprio. A rota fica como
+              redirecionamento porque ela circulou como link durante a revisao —
+              tirar de vez transformaria esses links em volta para a Home, sem
+              explicacao. */}
+          <Route path="torre" element={<Navigate to="/torre/mapa" replace />} />
         </Route>
 
         {/* Torre de Controle: a mesma visão da torre da Mobilização, servida
