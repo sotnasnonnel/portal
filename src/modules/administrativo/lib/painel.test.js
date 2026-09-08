@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   COLUNAS_KANBAN, agruparEmColunas, semaforoPrazo, contarNaoLidas, iniciais,
   filtrarQuadro, opcoesDoQuadro,
-  filtrarFila, opcoesDaFila,
+  filtrarFila, opcoesDaFila, casaComPrazo,
 } from './painel.js';
 
 const HORA = 3600 * 1000;
@@ -171,4 +171,53 @@ test('opções saem do que está na fila, ordenadas por nome', () => {
 
 test('"sem responsável" só é oferecido quando existe algum', () => {
   assert.equal(opcoesDaFila([naFila({ atendente_id: null })]).temSemResponsavel, true);
+});
+
+
+// ---- filtro de atrasado (fila e quadro) ----
+// A régua é a mesma do indicador "Vencidos agora": aberto e passado do prazo.
+const atrasado = { id: 'a', status: 'aberto', sla_vence_em: daqui(-3) };
+const noPrazo = { id: 'b', status: 'em_atendimento', sla_vence_em: daqui(3) };
+const semPrazo = { id: 'c', status: 'aguardando_aprovacao', sla_vence_em: null };
+const fechadoTarde = { id: 'd', status: 'fechado', sla_vence_em: daqui(-9) };
+
+test('filtro vazio de prazo não tira ninguém', () => {
+  const todos = [atrasado, noPrazo, semPrazo, fechadoTarde];
+  assert.equal(filtrarFila(todos, { atrasado: '' }, AGORA).length, 4);
+  assert.equal(filtrarQuadro(todos, { atrasado: '' }, AGORA).length, 4);
+});
+
+test('"só atrasados" traz o que passou do prazo e ainda está em jogo', () => {
+  const r = filtrarFila([atrasado, noPrazo, semPrazo, fechadoTarde], { atrasado: 'sim' }, AGORA);
+  assert.deepEqual(r.map((c) => c.id), ['a']);
+});
+
+// Fechado com atraso já é contado pelo indicador de SLA; trazê-lo aqui contaria
+// o mesmo problema duas vezes — e ele não está mais "atrasado", está fechado.
+test('fechado fora do prazo não entra em "só atrasados"', () => {
+  assert.equal(casaComPrazo(fechadoTarde, 'sim', AGORA), false);
+  assert.deepEqual(
+    filtrarQuadro([atrasado, fechadoTarde], { atrasado: 'sim' }, AGORA).map((c) => c.id),
+    ['a'],
+  );
+});
+
+// Esconder o sem-prazo faria chamado sumir da tela sem explicação.
+test('"dentro do prazo" inclui o que não tem prazo definido', () => {
+  const r = filtrarFila([atrasado, noPrazo, semPrazo], { atrasado: 'nao' }, AGORA);
+  assert.deepEqual(r.map((c) => c.id), ['b', 'c']);
+});
+
+test('prazo combina com os outros filtros da fila em vez de substituí-los', () => {
+  const linhas = [
+    { ...atrasado, assunto: 'Compra de cadeira', atendente_id: 'u1' },
+    { id: 'e', status: 'aberto', sla_vence_em: daqui(-1), assunto: 'Outra coisa', atendente_id: 'u2' },
+  ];
+  const r = filtrarFila(linhas, { atrasado: 'sim', atendenteId: 'u1' }, AGORA);
+  assert.deepEqual(r.map((c) => c.id), ['a']);
+});
+
+test('opções da fila contam quantos estão atrasados', () => {
+  assert.equal(opcoesDaFila([atrasado, noPrazo, semPrazo], AGORA).atrasados, 1);
+  assert.equal(opcoesDaFila([], AGORA).atrasados, 0);
 });

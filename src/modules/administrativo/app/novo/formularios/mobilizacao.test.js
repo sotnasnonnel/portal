@@ -13,6 +13,8 @@ const mobilizacaoCheia = () => ({
   cliente_final: 'VALE',
   empresa_phd: 'PHD ASSESSORIA',
   cc: 'CC-100',
+  projeto_id: 'proj-1',
+  projeto: 'Obra Norte',
   local_obra: 'Obra X',
   data_inicio_cliente: '2026-09-01',
   epis: ['Capacete'],
@@ -29,6 +31,8 @@ test('as três situações vivem no mesmo seletor', () => {
 test('trocar para desmobilização descarta os campos que não se aplicam', () => {
   const v = aoTrocarMovimento(mobilizacaoCheia(), 'Desmobilização');
   assert.equal(v.cc, '');
+  assert.equal(v.projeto, '', 'projeto é da mobilização, não de quem sai');
+  assert.equal(v.projeto_id, '');
   assert.equal(v.local_obra, '');
   assert.equal(v.data_inicio_cliente, '');
   assert.deepEqual(v.epis, []);
@@ -49,17 +53,28 @@ test('eDesmobilizacao distingue o ramo', () => {
   assert.equal(eDesmobilizacao({ movimento: 'Nova mobilização' }), false);
 });
 
-// O cliente entrou na lista quando o modulo de Mobilizacao passou a nascer
-// deste chamado: sem ele o processo nascia com o cliente em branco, enquanto
-// as 125 linhas vindas da planilha tinham todos preenchidos.
-test('mobilização exige profissional, cliente, CC, obra e data', () => {
+// A cadeia de exigencias tem DOIS donos: `projeto` veio do Administrativo e
+// `cliente` veio do modulo de Mobilizacao, que nasce deste chamado. O teste
+// cobre a ordem inteira de proposito — foi ela que conflitou no merge, e uma
+// ordem errada faz a tela cobrar o campo errado.
+test('mobilização exige profissional, cliente, CC, projeto, obra e data', () => {
   const mob = (extra) => validarMobilizacao({ movimento: 'Nova mobilização', profissional_id: 'p1', ...extra });
+  const comCliente = { cliente: 'IMC SASTE' };
   assert.match(validarMobilizacao(inicialMobilizacao()), /profissional/i);
   assert.match(mob({}), /cliente/i);
-  assert.match(mob({ cliente: 'IMC SASTE' }), /centro de custo/i);
-  assert.match(mob({ cliente: 'IMC SASTE', cc: 'x' }), /obra/i);
-  assert.match(mob({ cliente: 'IMC SASTE', cc: 'x', local_obra: 'y' }), /data/i);
+  assert.match(mob(comCliente), /centro de custo/i);
+  assert.match(mob({ ...comCliente, cc: 'x' }), /projeto/i);
+  assert.match(mob({ ...comCliente, cc: 'x', projeto: 'Obra Norte' }), /obra/i);
+  assert.match(mob({ ...comCliente, cc: 'x', projeto: 'Obra Norte', local_obra: 'y' }), /data/i);
   assert.equal(validarMobilizacao(mobilizacaoCheia()), '');
+});
+
+// O nome digitado vale tanto quanto o escolhido da lista: obra recém-fechada
+// ainda não está cadastrada, e travar a mobilização por isso seria pior.
+test('projeto fora da lista passa pela validação com o nome digitado', () => {
+  const v = { ...mobilizacaoCheia(), projeto_id: 'outro', projeto: 'Obra que não está no portal' };
+  assert.equal(validarMobilizacao(v), '');
+  assert.match(validarMobilizacao({ ...v, projeto: '   ' }), /projeto/i);
 });
 
 // Desmobilização não pode herdar as exigências da mobilização: nada de CC,

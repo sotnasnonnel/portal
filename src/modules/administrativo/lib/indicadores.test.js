@@ -153,3 +153,18 @@ test('lista vazia não quebra nem inventa número', () => {
   assert.deepEqual(r.abertosPorClasse, []);
   assert.deepEqual(r.porServico, []);
 });
+
+
+// A lista que o painel abre no clique e o número do cartão têm de contar o
+// mesmo: dois cálculos separados divergiriam na primeira mudança de regra.
+test('listaAtrasados casa com o número e vem do mais vencido para o menos', () => {
+  const r = resumoIndicadores([
+    ch({ id: 1, status: 'aberto', sla_vence_em: iso(AGORA - DIA) }),
+    ch({ id: 2, status: 'em_atendimento', sla_vence_em: iso(AGORA - 3 * DIA) }),
+    ch({ id: 3, status: 'aberto', sla_vence_em: iso(AGORA + DIA) }),
+    ch({ id: 4, status: 'fechado', sla_vence_em: iso(AGORA - 5 * DIA), fechado_em: iso(AGORA) }),
+  ], AGORA);
+  assert.equal(r.atrasados, 2);
+  assert.equal(r.listaAtrasados.length, r.atrasados);
+  assert.deepEqual(r.listaAtrasados.map((c) => c.id), [2, 1]);
+});

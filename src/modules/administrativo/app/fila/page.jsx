@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Inbox, Loader2, AlertCircle, UserX, Clock } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { listarFila } from '../../lib/chamados';
@@ -7,7 +7,7 @@ import { STATUS_LABEL as ROTULO_STATUS } from '../../lib/statusChamado';
 import { filtrarFila, opcoesDaFila } from '../../lib/painel';
 
 const FILTRO_VAZIO = {
-  assunto: '', status: '', solicitanteId: '', atendenteId: '', criadoDe: '', criadoAte: '',
+  assunto: '', status: '', solicitanteId: '', atendenteId: '', atrasado: '', criadoDe: '', criadoAte: '',
 };
 
 
@@ -20,7 +20,13 @@ const dataHora = (iso) => (iso
 export default function FilaAdm() {
   const { user } = useAuth();
   const [apenasMeus, setApenasMeus] = useState(false);
-  const [filtro, setFiltro] = useState(FILTRO_VAZIO);
+  // O painel manda para cá com ?atrasado=sim quando a pessoa clica em "abrir na
+  // fila" pela lista de vencidos. Só a carga inicial olha a URL: depois disso
+  // quem manda é o que a pessoa escolheu na tela.
+  const [params] = useSearchParams();
+  const [filtro, setFiltro] = useState(
+    () => (params.get('atrasado') === 'sim' ? { ...FILTRO_VAZIO, atrasado: 'sim' } : FILTRO_VAZIO),
+  );
   const [linhas, setLinhas] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
@@ -43,8 +49,8 @@ export default function FilaAdm() {
   const agora = Date.now();
   // Filtro é no cliente: a fila cabe numa tela e ir ao banco a cada tecla
   // digitada no assunto deixaria a busca travada.
-  const visiveis = filtrarFila(linhas, filtro);
-  const opcoes = opcoesDaFila(linhas);
+  const visiveis = filtrarFila(linhas, filtro, agora);
+  const opcoes = opcoesDaFila(linhas, agora);
   const semDono = linhas.filter((c) => !c.atendente_id).length;
   const filtrando = Object.values(filtro).some(Boolean);
   const mudar = (campo, valor) => setFiltro((f) => ({ ...f, [campo]: valor }));
@@ -88,6 +94,16 @@ export default function FilaAdm() {
           {opcoes.status.map((st) => (
             <option key={st} value={st}>{ROTULO_STATUS[st] || st}</option>
           ))}
+        </select>
+        {/* Prazo antes de solicitante: "o que está atrasado" é a primeira
+            pergunta de quem abre a fila de manhã. */}
+        <select className="adm-select" aria-label="Prazo"
+          value={filtro.atrasado} onChange={(e) => mudar('atrasado', e.target.value)}>
+          <option value="">Todos os prazos</option>
+          <option value="sim">
+            Só atrasados{opcoes.atrasados > 0 ? ` (${opcoes.atrasados})` : ''}
+          </option>
+          <option value="nao">Dentro do prazo</option>
         </select>
         <select className="adm-select" aria-label="Solicitante"
           value={filtro.solicitanteId} onChange={(e) => mudar('solicitanteId', e.target.value)}>

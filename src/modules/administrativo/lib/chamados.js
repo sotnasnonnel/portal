@@ -64,6 +64,25 @@ export async function listarPessoas() {
 }
 
 /**
+ * Projetos/obras do portal — a mesma tabela que o módulo Horas usa para
+ * apontar. A leitura de horas_projetos é livre (RLS `using(true)`), então o
+ * solicitante enxerga a lista inteira: aqui ele diz para ONDE o profissional
+ * vai, e não é obrigado a apontar horas naquele projeto.
+ *
+ * Os arquivados ficam de fora: mobilizar alguém para obra encerrada é engano,
+ * não escolha.
+ */
+export async function listarProjetos() {
+  const { data, error } = await supabase
+    .from('horas_projetos')
+    .select('id, nome, cliente')
+    .eq('arquivado', false)
+    .order('nome');
+  if (error) throw new Error(`Não foi possível carregar os projetos: ${error.message}`);
+  return data || [];
+}
+
+/**
  * Time do Adm — os únicos que podem ser responsáveis por um chamado.
  *
  * Separado de `listarPessoas`, que devolve a empresa inteira: aquilo serve
@@ -735,7 +754,9 @@ export async function buscarChamado(id) {
 export async function listarParaIndicadores() {
   const { data, error } = await supabase
     .from('chamados_adm')
-    .select('classe, servico, status, criado_em, analise_em, sla_vence_em, fechado_em');
+    // id/numero/assunto vêm junto para o painel poder ABRIR a lista por trás
+    // de um indicador — "3 vencidos" sem dizer quais não leva ninguém a agir.
+    .select('id, numero, assunto, classe, servico, status, criado_em, analise_em, sla_vence_em, fechado_em');
   if (error) throw new Error(`Não foi possível carregar os indicadores: ${error.message}`);
   return (data || []).map((c) => ({
     ...c,
