@@ -15,7 +15,11 @@ import {
 } from "../services/reimbursements.js";
 import { reconcileAdvance } from "../lib/advanceAccountability.js";
 import { formatBillable, formatCurrency, formatDate } from "../lib/format.js";
-import { evaluatePolicyOverage, REGRAS_VALOR_ATIVAS } from "../lib/reimbursementPolicy.js";
+import {
+  evaluatePolicyOverage,
+  itensExcedentes,
+  REGRAS_VALOR_ATIVAS,
+} from "../lib/reimbursementPolicy.js";
 import { kindMeta } from "../lib/kind.js";
 import StatusBadge from "../components/StatusBadge.jsx";
 import ImageLightbox from "../components/ImageLightbox.jsx";
@@ -125,6 +129,16 @@ export default function ReembolsoDetail() {
   // separa itens do PEDIDO (false) das notas da PRESTAÇÃO (true)
   const requestItems = (reembolso.items ?? []).filter((it) => !it.is_accountability);
   const accItems = (reembolso.items ?? []).filter((it) => it.is_accountability);
+  // Linhas que entram no estouro, para o gestor ver na tabela QUAL item puxou o
+  // desconto que ele está prestes a aplicar — o aviso só diz o quanto. Pedido e
+  // prestação de contas são avaliados separados, como já são nos avisos: são
+  // duas listas de refeições, e misturá-las inventaria dias que não existem.
+  const overIdsPedido = REGRAS_VALOR_ATIVAS
+    ? itensExcedentes(requestItems, (it) => it.id)
+    : new Set();
+  const overIdsPrestacao = REGRAS_VALOR_ATIVAS
+    ? itensExcedentes(accItems, (it) => it.id)
+    : new Set();
   const accRec = reconcileAdvance({
     total: reembolso.total,
     accountabilityTotal: reembolso.accountability_total,
@@ -552,7 +566,7 @@ export default function ReembolsoDetail() {
                 </thead>
                 <tbody>
                   {accItems.map((it) => (
-                    <tr key={it.id}>
+                    <tr key={it.id} className={overIdsPrestacao.has(it.id) ? "is-over-limit" : undefined}>
                       <td data-label="QTD">{it.qty}</td>
                       <td data-label="Item">{it.description}</td>
                       <td data-label="Data">{formatDate(it.item_date)}</td>
@@ -667,7 +681,7 @@ export default function ReembolsoDetail() {
             </thead>
             <tbody>
               {requestItems.map((item) => (
-                <tr key={item.id}>
+                <tr key={item.id} className={overIdsPedido.has(item.id) ? "is-over-limit" : undefined}>
                   <td data-label="QTD">{item.qty}</td>
                   <td data-label="Item">{item.description}</td>
                   {!isAdiantamento && <td data-label="Data">{formatDate(item.item_date)}</td>}

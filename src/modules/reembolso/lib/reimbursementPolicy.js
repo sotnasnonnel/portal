@@ -55,14 +55,23 @@ export const POLICY = {
  * pelo campo `campo` de cada refeição (REGIOES_ALIMENTACAO).
  *
  * A refeição genérica ("COMIDA", que é o que a IA usa quando não dá para dizer
- * se foi almoço ou jantar) usa o teto do café da manhã — o menor da região —
- * para não afrouxar o limite quando a nota não diz qual refeição foi.
+ * se foi almoço ou jantar) usa o teto de ALMOÇO/JANTAR — em toda coluna da
+ * tabela os dois são o mesmo número, então é o teto de "uma refeição comum".
+ *
+ * Usava o do café, o menor. Mas a tabela publicada só tem três linhas (café,
+ * almoço, jantar): cobrar o teto do café de quem almoçou é cobrar uma regra que
+ * ninguém pode ler. Quem não é classificado não é café — é uma refeição que o
+ * sistema não soube nomear, e a nota diz "CAFÉ" quando é café. O teto do DIA
+ * (R$ 100 / R$ 130 / R$ 200) continua sendo o freio de quem repete.
  */
+// `especifica` separa quem NOMEIA a refeição (café, almoço, jantar) de quem só
+// diz "isto é comida". Só a específica pode corrigir a categoria que a IA deu à
+// nota — ver mealOfGroup.
 const FOOD_LIMITS = [
-  { keys: ["CAFE DA MANHA", "CAFE MANHA", "CAFE"], label: "Café da manhã", campo: "cafe" },
-  { keys: ["ALMOCO"], label: "Almoço", campo: "almoco" },
-  { keys: ["JANTAR", "JANTA"], label: "Jantar", campo: "jantar" },
-  { keys: ["COMIDA", "REFEICAO", "RESTAURANTE", "LANCHE"], label: "Refeição", campo: "cafe" },
+  { keys: ["CAFE DA MANHA", "CAFE MANHA", "CAFE"], label: "Café da manhã", campo: "cafe", especifica: true },
+  { keys: ["ALMOCO"], label: "Almoço", campo: "almoco", especifica: true },
+  { keys: ["JANTAR", "JANTA"], label: "Jantar", campo: "jantar", especifica: true },
+  { keys: ["COMIDA", "REFEICAO", "RESTAURANTE", "LANCHE"], label: "Refeição", campo: "almoco", especifica: false },
 ];
 
 function normalize(text) {
@@ -200,7 +209,7 @@ export function foodLimitFor(text, regiaoId = REGIAO_PADRAO) {
   const regra = regraDaRegiao(regiaoId);
   for (const f of FOOD_LIMITS) {
     if (f.keys.some((k) => d.includes(k))) {
-      return { label: f.label, limit: regra[f.campo] };
+      return { label: f.label, limit: regra[f.campo], especifica: f.especifica };
     }
   }
   return null;
@@ -209,17 +218,31 @@ export function foodLimitFor(text, regiaoId = REGIAO_PADRAO) {
 // Identifica a refeição de um grupo de itens da MESMA nota. Uma nota fiscal de
 // alimentação costuma ter vários itens no cupom (cafés, pães, bebidas) que, no
 // conjunto, formam uma única refeição.
-// Prioridade: a categoria que a IA atribuiu à nota classifica a refeição
-// inteira (ex.: "CAFÉ" mantém o teto de R$20 mesmo que um item diga "COMIDA").
-// Sem categoria (ex.: itens digitados à mão), cai na descrição dos itens —
-// nesse caso usa o MENOR teto encontrado, para não afrouxar o limite.
+// Prioridade:
+//   1. A DESCRIÇÃO que nomeia a refeição (café, almoço, jantar). É o campo que
+//      a pessoa edita, e editá-lo é justamente como ela corrige a leitura da
+//      IA: trocar "CAFÉ" por "ALMOÇO" na linha tem de trocar o teto junto,
+//      senão a nota fica presa em R$20 e o almoço aparece estourado.
+//      Entre várias descrições específicas na MESMA nota vale o MAIOR teto: a
+//      nota é uma refeição só, e o cafezinho do fim do almoço não pode
+//      rebaixar o almoço inteiro ao teto do café.
+//   2. A categoria que a IA atribuiu à nota, quando nenhuma descrição nomeia a
+//      refeição (ex.: itens "PÃO DE QUEIJO", "SUCO" numa nota de café).
+//   3. A descrição genérica ("COMIDA", "LANCHE"), que vale o teto de uma
+//      refeição comum (almoço/jantar) — ver FOOD_LIMITS.
 function mealOfGroup(group, regiaoId) {
-  // 1. categoria da nota tem prioridade
+  let nomeada = null;
+  for (const it of group) {
+    const info = foodLimitFor(it.description, regiaoId);
+    if (info?.especifica && (!nomeada || info.limit > nomeada.limit)) nomeada = info;
+  }
+  if (nomeada) return nomeada;
+
   for (const it of group) {
     const info = foodLimitFor(it.meal_category, regiaoId);
     if (info) return info;
   }
-  // 2. fallback pela descrição dos itens (menor teto encontrado)
+
   let meal = null;
   for (const it of group) {
     const info = foodLimitFor(it.description, regiaoId);
@@ -261,8 +284,9 @@ function groupByNote(items) {
 }
 
 // Avalia uma lista de itens e calcula o quanto a alimentação passou do limite.
-// O limite (almoço/jantar R$40, café R$20) é POR REFEIÇÃO, não por linha do
-// cupom: itens da mesma nota são somados e comparados ao limite uma única vez.
+// O limite sai da tabela por região (REGIOES_ALIMENTACAO) e é POR REFEIÇÃO, não
+// por linha do cupom: itens da mesma nota são somados e comparados ao limite uma
+// única vez.
 // Itens digitados à mão (sem nota) contam como uma refeição cada.
 //   spent   -> total gasto em refeições de alimentação
 //   allowed -> total que deveria ficar (cada refeição limitada ao teto)
@@ -303,11 +327,12 @@ export function evaluateFoodOverage(items) {
       // Num dia com refeições de regiões diferentes (viagem começando em BH e
       // terminando fora, p.ex.) vale o maior teto do dia: o dia mudou de faixa
       // junto com a pessoa, e o teto menor puniria a metade que não era dele.
-      const atual = porDia.get(dia) || { total: 0, regiaoId };
+      const atual = porDia.get(dia) || { total: 0, regiaoId, items: [] };
       porDia.set(dia, {
         total: atual.total + liberado,
         regiaoId:
           alimentacaoDia(regiaoId) > alimentacaoDia(atual.regiaoId) ? regiaoId : atual.regiaoId,
+        items: [...atual.items, ...group.items],
       });
     }
 
@@ -324,13 +349,15 @@ export function evaluateFoodOverage(items) {
         value: total,
         limit,
         over: total - limit,
+        // Os itens que compõem o estouro, para a tela poder apontar a linha.
+        items: group.items,
       });
     }
   }
 
   // Teto do DIA: o que sobreviveu aos tetos por refeição ainda precisa caber
   // no diário da região (almoço + jantar + café).
-  for (const [dia, { total: liberadoNoDia, regiaoId }] of porDia) {
+  for (const [dia, { total: liberadoNoDia, regiaoId, items: itensDoDia }] of porDia) {
     const tetoDia = alimentacaoDia(regiaoId);
     if (liberadoNoDia <= tetoDia + 0.001) continue;
     const excedeDia = liberadoNoDia - tetoDia;
@@ -344,6 +371,8 @@ export function evaluateFoodOverage(items) {
       value: liberadoNoDia,
       limit: tetoDia,
       over: excedeDia,
+      // Aqui o estouro é do dia inteiro: são todas as refeições daquele dia.
+      items: itensDoDia,
     });
   }
 
@@ -374,6 +403,22 @@ export function evaluatePolicyOverage(items) {
     exceeded: food.exceeded.map((e) => ({ kind: "alimentacao", ...e })),
     food,
   };
+}
+
+/**
+ * Conjunto dos itens que entram em algum estouro de teto, para a tela realçar
+ * a linha em vez de deixar a pessoa procurar qual das dez foi.
+ *
+ * `keyOf` diz o que identifica um item na tela que chamou: no formulário é a
+ * chave local (`_key`, que sobrevive à edição), no detalhe é o `id` do banco.
+ */
+export function itensExcedentes(items, keyOf = (it) => it) {
+  const { exceeded } = evaluatePolicyOverage(items);
+  const chaves = new Set();
+  for (const e of exceeded) {
+    for (const it of e.items ?? []) chaves.add(keyOf(it));
+  }
+  return chaves;
 }
 
 // Data de pagamento calculada a partir da data de APROVAÇÃO.

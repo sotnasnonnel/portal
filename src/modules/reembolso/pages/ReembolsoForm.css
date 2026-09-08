@@ -532,3 +532,41 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ===== Linha acima do teto da política =====
+   O aviso embaixo da tabela diz QUANTO passou; aqui a linha diz QUAL passou.
+   O selo ocupa a largura toda da grade (grid-column: 1 / -1) para caber tanto
+   na tabela do desktop quanto no card do mobile sem mexer nas colunas.
+   O realce é box-shadow, não borda nem padding: assim a linha acesa continua
+   com as colunas alinhadas com as apagadas. */
+.items-row.is-over-limit {
+  border-radius: var(--radius-md);
+  background: var(--status-reprovado-bg);
+  box-shadow:
+    0 0 0 4px var(--status-reprovado-bg),
+    0 0 0 5px var(--status-reprovado-fg);
+}
+
+.items-row-flag {
+  grid-column: 1 / -1;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--status-reprovado-fg);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.items-row.is-over-limit input {
+  border-color: var(--status-reprovado-fg);
+}
+
+@media (max-width: 860px) {
+  /* No card o realce é a própria borda; o halo do desktop invadiria o vizinho. */
+  .items-row.is-over-limit {
+    border-color: var(--status-reprovado-fg);
+    box-shadow: none;
+  }
+}

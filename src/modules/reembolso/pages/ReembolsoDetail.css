@@ -222,6 +222,19 @@
   color: var(--terracotta-dark);
 }
 
+/* Linha de item que estoura o teto da política. Na tabela do desktop o realce
+   é o fundo da linha (a borda de <tr> não pinta em todo navegador); no card do
+   mobile a própria borda do card muda de cor. Assim o gestor vê QUAL item puxou
+   o desconto, e não só o quanto, que já está no aviso. */
+.items-detail-table tbody tr.is-over-limit > td {
+  background: var(--status-reprovado-bg);
+}
+
+.items-detail-table tbody tr.is-over-limit td[data-label="Item"] {
+  color: var(--status-reprovado-fg);
+  font-weight: 700;
+}
+
 /* Total compacto exibido só no mobile (no lugar da última coluna do tfoot) */
 .items-detail-total {
   display: none;
@@ -293,6 +306,11 @@
     padding-bottom: 6px;
     margin-bottom: 2px;
     border-bottom: 1px solid var(--border);
+  }
+
+  .items-detail-table tbody tr.is-over-limit {
+    border-color: var(--status-reprovado-fg);
+    background: var(--status-reprovado-bg);
   }
 
   .items-detail-total {
