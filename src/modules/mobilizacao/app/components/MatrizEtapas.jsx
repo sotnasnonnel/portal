@@ -61,7 +61,9 @@ export default function MatrizEtapas({ blocos, onClicarCelula }) {
               <tbody>
                 {bloco.linhas.map((l) => (
                   <tr key={l.processo.id}>
-                    <th scope="row" className="mob-matriz-nome">
+                    {/* O title cobre o nome que a coluna corta: ela e estreita
+                        de proposito, para a matriz nao ficar longe das bolinhas. */}
+                    <th scope="row" className="mob-matriz-nome" title={l.processo.titulo}>
                       <span className="mob-matriz-titulo">{l.processo.titulo}</span>
                       <span className="mob-matriz-sub">
                         #{l.processo.numero}

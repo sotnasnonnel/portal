@@ -420,8 +420,13 @@
 .mob-matriz-nome {
   position: sticky; left: 0; z-index: 1;
   background: var(--neutral-surface);
-  text-align: left; padding: 6px 12px 6px 4px;
-  min-width: 190px; max-width: 240px;
+  text-align: left; padding: 6px 10px 6px 4px;
+  /* A largura desta coluna e a distancia ate a primeira bolinha. Ela se ajusta
+     ao nome mais longo do bloco, entao o teto e que manda: a 240px um unico
+     processo de nome comprido afastava a matriz inteira. A 200px o nome longo
+     ganha reticencias (o titulo completo continua no hover da linha) e a
+     matriz encosta na coluna. */
+  min-width: 150px; max-width: 200px;
   border-right: 1px solid var(--m-border);
   font-weight: var(--fw-regular);
 }
@@ -431,12 +436,12 @@
   vertical-align: bottom; padding-bottom: 10px;
 }
 .mob-matriz-titulo {
-  display: block; font-size: var(--font-size-sm); font-weight: var(--fw-semibold);
+  display: block; font-size: var(--font-size-md); font-weight: var(--fw-semibold);
   color: var(--m-ink); line-height: var(--lh-tight);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .mob-matriz-sub {
-  display: block; font-size: var(--font-size-xs); color: var(--m-muted);
+  display: block; font-size: var(--font-size-sm); color: var(--m-muted);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
@@ -518,6 +523,6 @@ button.mob-bolinha:focus-visible { outline: 2px solid var(--m-primary); outline-
 }
 
 @media (max-width: 768px) {
-  .mob-matriz-nome { min-width: 150px; }
+  .mob-matriz-nome { min-width: 130px; max-width: 170px; }
   .mob-matriz-col { height: 128px; }
 }
