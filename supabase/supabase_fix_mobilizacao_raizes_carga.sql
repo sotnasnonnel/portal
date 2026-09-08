@@ -1,7 +1,11 @@
 -- Correção: etapas RAIZ que a carga deixou pendentes e que a matriz mostra
 -- vermelhas sem serem gargalo.
 -- ============================================================================
--- NÃO APLICADO. Rode só depois de decidir (ver "O que isto assume", no fim).
+-- APLICADO em produção em 08/09/2026. Corrigiu 38 etapas raiz, e o gatilho de
+-- recálculo fechou junto os processos que dependiam só delas: "em andamento"
+-- caiu de 43 para 17, e todos os 95 finalizados estão com 11/11 ou 8/8 passos.
+-- Fica aqui versionado porque a próxima recarga da planilha pode reintroduzir o
+-- mesmo artefato — se isso acontecer, é só rodar de novo (é idempotente).
 --
 -- O QUE ACONTECEU
 --
@@ -25,9 +29,13 @@
 -- rodapé "Vencidas" aponta o passo errado como gargalo.
 --
 -- O RECORTE é estreito de propósito: só etapa RAIZ (sem `depende_de`), só de
--- processo vindo da PLANILHA, e só quando um passo posterior já está concluído.
--- Etapa raiz genuinamente pendente — processo que de fato parou no começo — não
--- é tocada.
+-- processo vindo da PLANILHA, só de processo NÃO cancelado, e só quando um passo
+-- posterior já está concluído. Etapa raiz genuinamente pendente — processo que
+-- de fato parou no começo — não é tocada.
+--
+-- Cancelado fica de fora porque não aparece no Mapa: a correção existe para
+-- tirar vermelho falso da tela, e reescrever histórico de processo cancelado não
+-- ganharia nada. São 4 linhas na conferência de 08/09/2026 (42 total, 38 úteis).
 -- ============================================================================
 
 begin;
@@ -38,6 +46,7 @@ select count(*) as etapas_a_corrigir
   join public.mobilizacao_processos p on p.id = e.processo_id
  where p.origem = 'planilha'
    and e.depende_de is null
+   and p.status <> 'cancelado'
    and e.status not in ('concluida', 'dispensada')
    and e.tocada_no_portal is false
    and exists (
@@ -56,6 +65,7 @@ update public.mobilizacao_etapas e
  where p.id = e.processo_id
    and p.origem = 'planilha'
    and e.depende_de is null
+   and p.status <> 'cancelado'
    and e.status not in ('concluida', 'dispensada')
    -- Nunca sobrescreve o que alguém já ajustou pelo portal.
    and e.tocada_no_portal is false
