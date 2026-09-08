@@ -154,6 +154,22 @@ async function primeiroAprovador(solicitanteId, classe) {
   }
 }
 
+/**
+ * Centros de custo disponíveis — são as gerências do organograma.
+ *
+ * Lista fechada de propósito: é o meio-termo entre travar o campo (que impede
+ * destinar o gasto a outra área) e voltar ao texto livre (que foi o que
+ * inviabilizou qualquer relatório por CC).
+ */
+export async function listarCentrosDeCusto() {
+  const { data, error } = await supabase
+    .from('horas_gerencias')
+    .select('nome')
+    .order('nome');
+  if (error) throw new Error(`Não foi possível carregar os centros de custo: ${error.message}`);
+  return (data || []).map((g) => g.nome).filter(Boolean);
+}
+
 /** Cadeias cadastradas do solicitante (a geral e as por classe). */
 export async function buscarFluxos(solicitanteId) {
   const { data, error } = await supabase

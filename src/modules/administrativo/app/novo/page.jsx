@@ -8,7 +8,7 @@ import { getClasse, getServico, assuntoDoServico } from '../../../../config/admi
 import { useAuth } from '../../../../contexts/AuthContext';
 import {
   criarChamado, criarMobilizacaoComAdicionais, buscarConfigServico, listarPessoas,
-  listarProjetos, buscarAvaliacaoPendente, buscarCentroDeCusto,
+  listarProjetos, buscarAvaliacaoPendente, buscarCentroDeCusto, listarCentrosDeCusto,
 } from '../../lib/chamados';
 import { desdobrarMobilizacao } from '../../lib/desdobramento';
 import { validarCamposExtras, limparValores, mesclarComExtras } from '../../lib/camposExtras';
@@ -53,6 +53,9 @@ export default function NovoChamadoAdm() {
   const [pendente, setPendente] = useState(null); // avaliação que trava a abertura
   // Centro de custo do aprovador. '' = ninguém acima com gerência; null = carregando.
   const [centroCusto, setCentroCusto] = useState(null);
+  // Quem pode destinar o gasto a outra área escolhe numa lista; os demais
+  // recebem o campo preenchido e travado.
+  const [opcoesCc, setOpcoesCc] = useState([]);
   const avisoErro = useRef(null);
   // Contador de tentativas, não o texto do erro: errar DUAS vezes no mesmo campo
   // repete a mesma mensagem, e um efeito preso ao texto não dispararia de novo.
@@ -156,6 +159,17 @@ export default function NovoChamadoAdm() {
       .catch(() => { if (!cancelado) setCentroCusto(''); });
     return () => { cancelado = true; };
   }, [user?.id, user?.horasGerenciaId, classe]);
+
+  // Lista de centros de custo, só para quem pode trocar. Quem não pode nunca
+  // paga a consulta.
+  useEffect(() => {
+    if (!user?.admEscolheCc) return undefined;
+    let cancelado = false;
+    listarCentrosDeCusto()
+      .then((l) => { if (!cancelado) setOpcoesCc(l); })
+      .catch(() => { if (!cancelado) setOpcoesCc([]); });
+    return () => { cancelado = true; };
+  }, [user?.admEscolheCc]);
 
   // Preenche o campo assim que o nome chega, sem pisar no que a pessoa digitou
   // (nos casos em que ela pôde digitar, por não ter gerência).
@@ -366,7 +380,8 @@ export default function NovoChamadoAdm() {
           {form && (
             <form.Componente valores={extras} onChange={setExtras} pessoas={pessoas}
               projetos={projetos}
-              classe={classe} servico={servico} travarCc={!!centroCusto} />
+              classe={classe} servico={servico}
+              travarCc={!!centroCusto && !opcoesCc.length} opcoesCc={opcoesCc} />
           )}
 
           {/* Depois dos campos do serviço, nunca no lugar deles: o que o time do

@@ -19,7 +19,9 @@ const DICA_GRUPO = {
   condutor: 'A locadora confere a CNH na retirada — vencida, o carro não sai.',
 };
 
-export default function FormSchema({ valores, onChange, pessoas = [], classe, servico, travarCc = false }) {
+export default function FormSchema({
+  valores, onChange, pessoas = [], classe, servico, travarCc = false, opcoesCc = [],
+}) {
   const schema = schemaDoServico(classe, servico) || [];
   const mexer = (chave, valor) => onChange({ ...valores, [chave]: valor });
 
@@ -40,8 +42,12 @@ export default function FormSchema({ valores, onChange, pessoas = [], classe, se
             {DICA_GRUPO[campo.grupo] && <p>{DICA_GRUPO[campo.grupo]}</p>}
           </div>
         )}
+        {/* Com lista de CC, o campo vira seleção reusando o tipo que já
+            existe — não precisa de um desenho novo só para ele. */}
         <CampoExtra
-          campo={campo}
+          campo={campo.chave === 'cc' && opcoesCc.length
+            ? { ...campo, tipo: 'selecao', opcoes: opcoesCc }
+            : campo}
           valor={valores[campo.chave]}
           onChange={mexer}
           pessoas={pessoas}
