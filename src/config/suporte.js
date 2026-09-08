@@ -10,6 +10,7 @@ import { Bug, Lightbulb, Heart } from 'lucide-react';
 export const ATENDENTES_SUPORTE = [
   'lennon.santos@phdengenharia.eng.br',
   'andre.guimaraes@phdengenharia.eng.br',
+  'marcus.guimaraes@phdengenharia.eng.br',
 ];
 
 export function ehSuporte(user) {
