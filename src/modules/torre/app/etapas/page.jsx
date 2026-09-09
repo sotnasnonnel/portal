@@ -4,8 +4,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { semaforoDias } from '../../../../utils/semaforo';
-import { listarEtapasDoQuadro } from '../../../mobilizacao/lib/mobilizacao';
-import { listarChamadosDaLista } from '../../lib/chamadosTorre';
+import { lerEtapas, lerChamados } from '../../lib/dados';
 import {
   ORIGENS, montarLista, filtrarLista, opcoesDaLista, resumoDaLista,
 } from '../../lib/listaTorre';
@@ -42,9 +41,7 @@ export default function EtapasTorre() {
     try {
       // Em paralelo: são dois módulos independentes, e encadear dobraria a
       // espera sem nenhum ganho.
-      const [etapas, chamados] = await Promise.all([
-        listarEtapasDoQuadro({}), listarChamadosDaLista({}),
-      ]);
+      const [etapas, chamados] = await Promise.all([lerEtapas(), lerChamados({})]);
       setDados({ etapas, chamados });
     } catch (e) {
       setErro(e.message);

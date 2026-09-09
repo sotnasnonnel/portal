@@ -291,56 +291,6 @@ export async function listarEtapasDoQuadro({ diasConcluidas = 15, fluxo = '' } =
   }));
 }
 
-/**
- * Carga da MATRIZ: os processos em andamento e TODAS as etapas deles.
- *
- * Nao reusa listarEtapasDoQuadro de proposito. Aquela corta as concluidas com
- * mais de 15 dias, o que e certo para um quadro (encerrado antigo nao e o que
- * se olha) e errado para a matriz: a etapa concluida em janeiro tem de aparecer
- * VERDE, senao a linha nasce cheia de buraco e da a entender que o passo nao
- * existe naquele processo.
- *
- * Duas consultas em vez de um join gordo: os processos ja vem filtrados por
- * status, e as etapas se ligam a eles pelo id em memoria. Trazer os dados do
- * processo repetidos em cada uma das ~11 etapas seria 11x o mesmo texto na rede.
- */
-export async function listarParaMatriz({ apenasAbertos = true } = {}) {
-  let qp = supabase
-    .from('mobilizacao_processos')
-    .select('id, numero, titulo, fluxo, status, profissional_nome, cliente_phd, cod_ct, local_obra, responsavel_id, prazo_em')
-    .neq('status', 'cancelado');
-  if (apenasAbertos) qp = qp.eq('status', 'em_andamento');
-
-  const { data: procs, error: erroP } = await qp;
-  if (erroP) throw new Error(`Não foi possível carregar os processos: ${erroP.message}`);
-
-  const processos = procs || [];
-  if (!processos.length) return { processos: [], etapas: [] };
-
-  const ids = processos.map((p) => p.id);
-  // Paginado pela mesma razao da fila: sao ~11 etapas por processo, entao a
-  // matriz passa de 1000 linhas antes de passar de 100 mobilizacoes abertas — e
-  // o corte do PostgREST abriria BURACO na matriz, que e pior que na lista:
-  // celula vazia ali se le como "esta etapa nao existe neste processo".
-  const { data: etapas, error: erroE } = await lerTudo(() => supabase
-    .from('mobilizacao_etapas')
-    .select('id, processo_id, codigo, ordem, titulo, status, data_prevista, data_real, dias_atraso, responsavel_id')
-    .in('processo_id', ids)
-    .order('processo_id')
-    .order('ordem'));
-  if (erroE) throw new Error(`Não foi possível carregar as etapas: ${erroE.message}`);
-
-  const lista = etapas || [];
-  const nomes = await nomesDe([
-    ...processos.map((p) => p.responsavel_id),
-    ...lista.map((e) => e.responsavel_id),
-  ]);
-
-  return {
-    processos: processos.map((p) => ({ ...p, responsavelNome: nomes.get(p.responsavel_id) || '' })),
-    etapas: lista.map((e) => ({ ...e, responsavelNome: nomes.get(e.responsavel_id) || '' })),
-  };
-}
 
 /**
  * Move a etapa de coluna.
@@ -454,32 +404,6 @@ export async function listarParaIndicadores() {
   };
 }
 
-/**
- * Torre de controle: chamados do Adm e etapas de Mobilização numa consulta só.
- *
- * A view faz o `union all` e roda com `security_invoker`, então a RLS de cada
- * tabela base continua valendo — quem não é do time vê exatamente o que já
- * veria. Costurar duas listagens no cliente seria duas idas ao banco e dois
- * recortes que poderiam discordar.
- */
-export async function listarTorre() {
-  // Paginado pela mesma razao da fila e da matriz: a view e um union das duas
-  // bases, entao ela cruza as 1000 linhas do corte do PostgREST antes de
-  // qualquer uma delas sozinha — e um quadro cortado em silencio some com
-  // cartao sem avisar ninguem.
-  const { data, error } = await lerTudo(() => supabase
-    .from('mobilizacao_torre_v')
-    .select('origem, id, numero, titulo, status, responsavel_id, prazo, criado_em, cc, processo_id, responsavel_contrato')
-    .order('prazo', { nullsFirst: false })
-    // Desempate estavel: sem ele duas linhas de mesmo prazo trocam de lugar
-    // entre paginas e uma se perde na emenda.
-    .order('id'));
-  if (error) throw new Error(`Não foi possível carregar a torre: ${error.message}`);
-
-  const lista = data || [];
-  const nomes = await nomesDe(lista.map((i) => i.responsavel_id));
-  return lista.map((i) => ({ ...i, responsavelNome: nomes.get(i.responsavel_id) || '' }));
-}
 
 /**
  * Falhas do gatilho do Adm.

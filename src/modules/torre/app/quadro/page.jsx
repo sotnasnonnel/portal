@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Radar, Loader2, AlertCircle, X, AlertTriangle, Eye, User } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { STATUS_LABEL as STATUS_ADM } from '../../../administrativo/lib/statusChamado';
-import { listarTorre } from '../../../mobilizacao/lib/mobilizacao';
+import { lerQuadro } from '../../lib/dados';
 import {
   agruparTorre, filtrarTorre, opcoesDaTorre, estaVencido, ROTULO_ORIGEM,
   responsavelDoItem, SEM_RESPONSAVEL,
@@ -45,7 +45,7 @@ export default function QuadroTorre() {
     setCarregando(true);
     setErro('');
     try {
-      setItens(await listarTorre());
+      setItens(await lerQuadro());
     } catch (e) {
       setErro(e.message);
     } finally {

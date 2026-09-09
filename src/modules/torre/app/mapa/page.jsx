@@ -2,10 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { LayoutGrid, Loader2, AlertCircle, X, AlertTriangle, Eye, Headset } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { FLUXOS } from '../../../../config/mobilizacao';
-import { listarParaMatriz, listarCatalogo } from '../../../mobilizacao/lib/mobilizacao';
+import { listarCatalogo } from '../../../mobilizacao/lib/mobilizacao';
+import { lerParaMatriz, lerChamados } from '../../lib/dados';
 import { montarMatriz, linhaEmAndamento } from '../../../mobilizacao/lib/matriz';
 import MatrizEtapas, { LegendaMatriz } from '../../../mobilizacao/app/components/MatrizEtapas';
-import { listarChamadosAbertos } from '../../lib/chamadosTorre';
 import { montarMatrizChamados } from '../../lib/matrizChamados';
 import MatrizChamados, { LegendaChamados } from '../components/MatrizChamados';
 
@@ -38,8 +38,10 @@ export default function MapaTorre() {
     setCarregando(true);
     setErro('');
     try {
+      // O catalogo continua vindo direto da tabela: a RLS dele ja e `select
+      // true`, porque o front precisa do SLA para prever prazo.
       const [m, c, ch] = await Promise.all([
-        listarParaMatriz({}), listarCatalogo(), listarChamadosAbertos(),
+        lerParaMatriz(), listarCatalogo(), lerChamados({ diasFechados: 0 }),
       ]);
       setDados(m);
       setCatalogo(c);
