@@ -4,7 +4,7 @@ import { STATUS_LABEL as STATUS_ADM } from '../../administrativo/lib/statusChama
 import { STATUS_LABEL as STATUS_MOB } from './statusEtapa.js';
 import {
   COLUNAS_TORRE, statusUnificado, agruparTorre, linkDoItem,
-  estaVencido, filtrarTorre, opcoesDaTorre,
+  estaVencido, filtrarTorre, opcoesDaTorre, SEM_RESPONSAVEL, responsavelDoItem,
 } from './torre.js';
 
 /**
@@ -80,22 +80,62 @@ test('concluído nunca está vencido', () => {
 
 test('filtros da torre: vazio é todos', () => {
   const itens = [
-    { id: 'a', origem: 'adm', status: 'aberto', responsavel_id: 'x', cc: 'CT08', prazo: '2020-01-01' },
-    { id: 'b', origem: 'mobilizacao', status: 'pendente', responsavel_id: null, cc: 'CT09', prazo: '2099-01-01' },
+    { id: 'a', origem: 'adm', status: 'aberto', responsavel_id: 'x', responsavel_contrato: 'ANA', prazo: '2020-01-01' },
+    { id: 'b', origem: 'mobilizacao', status: 'pendente', responsavel_id: null, responsavel_contrato: 'ZILDA', prazo: '2099-01-01' },
   ];
   assert.equal(filtrarTorre(itens, {}).length, 2);
   assert.deepEqual(filtrarTorre(itens, { origem: 'adm' }).map((i) => i.id), ['a']);
   assert.deepEqual(filtrarTorre(itens, { responsavelId: 'sem' }).map((i) => i.id), ['b']);
-  assert.deepEqual(filtrarTorre(itens, { cc: 'CT09' }).map((i) => i.id), ['b']);
+  assert.deepEqual(filtrarTorre(itens, { responsavel: 'ZILDA' }).map((i) => i.id), ['b']);
   assert.deepEqual(filtrarTorre(itens, { atrasados: true }).map((i) => i.id), ['a']);
 });
 
 test('opções saem do que está na torre', () => {
   const o = opcoesDaTorre([
-    { responsavel_id: 'i1', responsavelNome: 'Ivone', cc: 'CT09' },
-    { responsavel_id: 'e1', responsavelNome: 'Edijane', cc: 'CT08' },
-    { responsavel_id: null, cc: null },
+    { responsavel_id: 'i1', responsavelNome: 'Ivone', responsavel_contrato: 'ZILDA' },
+    { responsavel_id: 'e1', responsavelNome: 'Edijane', responsavel_contrato: 'ANA' },
+    { responsavel_id: null, responsavel_contrato: null },
   ]);
   assert.deepEqual(o.responsaveis.map((r) => r.label), ['Edijane', 'Ivone']);
-  assert.deepEqual(o.ccs, ['CT08', 'CT09']);
+  assert.deepEqual(o.responsaveisContrato, ['ANA', 'ZILDA', '(nao identificado)']);
+});
+
+// ---- responsável pelo contrato ----
+
+const item = (extra = {}) => ({
+  origem: 'adm', id: 'x', status: 'aberto', responsavel_id: null,
+  responsavel_contrato: 'PAULO CEZAR DE PAIVA NETO', ...extra,
+});
+
+// O motivo de o filtro existir: antes o Adm guardava "Equipe FULANO" e a
+// Mobilização "ATNI-CT01", então escolher uma pessoa trazia metade do trabalho
+// dela. O de-para resolve os dois para o mesmo nome, e o filtro passa a somar.
+test('o filtro por responsável junta os dois mundos no mesmo nome', () => {
+  const itens = [
+    item({ origem: 'adm', id: 'c1' }),
+    item({ origem: 'mobilizacao', id: 'e1' }),
+    item({ origem: 'mobilizacao', id: 'e2', responsavel_contrato: 'OUTRA PESSOA' }),
+  ];
+  const so = filtrarTorre(itens, { responsavel: 'PAULO CEZAR DE PAIVA NETO' });
+  assert.equal(so.length, 2);
+  assert.deepEqual(so.map((i) => i.origem), ['adm', 'mobilizacao']);
+});
+
+test('sem de-para o item vira "(nao identificado)", e não some', () => {
+  assert.equal(responsavelDoItem({ responsavel_contrato: null }), SEM_RESPONSAVEL);
+  assert.equal(responsavelDoItem({ responsavel_contrato: '' }), SEM_RESPONSAVEL);
+
+  const itens = [item(), item({ id: 'y', responsavel_contrato: null })];
+  assert.equal(filtrarTorre(itens, { responsavel: SEM_RESPONSAVEL }).length, 1);
+  assert.equal(filtrarTorre(itens, {}).length, 2, 'sem filtro, ninguém é escondido');
+});
+
+test('as opções são só nomes, e o "(nao identificado)" fica por último', () => {
+  const itens = [
+    item({ responsavel_contrato: 'ZILDA' }),
+    item({ responsavel_contrato: null }),
+    item({ responsavel_contrato: 'ANA' }),
+    item({ responsavel_contrato: 'ANA' }),
+  ];
+  assert.deepEqual(opcoesDaTorre(itens).responsaveisContrato, ['ANA', 'ZILDA', SEM_RESPONSAVEL]);
 });

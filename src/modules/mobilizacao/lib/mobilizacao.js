@@ -463,10 +463,17 @@ export async function listarParaIndicadores() {
  * recortes que poderiam discordar.
  */
 export async function listarTorre() {
-  const { data, error } = await supabase
+  // Paginado pela mesma razao da fila e da matriz: a view e um union das duas
+  // bases, entao ela cruza as 1000 linhas do corte do PostgREST antes de
+  // qualquer uma delas sozinha — e um quadro cortado em silencio some com
+  // cartao sem avisar ninguem.
+  const { data, error } = await lerTudo(() => supabase
     .from('mobilizacao_torre_v')
-    .select('origem, id, numero, titulo, status, responsavel_id, prazo, criado_em, cc, processo_id')
-    .order('prazo', { nullsFirst: false });
+    .select('origem, id, numero, titulo, status, responsavel_id, prazo, criado_em, cc, processo_id, responsavel_contrato')
+    .order('prazo', { nullsFirst: false })
+    // Desempate estavel: sem ele duas linhas de mesmo prazo trocam de lugar
+    // entre paginas e uma se perde na emenda.
+    .order('id'));
   if (error) throw new Error(`Não foi possível carregar a torre: ${error.message}`);
 
   const lista = data || [];

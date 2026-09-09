@@ -79,12 +79,29 @@ export const ROTULO_ORIGEM = { adm: 'Chamado', mobilizacao: 'Mobilização' };
 /**
  * Filtros da torre. Mesma convenção do resto do portal: vazio é "todos".
  */
+/**
+ * Rotulo de quem nao tem responsavel de contrato conhecido.
+ *
+ * Existe como OPCAO do filtro, e nao como linha escondida: sao poucos itens
+ * (chamado sem centro de custo preenchido, processo cujo gerente a planilha nao
+ * registrou), e some-los da tela faria as contas do quadro nao fecharem com as
+ * do resto do portal. Aparecendo, viram uma lista curta de coisa a arrumar.
+ */
+export const SEM_RESPONSAVEL = '(nao identificado)';
+
+export const responsavelDoItem = (i) => i?.responsavel_contrato || SEM_RESPONSAVEL;
+
 export function filtrarTorre(itens = [], f = {}) {
   return itens.filter((i) => {
     if (f.origem && i.origem !== f.origem) return false;
     if (f.responsavelId === 'sem' && i.responsavel_id) return false;
     if (f.responsavelId && f.responsavelId !== 'sem' && i.responsavel_id !== f.responsavelId) return false;
-    if (f.cc && (i.cc || '') !== f.cc) return false;
+    // Filtra pelo NOME do responsavel pelo contrato, e nao mais pelo centro de
+    // custo cru. O CC nunca funcionou como filtro porque cada lado guarda um
+    // formato: o Adm escrevia "Equipe LUCAS FERRAZ GONCALVES" e a Mobilizacao
+    // "ATNI-CT01", entao escolher uma pessoa trazia metade do trabalho dela.
+    // O de-para (torre_responsavel_de_para) resolve os dois para o mesmo nome.
+    if (f.responsavel && responsavelDoItem(i) !== f.responsavel) return false;
     if (f.atrasados && !estaVencido(i)) return false;
     return true;
   });
@@ -108,14 +125,22 @@ export function estaVencido(item, hoje) {
 
 export function opcoesDaTorre(itens = []) {
   const responsaveis = new Map();
-  const ccs = new Set();
+  const contratos = new Set();
   for (const i of itens) {
     if (i.responsavel_id) responsaveis.set(i.responsavel_id, i.responsavelNome || 'Sem nome');
-    if (i.cc) ccs.add(i.cc);
+    contratos.add(responsavelDoItem(i));
   }
+
+  // "(nao identificado)" vai para o FIM, sempre. Ordenado junto com os nomes ele
+  // cairia no meio da lista pelo parentese, e quem procura uma pessoa tropecaria
+  // nele antes de achar quem procura.
+  const nomes = [...contratos].filter((c) => c !== SEM_RESPONSAVEL)
+    .sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  if (contratos.has(SEM_RESPONSAVEL)) nomes.push(SEM_RESPONSAVEL);
+
   return {
     responsaveis: [...responsaveis].map(([value, label]) => ({ value, label }))
       .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR')),
-    ccs: [...ccs].sort((a, b) => a.localeCompare(b, 'pt-BR')),
+    responsaveisContrato: nomes,
   };
 }

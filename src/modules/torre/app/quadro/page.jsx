@@ -5,6 +5,7 @@ import { STATUS_LABEL as STATUS_ADM } from '../../../administrativo/lib/statusCh
 import { listarTorre } from '../../../mobilizacao/lib/mobilizacao';
 import {
   agruparTorre, filtrarTorre, opcoesDaTorre, estaVencido, ROTULO_ORIGEM,
+  responsavelDoItem, SEM_RESPONSAVEL,
 } from '../../../mobilizacao/lib/torre';
 import { rotuloStatus } from '../../../mobilizacao/lib/statusEtapa';
 import { iniciais } from '../../../mobilizacao/lib/painelEtapas';
@@ -15,7 +16,7 @@ const rotulo = (item) => (item.origem === 'adm'
   ? (STATUS_ADM[item.status] || item.status)
   : rotuloStatus(item.status));
 
-const VAZIO = { origem: '', responsavelId: '', cc: '', atrasados: false };
+const VAZIO = { origem: '', responsavelId: '', responsavel: '', atrasados: false };
 
 /**
  * Quadro da Torre — a mesma visão de /mobilizacao/torre, sem ação nenhuma.
@@ -92,11 +93,16 @@ export default function QuadroTorre() {
           </select>
         </div>
 
-        <div className="mob-filtro">
-          <label htmlFor="tor-q-cc">Centro de custo</label>
-          <select id="tor-q-cc" value={f.cc} onChange={trocar('cc')}>
+        {/* Era "Centro de custo", e nao funcionava: o Adm guardava o CC como
+            "Equipe FULANO" e a Mobilizacao como "ATNI-CT01", entao o seletor
+            tinha 57 opcoes, metade nome e metade codigo, e escolher uma pessoa
+            trazia so metade do trabalho dela. Agora sao os ~14 nomes que o
+            de-para resolve, e o filtro soma os dois mundos. */}
+        <div className="mob-filtro" style={{ minWidth: 220 }}>
+          <label htmlFor="tor-q-resp-contrato">Responsável pelo contrato</label>
+          <select id="tor-q-resp-contrato" value={f.responsavel} onChange={trocar('responsavel')}>
             <option value="">Todos</option>
-            {opcoes.ccs.map((c) => <option key={c} value={c}>{c}</option>)}
+            {opcoes.responsaveisContrato.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
 
@@ -135,7 +141,12 @@ export default function QuadroTorre() {
                       <span className="mob-cartao-num">#{i.numero}</span>
                     </div>
                     <strong className="mob-cartao-titulo">{i.titulo}</strong>
-                    <span className="mob-cartao-proc">{rotulo(i)}{i.cc ? ` · ${i.cc}` : ''}</span>
+                    {/* O cartao mostra o NOME, e nao mais o codigo: e por ele
+                        que a reuniao chama o contrato. */}
+                    <span className="mob-cartao-proc">
+                      {rotulo(i)}
+                      {responsavelDoItem(i) !== SEM_RESPONSAVEL && ` · ${responsavelDoItem(i)}`}
+                    </span>
                     <div className="mob-cartao-rodape">
                       {i.responsavelNome ? (
                         <span className="mob-cartao-dono" title={i.responsavelNome}>
