@@ -48,6 +48,12 @@ export const TORRE_LIBERADOS = [
   // administrativo_role = 'atendente'. O mesmo vale no banco, onde
   // app_private.pode_torre() é `e_torre() or is_adm_time()`.
   'edijane.rodrigues@phdengenharia.eng.br',
+  // perfil = 'gestor' E administrativo_role = 'admin': passa no portão pelos
+  // dois caminhos. Nada mais foi preciso para ele entrar "como administrador" —
+  // a Torre não tem papel próprio, ela é só leitura para todo mundo. O que o
+  // 'admin' dele já dá é a configuração do catálogo e dos SLAs, e isso é do
+  // módulo de Mobilização, onde ele ainda não está liberado.
+  'pedro.nery@phdengenharia.eng.br',
 ];
 
 export const podeVerTorre = (user, modules) => {
