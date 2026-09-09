@@ -447,15 +447,25 @@
 
 /* Cabeçalho na vertical: onze rótulos deitados dariam uma tabela mais larga que
    qualquer tela. O writing-mode gira o texto sem virar imagem, então continua
-   selecionável e legível por leitor de tela. */
+   selecionável e legível por leitor de tela.
+
+   O giro fica no SPAN, e não no TH, e isso é o que mantém o rótulo em cima do
+   número. Com writing-mode na célula, a linha de texto se encosta na borda do
+   bloco (que em vertical-rl é a horizontal), e sobra todo o resto da largura de
+   um lado só: numa coluna de 26px o desvio passa despercebido, mas na matriz de
+   chamados, de 62px, o rótulo aparecia a meia coluna de distância do número que
+   ele nomeia. Com o giro no span, o `text-align: center` do TH volta a valer e
+   centra o rótulo — porque para o TH o span é só uma caixa inline. */
 .mob-matriz-col {
-  writing-mode: vertical-rl; transform: rotate(180deg);
   height: 152px; width: 26px; vertical-align: bottom;
   padding: 6px 0 !important;
   font-size: var(--font-size-xs); font-weight: var(--fw-semibold);
-  color: var(--m-gray-600); text-align: left; white-space: nowrap;
+  color: var(--m-gray-600); text-align: center; white-space: nowrap;
 }
-.mob-matriz-col-txt { display: inline-block; }
+.mob-matriz-col-txt {
+  display: inline-block;
+  writing-mode: vertical-rl; transform: rotate(180deg);
+}
 
 .mob-matriz-celula { text-align: center; padding: 4px 0 !important; width: 26px; }
 

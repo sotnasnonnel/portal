@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import gerador from './gerar_carga_mobilizacao.cjs';
+const { entraNaCarga } = gerador;
 
 const { data, normal, chaveDe, primeiraData, q, ABAS, STATUS } = gerador;
 
@@ -112,4 +113,29 @@ test('cada aba mapeia todas as etapas do fluxo dela', () => {
   for (const cfg of ABAS) {
     assert.equal(cfg.etapas.length, esperado[cfg.aba], cfg.aba);
   }
+});
+
+// ---- recorte da carga ----
+
+test('linha de 2026 entra, encerrada de outro ano fica de fora', () => {
+  assert.equal(entraNaCarga('finalizado', '2026-03-10'), true);
+  assert.equal(entraNaCarga('cancelado', '2026-01-02'), true);
+  assert.equal(entraNaCarga('finalizado', '2025-10-20'), false);
+  assert.equal(entraNaCarga('cancelado', '2024-07-19'), false);
+});
+
+// Um processo aberto continua sendo trabalho de hoje, tenha começado quando
+// tiver. Descartá-lo pelo ano deixava o quadro mostrando só parte do que está
+// rodando — foi o que apagou as 2 desmobilizações abertas da planilha.
+test('processo em andamento entra de qualquer ano', () => {
+  assert.equal(entraNaCarga('em_andamento', '2025-10-20'), true);
+  assert.equal(entraNaCarga('em_andamento', '2024-01-05'), true);
+  assert.equal(entraNaCarga('em_andamento', '2026-08-01'), true);
+});
+
+// A aba de desmobilização tem linha sem data nenhuma nas 4 colunas de corte.
+// Sem esta regra ela sumia, que é exatamente o caso do Jeferson.
+test('em andamento sem data nenhuma tambem entra', () => {
+  assert.equal(entraNaCarga('em_andamento', null), true);
+  assert.equal(entraNaCarga('finalizado', null), false);
 });

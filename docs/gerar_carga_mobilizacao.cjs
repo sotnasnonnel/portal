@@ -32,10 +32,17 @@ const fs = require('fs');
 const path = require('path');
 
 const RAIZ = path.resolve(__dirname, '..');
-const ENTRADA = path.join(RAIZ, 'referencia', 'planilha_modulo_mobilizacao.xlsx');
+// O nome do arquivo muda a cada versao que o time exporta. Fica numa constante
+// so, e o cabecalho do SQL gerado imprime ESTE valor — assim o SQL sempre diz
+// de qual arquivo ele saiu, sem depender de alguem lembrar de atualizar o texto.
+const PLANILHA = 'ADM_GESTAO_DE_MOBILIZACAO_ATUALIZADA (1).xlsx';
+const ENTRADA = path.join(RAIZ, 'referencia', PLANILHA);
 const SAIDA = path.join(RAIZ, 'supabase', 'supabase_import_mobilizacao_2026.sql');
 
-/** Só 2026: os demais anos não precisam ser considerados (definição do cliente). */
+/**
+ * Só 2026 (definição do cliente) — com uma exceção: processo em andamento entra
+ * de qualquer ano, porque é trabalho que ainda está na mão do time.
+ */
 const ANO = '2026';
 
 // ---------------------------------------------------------------------------
@@ -186,6 +193,19 @@ const primeiraData = (linha, colunas) => {
 const chaveDe = (fluxo, identidade, dataBase) =>
   [fluxo, normal(identidade), dataBase || 'sem-data'].join('|');
 
+/**
+ * A linha entra na carga?
+ *
+ * O recorte de ANO existe para não arrastar histórico já encerrado. Processo
+ * ainda EM ANDAMENTO entra de qualquer ano — e mesmo sem data nenhuma: ele
+ * começou antes, mas quem tem de tocá-lo é o time de hoje, e deixá-lo fora
+ * poria no quadro só uma parte do que está rodando. Foi o que aconteceu com a
+ * desmobilização, cujos 2 únicos processos abertos (um de 2025, um sem data)
+ * ficaram invisíveis enquanto a aba inteira era descartada.
+ */
+const entraNaCarga = (status, corte) => status === 'em_andamento'
+  || (Boolean(corte) && corte.startsWith(ANO));
+
 // ---------------------------------------------------------------------------
 // Leitura
 // ---------------------------------------------------------------------------
@@ -205,12 +225,12 @@ function lerAba(wb, cfg) {
     const identidade = texto(linha[cfg.identidade]);
     if (!identidade) { descartadas.semIdentidade += 1; continue; }
 
-    const corte = primeiraData(linha, cfg.corte);
-    if (!corte || !corte.startsWith(ANO)) { descartadas.semAno += 1; continue; }
-
     const statusBruto = normal(linha[cfg.status]);
     const status = STATUS[statusBruto];
     if (!status) { descartadas.semStatus += 1; continue; }
+
+    const corte = primeiraData(linha, cfg.corte);
+    if (!entraNaCarga(status, corte)) { descartadas.semAno += 1; continue; }
 
     const dataBase = primeiraData(linha, cfg.dataBase);
     const chave = chaveDe(cfg.fluxo, identidade, dataBase);
@@ -264,8 +284,9 @@ function gerar() {
   out.push(`-- GERADO por docs/gerar_carga_mobilizacao.cjs em ${new Date().toISOString().slice(0, 10)}.`);
   out.push('-- NÃO EDITAR À MÃO: se a planilha mudar, regere.');
   out.push('--');
-  out.push(`-- Fonte: referencia/planilha_modulo_mobilizacao.xlsx`);
-  out.push(`-- Recorte: só ${ANO} (definição do cliente).`);
+  out.push(`-- Fonte: referencia/${PLANILHA}`);
+  out.push(`-- Recorte: só ${ANO} (definição do cliente), MAIS todo processo ainda`);
+  out.push('-- em andamento de anos anteriores — esse continua sendo trabalho de hoje.');
   out.push('--');
   out.push('-- CHAVE NATURAL (grava em mobilizacao_processos.carga_chave, índice único');
   out.push('-- parcial): fluxo | identidade normalizada | data-base. A coluna');
@@ -369,4 +390,4 @@ function gerar() {
 // dá para conferir olhando o SQL gerado.
 if (require.main === module) gerar();
 
-module.exports = { data, normal, chaveDe, primeiraData, q, ABAS, STATUS };
+module.exports = { data, normal, chaveDe, primeiraData, entraNaCarga, q, ABAS, STATUS };

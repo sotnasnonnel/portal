@@ -33,3 +33,11 @@
   font-size: var(--font-size-xs); color: var(--m-muted);
   margin: 0 0 16px;
 }
+
+/* Origem da linha na lista de Etapas: a Torre mistura etapa de mobilização e
+   chamado do Adm na mesma tabela, e o ícone diz qual é antes de qualquer
+   leitura. Sem ele as duas coisas se confundem, e elas não são a mesma. */
+.tor-origem {
+  display: inline-flex; align-items: center; gap: 6px;
+  white-space: nowrap; color: var(--m-gray-600);
+}
