@@ -42,6 +42,12 @@ export const TORRE_LIBERADOS = [
   'marcus.guimaraes@phdengenharia.eng.br',
   'andre.guimaraes@phdengenharia.eng.br',
   'lennon.santos@phdengenharia.eng.br',
+  // Passa por perfil = 'gestor'.
+  'jarbas.junior@phdengenharia.eng.br',
+  // Passa pelo ramo do Adm de podeAcessarTorre: perfil dela é nulo, mas
+  // administrativo_role = 'atendente'. O mesmo vale no banco, onde
+  // app_private.pode_torre() é `e_torre() or is_adm_time()`.
+  'edijane.rodrigues@phdengenharia.eng.br',
 ];
 
 export const podeVerTorre = (user, modules) => {

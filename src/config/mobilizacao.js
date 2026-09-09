@@ -39,6 +39,12 @@ export const MOBILIZACAO_LIBERADOS = [
   // Também administrativo_role = 'admin'. Entra para o de-para de centro de
   // custo da Torre, que depende da base comercial que ele mantém.
   'lennon.santos@phdengenharia.eng.br',
+  // administrativo_role = 'admin': além de operar, configura catálogo e SLAs.
+  'jarbas.junior@phdengenharia.eng.br',
+  // administrativo_role = 'atendente'. É quem TOCA a mobilização — o nome dela
+  // é o que mais aparece na coluna RESPONSÁVEL da planilha. Opera o quadro e as
+  // etapas; a configuração de catálogo e SLA continua só com o admin.
+  'edijane.rodrigues@phdengenharia.eng.br',
 ];
 
 export const podeAcessarMobilizacao = (user) => !MOBILIZACAO_EM_BREVE
