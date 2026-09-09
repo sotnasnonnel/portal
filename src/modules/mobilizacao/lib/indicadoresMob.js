@@ -27,6 +27,39 @@ import { estaAtrasada } from './painelEtapas.js';
 export { estaAtrasada } from './painelEtapas.js';
 
 /**
+ * O processo dessa etapa ainda está em jogo?
+ *
+ * Um processo CANCELADO para no meio, e os passos que faltavam ficam pendentes
+ * para sempre — com prazo no passado, porque o relógio deles continuou correndo
+ * até o dia em que alguém desistiu. Contá-los como trabalho aberto ou atrasado
+ * põe na frente da reunião mobilização que ninguém vai fazer: em 09/09/2026 os
+ * cinco processos mais "travados" do indicador eram todos cancelados, um deles
+ * com 222 dias de atraso.
+ *
+ * FINALIZADO não precisaria do guarda hoje (a carga fecha todas as etapas de uma
+ * linha finalizada), mas entra pela mesma razão: processo que acabou não tem
+ * trabalho em aberto, e depender de a carga estar sempre certa seria contar com
+ * sorte.
+ *
+ * O que NÃO muda: etapa CONCLUÍDA de processo cancelado continua contando no
+ * "% no prazo". Ela aconteceu de verdade, e apagá-la reescreveria o histórico.
+ *
+ * Sem a informação do processo, assume que está em jogo — esconder por falta de
+ * dado é pior que mostrar a mais, e mantém o comportamento de quem chama estas
+ * funções sem o status junto.
+ */
+const emJogo = (e) => {
+  const st = e?.processoStatus ?? e?.processo?.status;
+  return st === undefined || st === null || st === 'em_andamento';
+};
+
+/** Etapa que é trabalho aberto DE VERDADE. */
+export const etapaAberta = (e) => estaAberta(e) && emJogo(e);
+
+/** Etapa vencida que ainda importa: a de processo que alguém vai tocar. */
+export const etapaTravada = (e) => estaAtrasada(e) && emJogo(e);
+
+/**
  * Concluiu dentro do prazo?
  *
  * @returns {boolean|null} null quando não dá para dizer — etapa ainda aberta,
@@ -59,7 +92,7 @@ function contarPor(itens, chave) {
  * @param processos [{ status, fluxo }]
  */
 export function resumoIndicadores(etapas = [], processos = []) {
-  const abertas = etapas.filter(estaAberta);
+  const abertas = etapas.filter(etapaAberta);
   const concluidas = etapas.filter((e) => e.status === 'concluida');
 
   // Cumprimento de prazo: só entram as que dá para julgar. `semPrazo` fica
@@ -75,7 +108,7 @@ export function resumoIndicadores(etapas = [], processos = []) {
   }
   const medidas = noPrazo + fora;
 
-  const atrasadas = etapas.filter(estaAtrasada);
+  const atrasadas = etapas.filter(etapaTravada);
 
   return {
     processos: {
@@ -135,7 +168,7 @@ export function gargalosPorEtapa(etapas = []) {
       linha.somaAtraso += Number(e.dias_atraso);
       if (Number(e.dias_atraso) > 0) linha.foraDoPrazo += 1;
     }
-    if (estaAtrasada(e)) linha.abertasAtrasadas += 1;
+    if (etapaTravada(e)) linha.abertasAtrasadas += 1;
   }
 
   return [...mapa.values()]
@@ -169,7 +202,7 @@ export { ehEncerrada };
  * o ranking por atraso e a ordem em que alguem vai atacar a lista.
  */
 export function etapasVencidas(etapas = []) {
-  return etapas.filter(estaAtrasada)
+  return etapas.filter(etapaTravada)
     .sort((a, b) => (Number(b.dias_atraso) - Number(a.dias_atraso))
       || String(a.titulo || '').localeCompare(String(b.titulo || ''), 'pt-BR'));
 }

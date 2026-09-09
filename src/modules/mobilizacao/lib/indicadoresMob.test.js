@@ -1,8 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  estaAtrasada, concluiuNoPrazo, resumoIndicadores, gargalosPorEtapa,
-  faixaPct, formatarPct, etapasVencidas, processosTravados,
+  estaAtrasada, concluiuNoPrazo, resumoIndicadores, gargalosPorEtapa, faixaPct, formatarPct, etapasVencidas, processosTravados, etapaTravada, etapaAberta,
 } from './indicadoresMob.js';
 
 const et = (over = {}) => ({
@@ -203,4 +202,54 @@ test('processo sem cadastro na lista ainda aparece no detalhe', () => {
 test('sem etapa vencida, os dois detalhes são vazios', () => {
   assert.deepEqual(etapasVencidas([]), []);
   assert.deepEqual(processosTravados([], []), []);
+});
+
+// ---- processo fora de jogo não gera trabalho aberto nem atraso ----
+
+const etapaDe = (statusProcesso, extra = {}) => ({
+  id: `e-${Math.random()}`, processo_id: `p-${statusProcesso}`, titulo: 'Exames',
+  status: 'pendente', dias_atraso: 200, responsavel_id: null,
+  processoStatus: statusProcesso, ...extra,
+});
+
+// O caso real: em 09/09/2026 os cinco processos mais "travados" do indicador
+// eram todos CANCELADOS — um deles com 222 dias. O relógio deles continuou
+// correndo depois que alguém desistiu.
+test('etapa pendente de processo cancelado não conta como travada', () => {
+  assert.equal(etapaTravada(etapaDe('em_andamento')), true);
+  assert.equal(etapaTravada(etapaDe('cancelado')), false);
+  assert.equal(etapaTravada(etapaDe('finalizado')), false);
+});
+
+test('a mesma regra vale para "trabalho aberto"', () => {
+  assert.equal(etapaAberta(etapaDe('em_andamento')), true);
+  assert.equal(etapaAberta(etapaDe('cancelado')), false);
+});
+
+// Sem o status junto, nada muda — quem chama sem essa informação continua
+// vendo o que via, e esconder por falta de dado seria pior que mostrar a mais.
+test('sem o status do processo, assume que está em jogo', () => {
+  assert.equal(etapaTravada({ status: 'pendente', dias_atraso: 5 }), true);
+  assert.equal(etapaAberta({ status: 'pendente', dias_atraso: 5 }), true);
+});
+
+// O que NÃO pode mudar: o histórico. A etapa concluída aconteceu de verdade,
+// mesmo que o processo tenha sido cancelado depois.
+test('etapa concluída de processo cancelado continua contando no histórico', () => {
+  const feita = etapaDe('cancelado', { status: 'concluida', dias_atraso: -2 });
+  const r = resumoIndicadores([feita], [{ id: 'p-cancelado', status: 'cancelado' }]);
+  assert.equal(r.etapas.concluidas, 1);
+  assert.equal(r.prazo.medidas, 1, 'entra na conta do % no prazo');
+  assert.equal(r.etapas.atrasadas, 0);
+});
+
+test('processosTravados ignora o que foi cancelado', () => {
+  const etapas = [etapaDe('em_andamento'), etapaDe('cancelado')];
+  const processos = [
+    { id: 'p-em_andamento', numero: 1, titulo: 'Vivo', status: 'em_andamento' },
+    { id: 'p-cancelado', numero: 2, titulo: 'Morto', status: 'cancelado' },
+  ];
+  const travados = processosTravados(etapas, processos);
+  assert.equal(travados.length, 1);
+  assert.equal(travados[0].titulo, 'Vivo');
 });

@@ -398,6 +398,10 @@ export async function listarParaIndicadores() {
       fluxo: e.processo?.fluxo,
       processoNumero: e.processo?.numero,
       processoTitulo: e.processo?.titulo,
+      // Sem isto o indicador nao sabe distinguir etapa parada de etapa
+      // abandonada: processo cancelado deixa passos pendentes com prazo no
+      // passado, e eles apareciam como os mais travados de todos.
+      processoStatus: e.processo?.status,
       responsavelNome: nomes.get(e.responsavel_id) || '',
     })),
     processos: processos.data || [],
