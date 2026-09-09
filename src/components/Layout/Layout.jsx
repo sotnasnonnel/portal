@@ -6,7 +6,7 @@ import PortalHeader from '../PortalHeader/PortalHeader';
 import GuiaModal from '../Guia/GuiaModal';
 import { DP_GUIA } from '../Guia/guides';
 import { supabase } from '../../services/supabase';
-import { getEquipeIds } from '../../services/equipe';
+import { getEquipeAprovacaoIds } from '../../services/equipe';
 import { acaoDisponivel, APROVADORES } from '../../config/aprovacao';
 import './Layout.css';
 
@@ -37,7 +37,7 @@ export default function Layout() {
   const fetchPendingCount = async () => {
     if (user?.perfil !== 'gestor' && user?.perfil !== 'coordenador') return;
     try {
-      const ids = await getEquipeIds();
+      const ids = await getEquipeAprovacaoIds();
       if (!ids.length) { setPendingCount(0); return; }
       const { count, error } = await supabase
         .from('ciclos_ausencia')

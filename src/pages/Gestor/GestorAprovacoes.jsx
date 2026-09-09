@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../services/supabase';
-import { getEquipeIds } from '../../services/equipe';
+import { getEquipeAprovacaoIds } from '../../services/equipe';
 import { formatarData, getStatusCalculado } from '../../utils/formatters';
 import { ClipboardCheck, Check, X, Eye, Filter, Loader2, AlertCircle, Clock, RefreshCw, ArrowRight } from 'lucide-react';
 import '../../components/UI/Components.css';
@@ -22,7 +22,7 @@ export default function GestorAprovacoes() {
   const fetchSolicitacoes = async () => {
     setLoading(true);
     try {
-      const idsEquipe = await getEquipeIds();
+      const idsEquipe = await getEquipeAprovacaoIds();
       const { data: cols, error: colsError } = idsEquipe.length
         ? await supabase.from('colaboradores').select('id, nome').in('id', idsEquipe)
         : { data: [], error: null };
