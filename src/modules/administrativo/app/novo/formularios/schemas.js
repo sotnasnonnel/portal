@@ -13,7 +13,7 @@
  * - "Observação" é campo à parte, porque nas abas ela convive com a descrição.
  * - Anexo idem: é o do chamado.
  *
- * tipo: texto | texto_longo | numero | data | hora | datahora | selecao | sim_nao | pessoa
+ * tipo: texto | texto_longo | numero | data | hora | datahora | selecao | selecao_multipla | sim_nao | pessoa
  */
 
 const TIPOS_EQUIP_TI = ['Notebook', 'Desktop', 'Monitor', 'Teclado', 'Mouse', 'Headset'];
@@ -139,9 +139,12 @@ export const SCHEMAS = {
     dataNecessidade(),
     observacao(),
   ],
+  // O Tipo aceita MAIS DE UM: pedir notebook, monitor e headset para a mesma
+  // pessoa era um chamado por item, cada um com aprovação e prazo próprios —
+  // três filas para uma entrega só.
   'ti/solicitacao-equipamentos': [
     cc(),
-    { chave: 'tipo', rotulo: 'Tipo', tipo: 'selecao', obrigatorio: true, opcoes: TIPOS_EQUIP_TI },
+    { chave: 'tipo', rotulo: 'Tipo', tipo: 'selecao_multipla', obrigatorio: true, opcoes: TIPOS_EQUIP_TI },
     { chave: 'localizacao', rotulo: 'Localização', tipo: 'texto', obrigatorio: true },
     dataNecessidade(),
     observacao(),
@@ -368,4 +371,6 @@ export const usaAnexo = (classe, servico) => !SEM_ANEXO.has(`${classe}/${servico
 export const schemaUsaPessoa = (schema) => (schema || []).some((c) => c.tipo === 'pessoa');
 
 /** Estado inicial com todas as chaves presentes — evita input trocando de não-controlado para controlado. */
-export const inicialDoSchema = (schema) => Object.fromEntries((schema || []).map((c) => [c.chave, '']));
+export const inicialDoSchema = (schema) => Object.fromEntries(
+  (schema || []).map((c) => [c.chave, c.tipo === 'selecao_multipla' ? [] : '']),
+);

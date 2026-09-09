@@ -155,9 +155,6 @@ export function AuthProvider({ children }) {
         // Capacidade avulsa: trocar o responsável de um chamado do Adm. Não é
         // papel — quem a tem pode ser admin ou atendente. O banco também barra.
         admReatribui: colab.administrativo_reatribui === true,
-        // Pode destinar o chamado a outro centro de custo, escolhendo numa
-        // lista. Sem isso o campo vem preenchido e travado.
-        admEscolheCc: colab.administrativo_escolhe_cc === true,
         programasRole: colab.programas_role || null,           // time comercial dos Programas
         authId: authUser.id,
       });

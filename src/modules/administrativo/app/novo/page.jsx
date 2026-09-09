@@ -53,8 +53,8 @@ export default function NovoChamadoAdm() {
   const [pendente, setPendente] = useState(null); // avaliação que trava a abertura
   // Centro de custo do aprovador. '' = ninguém acima com gerência; null = carregando.
   const [centroCusto, setCentroCusto] = useState(null);
-  // Quem pode destinar o gasto a outra área escolhe numa lista; os demais
-  // recebem o campo preenchido e travado.
+  // Centros de custo para trocar o do organograma. Vazia (consulta falhou), o
+  // campo cai no comportamento antigo: travado no valor que veio.
   const [opcoesCc, setOpcoesCc] = useState([]);
   const avisoErro = useRef(null);
   // Contador de tentativas, não o texto do erro: errar DUAS vezes no mesmo campo
@@ -160,16 +160,18 @@ export default function NovoChamadoAdm() {
     return () => { cancelado = true; };
   }, [user?.id, user?.horasGerenciaId, classe]);
 
-  // Lista de centros de custo, só para quem pode trocar. Quem não pode nunca
-  // paga a consulta.
+  // Lista de centros de custo, para qualquer pessoa que abra chamado. Era
+  // restrita a quem tinha a permissão avulsa, e o resultado é que todo pedido
+  // de uma área para outra virava chamado aberto no CC errado, corrigido depois
+  // pelo Adm. O padrão continua sendo o do organograma — muda só o poder de
+  // trocar.
   useEffect(() => {
-    if (!user?.admEscolheCc) return undefined;
     let cancelado = false;
     listarCentrosDeCusto()
       .then((l) => { if (!cancelado) setOpcoesCc(l); })
       .catch(() => { if (!cancelado) setOpcoesCc([]); });
     return () => { cancelado = true; };
-  }, [user?.admEscolheCc]);
+  }, []);
 
   // Preenche o campo assim que o nome chega, sem pisar no que a pessoa digitou
   // (nos casos em que ela pôde digitar, por não ter gerência).
@@ -381,7 +383,7 @@ export default function NovoChamadoAdm() {
             <form.Componente valores={extras} onChange={setExtras} pessoas={pessoas}
               projetos={projetos}
               classe={classe} servico={servico}
-              travarCc={!!centroCusto && !opcoesCc.length} opcoesCc={opcoesCc} />
+              opcoesCc={opcoesCc} />
           )}
 
           {/* Depois dos campos do serviço, nunca no lugar deles: o que o time do

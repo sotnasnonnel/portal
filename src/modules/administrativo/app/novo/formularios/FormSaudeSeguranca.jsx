@@ -1,5 +1,6 @@
 import { MOTIVOS } from './saudeSeguranca';
 import SeletorPedido from '../../../../estoque/app/components/SeletorPedido';
+import CampoCentroCusto from '../CampoCentroCusto';
 
 /**
  * EPI, uniforme e outras demandas de Saúde e segurança. É o pedido AVULSO —
@@ -20,18 +21,15 @@ import SeletorPedido from '../../../../estoque/app/components/SeletorPedido';
  *
  * Descrição e anexos não aparecem aqui: são os campos do chamado, logo abaixo.
  */
-export default function FormSaudeSeguranca({ valores, onChange, servico }) {
+export default function FormSaudeSeguranca({ valores, onChange, servico, opcoesCc = [] }) {
   const mexer = (patch) => onChange({ ...valores, ...patch });
   const eEpi = servico === 'epi';
   const eUniforme = servico === 'uniforme';
 
   return (
     <>
-      <div className="adm-campo">
-        <label htmlFor="ss-cc">Centro de custo<span className="req">*</span></label>
-        <input id="ss-cc" className="adm-input" value={valores.cc}
-          onChange={(e) => mexer({ cc: e.target.value })} />
-      </div>
+      <CampoCentroCusto id="ss-cc" valor={valores.cc} opcoes={opcoesCc}
+        onChange={(v) => mexer({ cc: v })} />
 
       {(eEpi || eUniforme) && (
         <>

@@ -21,7 +21,8 @@ const SEM_CAMPOS_POR_DECISAO = [
 ];
 
 const TIPOS_VALIDOS = new Set([
-  'texto', 'texto_longo', 'numero', 'data', 'hora', 'datahora', 'selecao', 'sim_nao', 'pessoa',
+  'texto', 'texto_longo', 'numero', 'data', 'hora', 'datahora', 'selecao', 'selecao_multipla',
+  'sim_nao', 'pessoa',
 ]);
 
 const todosCampos = () => Object.entries(SCHEMAS).flatMap(([k, s]) => s.map((c) => [k, c]));
@@ -44,7 +45,7 @@ test('as chaves não se repetem dentro do mesmo serviço', () => {
 
 test('campo de seleção sempre traz opções', () => {
   for (const [servico, campo] of todosCampos()) {
-    if (campo.tipo === 'selecao') {
+    if (campo.tipo === 'selecao' || campo.tipo === 'selecao_multipla') {
       assert.ok(campo.opcoes?.length, `${servico}: ${campo.chave} é seleção sem opções`);
     }
   }
@@ -155,4 +156,12 @@ test('sim/não, listas e vazio', () => {
   assert.equal(formatarValorCampo('mobilizacao', 'mobilizacao', 'epis', ['Capacete', 'Botina']), 'Capacete, Botina');
   assert.equal(formatarValorCampo('compra', 'solicitacao-compra', 'valor_base', ''), '');
   assert.equal(formatarValorCampo('compra', 'solicitacao-compra', 'valor_base', null), '');
+});
+
+// Estado inicial errado faz o campo trocar de não-controlado para controlado no
+// primeiro clique — e `''.includes` daria falso positivo nas opções marcadas.
+test('múltipla escolha começa como lista vazia', () => {
+  const inicial = inicialDoSchema(SCHEMAS['ti/solicitacao-equipamentos']);
+  assert.deepEqual(inicial.tipo, []);
+  assert.equal(inicial.localizacao, '');
 });

@@ -25,7 +25,7 @@ test('especificação da máquina vira categoria, e a original fica na observaç
   const [f] = desdobrarMobilizacao(mob({ equipamentos: ['Gamer 32RAM + 1TB'] }));
   assert.equal(f.classe, 'ti');
   assert.equal(f.servico, 'solicitacao-equipamentos');
-  assert.equal(f.campos.tipo, 'Notebook');
+  assert.deepEqual(f.campos.tipo, ['Notebook']);
   assert.match(f.campos.observacao, /Gamer 32RAM \+ 1TB/);
 });
 
@@ -41,7 +41,7 @@ test('notebook e segunda tela saem em chamados separados', () => {
     equipamentos: ['Notebook Padrão', SEGUNDA_TELA],
   }));
   assert.equal(filhos.length, 2);
-  assert.deepEqual(filhos.map((f) => f.campos.tipo).sort(), ['Monitor', 'Notebook']);
+  assert.deepEqual(filhos.map((f) => f.campos.tipo[0]).sort(), ['Monitor', 'Notebook']);
 });
 
 test('dois notebooks continuam num chamado só', () => {

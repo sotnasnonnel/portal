@@ -95,3 +95,17 @@ test('campo extra não rouba a chave de um campo do serviço', () => {
   assert.ok(doServico.includes('valor_base'));
   assert.equal(chaveUnica('Valor base', doServico), 'valor_base_2');
 });
+
+// Múltipla escolha guarda uma lista: `[]` é "não marcou nada", e sem esse caso
+// o campo obrigatório passaria vazio.
+test('múltipla escolha sem nada marcado não passa como preenchida', () => {
+  const def = [{ chave: 'tipo', rotulo: 'Tipo', tipo: 'selecao_multipla', obrigatorio: true }];
+  assert.equal(validarCamposExtras(def, { tipo: [] }), 'Preencha o campo "Tipo".');
+  assert.equal(validarCamposExtras(def, { tipo: ['Notebook'] }), '');
+});
+
+test('múltipla escolha é gravada como lista, e a vazia não é gravada', () => {
+  const def = [{ chave: 'tipo', rotulo: 'Tipo', tipo: 'selecao_multipla' }];
+  assert.deepEqual(limparValores(def, { tipo: ['Notebook', 'Monitor'] }).tipo, ['Notebook', 'Monitor']);
+  assert.ok(!('tipo' in limparValores(def, { tipo: [] })), 'lista vazia foi gravada');
+});

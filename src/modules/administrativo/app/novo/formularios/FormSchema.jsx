@@ -1,5 +1,6 @@
 import { Fragment } from 'react';
 import CampoExtra from '../CampoExtra';
+import CampoCentroCusto from '../CampoCentroCusto';
 import { schemaDoServico } from './schemas';
 
 /**
@@ -20,7 +21,7 @@ const DICA_GRUPO = {
 };
 
 export default function FormSchema({
-  valores, onChange, pessoas = [], classe, servico, travarCc = false, opcoesCc = [],
+  valores, onChange, pessoas = [], classe, servico, opcoesCc = [],
 }) {
   const schema = schemaDoServico(classe, servico) || [];
   const mexer = (chave, valor) => onChange({ ...valores, [chave]: valor });
@@ -42,17 +43,24 @@ export default function FormSchema({
             {DICA_GRUPO[campo.grupo] && <p>{DICA_GRUPO[campo.grupo]}</p>}
           </div>
         )}
-        {/* Com lista de CC, o campo vira seleção reusando o tipo que já
-            existe — não precisa de um desenho novo só para ele. */}
-        <CampoExtra
-          campo={campo.chave === 'cc' && opcoesCc.length
-            ? { ...campo, tipo: 'selecao', opcoes: opcoesCc }
-            : campo}
-          valor={valores[campo.chave]}
-          onChange={mexer}
-          pessoas={pessoas}
-          travado={travarCc && campo.chave === 'cc'}
-        />
+        {/* O centro de custo é o mesmo campo em todo formulário do módulo:
+            preenchido pelo organograma e trocável numa lista. */}
+        {campo.chave === 'cc' ? (
+          <CampoCentroCusto
+            id="extra-cc"
+            valor={valores.cc}
+            onChange={(v) => mexer('cc', v)}
+            opcoes={opcoesCc}
+            obrigatorio={campo.obrigatorio}
+          />
+        ) : (
+          <CampoExtra
+            campo={campo}
+            valor={valores[campo.chave]}
+            onChange={mexer}
+            pessoas={pessoas}
+          />
+        )}
       </Fragment>
     );
   });

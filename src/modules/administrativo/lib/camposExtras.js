@@ -43,7 +43,11 @@ export function chaveUnica(rotulo, existentes = []) {
   return `${base}_${i}`;
 }
 
-const vazio = (v) => v === undefined || v === null || (typeof v === 'string' && !v.trim());
+// Campo de múltipla escolha guarda uma LISTA: sem o caso do array, marcar
+// nada passaria pela exigência de preenchimento (`[]` não é vazio em JS).
+const vazio = (v) => v === undefined || v === null
+  || (typeof v === 'string' && !v.trim())
+  || (Array.isArray(v) && v.length === 0);
 
 /**
  * Valida o preenchimento contra a definição cadastrada.

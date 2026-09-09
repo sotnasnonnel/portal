@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import SearchSelect from '../../../../../components/UI/SearchSelect';
 import Marcador from './Marcador';
+import CampoCentroCusto from '../CampoCentroCusto';
 import { MOVIMENTOS, OUTRO_PROJETO, eDesmobilizacao, aoTrocarMovimento } from './mobilizacao';
 import { OPCOES_EQUIPAMENTO, OPCOES_SOFTWARE, OPCOES_EPI } from './opcoes';
 
-export default function FormMobilizacao({ valores, onChange, pessoas = [], projetos = [] }) {
+export default function FormMobilizacao({
+  valores, onChange, pessoas = [], projetos = [], opcoesCc = [],
+}) {
   const [aberto, setAberto] = useState('');
   const mexer = (patch) => onChange({ ...valores, ...patch });
   const desmob = eDesmobilizacao(valores);
@@ -138,11 +141,8 @@ export default function FormMobilizacao({ valores, onChange, pessoas = [], proje
           placeholder="PHD ENGENHARIA, PHD ASSESSORIA ou PJ" />
       </div>
 
-      <div className="adm-campo">
-        <label htmlFor="mob-cc">Centro de custo<span className="req">*</span></label>
-        <input id="mob-cc" className="adm-input" value={valores.cc}
-          onChange={(e) => mexer({ cc: e.target.value })} />
-      </div>
+      <CampoCentroCusto id="mob-cc" valor={valores.cc} opcoes={opcoesCc}
+        onChange={(v) => mexer({ cc: v })} />
 
       <div className="adm-campo">
         <label>Projeto<span className="req">*</span></label>

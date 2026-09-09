@@ -59,8 +59,9 @@ export function desdobrarMobilizacao(valores = {}) {
   const base = comuns(valores);
   const dataNecessidade = valores.data_inicio_cliente || '';
 
-  // --- Equipamentos: agrupados por categoria, porque o campo "Tipo" do serviço
-  // de TI é de escolha única. Notebook e segunda tela viram dois chamados.
+  // --- Equipamentos: agrupados por categoria. O "Tipo" do serviço de TI aceita
+  // mais de um, mas cada categoria continua sendo um chamado — é assim que o
+  // pedido de notebook e o de monitor andam com prazos próprios.
   const porCategoria = new Map();
   for (const item of valores.equipamentos || []) {
     const cat = categoriaDoEquipamento(item);
@@ -74,7 +75,8 @@ export function desdobrarMobilizacao(valores = {}) {
       descricao: origem,
       campos: {
         ...base,
-        tipo: categoria,
+        // Lista, e não texto: é o formato do campo no serviço de destino.
+        tipo: [categoria],
         data_necessidade: dataNecessidade,
         observacao: `${origem} Itens: ${itens.join(', ')}.`,
       },

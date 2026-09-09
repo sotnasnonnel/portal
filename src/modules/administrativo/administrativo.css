@@ -194,8 +194,11 @@
 }
 .adm-grupo-cab p { margin: 3px 0 0; font-size: var(--font-size-xs); color: var(--a-muted); }
 .adm-campo:last-child { margin-bottom: 0; }
-.adm-campo label { font-size: var(--font-size-xs); font-weight: 600; color: var(--a-gray-600); }
-.adm-campo label .req { color: var(--a-red); margin-left: 2px; }
+.adm-campo label, .adm-campo-rotulo { font-size: var(--font-size-xs); font-weight: 600; color: var(--a-gray-600); }
+.adm-campo label .req, .adm-campo-rotulo .req { color: var(--a-red); margin-left: 2px; }
+/* Campo de múltipla escolha: os mesmos chips do marcador da mobilização, sem o
+   bloco expansível — aqui as opções são poucas e ficam à vista. */
+.adm-opcoes { display: flex; flex-wrap: wrap; gap: 8px; }
 .adm-campo-dica { font-size: var(--font-size-xs); color: var(--a-muted); }
 
 .adm-input, .adm-select, .adm-textarea {

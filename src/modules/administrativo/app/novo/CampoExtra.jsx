@@ -1,9 +1,11 @@
-import { Lock } from 'lucide-react';
+import { Check } from 'lucide-react';
 import SearchSelect from '../../../../components/UI/SearchSelect';
 
 // Tipos com desenho próprio. O que não estiver aqui cai no input de texto, para
 // um tipo desconhecido (cadastro antigo, por exemplo) não sumir da tela.
-const COM_DESENHO_PROPRIO = ['texto_longo', 'numero', 'data', 'hora', 'datahora', 'selecao', 'sim_nao', 'pessoa'];
+const COM_DESENHO_PROPRIO = [
+  'texto_longo', 'numero', 'data', 'hora', 'datahora', 'selecao', 'selecao_multipla', 'sim_nao', 'pessoa',
+];
 
 /**
  * Desenha um campo a partir da definição — venha ela do cadastro do Adm
@@ -12,7 +14,7 @@ const COM_DESENHO_PROPRIO = ['texto_longo', 'numero', 'data', 'hora', 'datahora'
  * É o ponto único de renderização de campo do módulo: assim os 22 serviços
  * ficam idênticos entre si sem ninguém precisar repetir estilo e marcação.
  */
-export default function CampoExtra({ campo, valor, onChange, pessoas = [], travado = false }) {
+export default function CampoExtra({ campo, valor, onChange, pessoas = [] }) {
   const id = `extra-${campo.chave}`;
   const comum = {
     id,
@@ -20,17 +22,38 @@ export default function CampoExtra({ campo, valor, onChange, pessoas = [], trava
     onChange: (e) => onChange(campo.chave, e.target.value),
   };
 
-  // Travado: o valor vem do cadastro (hoje só o centro de custo, lido do
-  // organograma). Mesma apresentação do Assunto, que também não é digitado.
-  if (travado) {
+  // Múltipla escolha tem marcação própria: são vários botões, e um <label
+  // htmlFor> não aponta para um controle só. O grupo é rotulado pelo texto.
+  if (campo.tipo === 'selecao_multipla') {
+    const marcados = Array.isArray(valor) ? valor : [];
+    const alternar = (o) => onChange(
+      campo.chave,
+      marcados.includes(o) ? marcados.filter((v) => v !== o) : [...marcados, o],
+    );
     return (
-      <div className="adm-campo">
-        <label htmlFor={id}>{campo.rotulo}</label>
-        <div className="adm-travado">
-          <input id={id} className="adm-input" value={valor ?? ''} readOnly tabIndex={-1} />
-          <Lock size={15} aria-hidden="true" />
+      <div className="adm-campo" role="group" aria-labelledby={`${id}-rot`}>
+        <span className="adm-campo-rotulo" id={`${id}-rot`}>
+          {campo.rotulo}
+          {campo.obrigatorio && <span className="req">*</span>}
+        </span>
+        <div className="adm-opcoes">
+          {(campo.opcoes || []).map((o) => {
+            const marcado = marcados.includes(o);
+            return (
+              <button
+                key={o}
+                type="button"
+                className={`adm-chip ${marcado ? 'is-on' : ''}`}
+                aria-pressed={marcado}
+                onClick={() => alternar(o)}
+              >
+                {marcado && <Check size={13} />}
+                {o}
+              </button>
+            );
+          })}
         </div>
-        <span className="adm-campo-dica">Vem da sua gerência no organograma.</span>
+        <span className="adm-campo-dica">Pode marcar mais de um.</span>
       </div>
     );
   }
