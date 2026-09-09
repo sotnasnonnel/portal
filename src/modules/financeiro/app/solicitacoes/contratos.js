@@ -14,13 +14,13 @@ import { distinctMonths, resolveDefaultMonth } from '../../../../pages/Gestor/or
  */
 export async function listarTodosContratos() {
   const { data: mesesRows, error: eMeses } = await supabaseBackoffice
-    .from('organograma_meses').select('mes');
+    .from('portal_organograma_meses').select('mes');
   if (eMeses) throw eMeses;
   const mes = resolveDefaultMonth(distinctMonths(mesesRows), new Date());
   if (!mes) return [];
 
   const { data, error } = await supabaseBackoffice
-    .from('organograma_alocacao')
+    .from('portal_organograma_alocacao')
     .select('obra_cod_phd')
     .eq('mes', mes);
   if (error) throw error;

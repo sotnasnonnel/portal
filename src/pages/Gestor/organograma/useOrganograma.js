@@ -4,8 +4,13 @@ import { mapAlocacoes, distinctMonths } from './organogramaData';
 
 /**
  * Carrega a lista de meses e as alocações do mês selecionado do projeto
- * backoffice_phd. Read-only. A lista de meses vem da view organograma_meses
- * (DISTINCT mes) para não sofrer o teto de linhas do PostgREST.
+ * backoffice_phd. Read-only. A lista de meses vem da view
+ * portal_organograma_meses (DISTINCT mes) para não sofrer o teto de linhas do
+ * PostgREST.
+ *
+ * As views portal_organograma_* são o recorte que o backoffice expõe ao papel
+ * anon (migration 181 de lá). As tabelas organograma_* que este arquivo usava
+ * antes ficaram fechadas ao anon no endurecimento de RLS de 2026-09-08.
  */
 export function useOrganograma(mes) {
   const [months, setMonths] = useState([]);
@@ -17,7 +22,7 @@ export function useOrganograma(mes) {
   const carregarMeses = useCallback(() => {
     let ativo = true;
     supabaseBackoffice
-      .from('organograma_meses')
+      .from('portal_organograma_meses')
       .select('mes')
       .then(({ data, error: err }) => {
         if (!ativo) return;
@@ -37,10 +42,10 @@ export function useOrganograma(mes) {
     setLoading(true);
     setError(null);
     supabaseBackoffice
-      .from('organograma_alocacao')
-      .select('percentual, obra_cod_phd, colaborador:organograma_colaborador(nome, gerente)')
+      .from('portal_organograma_alocacao')
+      .select('percentual, obra_cod_phd, colaborador:portal_organograma_colaborador(nome, gerente)')
       .eq('mes', mes)
-      .order('nome', { referencedTable: 'organograma_colaborador' })
+      .order('nome', { referencedTable: 'portal_organograma_colaborador' })
       .then(({ data, error: err }) => {
         if (!ativo) return;
         if (err) { setError(err.message); setRows([]); }

@@ -107,14 +107,14 @@ export async function listarIniciativas() {
  */
 export async function listarObras() {
   const { data: meses, error: eMeses } = await supabaseBackoffice
-    .from('organograma_meses').select('mes');
+    .from('portal_organograma_meses').select('mes');
   if (eMeses) throw new Error(`Não consegui ler as obras: ${eMeses.message}`);
 
   const mes = resolveDefaultMonth(distinctMonths(meses), new Date());
   if (!mes) return [];
 
   const { data, error } = await supabaseBackoffice
-    .from('organograma_alocacao').select('obra_cod_phd').eq('mes', mes);
+    .from('portal_organograma_alocacao').select('obra_cod_phd').eq('mes', mes);
   if (error) throw new Error(`Não consegui ler as obras: ${error.message}`);
 
   return [...new Set((data || []).map((r) => r.obra_cod_phd).filter(Boolean))]
