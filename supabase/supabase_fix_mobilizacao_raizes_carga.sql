@@ -1,10 +1,20 @@
 -- Correção: etapas RAIZ que a carga deixa pendentes sem serem gargalo
 -- ============================================================================
--- RODAR SEMPRE DEPOIS DE supabase_import_mobilizacao_2026.sql. Não é correção
--- de uma vez: é o par obrigatório da carga, porque o problema volta a cada
--- recarga da planilha. Aplicado em 08/09/2026 e de novo em 09/09/2026.
+-- SUPERADO em 09/09/2026 — não precisa mais rodar. Fica como registro.
 --
--- O PROBLEMA
+-- Este arquivo tratava o SINTOMA. A causa era o gerador ignorar a coluna STATUS
+-- da planilha: linha marcada "Finalizado" sem todas as datas preenchidas
+-- chegava ao banco com etapas pendentes, e `mob_recalcular`, que deduz o status
+-- CONTANDO etapas concluídas, ressuscitava o processo como "em andamento".
+--
+-- docs/gerar_carga_mobilizacao.cjs passou a fechar todas as etapas de uma linha
+-- FINALIZADA e a mandar o status sempre. Depois disso, a consulta de conferência
+-- deste arquivo devolve zero linhas: não há mais raiz pendente para corrigir.
+-- ============================================================================
+-- Abaixo, o registro do que ele fazia enquanto valia. Foi aplicado em
+-- 08/09/2026 e de novo em 09/09/2026, antes de a causa ser encontrada.
+--
+-- O PROBLEMA (como era entendido na época)
 --
 -- A carga só marca uma etapa como concluída quando a planilha tem DATA REAL na
 -- coluna dela. Três etapas do catálogo não têm coluna com data confiável, e por
@@ -84,14 +94,11 @@ commit;
 select status, count(*) from public.mobilizacao_processos group by 1 order by 1;
 
 -- ============================================================================
--- COMO PARAR DE PRECISAR DESTE ARQUIVO
+-- O QUE AINDA VALE DAQUI
 --
--- Para "Integração no cliente": criar a coluna DATA REAL dela na planilha e
--- mapeá-la em docs/gerar_carga_mobilizacao.cjs (lista `etapas` da aba
--- MOB.PESSOAS). Aí a carga traz a data verdadeira e o bloco (B) vira inócuo.
---
--- Para as duas raízes: preencher as colunas DATA REAL correspondentes nas
--- linhas em que estão vazias. O bloco (A) então não encontra nada para corrigir.
---
--- Enquanto isso não acontece, este arquivo roda logo depois da carga, sempre.
+-- Preencher na planilha a coluna DATA REAL de "Integração no cliente" (e as das
+-- duas raízes, onde estão vazias) continua sendo o melhor caminho: aí a carga
+-- traz a data verdadeira em vez de deduzi-la do fecho da linha. Enquanto isso
+-- não acontece, o gerador usa a DATA REAL FINALIZAÇÃO como limite superior, que
+-- é honesto mas menos preciso do que o registro real.
 -- ============================================================================

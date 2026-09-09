@@ -84,7 +84,15 @@ values
   ('mobilizacao_pessoa', 'aprovacao_cliente_final', 9, 'Aprovação do cliente final',
    'Análise e aprovação pelo cliente final.', 'postagem_cliente', 6, 'cliente'),
 
-  ('mobilizacao_pessoa', 'liberacao_cracha', 10, 'Liberação do crachá',
+  -- Criada pela tela de Catálogo depois da primeira carga, e trazida para cá em
+  -- 09/09/2026 para o arquivo voltar a descrever a produção. Não tem coluna na
+  -- planilha, então o gerador a marca com `real: null` — ver
+  -- docs/gerar_carga_mobilizacao.cjs. Raiz de propósito: a agenda é do cliente
+  -- e não decorre de nenhum passo nosso.
+  ('mobilizacao_pessoa', 'integracao_no_cliente', 10, 'Integração no cliente',
+   'Depende prazo pelo cliente. Agendas específicas', null, 3, 'cliente'),
+
+  ('mobilizacao_pessoa', 'liberacao_cracha', 11, 'Liberação do crachá',
    'Crachá liberado — o profissional pode entrar na obra.', 'aprovacao_cliente_final', 1, 'cliente')
 on conflict (fluxo, codigo) do update set
   ordem = excluded.ordem, titulo = excluded.titulo, descricao = excluded.descricao,
@@ -119,7 +127,12 @@ values
    'Cliente posta os programas no sistema dele.', 'envio_programas_legais', 5, 'cliente'),
 
   ('mobilizacao_empresa', 'aprovacao', 7, 'Aprovação',
-   'Aprovação final do cliente — a empresa está mobilizada.', 'postagem_cliente', 1, 'cliente')
+   'Aprovação final do cliente — a empresa está mobilizada.', 'postagem_cliente', 1, 'cliente'),
+
+  -- Mesma história da integração no fluxo de pessoas: criada pela tela, sem
+  -- coluna na planilha.
+  ('mobilizacao_empresa', 'aprovacao_da_subcontratacao_phd', 8, 'Aprovação da subcontratação PHD',
+   'Atrelado ao contrato. Depende do contrato assinado', 'envio_anexo_06', 6, 'cliente')
 on conflict (fluxo, codigo) do update set
   ordem = excluded.ordem, titulo = excluded.titulo, descricao = excluded.descricao,
   depende_de = excluded.depende_de, sla_dias_uteis = excluded.sla_dias_uteis,

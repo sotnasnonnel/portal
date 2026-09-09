@@ -108,11 +108,42 @@ test('os códigos de etapa das abas batem com o seed do catálogo', async () => 
   }
 });
 
-test('cada aba mapeia todas as etapas do fluxo dela', () => {
-  const esperado = { 'MOB.PESSOAS': 11, 'MOB.EMPRESAS': 8, 'DESMOB. PESSOAS': 5 };
+/**
+ * O outro lado da guarda acima: nao basta cada codigo existir no catalogo, o
+ * mapeamento tem de cobrir o catalogo INTEIRO.
+ *
+ * A contagem sai do seed, e nao de numeros escritos aqui. Foi o que faltou: as
+ * etapas "Integracao no cliente" e "Aprovacao da subcontratacao PHD" foram
+ * criadas pela tela de Catalogo, o gerador nao as conhecia, e elas nasciam
+ * pendentes em TODO processo — inclusive nos que a planilha ja dava por
+ * encerrados. Com numero fixo aqui, o teste continuava verde enquanto isso
+ * acontecia.
+ */
+test('cada aba mapeia todas as etapas do fluxo dela', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const seed = await readFile(
+    new URL('../supabase/supabase_seed_mobilizacao_catalogo.sql', import.meta.url), 'utf8');
+
   for (const cfg of ABAS) {
-    assert.equal(cfg.etapas.length, esperado[cfg.aba], cfg.aba);
+    const noSeed = [...seed.matchAll(new RegExp(`'${cfg.fluxo}', '([a-z0-9_]+)'`, 'g'))]
+      .map((m) => m[1]);
+    assert.deepEqual(
+      cfg.etapas.map((e) => e.codigo).sort(),
+      [...new Set(noSeed)].sort(),
+      `${cfg.aba}: o mapeamento e o catálogo divergem`,
+    );
   }
+});
+
+// Etapa sem coluna na planilha é declarada com `real: null`, e não omitida: é
+// isso que a faz ser fechada junto quando a linha está FINALIZADA.
+test('as etapas sem coluna na planilha estão declaradas, não ausentes', () => {
+  const semColuna = ABAS.flatMap((cfg) => cfg.etapas.filter((e) => e.real === null)
+    .map((e) => `${cfg.fluxo}/${e.codigo}`));
+  assert.deepEqual(semColuna.sort(), [
+    'mobilizacao_empresa/aprovacao_da_subcontratacao_phd',
+    'mobilizacao_pessoa/integracao_no_cliente',
+  ]);
 });
 
 // ---- recorte da carga ----
@@ -124,18 +155,18 @@ test('linha de 2026 entra, encerrada de outro ano fica de fora', () => {
   assert.equal(entraNaCarga('cancelado', '2024-07-19'), false);
 });
 
-// Um processo aberto continua sendo trabalho de hoje, tenha começado quando
-// tiver. Descartá-lo pelo ano deixava o quadro mostrando só parte do que está
-// rodando — foi o que apagou as 2 desmobilizações abertas da planilha.
-test('processo em andamento entra de qualquer ano', () => {
-  assert.equal(entraNaCarga('em_andamento', '2025-10-20'), true);
-  assert.equal(entraNaCarga('em_andamento', '2024-01-05'), true);
+// O ano manda, mesmo para processo aberto. A regra contraria ja existiu aqui e
+// foi removida: o que ela arrastava nao era trabalho, eram as 2 linhas de
+// DESMOB. PESSOAS marcadas "Em andamento" e mortas ha quase um ano — que
+// apareciam na reuniao de torre como desmobilizacoes ativas.
+test('em andamento de outro ano NAO entra', () => {
+  assert.equal(entraNaCarga('em_andamento', '2025-10-20'), false);
+  assert.equal(entraNaCarga('em_andamento', '2024-01-05'), false);
   assert.equal(entraNaCarga('em_andamento', '2026-08-01'), true);
 });
 
-// A aba de desmobilização tem linha sem data nenhuma nas 4 colunas de corte.
-// Sem esta regra ela sumia, que é exatamente o caso do Jeferson.
-test('em andamento sem data nenhuma tambem entra', () => {
-  assert.equal(entraNaCarga('em_andamento', null), true);
+// Linha sem data nenhuma nas colunas de corte nao tem como ser situada no tempo.
+test('sem data nenhuma nao entra, em qualquer situacao', () => {
+  assert.equal(entraNaCarga('em_andamento', null), false);
   assert.equal(entraNaCarga('finalizado', null), false);
 });

@@ -79,8 +79,16 @@ const ABAS = [
       { codigo: 'envio_dossie', real: 54 },
       { codigo: 'postagem_cliente', real: 57 },
       { codigo: 'aprovacao_cliente_final', real: 60 },
+      // Criada no catalogo DEPOIS da planilha, entao nao tem coluna: `real:
+      // null`. No dia a dia ela fica pendente, como qualquer passo sem data; o
+      // que muda e a linha FINALIZADA, onde ela e concluida junto com o resto,
+      // porque um processo que a planilha da por encerrado nao pode ter passo
+      // em aberto na Torre.
+      { codigo: 'integracao_no_cliente', real: null },
       { codigo: 'liberacao_cracha', real: 63 },
     ],
+    // DATA REAL FINALIZAÇÃO — a data que fecha a linha inteira.
+    fim: 17,
   },
   {
     aba: 'MOB.EMPRESAS',
@@ -104,7 +112,10 @@ const ABAS = [
       { codigo: 'envio_programas_legais', real: 43 },
       { codigo: 'postagem_cliente', real: 46 },
       { codigo: 'aprovacao', real: 49 },
+      // Mesma situacao da integracao no fluxo de pessoas: etapa nova, sem coluna.
+      { codigo: 'aprovacao_da_subcontratacao_phd', real: null },
     ],
+    fim: 13,
   },
   {
     aba: 'DESMOB. PESSOAS',
@@ -128,6 +139,9 @@ const ABAS = [
       { codigo: 'envio_protocolo_cracha', real: 31 },
       { codigo: 'desmobilizacao_finalizada', real: 34 },
     ],
+    // Esta aba nao tem coluna de "data real de finalizacao"; o fecho cai na
+    // maior data real da propria linha.
+    fim: null,
   },
 ];
 
@@ -196,15 +210,20 @@ const chaveDe = (fluxo, identidade, dataBase) =>
 /**
  * A linha entra na carga?
  *
- * O recorte de ANO existe para não arrastar histórico já encerrado. Processo
- * ainda EM ANDAMENTO entra de qualquer ano — e mesmo sem data nenhuma: ele
- * começou antes, mas quem tem de tocá-lo é o time de hoje, e deixá-lo fora
- * poria no quadro só uma parte do que está rodando. Foi o que aconteceu com a
- * desmobilização, cujos 2 únicos processos abertos (um de 2025, um sem data)
- * ficaram invisíveis enquanto a aba inteira era descartada.
+ * Só 2026, sem exceção — que é o recorte combinado desde o início.
+ *
+ * Houve uma exceção aqui: "processo em andamento entra de qualquer ano", pela
+ * ideia de que trabalho aberto é trabalho de hoje. Ela foi removida em
+ * 09/09/2026 porque o que arrastou não foi trabalho: foram as 2 únicas linhas
+ * de DESMOB. PESSOAS marcadas "Em andamento", ambas mortas — uma parada desde
+ * outubro de 2025, a outra sem data nenhuma e com zero passos feitos. Elas
+ * apareciam na reunião de torre como desmobilizações ativas, e não são.
+ *
+ * Conferido antes de tirar: com a regra estrita, PESSOAS e EMPRESAS não perdem
+ * NENHUMA linha (todo o trabalho aberto delas já é de 2026). O único efeito é
+ * a desmobilização voltar a zero, que é o número real.
  */
-const entraNaCarga = (status, corte) => status === 'em_andamento'
-  || (Boolean(corte) && corte.startsWith(ANO));
+const entraNaCarga = (status, corte) => Boolean(corte) && corte.startsWith(ANO);
 
 // ---------------------------------------------------------------------------
 // Leitura
@@ -246,10 +265,37 @@ function lerAba(wb, cfg) {
 
     const etapas = [];
     for (const e of cfg.etapas) {
-      const real = data(linha[e.real]);
-      // Sem data real, o passo entra como pendente: dizer "concluído" só porque
-      // o processo terminou inventaria uma data que ninguém registrou.
+      const real = e.real === null ? null : data(linha[e.real]);
       if (real) etapas.push({ codigo: e.codigo, status: 'concluida', real });
+    }
+
+    // Linha FINALIZADA: nenhum passo dela pode ficar pendente.
+    //
+    // A regra antiga era "sem data real, o passo fica pendente", para não
+    // inventar data. O efeito colateral apareceu na Torre: a planilha diz 220
+    // mobilizações de pessoas finalizadas, mas quase nenhuma tem as 12 datas
+    // preenchidas — e `mob_recalcular` deduz o status do processo CONTANDO
+    // etapas concluídas, então uma data faltando ressuscitava o processo inteiro
+    // como "em andamento". Deu 34 processos em andamento onde a planilha tem 13,
+    // e ~1189 etapas de trabalho já encerrado enchendo a tela da reunião.
+    //
+    // A coluna STATUS da planilha é a autoridade — é ela que o time atualiza. Se
+    // ela diz Finalizado, o que falta é registro, não trabalho. A data usada é a
+    // de fecho da linha (DATA REAL FINALIZAÇÃO), que é um limite superior real:
+    // o processo terminou naquele dia, então cada passo terminou até lá.
+    if (status === 'finalizado') {
+      const jaTem = new Map(etapas.map((e) => [e.codigo, e.real]));
+      const dataFim = (cfg.fim !== null && cfg.fim !== undefined ? data(linha[cfg.fim]) : null)
+        || [...jaTem.values()].sort().pop()
+        || dataBase;
+      // Sem data nenhuma na linha não há o que fechar: fica como está, e a
+      // conferência do fim do arquivo mostra o caso.
+      if (dataFim) {
+        etapas.length = 0;
+        for (const e of cfg.etapas) {
+          etapas.push({ codigo: e.codigo, status: 'concluida', real: jaTem.get(e.codigo) || dataFim });
+        }
+      }
     }
 
     processos.push({
@@ -326,12 +372,15 @@ function gerar() {
 
     for (const p of processos) {
       if (p.responsavel) responsaveis.add(p.responsavel);
-      // Uma linha por processo. As etapas vão dentro do jsonb e o status só
-      // viaja quando é 'cancelado' — os outros dois o recálculo deduz das
-      // etapas, e mandá-los explicitamente abriria espaço para o import
-      // discordar do que as etapas dizem.
+      // Uma linha por processo, com as etapas dentro do jsonb.
+      //
+      // O status viaja SEMPRE. Antes só 'cancelado' ia, e os outros dois eram
+      // deduzidos das etapas pelo recálculo — o que fazia o banco discordar da
+      // planilha toda vez que faltasse uma data. Agora a planilha manda: para
+      // 'finalizado' as etapas já vão todas concluídas (ver acima), então o
+      // recálculo chega sozinho à mesma conclusão e os dois nunca divergem.
       const dados = { ...p.dados, etapas: Object.fromEntries(p.etapas.map((e) => [e.codigo, e.real])) };
-      if (p.status === 'cancelado') dados.status = 'cancelado';
+      if (p.status !== 'em_andamento') dados.status = p.status;
       out.push(`select app_private.mob_carga_processo(${q(p.fluxo)}, ${jsonSql(dados)});`);
     }
     out.push('');

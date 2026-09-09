@@ -92,10 +92,16 @@ $$;
 -- ---------------------------------------------------------------------------
 -- 2. Etapas de mobilização, com o contexto do processo.
 --
--- Sem janela de tempo de propósito: a matriz do Mapa precisa da etapa concluída
--- em janeiro para pintá-la de verde — cortá-la abriria BURACO na linha, e
--- célula vazia ali se lê como "esta etapa não existe neste processo". A lista
--- de Etapas faz o próprio recorte no cliente.
+-- Só processo EM ANDAMENTO. A primeira versão trazia tudo que não estava
+-- cancelado, e a Torre abriu com 1279 etapas — das quais ~1189 concluídas, de
+-- trabalho já encerrado. A Torre é a reunião do que FALTA; histórico se vê nos
+-- indicadores do módulo.
+--
+-- Dentro de um processo em andamento, as etapas já concluídas continuam vindo,
+-- e isso é proposital: a matriz do Mapa precisa delas para pintar o verde, e
+-- cortá-las abriria BURACO na linha — célula vazia ali se lê como "esta etapa
+-- não existe neste processo". A lista de Etapas esconde as encerradas no
+-- cliente, atrás do botão "Incluir encerradas".
 -- ---------------------------------------------------------------------------
 create or replace function public.torre_etapas()
 returns table (
@@ -116,7 +122,7 @@ as $$
     from public.mobilizacao_etapas e
     join public.mobilizacao_processos p on p.id = e.processo_id
    where app_private.pode_torre()
-     and p.status <> 'cancelado';
+     and p.status = 'em_andamento';
 $$;
 
 -- ---------------------------------------------------------------------------

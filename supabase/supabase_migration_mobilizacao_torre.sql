@@ -68,9 +68,10 @@ create or replace view public.mobilizacao_torre_v as
   left join public.torre_responsavel_de_para d
     on d.chave = coalesce(nullif(trim(p.ger_phd), ''), nullif(trim(p.coo_phd), ''),
                           nullif(trim(p.cod_phd), ''), nullif(trim(p.cod_ct), ''))
-  where p.status <> 'cancelado'
-    and (e.status not in ('concluida', 'dispensada')
-      or e.data_real >= current_date - 15);
+  -- Só o que está EM ANDAMENTO, a mesma regra de torre_etapas(). A janela de 15
+  -- dias que existia aqui não bastava: processo encerrado com etapa recém-datada
+  -- continuava entrando, e o quadro enchia de trabalho já concluído.
+  where p.status = 'em_andamento';
 
 alter view public.mobilizacao_torre_v set (security_invoker = on);
 
