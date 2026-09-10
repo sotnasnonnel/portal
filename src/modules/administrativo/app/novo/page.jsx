@@ -15,6 +15,7 @@ import { validarCamposExtras, limparValores, mesclarComExtras } from '../../lib/
 import CampoExtra from './CampoExtra';
 import { formDoServico } from './formularios';
 import { usaDescricao, usaAnexo } from './formularios/schemas';
+import { formatarTamanho } from '../../lib/arquivo';
 
 // O seletor "Tipo" do Milldesk (incidente/materiais/informação/serviço) saiu da
 // tela: ninguém escolhia outra coisa, já que todo item do catálogo é serviço.
@@ -29,12 +30,6 @@ const NATUREZA_PADRAO = 'solicitacao_servico';
 const listarNomes = (nomes = []) => (nomes.length <= 1
   ? (nomes[0] || '')
   : `${nomes.slice(0, -1).join(', ')} e ${nomes[nomes.length - 1]}`);
-
-const formatarTamanho = (bytes) => {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-};
 
 export default function NovoChamadoAdm() {
   const { classe, servico } = useParams();
@@ -223,6 +218,19 @@ export default function NovoChamadoAdm() {
 
   const enviar = async (e) => {
     e.preventDefault();
+    // A avaliação pendente é o PRIMEIRO motivo de recusa, e precisa ser dito
+    // no clique. Enquanto ela só desabilitava o botão, quem preenchia o
+    // formulário inteiro (mobilização tem uma tela e meia de campos) clicava
+    // em "Abrir chamado" e não acontecia absolutamente nada: botão
+    // desabilitado não dispara evento, e o aviso ficava lá em cima, fora da
+    // tela. Agora o clique passa, é recusado com o motivo e a tela sobe até
+    // ele — o mesmo caminho de qualquer outro campo faltando.
+    if (pendente) {
+      return falhar(
+        `O chamado #${pendente.numero} — ${pendente.assunto} foi fechado e ainda espera sua `
+        + 'avaliação. Avalie-o para poder abrir um novo (o aviso acima tem o link).',
+      );
+    }
     if (temDescricao && !descricao.trim()) return falhar('A descrição é obrigatória.');
     const definicao = config?.campos_extras || [];
     // As duas validações: a do formulário do serviço e a dos campos cadastrados.
@@ -459,8 +467,19 @@ export default function NovoChamadoAdm() {
           </div>
         )}
 
+        {/* Repetido junto do botão de propósito: o aviso do topo some da tela
+            em formulário longo, e era ali que a pessoa descobria o motivo. */}
+        {pendente && (
+          <p className="adm-campo-dica">
+            <Star size={13} /> Você tem o chamado #{pendente.numero} esperando avaliação —
+            {' '}
+            <Link className="adm-link" to={`/administrativo/chamado/${pendente.id}`}>avalie-o</Link>
+            {' '}para poder abrir este.
+          </p>
+        )}
+
         <div className="adm-acoes">
-          <button type="submit" className="adm-btn adm-btn-primary" disabled={enviando || !!pendente}>
+          <button type="submit" className="adm-btn adm-btn-primary" disabled={enviando}>
             {enviando ? <><Loader2 size={16} className="adm-spin" /> Enviando…</> : <><Send size={16} /> Abrir chamado</>}
           </button>
           <button type="button" className="adm-btn adm-btn-ghost" disabled={enviando}
