@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft, Loader2, AlertCircle, Send, Paperclip, FileText, Lock, UserCheck,
@@ -18,6 +18,7 @@ import {
 import FluxoAprovacao from './FluxoAprovacao';
 import BaixaEstoque from './BaixaEstoque';
 import { montarLinhaDoTempo, textoDoEvento } from '../../lib/linhaDoTempo';
+import { formatarTamanho } from '../../lib/arquivo';
 import { ehEncerrado } from '../../lib/statusChamado';
 import {
   chamadoDeEstoque, chamadoUsaEstoque, categoriaDoChamado, montarLinhasDeBaixa, validarLinhasDeBaixa,
@@ -78,6 +79,11 @@ export default function ChamadoAdm() {
 
   const [mensagem, setMensagem] = useState('');
   const [interna, setInterna] = useState(false);
+  // Anexo da RESPOSTA. O chamado já nascia podendo anexar, mas depois de aberto
+  // a única saída era mandar o arquivo por fora (e-mail, WhatsApp) e o chamado
+  // ficava sem o documento que resolveu o caso.
+  const [arquivosMsg, setArquivosMsg] = useState([]);
+  const inputMsgArquivo = useRef(null);
   const [resolucao, setResolucao] = useState('');
   // Cancelamento: pedido que não vai ser atendido, diferente de resolvido.
   // Nasce fechado para não competir com o fechamento normal, que é o caminho
@@ -221,6 +227,16 @@ export default function ChamadoAdm() {
       setErro(e.message);
     }
   };
+
+  // Mesma mecânica da abertura do chamado: acumula os escolhidos e permite
+  // reescolher o mesmo arquivo depois de remover (daí zerar o value).
+  const adicionarArquivosMsg = (e) => {
+    const novos = Array.from(e.target.files || []);
+    if (novos.length) setArquivosMsg((atual) => [...atual, ...novos]);
+    e.target.value = '';
+  };
+
+  const removerArquivoMsg = (idx) => setArquivosMsg((atual) => atual.filter((_, i) => i !== idx));
 
   if (carregando) {
     return <div className="adm-page"><div className="adm-vazio"><Loader2 size={20} className="adm-spin" /> Carregando…</div></div>;
@@ -673,7 +689,9 @@ export default function ChamadoAdm() {
                   <span>{dataHora(item.dado.created_at)}</span>
                   {item.dado.interna && <span className="adm-msg-tag"><Lock size={11} /> Nota interna</span>}
                 </div>
-                <p>{item.dado.mensagem}</p>
+                {/* Mensagem só de anexo (o arquivo É o recado) não desenha
+                    parágrafo vazio no meio da conversa. */}
+                {item.dado.mensagem && <p>{item.dado.mensagem}</p>}
                 {(item.dado.anexos || []).length > 0 && (
                   <ul className="adm-anexo-lista">
                     {item.dado.anexos.map((a) => (
@@ -700,17 +718,49 @@ export default function ChamadoAdm() {
             </label>
           )}
         </div>
+
+        {/* Anexo depois de aberto: o arquivo vai PRESO à mensagem, e não solto
+            no chamado, para o histórico dizer quem mandou o quê e quando. */}
+        <div className="adm-campo">
+          <input
+            id="msg-anexos"
+            ref={inputMsgArquivo}
+            type="file"
+            multiple
+            onChange={adicionarArquivosMsg}
+            style={{ display: 'none' }}
+          />
+          <button type="button" className="adm-anexo-btn" onClick={() => inputMsgArquivo.current?.click()}>
+            <Paperclip size={16} /> Anexar arquivos
+          </button>
+          {arquivosMsg.length > 0 && (
+            <ul className="adm-anexo-lista">
+              {arquivosMsg.map((a, i) => (
+                <li key={`${a.name}-${i}`} className="adm-anexo-item">
+                  <FileText size={16} />
+                  <span className="adm-anexo-nome" title={a.name}>{a.name}</span>
+                  <span className="adm-anexo-tam">{formatarTamanho(a.size)}</span>
+                  <button type="button" className="adm-anexo-x" onClick={() => removerArquivoMsg(i)} title="Remover">
+                    <X size={15} />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
         <div className="adm-acoes">
           <button type="button" className="adm-btn adm-btn-primary"
-            disabled={!mensagem.trim() || ocupado === 'msg'}
+            disabled={(!mensagem.trim() && arquivosMsg.length === 0) || ocupado === 'msg'}
             onClick={() => acao('msg', async () => {
               // Responder passa a bola: o Adm joga para "aguardando solicitante"
               // e o solicitante devolve para "em atendimento".
               await responder({
-                chamado, autorId: user.id, mensagem, interna, souSolicitante,
+                chamado, autorId: user.id, mensagem, interna, arquivos: arquivosMsg, souSolicitante,
               });
               setMensagem('');
               setInterna(false);
+              setArquivosMsg([]);
             })}>
             {ocupado === 'msg' ? <Loader2 size={16} className="adm-spin" /> : <Send size={16} />} Enviar
           </button>
