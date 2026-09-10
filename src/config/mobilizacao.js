@@ -45,6 +45,10 @@ export const MOBILIZACAO_LIBERADOS = [
   // é o que mais aparece na coluna RESPONSÁVEL da planilha. Opera o quadro e as
   // etapas; a configuração de catálogo e SLA continua só com o admin.
   'edijane.rodrigues@phdengenharia.eng.br',
+  // administrativo_role = 'admin'. Ja estava na Torre; aqui e onde o 'admin'
+  // dele muda alguma coisa de fato — a Torre e so leitura para todo mundo, e a
+  // configuracao de catalogo e SLAs vive neste modulo.
+  'pedro.nery@phdengenharia.eng.br',
 ];
 
 export const podeAcessarMobilizacao = (user) => !MOBILIZACAO_EM_BREVE
