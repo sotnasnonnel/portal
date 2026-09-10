@@ -28,6 +28,15 @@ export const STATUS_ENCERRADOS = ['fechado', 'reprovado', 'cancelado'];
 
 export const ehEncerrado = (status) => STATUS_ENCERRADOS.includes(status);
 
+/**
+ * Estados em que o chamado ainda está vivo, na ordem em que ele caminha.
+ *
+ * Derivado de STATUS_LABEL, e não escrito à mão: status novo entra no rótulo e
+ * já aparece nos filtros, em vez de existir no banco e faltar na tela — que é
+ * exatamente como os encerrados sumiram da Fila.
+ */
+export const STATUS_ABERTOS = Object.keys(STATUS_LABEL).filter((s) => !ehEncerrado(s));
+
 /** Estados em que o chamado ainda está em jogo. */
 const EM_ANDAMENTO = new Set(['aberto', 'em_atendimento', 'aguardando_solicitante']);
 

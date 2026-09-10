@@ -785,13 +785,19 @@ export async function listarParaIndicadores() {
  * Fila do time do Adm. `apenasMeus` filtra pelos que estão no meu nome; sem
  * isso, mostra tudo que ainda não fechou — inclusive o que não tem atendente,
  * que é justamente o que ninguém está olhando.
+ *
+ * `incluirEncerrados` traz também fechado, reprovado e cancelado. Fica DE FORA
+ * por padrão de propósito — a fila é a lista de trabalho do dia —, mas
+ * precisava existir: o chamado encerrado continua recebendo mensagem (e o
+ * e-mail correspondente), e quem recebia o aviso não achava o chamado em tela
+ * nenhuma do módulo.
  */
-export async function listarFila(colaboradorId, { apenasMeus = false } = {}) {
+export async function listarFila(colaboradorId, { apenasMeus = false, incluirEncerrados = false } = {}) {
   let q = supabase
     .from('chamados_adm')
     .select('id, numero, classe, servico, assunto, status, criado_em, sla_vence_em, solicitante_id, atendente_id')
-    .not('status', 'in', `(${STATUS_ENCERRADOS.join(',')})`)
     .order('criado_em', { ascending: true });
+  if (!incluirEncerrados) q = q.not('status', 'in', `(${STATUS_ENCERRADOS.join(',')})`);
   if (apenasMeus) q = q.eq('atendente_id', colaboradorId);
 
   const { data, error } = await q;

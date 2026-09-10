@@ -3,6 +3,7 @@
  * Lógica pura, testável — sem Supabase e sem React.
  */
 import { estaAtrasado } from './indicadores.js';
+import { ehEncerrado } from './statusChamado.js';
 
 /** Colunas do quadro, na ordem em que o chamado caminha. */
 export const COLUNAS_KANBAN = [
@@ -122,11 +123,32 @@ export function iniciais(nome) {
  */
 const semAcento = (s) => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
+/**
+ * Valor do seletor de status que significa "tudo, inclusive o que já acabou".
+ *
+ * Existe porque '' (vazio) já quer dizer outra coisa na Fila: "todos os que
+ * ainda estão em jogo", que é o padrão de quem abre a tela para trabalhar.
+ * Sem separar os dois, quem quisesse ver o encerrado teria de escolher status
+ * por status.
+ */
+export const STATUS_TODOS = 'todos';
+
+/**
+ * A escolha de status obriga a IR AO BANCO buscar os encerrados?
+ *
+ * A Fila carrega só o que está em aberto — é o recorte de quem vai atender.
+ * Filtrar no cliente por 'fechado' devolvia lista vazia, e a opção nem
+ * aparecia, porque as opções nasciam do que tinha sido carregado: o chamado
+ * encerrado simplesmente não existia nesta tela. Este é o gatilho da segunda
+ * consulta.
+ */
+export const precisaEncerrados = (status) => status === STATUS_TODOS || ehEncerrado(status);
+
 export function filtrarFila(chamados = [], f = {}, agora = Date.now()) {
   const termo = semAcento(f.assunto).trim();
   return chamados.filter((c) => {
     if (termo && !semAcento(c.assunto).includes(termo)) return false;
-    if (f.status && c.status !== f.status) return false;
+    if (f.status && f.status !== STATUS_TODOS && c.status !== f.status) return false;
     if (f.solicitanteId && c.solicitante_id !== f.solicitanteId) return false;
     // '' no filtro = "todos"; 'sem' = os que ninguém assumiu ainda.
     if (f.atendenteId === 'sem' && c.atendente_id) return false;
@@ -140,24 +162,25 @@ export function filtrarFila(chamados = [], f = {}, agora = Date.now()) {
 }
 
 /**
- * Opções dos filtros, montadas do que está NA FILA — não do cadastro inteiro.
- * Oferecer um responsável sem chamado nenhum só gera lista vazia.
+ * Opções dos filtros de PESSOA, montadas do que está NA FILA — não do cadastro
+ * inteiro. Oferecer um responsável sem chamado nenhum só gera lista vazia.
+ *
+ * Status ficou de fora: ele vem da lista fixa de STATUS_LABEL, porque montá-lo
+ * do que foi carregado tornava impossível pedir justamente o que não estava
+ * carregado — os encerrados.
  */
 export function opcoesDaFila(chamados = [], agora = Date.now()) {
   const solicitantes = new Map();
   const responsaveis = new Map();
-  const status = new Set();
   for (const c of chamados) {
     if (c.solicitante_id) solicitantes.set(c.solicitante_id, c.solicitanteNome || 'Sem nome');
     if (c.atendente_id) responsaveis.set(c.atendente_id, c.atendenteNome || 'Sem nome');
-    if (c.status) status.add(c.status);
   }
   const lista = (m) => [...m].map(([value, label]) => ({ value, label }))
     .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
   return {
     solicitantes: lista(solicitantes),
     responsaveis: lista(responsaveis),
-    status: [...status].sort(),
     // Só oferece "sem responsável" quando existe algum — filtro que nunca
     // devolve nada é ruído na tela.
     temSemResponsavel: chamados.some((c) => !c.atendente_id),

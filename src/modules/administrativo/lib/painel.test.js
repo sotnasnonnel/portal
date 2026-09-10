@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   COLUNAS_KANBAN, agruparEmColunas, semaforoPrazo, contarNaoLidas, iniciais,
   filtrarQuadro, opcoesDoQuadro,
-  filtrarFila, opcoesDaFila, casaComPrazo,
+  filtrarFila, opcoesDaFila, casaComPrazo, precisaEncerrados, STATUS_TODOS,
 } from './painel.js';
 
 const HORA = 3600 * 1000;
@@ -165,8 +165,31 @@ test('opções saem do que está na fila, ordenadas por nome', () => {
   ]);
   assert.deepEqual(o.solicitantes.map((x) => x.label), ['ANA', 'ZORA']);
   assert.deepEqual(o.responsaveis.map((x) => x.label), ['EDIJANE']);
-  assert.deepEqual(o.status, ['aberto', 'em_atendimento']);
   assert.equal(o.temSemResponsavel, false);
+});
+
+// ---- encerrados na fila ----
+// A fila só carrega o que está em jogo. Estas duas regras decidem quando ela
+// precisa voltar ao banco para trazer também o que já acabou — foi a falta
+// disso que deixou o chamado encerrado sem nenhuma tela onde ser achado.
+test('escolher um status encerrado (ou "todos") obriga a buscar os encerrados', () => {
+  assert.equal(precisaEncerrados('fechado'), true);
+  assert.equal(precisaEncerrados('reprovado'), true);
+  assert.equal(precisaEncerrados('cancelado'), true);
+  assert.equal(precisaEncerrados(STATUS_TODOS), true);
+});
+
+test('o padrão da fila e os status em aberto não pedem segunda consulta', () => {
+  assert.equal(precisaEncerrados(''), false);
+  assert.equal(precisaEncerrados('aberto'), false);
+  assert.equal(precisaEncerrados('aguardando_aprovacao'), false);
+});
+
+test('"todos" não filtra status nenhum, e o status encerrado filtra por igualdade', () => {
+  const fila = [naFila(), naFila({ status: 'fechado' }), naFila({ status: 'cancelado' })];
+  assert.equal(filtrarFila(fila, { status: STATUS_TODOS }).length, 3);
+  assert.equal(filtrarFila(fila, { status: 'fechado' }).length, 1);
+  assert.equal(filtrarFila(fila, {}).length, 3);
 });
 
 test('"sem responsável" só é oferecido quando existe algum', () => {

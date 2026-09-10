@@ -3,8 +3,12 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Inbox, Loader2, AlertCircle, UserX, Clock } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { listarFila } from '../../lib/chamados';
-import { STATUS_LABEL as ROTULO_STATUS } from '../../lib/statusChamado';
-import { filtrarFila, opcoesDaFila } from '../../lib/painel';
+import {
+  STATUS_LABEL as ROTULO_STATUS, STATUS_ABERTOS, STATUS_ENCERRADOS, ehEncerrado,
+} from '../../lib/statusChamado';
+import {
+  filtrarFila, opcoesDaFila, precisaEncerrados, STATUS_TODOS,
+} from '../../lib/painel';
 
 const FILTRO_VAZIO = {
   assunto: '', status: '', solicitanteId: '', atendenteId: '', atrasado: '', criadoDe: '', criadoAte: '',
@@ -31,18 +35,23 @@ export default function FilaAdm() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
 
+  // A escolha de status decide se a consulta traz também os encerrados. Fica
+  // aqui, e não dentro de `carregar`, para ser a dependência do useCallback:
+  // trocar o filtro é o que dispara a segunda ida ao banco.
+  const comEncerrados = precisaEncerrados(filtro.status);
+
   const carregar = useCallback(async () => {
     if (!user?.id) return;
     setCarregando(true);
     setErro('');
     try {
-      setLinhas(await listarFila(user.id, { apenasMeus }));
+      setLinhas(await listarFila(user.id, { apenasMeus, incluirEncerrados: comEncerrados }));
     } catch (e) {
       setErro(e.message);
     } finally {
       setCarregando(false);
     }
-  }, [user?.id, apenasMeus]);
+  }, [user?.id, apenasMeus, comEncerrados]);
 
   useEffect(() => { carregar(); }, [carregar]);
 
@@ -51,14 +60,20 @@ export default function FilaAdm() {
   // digitada no assunto deixaria a busca travada.
   const visiveis = filtrarFila(linhas, filtro, agora);
   const opcoes = opcoesDaFila(linhas, agora);
-  const semDono = linhas.filter((c) => !c.atendente_id).length;
+  // Encerrado sem responsável não é chamado "que ninguém está olhando" — já
+  // acabou. Sem esta condição, ligar o filtro de encerrados inflava o aviso.
+  const semDono = linhas.filter((c) => !c.atendente_id && !ehEncerrado(c.status)).length;
   const filtrando = Object.values(filtro).some(Boolean);
   const mudar = (campo, valor) => setFiltro((f) => ({ ...f, [campo]: valor }));
 
   return (
     <div className="adm-page adm-page-wide">
       <h1 className="adm-title"><Inbox size={24} /> Fila de atendimento</h1>
-      <p className="adm-sub">Chamados em aberto do setor Administrativo.</p>
+      <p className="adm-sub">
+        {comEncerrados
+          ? 'Chamados do setor Administrativo, inclusive os já encerrados.'
+          : 'Chamados em aberto do setor Administrativo.'}
+      </p>
 
       {/* Chamado sem técnico é o que ninguém está olhando — merece destaque. */}
       {semDono > 0 && !apenasMeus && (
@@ -88,12 +103,25 @@ export default function FilaAdm() {
           aria-label="Buscar no assunto"
           value={filtro.assunto} onChange={(e) => mudar('assunto', e.target.value)}
         />
+        {/* A lista é FIXA (todos os status cadastrados), não montada a partir
+            do que foi carregado: era essa a razão de "Fechado" nunca aparecer
+            aqui — a fila não trazia encerrado, logo a opção não nascia, logo
+            não havia como pedir por ele. Escolher um encerrado (ou "inclusive
+            encerrados") recarrega a lista do banco. */}
         <select className="adm-select" aria-label="Status"
           value={filtro.status} onChange={(e) => mudar('status', e.target.value)}>
-          <option value="">Todos os status</option>
-          {opcoes.status.map((st) => (
-            <option key={st} value={st}>{ROTULO_STATUS[st] || st}</option>
-          ))}
+          <option value="">Todos os status em aberto</option>
+          <option value={STATUS_TODOS}>Todos, inclusive encerrados</option>
+          <optgroup label="Em aberto">
+            {STATUS_ABERTOS.map((st) => (
+              <option key={st} value={st}>{ROTULO_STATUS[st] || st}</option>
+            ))}
+          </optgroup>
+          <optgroup label="Encerrados">
+            {STATUS_ENCERRADOS.map((st) => (
+              <option key={st} value={st}>{ROTULO_STATUS[st] || st}</option>
+            ))}
+          </optgroup>
         </select>
         {/* Prazo antes de solicitante: "o que está atrasado" é a primeira
             pergunta de quem abre a fila de manhã. */}
@@ -146,7 +174,7 @@ export default function FilaAdm() {
         <div className="adm-vazio">
           {apenasMeus
             ? 'Nenhum chamado atribuído a você. Em "Todos", os sem responsável podem ser assumidos.'
-            : 'Nenhum chamado em aberto.'}
+            : (comEncerrados ? 'Nenhum chamado encontrado.' : 'Nenhum chamado em aberto.')}
         </div>
       ) : visiveis.length === 0 ? (
         <div className="adm-vazio">
@@ -167,8 +195,12 @@ export default function FilaAdm() {
             </thead>
             <tbody>
               {visiveis.map((c) => {
-                // Vencido pinta a data; sem prazo não há o que comparar.
-                const vencido = c.sla_vence_em && new Date(c.sla_vence_em).getTime() < agora;
+                // Vencido pinta a data; sem prazo não há o que comparar. O
+                // que já encerrou nunca pinta: é a mesma régua do indicador
+                // "Vencidos agora", e sem ela a lista com encerrados nasceria
+                // cheia de vermelho de chamado que ninguém deve mais atender.
+                const vencido = !ehEncerrado(c.status)
+                  && c.sla_vence_em && new Date(c.sla_vence_em).getTime() < agora;
                 return (
                   <tr key={c.id}>
                     <td className="num">
