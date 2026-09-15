@@ -33,10 +33,15 @@ export const podeAcessarTorre = (user, modules) =>
 /**
  * Trava de lançamento, no molde de MOBILIZACAO_EM_BREVE. Enquanto `true`, o
  * módulo some da Home e a rota devolve para o início — exceto para a lista
- * abaixo. Vira `false` junto com a Mobilização: uma torre sem os processos
- * carregados não teria o que apresentar.
+ * abaixo.
+ *
+ * Aberta em 15/09/2026 para todo o público de podeAcessarTorre (time do Adm e
+ * liderança), ANTES da Mobilização: a leitura já não depende do módulo — vem
+ * das funções torre_* (supabase_migration_torre_leitura.sql), com o mesmo
+ * portão, e o catálogo de etapas é select livre para authenticated. A lista
+ * abaixo deixou de importar; fica só como registro de quem entrou no piloto.
  */
-export const TORRE_EM_BREVE = true;
+export const TORRE_EM_BREVE = false;
 
 export const TORRE_LIBERADOS = [
   'marcus.guimaraes@phdengenharia.eng.br',
