@@ -1,16 +1,27 @@
 /* Guia compartilhado. Surfaces em #fff (no .solicRoot --bg é cinza) e cores do
    tema terracota; espaçamentos em px para não depender de escalas diferentes
    entre os módulos. */
+/* Centralização "segura": `align-items: center` sozinho centraliza até o
+   diálogo ficar mais alto que a tela — e aí corta o TOPO para fora, num lugar
+   onde nem a rolagem alcança. No iPhone isso acontece fácil: o formulário do
+   Fale conosco com o teclado aberto passa da altura visível, e o cabeçalho e os
+   tipos (bug, melhoria, elogio) sumiam acima da tela.
+
+   Com `margin: auto` no diálogo e rolagem no fundo, ele fica centralizado
+   quando cabe e, quando não cabe, começa do topo e rola. Vale para o Guia e o
+   Fale conosco, que dividem esta casca. */
 .guia-overlay {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   z-index: 300;
   padding: 16px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   animation: guiaFadeIn 0.2s ease;
 }
 
@@ -25,6 +36,7 @@
 }
 
 .guia-modal {
+  margin: auto;
   background: #fff;
   border-radius: 16px;
   width: 100%;

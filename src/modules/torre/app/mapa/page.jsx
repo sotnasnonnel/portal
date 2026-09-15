@@ -8,6 +8,8 @@ import { montarMatriz, linhaEmAndamento } from '../../../mobilizacao/lib/matriz'
 import MatrizEtapas, { LegendaMatriz } from '../../../mobilizacao/app/components/MatrizEtapas';
 import { montarMatrizChamados } from '../../lib/matrizChamados';
 import MatrizChamados, { LegendaChamados } from '../components/MatrizChamados';
+import DetalheMapa from '../components/DetalheMapa';
+import { rotuloFluxo } from '../../../../config/mobilizacao';
 
 const semAcento = (s) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
@@ -28,6 +30,11 @@ export default function MapaTorre() {
   const [chamados, setChamados] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
+
+  // O item aberto no popup de detalhe. Null = nenhum. O conteúdo é montado no
+  // clique, e não guardado por id, porque tudo que o popup mostra já está em
+  // memória — o Mapa carrega processos, etapas e chamados de uma vez.
+  const [detalhe, setDetalhe] = useState(null);
 
   const [busca, setBusca] = useState('');
   const [fFluxo, setFFluxo] = useState('');
@@ -102,6 +109,28 @@ export default function MapaTorre() {
     return { linhas: montarMatrizChamados(visiveis, { agora }), agora };
   }, [chamados, busca, soMeus, user?.id]);
 
+  // Etapas de um processo, na ordem — a lista que o popup desenha inteira.
+  const etapasDoProcesso = (processoId) => dados.etapas
+    .filter((e) => e.processo_id === processoId)
+    .sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
+
+  const abrirProcesso = (linha, destaque = null) => setDetalhe({
+    tipo: 'processo',
+    titulo: `#${linha.processo.numero} · ${linha.processo.titulo}`,
+    descricao: rotuloFluxo(linha.processo.fluxo),
+    processo: linha.processo,
+    etapas: etapasDoProcesso(linha.processo.id),
+    destaque,
+  });
+
+  const abrirChamados = (chamados, titulo, descricao) => setDetalhe({
+    tipo: 'chamados',
+    titulo,
+    descricao,
+    chamados,
+    agora: linhasChamados.agora,
+  });
+
   const filtrando = !!busca || !!fFluxo || soMeus || soAtrasados;
   const totalLinhas = blocos.reduce((s, b) => s + b.linhas.length, 0);
   const travadas = blocos.reduce((s, b) => s + b.linhas.filter((l) => l.vencidas > 0).length, 0);
@@ -168,7 +197,19 @@ export default function MapaTorre() {
           </p>
 
           <LegendaMatriz />
-          <MatrizEtapas blocos={blocos} />
+          {/* Clicar na linha abre o processo inteiro; clicar na bolinha abre o
+              mesmo popup com aquele passo em destaque. É o pedido da reunião de
+              torre: o detalhe sem trocar de módulo. */}
+          <MatrizEtapas
+            blocos={blocos}
+            onClicarProcesso={(linha) => abrirProcesso(linha)}
+            onClicarCelula={(celula, processo) => {
+              const linha = blocos
+                .flatMap((b) => b.linhas)
+                .find((l) => l.processo.id === processo.id);
+              if (linha) abrirProcesso(linha, celula.codigo);
+            }}
+          />
 
           {/* Os chamados do Adm na MESMA tela: o pedido era nao ter que trocar
               de pagina no meio da reuniao. */}
@@ -182,10 +223,25 @@ export default function MapaTorre() {
               pior caso entre eles — uma célula com nove em dia e um vencido é vermelha.
             </p>
             <LegendaChamados />
-            <MatrizChamados linhas={linhasChamados.linhas} agora={linhasChamados.agora} />
+            <MatrizChamados
+              linhas={linhasChamados.linhas}
+              agora={linhasChamados.agora}
+              onClicarCelula={(celula, linha) => abrirChamados(
+                celula.chamados,
+                `${linha.servico} · ${celula.label}`,
+                `${celula.total} chamado(s) nesta situação.`,
+              )}
+              onClicarLinha={(linha) => abrirChamados(
+                linha.celulas.flatMap((c) => c.chamados),
+                linha.servico,
+                `${linha.total} chamado(s) em aberto neste serviço.`,
+              )}
+            />
           </section>
         </>
       )}
+
+      {detalhe && <DetalheMapa item={detalhe} onFechar={() => setDetalhe(null)} />}
     </div>
   );
 }

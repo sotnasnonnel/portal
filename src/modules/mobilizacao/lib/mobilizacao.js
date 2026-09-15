@@ -1,4 +1,8 @@
 import { supabase } from '../../../services/supabase';
+// Mesmo upload das Requisições DP e do Administrativo: ele carrega o tratamento
+// de arquivo "só na nuvem" (OneDrive) e o retry de rede, que custaram caro para
+// acertar. Uma terceira cópia perderia isso calado.
+import { enviarArquivo } from '../../../pages/Gestor/requisicoes/uploadAnexo';
 
 /**
  * Única camada de acesso ao Supabase da Mobilização. Nenhuma página fala com o
@@ -340,13 +344,75 @@ export async function definirDataReal(etapaId, dataReal) {
   exigirLinha(data, error, 'Não foi possível gravar a data');
 }
 
-export async function salvarObservacaoEtapa(etapaId, observacao) {
+// ---------------------------------------------------------------------------
+// Comentários da etapa
+//
+// Substituem a coluna `mobilizacao_etapas.observacao`, que existia no schema,
+// nunca chegou à tela e não servia ao que foi pedido: era UM texto, que a
+// próxima pessoa a escrever sobrescreveria, sem quem escreveu nem quando. A
+// função que a gravava foi removida junto — deixá-la viva era convite para
+// alguém ligá-la na tela e criar um segundo lugar onde o mesmo recado mora.
+// ---------------------------------------------------------------------------
+
+export const BUCKET_MOB = 'mobilizacao-anexos';
+
+/**
+ * Comentários de TODAS as etapas de um processo, de uma vez.
+ *
+ * Uma consulta para o processo inteiro, e não uma por etapa: a tela abre com
+ * vinte passos e vinte idas ao banco para desenhar uma tela só seria o mesmo
+ * erro que `contarNaoLidasPorChamado` evita no Adm.
+ *
+ * @returns {Map<string, Array>} etapaId -> comentários, do mais antigo ao mais novo.
+ */
+export async function listarComentariosDasEtapas(etapaIds = []) {
+  const ids = [...new Set(etapaIds.filter(Boolean))];
+  if (!ids.length) return new Map();
+
   const { data, error } = await supabase
-    .from('mobilizacao_etapas')
-    .update({ observacao: observacao?.trim() || null })
-    .eq('id', etapaId)
-    .select('id');
-  exigirLinha(data, error, 'Não foi possível salvar a observação');
+    .from('mobilizacao_etapa_comentarios')
+    .select('id, etapa_id, autor_id, texto, anexos, created_at')
+    .in('etapa_id', ids)
+    .order('created_at', { ascending: true });
+  if (error) throw new Error(`Não foi possível carregar os comentários: ${error.message}`);
+
+  const nomes = await nomesDe((data || []).map((c) => c.autor_id));
+  const porEtapa = new Map();
+  for (const c of data || []) {
+    const lista = porEtapa.get(c.etapa_id) || [];
+    lista.push({ ...c, autorNome: nomes.get(c.autor_id) || '' });
+    porEtapa.set(c.etapa_id, lista);
+  }
+  return porEtapa;
+}
+
+/**
+ * Escreve um comentário na etapa, com os arquivos anexados a ele.
+ *
+ * Texto vazio é permitido quando há arquivo: aí o arquivo É o recado. O banco
+ * barra o caso de não haver nem um nem outro (constraint de conteúdo).
+ *
+ * Os uploads vão ANTES do insert e um de cada vez — o upload já tem retry
+ * próprio, e subir tudo de uma vez atrapalha quem está em link de obra.
+ */
+export async function comentarEtapa({ etapaId, autorId, texto = '', arquivos = [] }) {
+  const anexos = [];
+  for (const file of arquivos) anexos.push(await enviarArquivo(BUCKET_MOB, file));
+
+  const { data, error } = await supabase
+    .from('mobilizacao_etapa_comentarios')
+    .insert({ etapa_id: etapaId, autor_id: autorId, texto: texto.trim(), anexos })
+    .select('id')
+    .single();
+  if (error) throw new Error(`Não foi possível enviar o comentário: ${error.message}`);
+  return data;
+}
+
+/** URL assinada do anexo: o bucket é privado, não há link direto. */
+export async function urlDoAnexoMob(path, segundos = 120) {
+  const { data, error } = await supabase.storage.from(BUCKET_MOB).createSignedUrl(path, segundos);
+  if (error) throw new Error(`Não foi possível abrir o anexo: ${error.message}`);
+  return data.signedUrl;
 }
 
 // ---------------------------------------------------------------------------

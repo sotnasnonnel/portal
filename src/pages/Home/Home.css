@@ -367,6 +367,73 @@
   .home-fale {
     font-size: 0;
     gap: 0;
-    padding: 8px 11px;
+  }
+}
+
+/* ---------- barra do topo no celular: círculos que continuam círculos ----------
+
+   O bug: num iPhone sobram ~354px na barra, e logo (160) + botões (274) pediam
+   434. O flexbox tira a diferença ENCOLHENDO A LARGURA de cada item — a altura
+   fica — e todo botão redondo de 36px virava uma elipse de ~29×36. O "Fale
+   conosco" nem precisava encolher: com `padding: 8px 11px` ele já era 40×34.
+
+   A correção tem duas metades, e as duas são necessárias:
+   1. os botões NUNCA encolhem (flex-shrink: 0) e têm largura = altura travadas;
+   2. para caber, quem cede é a logo (largura relativa, mask em `contain`) e os
+      rótulos viram ícone. Só a primeira metade faria a barra vazar da tela —
+      e o "Sair" sumiria pela direita. */
+.home-iconbtn,
+.home-user .notif-btn,
+.home-avatar,
+.home-fale,
+.home-logout {
+  flex-shrink: 0;
+}
+
+.home-brand {
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+@media (max-width: 640px) {
+  .home-topbar {
+    gap: 8px;
+    padding: 14px 16px;
+  }
+
+  .home-logo-brand {
+    width: min(160px, 30vw);
+    max-width: 100%;
+  }
+
+  .home-user {
+    gap: 8px;
+  }
+
+  /* Os cinco viram o mesmo círculo de 36px. Largura E altura explícitas, com
+     mínimo e máximo iguais: nenhum cálculo de flex, padding ou fonte consegue
+     deformar o que tem as quatro medidas travadas. */
+  .home-iconbtn,
+  .home-user .notif-btn,
+  .home-avatar,
+  .home-fale,
+  .home-logout {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    max-width: 36px;
+    max-height: 36px;
+    padding: 0;
+    border-radius: 50%;
+    justify-content: center;
+  }
+
+  /* "Sair" também vira só ícone, pelo mesmo motivo do "Fale conosco": com o
+     rótulo ele sozinho ocupava 78px. O texto continua no botão para leitor de
+     tela — `font-size: 0` só o tira da vista. */
+  .home-logout {
+    font-size: 0;
+    gap: 0;
   }
 }

@@ -187,3 +187,19 @@ export function opcoesDaFila(chamados = [], agora = Date.now()) {
     atrasados: chamados.filter((c) => estaAtrasado(c, agora)).length,
   };
 }
+
+/**
+ * Filtro guardado no navegador, de volta para a tela.
+ *
+ * O guardado pode ser de outra versão do portal: um campo que não existe mais,
+ * um que foi criado depois, um valor que já não é texto. Sai daqui só com as
+ * chaves que o filtro vazio conhece, e só com texto — o resto cai no vazio.
+ * Um filtro corrompido escondendo chamado calado é o pior defeito que uma fila
+ * de trabalho pode ter.
+ */
+export function restaurarFiltro(salvo, vazio) {
+  if (!salvo || typeof salvo !== 'object' || Array.isArray(salvo)) return { ...vazio };
+  return Object.fromEntries(Object.entries(vazio).map(([chave, padrao]) => [
+    chave, typeof salvo[chave] === typeof padrao ? salvo[chave] : padrao,
+  ]));
+}

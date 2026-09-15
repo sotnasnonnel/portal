@@ -477,8 +477,21 @@
 .mob-bolinha {
   display: inline-block; width: 18px; height: 18px; border-radius: 50%;
   border: 1px solid rgba(15, 23, 42, 0.12); padding: 0;
+  /* Medidas travadas nos dois eixos. No celular a bolinha aparecia elíptica: um
+     círculo só continua círculo se nada — flex, célula de tabela, fonte do
+     botão — conseguir mexer numa medida sem mexer na outra. */
+  min-width: 18px; max-width: 18px; min-height: 18px; max-height: 18px;
+  flex-shrink: 0; vertical-align: middle;
 }
-button.mob-bolinha { cursor: pointer; }
+/* Desde que a bolinha virou botão (o popup da Torre), ela herda o botão NATIVO
+   do iOS: aparência do sistema, métrica de fonte e altura de linha, que num
+   elemento de 18px bastam para deformá-lo. Tudo zerado — o botão aqui é só a
+   bolinha, o rótulo vai no .mob-so-leitor. */
+button.mob-bolinha {
+  cursor: pointer;
+  -webkit-appearance: none; appearance: none;
+  font-size: 0; line-height: 0;
+}
 button.mob-bolinha:focus-visible { outline: 2px solid var(--m-primary); outline-offset: 2px; }
 
 /* A régua é a MESMA do semáforo do quadro (lib/matriz.js), para os dois nunca
@@ -578,3 +591,111 @@ button.mob-bolinha:focus-visible { outline: 2px solid var(--m-primary); outline-
   .mob-matriz-chamados .mob-matriz-nome { min-width: 150px; max-width: 190px; }
   .mob-matriz-col-larga { height: 112px; }
 }
+
+/* ---------------------------------------------------------------------------
+   Itens clicáveis da matriz (Torre) — o detalhe sem trocar de módulo.
+
+   O nome do processo e o número de chamados viram botão quando a tela passa um
+   handler. Os dois herdam o visual do que já eram (o `span` de antes), porque a
+   matriz é uma grade densa: um botão com cara de botão em cada célula viraria
+   uma parede de caixinhas e destruiria a leitura vertical, que é a razão de a
+   matriz existir. O que avisa que dá para clicar é o cursor e o realce no hover.
+   --------------------------------------------------------------------------- */
+.mob-matriz-nome-btn {
+  display: block; width: 100%; text-align: left;
+  background: none; border: 0; padding: 0; cursor: pointer; font: inherit; color: inherit;
+}
+.mob-matriz-nome-btn:hover .mob-matriz-titulo { text-decoration: underline; }
+.mob-matriz-nome-btn:focus-visible { outline: 2px solid var(--m-primary); outline-offset: 2px; border-radius: 6px; }
+
+button.mob-conta { cursor: pointer; font-family: inherit; }
+button.mob-conta:hover { filter: brightness(0.96); }
+button.mob-conta:focus-visible { outline: 2px solid var(--m-primary); outline-offset: 2px; }
+
+/* A linha do passo que foi clicado, dentro do popup do processo: sem ela, quem
+   clicou numa bolinha no meio de vinte passos perde de vista qual era. */
+.mob-tabela tr.is-destaque > td {
+  background: var(--m-primary-soft);
+  box-shadow: inset 3px 0 0 var(--m-primary);
+}
+
+/* ---------------------------------------------------------------------------
+   Comentários e anexos da ETAPA.
+
+   Nasce FECHADO (só o cabeçalho com o contador). Um processo tem até vinte
+   passos, e vinte caixas de conversa abertas empurrariam o passo a passo — que
+   é a razão da tela — para fora do campo de visão.
+   --------------------------------------------------------------------------- */
+.mob-coment { margin-top: 8px; }
+
+.mob-coment-toggle {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: none; border: 0; padding: 2px 0; cursor: pointer;
+  font-size: var(--font-size-xs); font-weight: var(--fw-semibold);
+  color: var(--m-gray-600); font-family: inherit;
+}
+.mob-coment-toggle:hover { color: var(--m-primary); }
+.mob-coment-toggle:focus-visible { outline: 2px solid var(--m-primary); outline-offset: 2px; border-radius: 4px; }
+
+.mob-coment-cont {
+  display: inline-flex; align-items: center; gap: 3px;
+  background: var(--m-gray-100); color: var(--m-gray-600);
+  border-radius: 999px; padding: 1px 7px;
+  font-size: var(--font-size-2xs); font-variant-numeric: tabular-nums;
+}
+
+.mob-coment-corpo {
+  margin-top: 8px; padding: 10px 12px;
+  background: var(--m-gray-50); border: 1px solid var(--m-border); border-radius: 10px;
+}
+.mob-coment-erro { margin: 0 0 8px; font-size: var(--font-size-xs); color: var(--m-red, #dc2626); }
+
+.mob-coment-lista { list-style: none; margin: 0 0 10px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.mob-coment-item { background: #fff; border: 1px solid var(--m-border); border-radius: 8px; padding: 8px 10px; }
+.mob-coment-cab {
+  display: flex; gap: 8px; align-items: baseline; justify-content: space-between;
+  font-size: var(--font-size-xs); color: var(--m-muted);
+}
+.mob-coment-cab strong { color: var(--m-ink); font-weight: var(--fw-semibold); }
+.mob-coment-txt { margin: 4px 0 0; font-size: var(--font-size-sm); color: var(--m-ink); white-space: pre-wrap; }
+
+.mob-coment-campo {
+  width: 100%; resize: vertical; padding: 8px 10px;
+  border: 1px solid var(--m-border); border-radius: 8px;
+  font: inherit; font-size: var(--font-size-sm); color: var(--m-ink); background: #fff;
+}
+.mob-coment-campo:focus {
+  outline: none; border-color: var(--m-primary); box-shadow: 0 0 0 3px var(--m-primary-soft);
+}
+
+.mob-coment-acoes { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+
+/* A lista consolidada repete os anexos que já estão nos comentários: quem
+   procura um documento não quer ler a conversa inteira para achá-lo. */
+.mob-coment-arquivos { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--m-border); }
+.mob-coment-arquivos-tit {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: var(--font-size-2xs); text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--m-muted); font-weight: var(--fw-bold);
+}
+
+.mob-anexo-lista { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.mob-anexo-item {
+  display: flex; align-items: center; gap: 7px;
+  font-size: var(--font-size-xs); color: var(--m-gray-600); min-width: 0;
+}
+.mob-anexo-item svg:first-child { color: var(--m-primary); flex-shrink: 0; }
+.mob-anexo-nome { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mob-anexo-tam { font-size: var(--font-size-2xs); color: var(--m-muted); flex-shrink: 0; }
+.mob-anexo-x {
+  background: none; border: 0; cursor: pointer; color: var(--m-muted);
+  display: inline-flex; padding: 2px; border-radius: 4px;
+}
+.mob-anexo-x:hover { background: #fef2f2; color: #dc2626; }
+
+.mob-link {
+  background: none; border: 0; padding: 0; cursor: pointer; font: inherit;
+  font-size: var(--font-size-xs); color: var(--m-primary); text-align: left;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0;
+}
+.mob-link:hover { text-decoration: underline; }

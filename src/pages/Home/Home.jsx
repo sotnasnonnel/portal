@@ -1,12 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, BarChart3, Clock, CreditCard, Headset, Sparkles, Boxes, ShieldCheck, LogOut, ArrowRight, Lock, Hourglass, Blocks, MessageSquarePlus, Megaphone, Route, Radar } from 'lucide-react';
+import { Users, BarChart3, Clock, CreditCard, Headset, Sparkles, ShieldCheck, LogOut, ArrowRight, Lock, Hourglass, Blocks, MessageSquarePlus, Megaphone, Radar } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { isSuperAdmin } from '../../config/superAdmin';
-import { podeAcessarAdm } from '../../config/administrativo';
+import { areasAdministrativoDe } from '../../config/administrativo';
 import { podeAcessarProgramas } from '../../config/programas';
-import { podeAcessarEstoque } from '../../config/estoque';
-import { podeAcessarMobilizacao } from '../../config/mobilizacao';
 import { podeVerTorre } from '../../config/torre';
 import { areasFinanceiroDe } from '../../config/financeiro';
 import { FALE_CONOSCO_OPEN_EVENT, SLA_HORAS } from '../../config/suporte';
@@ -16,6 +14,7 @@ import SolucoesModal from './SolucoesModal';
 import ProgramasModal from './ProgramasModal';
 import FinanceiroModal from './FinanceiroModal';
 import HorasModal from './HorasModal';
+import AdministrativoModal from './AdministrativoModal';
 import NovidadesModal from '../../components/Novidades/NovidadesModal';
 import SinoNotificacoes from '../../components/Notificacoes/SinoNotificacoes';
 import AvatarUsuario from '../../components/UI/AvatarUsuario';
@@ -39,6 +38,7 @@ export default function Home() {
   const [programasAbertos, setProgramasAbertos] = useState(false);
   const [financeiroAberto, setFinanceiroAberto] = useState(false);
   const [horasAberto, setHorasAberto] = useState(false);
+  const [admAberto, setAdmAberto] = useState(false);
 
   // "O que mudou na plataforma": a Home é a primeira tela depois do login, e é
   // aqui que o aviso aparece — uma vez por versão, por pessoa (o carimbo vai
@@ -60,6 +60,12 @@ export default function Home() {
   // entrar, como no card "Programas". Com uma só, o popup teria um botão
   // sozinho — um clique a mais para não escolher nada —, então vai direto.
   const areasFin = areasFinanceiroDe(modules);
+
+  // Chamados, Estoque e Mobilização viraram um card só — são o mesmo time, e
+  // três cards lado a lado faziam a Home pedir que a pessoa soubesse de antemão
+  // em qual deles o que ela precisa mora. Com uma área só liberada o popup
+  // teria um botão sozinho, então vai direto, como no card "Financeiro".
+  const areasAdm = areasAdministrativoDe(user);
 
   const cards = [
     {
@@ -94,16 +100,18 @@ export default function Home() {
       desc: 'Apontamento por projeto e solicitação de horas extras',
     },
     {
-      // Módulo aberto a todos, como a Gestão de Horas — mas ainda não lançado:
-      // fica visível e travado, exceto para quem está testando
-      // (ver ADM_LIBERADOS em config/administrativo.js).
-      to: '/administrativo/novo',
+      // Card guarda-chuva do time do Adm: Chamados, Estoque e Mobilização (ver
+      // AREAS_ADMINISTRATIVO em config/administrativo.js). Cada área mantém o
+      // próprio gate — Estoque e Mobilização seguem em lançamento restrito e
+      // só aparecem no popup para quem já entrava neles.
+      ...(areasAdm.length > 1
+        ? { acao: () => setAdmAberto(true) }
+        : { to: areasAdm[0]?.href || '/administrativo/novo' }),
       icon: Headset,
       tone: 'terracotta',
       title: 'Administrativo',
-      desc: 'Chamados de frota, viagem, compras e manutenção',
-      locked: !podeAcessarAdm(user),
-      emBreve: !podeAcessarAdm(user),
+      desc: 'Chamados, almoxarifado e mobilização',
+      locked: areasAdm.length === 0,
     },
     {
       // Aberto a todos os logados, como a Gestão de Horas (lançado em
@@ -117,31 +125,6 @@ export default function Home() {
       desc: 'Campo de Ideias e indicações da Alavanca PHD',
       locked: !podeAcessarProgramas(user),
       emBreve: !podeAcessarProgramas(user),
-    },
-    {
-      // Consulta é aberta a todos (quem atende um chamado precisa saber se tem o
-      // item); movimentar é do time do Adm, e quem barra é a RLS. Ainda não
-      // lançado (ver ESTOQUE_LIBERADOS em config/estoque.js).
-      to: '/estoque/posicao',
-      icon: Boxes,
-      tone: 'slate',
-      title: 'Estoque',
-      desc: 'Almoxarifado de EPIs e uniformes',
-      locked: !podeAcessarEstoque(user),
-      emBreve: !podeAcessarEstoque(user),
-    },
-    {
-      // O passo a passo da mobilização, que era planilha. Acompanhar é aberto a
-      // todos os logados (a RLS mostra a cada um os processos em que está
-      // envolvido); controlar é do time do Adm. Ainda não lançado (ver
-      // MOBILIZACAO_LIBERADOS em config/mobilizacao.js).
-      to: '/mobilizacao/kanban',
-      icon: Route,
-      tone: 'blue',
-      title: 'Mobilização',
-      desc: 'Mobilização e desmobilização de pessoas e da empresa',
-      locked: !podeAcessarMobilizacao(user),
-      emBreve: !podeAcessarMobilizacao(user),
     },
     {
       // Só consulta: o quadro e a lista de etapas, sem nenhuma edição. É a
@@ -319,6 +302,7 @@ export default function Home() {
       {programasAbertos && <ProgramasModal onClose={() => setProgramasAbertos(false)} />}
       {financeiroAberto && <FinanceiroModal onClose={() => setFinanceiroAberto(false)} />}
       {horasAberto && <HorasModal onClose={() => setHorasAberto(false)} />}
+      {admAberto && <AdministrativoModal areas={areasAdm} onClose={() => setAdmAberto(false)} />}
       {novidades && (
         <NovidadesModal
           novidades={novidades.itens}

@@ -59,6 +59,18 @@
   gap: 12px;
 }
 
+/* Os botões da direita têm largura fixa e nunca cedem espaço: se a barra
+   apertar no celular, quem encolhe é o nome do módulo (que já tem reticências).
+   Sem isso o flexbox estreitava os botões e mantinha a altura — o mesmo
+   defeito que deixava os círculos da Home elípticos. */
+.portal-header-right > * {
+  flex-shrink: 0;
+}
+
+.portal-header-left {
+  flex: 1 1 auto;
+}
+
 .portal-header .portal-header-help {
   display: inline-grid;
   place-items: center;
@@ -110,6 +122,10 @@
 
   .portal-header-date {
     display: none;
+  }
+
+  .portal-header-right {
+    gap: 4px;
   }
 
   .portal-header-greeting .name {

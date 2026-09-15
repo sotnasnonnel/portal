@@ -17,7 +17,7 @@ import {
 // `agora` vem de fora, e nao de um Date.now() aqui dentro: a cor das celulas ja
 // foi decidida com UM instante, no montarMatrizChamados, e ler o relogio de novo
 // no render deixaria o rodape contando por um instante diferente do da cor.
-export default function MatrizChamados({ linhas, agora }) {
+export default function MatrizChamados({ linhas, agora, onClicarCelula, onClicarLinha }) {
   if (!linhas.length) {
     return <div className="mob-vazio">Nenhum chamado em aberto.</div>;
   }
@@ -41,22 +41,43 @@ export default function MatrizChamados({ linhas, agora }) {
           {linhas.map((l) => (
             <tr key={l.chave}>
               <th scope="row" className="mob-matriz-nome" title={`${l.classe} · ${l.servico}`}>
-                <span className="mob-matriz-titulo">{l.servico}</span>
                 {/* A classe só aparece quando acrescenta algo: em classe de
                     serviço único ela repete o nome do serviço, e a linha virava
                     "Solicitação de compra / Solicitação de compra". */}
-                {l.classe && l.classe !== l.servico && (
-                  <span className="mob-matriz-sub">{l.classe}</span>
+                {onClicarLinha ? (
+                  <button type="button" className="mob-matriz-nome-btn" onClick={() => onClicarLinha(l)}>
+                    <span className="mob-matriz-titulo">{l.servico}</span>
+                    {l.classe && l.classe !== l.servico && (
+                      <span className="mob-matriz-sub">{l.classe}</span>
+                    )}
+                  </button>
+                ) : (
+                  <>
+                    <span className="mob-matriz-titulo">{l.servico}</span>
+                    {l.classe && l.classe !== l.servico && (
+                      <span className="mob-matriz-sub">{l.classe}</span>
+                    )}
+                  </>
                 )}
               </th>
 
               {l.celulas.map((c) => (
                 <td key={c.status} className="mob-matriz-celula">
                   {c.total > 0 ? (
-                    <span className={`mob-conta tom-${c.tom}`}
-                      title={`${c.total} em "${c.label}" — ${ROTULO_TOM_CHAMADO[c.tom]}`}>
-                      {c.total}
-                    </span>
+                    // Célula vazia não vira botão: clicar para abrir "nenhum
+                    // chamado" é um clique que só decepciona.
+                    onClicarCelula ? (
+                      <button type="button" className={`mob-conta tom-${c.tom}`}
+                        title={`${c.total} em "${c.label}" — ${ROTULO_TOM_CHAMADO[c.tom]}`}
+                        onClick={() => onClicarCelula(c, l)}>
+                        {c.total}
+                      </button>
+                    ) : (
+                      <span className={`mob-conta tom-${c.tom}`}
+                        title={`${c.total} em "${c.label}" — ${ROTULO_TOM_CHAMADO[c.tom]}`}>
+                        {c.total}
+                      </span>
+                    )
                   ) : (
                     <span className="mob-conta-vazia" aria-hidden="true">·</span>
                   )}

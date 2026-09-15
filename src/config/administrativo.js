@@ -1,6 +1,12 @@
 import {
   Users, ShoppingCart, Car, Navigation, Mail, Building2, Monitor, Plane, HardHat, MoreHorizontal,
+  Headset, Boxes, Route,
 } from 'lucide-react';
+// Os gates de Estoque e Mobilização entram aqui porque o card da Home reúne os
+// três módulos (ver AREAS_ADMINISTRATIVO no fim do arquivo). A dependência é de
+// mão única: nenhum dos dois importa este arquivo de volta.
+import { podeAcessarEstoque } from './estoque.js';
+import { podeAcessarMobilizacao } from './mobilizacao.js';
 
 /**
  * Catálogo do módulo Administrativo — espelha o Milldesk que a empresa usa hoje
@@ -212,3 +218,54 @@ export const assuntoDoServico = (classeSlug, servicoSlug, valores = {}) => {
 export const TODOS_SERVICOS = CLASSES_ADM.flatMap((c) =>
   c.servicos.map((s) => ({ ...s, classeSlug: c.slug, classeLabel: c.label, icon: c.icon }))
 );
+
+/**
+ * As três áreas do card "Administrativo" da Home.
+ *
+ * Chamados, Estoque e Mobilização eram três cards soltos, lado a lado, como se
+ * fossem três assuntos diferentes — e são o mesmo: o time do Adm. Quem atende o
+ * chamado de EPI é quem dá baixa no estoque, e quem toca a mobilização é o
+ * mesmo pessoal. Reunidos num card só, a Home para de pedir que a pessoa saiba
+ * de antemão em qual dos três o que ela precisa mora.
+ *
+ * O gate continua sendo de CADA módulo, não deste agrupamento: Estoque e
+ * Mobilização ainda estão em lançamento restrito, e só aparecem para quem já
+ * entrava neles. Por isso a lista é filtrada por `areasAdministrativoDe` em vez
+ * de ser fixa.
+ *
+ * Mesmo desenho de AREAS_FINANCEIRO e AREAS_HORAS — a Home já faz essa mesma
+ * pergunta ("por onde começar?") em três cards, e um quarto jeito de perguntar
+ * seria uma Home diferente dentro da mesma Home.
+ */
+export const AREAS_ADMINISTRATIVO = [
+  {
+    slug: 'chamados',
+    label: 'Chamados',
+    icon: Headset,
+    desc: 'Abra e acompanhe chamados de frota, viagem, compras e manutenção.',
+    href: '/administrativo/novo',
+    cta: 'Abrir chamados',
+    pode: podeAcessarAdm,
+  },
+  {
+    slug: 'estoque',
+    label: 'Estoque',
+    icon: Boxes,
+    desc: 'Almoxarifado de EPIs e uniformes: saldo, entradas e saídas.',
+    href: '/estoque/posicao',
+    cta: 'Abrir estoque',
+    pode: podeAcessarEstoque,
+  },
+  {
+    slug: 'mobilizacao',
+    label: 'Mobilização',
+    icon: Route,
+    desc: 'O passo a passo da mobilização e da desmobilização de pessoas.',
+    href: '/mobilizacao/kanban',
+    cta: 'Abrir mobilização',
+    pode: podeAcessarMobilizacao,
+  },
+];
+
+/** Só as áreas que a pessoa pode abrir. Vazio = card travado na Home. */
+export const areasAdministrativoDe = (user) => AREAS_ADMINISTRATIVO.filter((a) => a.pode(user));

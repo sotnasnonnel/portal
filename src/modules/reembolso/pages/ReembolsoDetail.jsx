@@ -27,6 +27,9 @@ import PolicyNotice from "../components/PolicyNotice.jsx";
 import FoodOverageNotice from "../components/FoodOverageNotice.jsx";
 import ForbiddenItemsNotice from "../components/ForbiddenItemsNotice.jsx";
 import NfAnexoPreview from "../components/NfAnexoPreview.jsx";
+import EnvioClientePainel from "../components/EnvioClientePainel.jsx";
+import { enviarPdfAoCliente } from "../services/envioCliente.js";
+import { deveEnviarAoCliente } from "../lib/envioCliente.js";
 import "./ReembolsoDetail.css";
 
 export default function ReembolsoDetail() {
@@ -178,6 +181,13 @@ export default function ReembolsoDetail() {
     // Retorno para quem pediu: e-mail com o desfecho (e, no reembolso aprovado,
     // a data em que o pagamento cai). Não bloqueia o fluxo se falhar.
     notifyRequesterDecision(reembolso.id);
+    // Reembolso cobrado do cliente: o PDF vai para o Financeiro (pedido da
+    // Alinne). Sem await — a aprovação já foi gravada e não espera o PDF. Se
+    // falhar ou a aba fechar, o banco já marcou o pedido como pendente e o
+    // Financeiro vê e reenvia pelo painel do detalhe.
+    if (deveEnviarAoCliente({ ...reembolso, status: next })) {
+      enviarPdfAoCliente(reembolso.id);
+    }
     const cap = `${meta.singular[0].toUpperCase()}${meta.singular.slice(1)}`;
     showToast(
       next === STATUS.APROVADO
@@ -426,6 +436,8 @@ export default function ReembolsoDetail() {
           )}
         </div>
       )}
+
+      {isAdmin && deveEnviarAoCliente(reembolso) && <EnvioClientePainel reembolsoId={reembolso.id} />}
 
       {canDecide && !isAdiantamento && <PolicyNotice />}
 

@@ -92,3 +92,46 @@ export async function lerParaMatriz() {
   const abertos = new Set(processos.map((p) => p.id));
   return { processos, etapas: etapas.filter((e) => abertos.has(e.processo_id)) };
 }
+
+/**
+ * Leitura TOLERANTE: devolve `{ disponivel, porId }` e nunca lança.
+ *
+ * Comentários e mensagens são acréscimo ao popup, não a razão dele — o passo a
+ * passo e a lista de chamados já estão na tela sem isto. Uma falha aqui (a
+ * função ainda não aplicada no banco, rede ruim na sala de reunião) não pode
+ * derrubar o detalhe inteiro. `disponivel: false` deixa a tela dizer que a
+ * informação não veio, em vez de sugerir que não existe.
+ */
+async function lerTolerante(fn, args, chave) {
+  try {
+    const lista = await chamar(fn, args, 'o detalhe');
+    const nomes = await nomesDe(lista.map((i) => i.autor_id));
+    const porId = new Map();
+    for (const i of lista) {
+      const item = { ...i, autorNome: nomes.get(i.autor_id) || '' };
+      porId.set(i[chave], [...(porId.get(i[chave]) || []), item]);
+    }
+    return { disponivel: true, porId };
+  } catch {
+    return { disponivel: false, porId: new Map() };
+  }
+}
+
+/** Comentários das etapas de um processo, do mais novo ao mais antigo. */
+export async function lerComentariosEtapas(etapaIds = []) {
+  const ids = [...new Set(etapaIds.filter(Boolean))];
+  if (!ids.length) return { disponivel: true, porId: new Map() };
+  return lerTolerante('torre_comentarios_etapas', { p_etapas: ids }, 'etapa_id');
+}
+
+/**
+ * Última mensagem (não interna) de cada chamado. A nota interna é filtrada no
+ * banco, e não aqui — um filtro no front bastaria o DevTools para contornar.
+ */
+export async function lerUltimasMensagens(chamadoIds = []) {
+  const ids = [...new Set(chamadoIds.filter(Boolean))];
+  if (!ids.length) return { disponivel: true, porId: new Map() };
+  const r = await lerTolerante('torre_ultima_mensagem_chamados', { p_chamados: ids }, 'chamado_id');
+  // Uma por chamado: a função já devolve só a última, então a lista tem um item.
+  return { disponivel: r.disponivel, porId: new Map([...r.porId].map(([k, v]) => [k, v[0]])) };
+}

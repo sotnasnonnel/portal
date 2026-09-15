@@ -49,6 +49,10 @@ export const MOBILIZACAO_LIBERADOS = [
   // dele muda alguma coisa de fato — a Torre e so leitura para todo mundo, e a
   // configuracao de catalogo e SLAs vive neste modulo.
   'pedro.nery@phdengenharia.eng.br',
+  // administrativo_role = 'atendente' — técnica de segurança do trabalho. Pedido
+  // do Jarbas (14/09/2026). Entra como TIME, como a Edijane: opera o quadro e as
+  // etapas (os passos de SESMT caem com ela); catálogo e SLA seguem com o admin.
+  'perla.passos@phdengenharia.eng.br',
 ];
 
 export const podeAcessarMobilizacao = (user) => !MOBILIZACAO_EM_BREVE

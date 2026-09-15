@@ -11,8 +11,9 @@ import { semaforoDias } from '../../../../utils/semaforo';
 import {
   buscarProcesso, listarEtapasDoProcesso, listarEventos, listarTime,
   moverEtapa, assumirEtapa, definirResponsavelEtapa, definirDataReal,
-  definirDataBase, cancelarProcesso,
+  definirDataBase, cancelarProcesso, listarComentariosDasEtapas,
 } from '../../lib/mobilizacao';
+import ComentariosEtapa from '../components/ComentariosEtapa';
 import { podeMover, podeEditar, progresso } from '../../lib/painelEtapas';
 import { rotuloStatus, ehEncerrada } from '../../lib/statusEtapa';
 
@@ -39,6 +40,9 @@ export default function ProcessoMob() {
   const [processo, setProcesso] = useState(null);
   const [etapas, setEtapas] = useState([]);
   const [eventos, setEventos] = useState([]);
+  // etapaId -> comentários. Uma consulta para o processo inteiro, não uma por
+  // etapa: a tela abre com até vinte passos.
+  const [comentarios, setComentarios] = useState(new Map());
   const [time, setTime] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
@@ -55,6 +59,14 @@ export default function ProcessoMob() {
       setProcesso(p);
       setEtapas(e);
       setEventos(h);
+      // Depois das etapas, porque depende dos ids delas. Falhar aqui não pode
+      // derrubar o processo inteiro: comentário é acréscimo, o passo a passo é
+      // o que a tela existe para mostrar.
+      try {
+        setComentarios(await listarComentariosDasEtapas(e.map((x) => x.id)));
+      } catch {
+        setComentarios(new Map());
+      }
     } catch (e) {
       setErro(e.message);
     } finally {
@@ -228,6 +240,13 @@ export default function ProcessoMob() {
                         : <span className="mob-cartao-sem-dono">sem responsável</span>}
                       {e.sla_dias_uteis !== null && <span>SLA {e.sla_dias_uteis} d.ú.</span>}
                     </div>
+
+                    <ComentariosEtapa
+                      etapaId={e.id}
+                      comentarios={comentarios.get(e.id) || []}
+                      meuId={user?.id}
+                      onEnviado={carregar}
+                    />
 
                     {trocando === e.id && (
                       <div className="mob-campo" style={{ maxWidth: 280, marginTop: 8 }}>

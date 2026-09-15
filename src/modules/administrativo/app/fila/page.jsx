@@ -7,8 +7,9 @@ import {
   STATUS_LABEL as ROTULO_STATUS, STATUS_ABERTOS, STATUS_ENCERRADOS, ehEncerrado,
 } from '../../lib/statusChamado';
 import {
-  filtrarFila, opcoesDaFila, precisaEncerrados, STATUS_TODOS,
+  filtrarFila, opcoesDaFila, precisaEncerrados, STATUS_TODOS, restaurarFiltro,
 } from '../../lib/painel';
+import { useEstadoPersistido } from '../../../../hooks/useEstadoPersistido';
 
 const FILTRO_VAZIO = {
   assunto: '', status: '', solicitanteId: '', atendenteId: '', atrasado: '', criadoDe: '', criadoAte: '',
@@ -23,14 +24,34 @@ const dataHora = (iso) => (iso
 
 export default function FilaAdm() {
   const { user } = useAuth();
-  const [apenasMeus, setApenasMeus] = useState(false);
+  // Filtro e aba PERSISTEM na aba do navegador (ver useEstadoPersistido): quem
+  // avalia abre um chamado, volta, e encontra a Fila como deixou. Antes o filtro
+  // era refeito a cada chamado avaliado. A chave leva o usuário para um
+  // computador compartilhado não herdar o filtro de outra pessoa.
+  const chave = (nome) => (user?.id ? `adm:fila:${nome}:${user.id}` : '');
+  const [apenasMeus, setApenasMeus] = useEstadoPersistido(chave('meus'), false, {
+    restaurar: (v) => v === true,
+  });
   // O painel manda para cá com ?atrasado=sim quando a pessoa clica em "abrir na
-  // fila" pela lista de vencidos. Só a carga inicial olha a URL: depois disso
-  // quem manda é o que a pessoa escolheu na tela.
-  const [params] = useSearchParams();
-  const [filtro, setFiltro] = useState(
-    () => (params.get('atrasado') === 'sim' ? { ...FILTRO_VAZIO, atrasado: 'sim' } : FILTRO_VAZIO),
+  // fila" pela lista de vencidos. Esse link é uma intenção explícita e vence o
+  // filtro guardado — senão ele abriria a Fila com o filtro de antes, e não com
+  // os vencidos que a pessoa acabou de pedir.
+  const [params, setParams] = useSearchParams();
+  const vemDoPainel = params.get('atrasado') === 'sim';
+  const [filtro, setFiltro] = useEstadoPersistido(
+    chave('filtro'),
+    vemDoPainel ? { ...FILTRO_VAZIO, atrasado: 'sim' } : FILTRO_VAZIO,
+    { restaurar: (v) => restaurarFiltro(v, FILTRO_VAZIO), ignorarSalvo: vemDoPainel },
   );
+
+  // Consumido o link, o parâmetro sai da URL (sem criar entrada no histórico).
+  // Se ficasse, quem ajustasse o filtro, abrisse um chamado e voltasse pelo
+  // botão do navegador reabriria a URL com `?atrasado=sim` — e o filtro voltaria
+  // a "só atrasados", que é justamente o problema que a persistência resolve.
+  useEffect(() => {
+    if (!vemDoPainel) return;
+    setParams((p) => { p.delete('atrasado'); return p; }, { replace: true });
+  }, [vemDoPainel, setParams]);
   const [linhas, setLinhas] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');

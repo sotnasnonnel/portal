@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   COLUNAS_KANBAN, agruparEmColunas, semaforoPrazo, contarNaoLidas, iniciais,
   filtrarQuadro, opcoesDoQuadro,
-  filtrarFila, opcoesDaFila, casaComPrazo, precisaEncerrados, STATUS_TODOS,
+  filtrarFila, opcoesDaFila, casaComPrazo, precisaEncerrados, STATUS_TODOS, restaurarFiltro,
 } from './painel.js';
 
 const HORA = 3600 * 1000;
@@ -243,4 +243,35 @@ test('prazo combina com os outros filtros da fila em vez de substituí-los', () 
 test('opções da fila contam quantos estão atrasados', () => {
   assert.equal(opcoesDaFila([atrasado, noPrazo, semPrazo], AGORA).atrasados, 1);
   assert.equal(opcoesDaFila([], AGORA).atrasados, 0);
+});
+
+// ---- filtro guardado no navegador ----
+// O guardado pode ser de outra versão do portal: tem de voltar sem quebrar e
+// sem esconder chamado.
+const VAZIO = { assunto: '', status: '', atendenteId: '' };
+
+test('filtro guardado volta como estava', () => {
+  const salvo = { assunto: 'uber', status: 'fechado', atendenteId: 'a1' };
+  assert.deepEqual(restaurarFiltro(salvo, VAZIO), salvo);
+});
+
+test('chave que não existe mais é descartada, e a nova nasce vazia', () => {
+  assert.deepEqual(restaurarFiltro({ assunto: 'epi', antigo: 'x' }, VAZIO),
+    { assunto: 'epi', status: '', atendenteId: '' });
+});
+
+test('valor de tipo errado cai no padrão', () => {
+  assert.deepEqual(restaurarFiltro({ assunto: 42, status: null, atendenteId: ['a'] }, VAZIO), VAZIO);
+});
+
+test('guardado corrompido ou ausente vira filtro vazio', () => {
+  assert.deepEqual(restaurarFiltro(null, VAZIO), VAZIO);
+  assert.deepEqual(restaurarFiltro('texto', VAZIO), VAZIO);
+  assert.deepEqual(restaurarFiltro([1, 2], VAZIO), VAZIO);
+});
+
+test('o vazio devolvido é cópia: mexer nele não altera o padrão', () => {
+  const r = restaurarFiltro(null, VAZIO);
+  r.assunto = 'mexido';
+  assert.equal(VAZIO.assunto, '');
 });

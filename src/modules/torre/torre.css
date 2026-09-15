@@ -41,3 +41,45 @@
   display: inline-flex; align-items: center; gap: 6px;
   white-space: nowrap; color: var(--m-gray-600);
 }
+
+/* ---------------------------------------------------------------------------
+   Popup de detalhe: comentários das etapas e última mensagem dos chamados.
+
+   A coluna ocupa o lugar da de "Responsável" e é a única de texto longo da
+   tabela, então tem largura mínima própria — sem ela o navegador a espremia e
+   o comentário virava uma coluna de uma palavra por linha.
+   --------------------------------------------------------------------------- */
+.tor-det-coment { min-width: 240px; max-width: 360px; vertical-align: top; }
+
+.tor-det-item + .tor-det-item { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--m-border); }
+
+.tor-det-txt {
+  margin: 0 0 2px; font-size: var(--font-size-sm); color: var(--m-ink); line-height: 1.4;
+  white-space: pre-wrap; overflow-wrap: anywhere;
+  /* Mensagem longa não pode empurrar a tabela para o infinito: três linhas
+     bastam para a reunião, e o texto inteiro continua no chamado. */
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+.tor-det-meta {
+  display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap;
+  font-size: var(--font-size-2xs); color: var(--m-muted);
+}
+
+.tor-det-mais { margin-top: 6px; }
+.tor-det-mais > summary {
+  cursor: pointer; font-size: var(--font-size-2xs); color: var(--m-primary);
+  font-weight: var(--fw-semibold); list-style: none;
+}
+.tor-det-mais > summary::-webkit-details-marker { display: none; }
+.tor-det-mais[open] > summary { margin-bottom: 6px; }
+.tor-det-mais .tor-det-txt { -webkit-line-clamp: unset; display: block; }
+
+/* De que lado veio a última mensagem: a pergunta seguinte da reunião é "a bola
+   está com quem?". Adm no acento da torre, solicitante em âmbar. */
+.tor-det-lado {
+  display: inline-block; padding: 0 6px; border-radius: 999px;
+  font-size: var(--font-size-2xs); font-weight: var(--fw-bold); line-height: 1.6;
+}
+.tor-det-lado.is-adm { background: var(--m-primary-soft); color: var(--m-primary); }
+.tor-det-lado.is-solic { background: #fef3c7; color: #92400e; }

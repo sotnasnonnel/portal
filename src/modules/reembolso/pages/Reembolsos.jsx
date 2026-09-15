@@ -6,6 +6,7 @@ import { formatBillable, formatCurrency, formatDate, relativeDays } from "../lib
 import { kindMeta } from "../lib/kind.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import StatusBadge from "../components/StatusBadge.jsx";
+import EnviosPendentesAviso from "../components/EnviosPendentesAviso.jsx";
 import "./Reembolsos.css";
 
 const FILTERS = [
@@ -67,7 +68,14 @@ export default function Reembolsos({ kind = "reembolso" }) {
   const isGestor = role === "gestor";
   // Admin do reembolso ou do Financeiro: mesma visão (todos os pedidos, a pagar, PDF).
   const isAdmin = !!profile?.isAdmin;
-  const canCreate = role !== "admin"; // solicitante e gestor abrem pedidos; admin não
+  // Todo mundo abre pedido, admin inclusive. A regra antiga ("admin não") partia
+  // de que o admin do reembolso só PROCESSA pedidos — mas ele também viaja,
+  // almoça em obra e paga do próprio bolso. Ela escondia o botão justamente da
+  // Alessandra, que é a admin, e de mais ninguém: o time do Financeiro, que tem
+  // a mesma visão de admin, entra como solicitante e sempre pôde pedir
+  // (context/AuthContext.jsx). Rota e formulário nunca barraram — a trava era
+  // só este botão.
+  const canCreate = true;
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   // null = ainda não escolhido: cada papel cai na sua fila de trabalho —
@@ -187,6 +195,9 @@ export default function Reembolsos({ kind = "reembolso" }) {
           )}
         </div>
       </header>
+
+      {/* Só no reembolso: adiantamento não entra no envio automático. */}
+      {isAdmin && !isAdiantamento && <EnviosPendentesAviso rows={rows} />}
 
       <section className="kpi-grid">
         <KPI
@@ -405,6 +416,11 @@ function EmptyState({ role, canCreate, activeFilter, activeBillable, meta, onCre
       <div className="list-empty">
         <FileText size={32} />
         <p>{message}</p>
+        {canCreate && (
+          <button className="btn btn-primary" onClick={onCreate}>
+            <Plus size={16} /> {meta.novo}
+          </button>
+        )}
       </div>
     );
   }

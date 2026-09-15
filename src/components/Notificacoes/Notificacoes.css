@@ -144,6 +144,26 @@
 .notif-vazio span { font-size: var(--font-size-sm); color: var(--ink); }
 .notif-vazio small { font-size: var(--font-size-xs); max-width: 30ch; line-height: 1.4; }
 
+/* No celular a lista vira um painel preso à TELA, não ao sino.
+
+   Antes ela era `position: absolute; right: -8px` em relação ao botão, com a
+   largura da tela inteira. Isso só dá certo quando o sino é o último item da
+   barra — e não é: na Home ficam à direita dele o "Fale conosco", o avatar e o
+   "Sair"; nos módulos, o "Fale conosco" e o "?". Uma lista da largura do
+   celular ancorada ali escapava pela ESQUERDA e cortava o texto, que foi o
+   relato do iPhone.
+
+   `fixed` com margem igual dos dois lados centraliza independente de onde o
+   sino estiver. O painel continua dentro do mesmo elemento no DOM, então o
+   "clicar fora fecha" do componente segue funcionando sem mudança. */
 @media (max-width: 480px) {
-  .notif-pop { width: calc(100vw - 24px); right: -8px; }
+  .notif-pop {
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 72px);
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-width: none;
+  }
+  .notif-lista { max-height: calc(100dvh - 160px); }
 }

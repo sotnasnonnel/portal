@@ -4,12 +4,17 @@ import { LayoutGrid, Loader2, AlertCircle, Inbox, Clock, MessageSquare, X } from
 import { useAuth } from '../../../../contexts/AuthContext';
 import { getClasse } from '../../../../config/administrativo';
 import { listarQuadro } from '../../lib/chamados';
-import { agruparEmColunas, semaforoPrazo, iniciais, filtrarQuadro, opcoesDoQuadro } from '../../lib/painel';
+import {
+  agruparEmColunas, semaforoPrazo, iniciais, filtrarQuadro, opcoesDoQuadro, restaurarFiltro,
+} from '../../lib/painel';
+import { useEstadoPersistido } from '../../../../hooks/useEstadoPersistido';
 import SearchSelect from '../../../../components/UI/SearchSelect';
 
 const dataHora = (iso) => (iso
   ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
   : 'sem prazo');
+
+const QUADRO_VAZIO = { solicitanteId: '', cc: '', atrasado: '' };
 
 const TEXTO_PRAZO = {
   vencido: 'Vencido', perto: 'Vence em breve', ok: 'No prazo', 'sem-prazo': 'Sem prazo',
@@ -17,13 +22,25 @@ const TEXTO_PRAZO = {
 
 export default function KanbanAdm() {
   const { user, modules } = useAuth();
-  const [apenasMeus, setApenasMeus] = useState(false);
+  // Mesmo motivo da Fila: abrir um cartão para avaliar e voltar não pode apagar
+  // o filtro. Persiste na aba do navegador (ver useEstadoPersistido).
+  const chave = (nome) => (user?.id ? `adm:quadro:${nome}:${user.id}` : '');
+  const [apenasMeus, setApenasMeus] = useEstadoPersistido(chave('meus'), false, {
+    restaurar: (v) => v === true,
+  });
   const [chamados, setChamados] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
-  const [fSolicitante, setFSolicitante] = useState('');
-  const [fCc, setFCc] = useState('');
-  const [fAtrasado, setFAtrasado] = useState('');
+  const [filtroQuadro, setFiltroQuadro] = useEstadoPersistido(chave('filtro'), QUADRO_VAZIO, {
+    restaurar: (v) => restaurarFiltro(v, QUADRO_VAZIO),
+  });
+  const { solicitanteId: fSolicitante, cc: fCc, atrasado: fAtrasado } = filtroQuadro;
+  // Atualizador funcional: o "Limpar filtros" chama os três em sequência, e cada
+  // um precisa partir do resultado do anterior.
+  const mudarFiltro = (campo) => (valor) => setFiltroQuadro((f) => ({ ...f, [campo]: valor }));
+  const setFSolicitante = mudarFiltro('solicitanteId');
+  const setFCc = mudarFiltro('cc');
+  const setFAtrasado = mudarFiltro('atrasado');
 
   const souAdm = modules?.administrativo === 'admin' || modules?.administrativo === 'atendente';
 

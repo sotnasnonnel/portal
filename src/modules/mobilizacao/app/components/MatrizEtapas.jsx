@@ -27,7 +27,7 @@ function tituloDaCelula(celula) {
  * Só leitura. As regras (cor, ordem das linhas, colunas do catálogo) vivem em
  * lib/matriz.js, testadas — aqui só se desenha.
  */
-export default function MatrizEtapas({ blocos, onClicarCelula }) {
+export default function MatrizEtapas({ blocos, onClicarCelula, onClicarProcesso }) {
   if (!blocos.length) {
     return <div className="mob-vazio">Nenhum processo para mostrar.</div>;
   }
@@ -64,11 +64,27 @@ export default function MatrizEtapas({ blocos, onClicarCelula }) {
                     {/* O title cobre o nome que a coluna corta: ela e estreita
                         de proposito, para a matriz nao ficar longe das bolinhas. */}
                     <th scope="row" className="mob-matriz-nome" title={l.processo.titulo}>
-                      <span className="mob-matriz-titulo">{l.processo.titulo}</span>
-                      <span className="mob-matriz-sub">
-                        #{l.processo.numero}
-                        {l.processo.cliente_phd ? ` · ${l.processo.cliente_phd}` : ''}
-                      </span>
+                      {/* Com onClicarProcesso a linha inteira vira o atalho para
+                          o detalhe: na reunião, a pergunta costuma ser sobre a
+                          mobilização toda, e não sobre a bolinha específica. */}
+                      {onClicarProcesso ? (
+                        <button type="button" className="mob-matriz-nome-btn"
+                          onClick={() => onClicarProcesso(l)}>
+                          <span className="mob-matriz-titulo">{l.processo.titulo}</span>
+                          <span className="mob-matriz-sub">
+                            #{l.processo.numero}
+                            {l.processo.cliente_phd ? ` · ${l.processo.cliente_phd}` : ''}
+                          </span>
+                        </button>
+                      ) : (
+                        <>
+                          <span className="mob-matriz-titulo">{l.processo.titulo}</span>
+                          <span className="mob-matriz-sub">
+                            #{l.processo.numero}
+                            {l.processo.cliente_phd ? ` · ${l.processo.cliente_phd}` : ''}
+                          </span>
+                        </>
+                      )}
                     </th>
 
                     {l.celulas.map((c) => (

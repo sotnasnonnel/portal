@@ -67,7 +67,12 @@ export function buildReembolsoFileName(r) {
 }
 
 // --- geracao do PDF ---
-export async function generateReembolsoPdf(r) {
+// Monta o documento sem decidir o destino. Separado em tres porque o mesmo PDF
+// agora tem dois destinos: o botao "Gerar PDF" (baixa no computador) e o envio
+// automatico ao Financeiro quando o reembolso e cobrado do cliente (vira
+// arquivo para anexar). Duas copias do gerador divergiriam justamente no nome
+// do arquivo, que e padrao exigido pelo cliente.
+async function montarReembolsoPdf(r) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
@@ -222,5 +227,17 @@ export async function generateReembolsoPdf(r) {
     }
   }
 
+  return doc;
+}
+
+/** Botao "Gerar PDF": baixa o arquivo, como sempre fez. */
+export async function generateReembolsoPdf(r) {
+  const doc = await montarReembolsoPdf(r);
   doc.save(buildReembolsoFileName(r));
+}
+
+/** Envio ao Financeiro: o mesmo PDF, como arquivo, com o nome no padrao do cliente. */
+export async function gerarReembolsoPdfBlob(r) {
+  const doc = await montarReembolsoPdf(r);
+  return { blob: doc.output("blob"), fileName: buildReembolsoFileName(r) };
 }
