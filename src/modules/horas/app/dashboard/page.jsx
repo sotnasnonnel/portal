@@ -10,6 +10,7 @@ import { labelsUsados, valorDoCampo } from '../../lib/camposEquipe';
 import { BrandBarChart, BrandLineChart, BrandPieChart } from '../components/Charts';
 import ApontamentosTable from '../components/ApontamentosTable';
 import SearchableSelect from '../components/SearchableSelect';
+import AusenciasProximaSemana from '../components/AusenciasProximaSemana';
 
 export default function DashboardPage() {
   const { user, modules } = useAuth();
@@ -315,6 +316,9 @@ export default function DashboardPage() {
         <Stat k="No período" v={fmtHoras(stats.total)} />
         <Stat k="Apontamentos" v={stats.qtd} />
       </div>
+
+      {/* Veio do Dashboard do gestor em Gestão de Pessoas. Só na visão de equipe. */}
+      {tipo === 'equipe' ? <AusenciasProximaSemana /> : null}
 
       {/* Grid único: os cards existentes ficam lado a lado. Quando o total é
           ímpar, o último ocupa a linha inteira em vez de deixar meia coluna vazia. */}

@@ -38,12 +38,22 @@ async function nomesDe(ids) {
   return mapa;
 }
 
-/** Quadro: as duas origens unificadas, com o responsável pelo contrato já resolvido. */
+/**
+ * Quadro: as duas origens unificadas, com o responsável pelo contrato já resolvido.
+ *
+ * `contexto` diz DE ONDE é o cartão: projeto (mobilização de empresa) ou
+ * colaborador (mobilização/desmobilização de pessoa) já vêm prontos da view;
+ * no chamado é o solicitante, resolvido aqui junto com os responsáveis.
+ */
 export async function lerQuadro() {
   const lista = await chamar('torre_quadro', {}, 'a torre');
-  const nomes = await nomesDe(lista.map((i) => i.responsavel_id));
+  const nomes = await nomesDe(lista.flatMap((i) => [i.responsavel_id, i.solicitante_id]));
   return lista
-    .map((i) => ({ ...i, responsavelNome: nomes.get(i.responsavel_id) || '' }))
+    .map((i) => ({
+      ...i,
+      responsavelNome: nomes.get(i.responsavel_id) || '',
+      contexto: i.origem === 'adm' ? (nomes.get(i.solicitante_id) || '') : (i.contexto || ''),
+    }))
     .sort((a, b) => String(a.prazo || '9999').localeCompare(String(b.prazo || '9999')));
 }
 

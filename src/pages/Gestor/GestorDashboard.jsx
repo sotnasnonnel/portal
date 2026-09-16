@@ -103,19 +103,6 @@ export default function GestorDashboard() {
   const reqMinhasEmAndamento = requisicoes.filter((s) => s.gestor_id === user?.id && s.status === 'pendente');
   const reqRecentes = requisicoes.slice(0, 5);
 
-  const hoje = new Date();
-  hoje.setHours(0, 0, 0, 0);
-  const limiteSemana = new Date(hoje);
-  limiteSemana.setDate(limiteSemana.getDate() + 7);
-
-  const proximasAusencias = statusInfo
-    .filter((s) => {
-      if (!s.inicio_ausencia) return false;
-      const inicio = new Date(s.inicio_ausencia + 'T00:00:00');
-      return inicio >= hoje && inicio <= limiteSemana;
-    })
-    .sort((a, b) => new Date(a.inicio_ausencia) - new Date(b.inicio_ausencia));
-
   if (loading) {
     return <div className="gestor-page animate-fade-in-up">Carregando indicadores...</div>;
   }
@@ -221,46 +208,8 @@ export default function GestorDashboard() {
         )}
       </div>
 
-      <div className="table-container" style={{ marginBottom: 'var(--space-xl)' }}>
-        <div className="table-header">
-          <div className="table-header-title">Ausência(s) marcada(s) para próxima semana</div>
-          <button className="btn btn-outline btn-sm" onClick={() => navigate('/gestor/ausencia')}>
-            Ver gestão de ausência
-          </button>
-        </div>
-        {proximasAusencias.length === 0 ? (
-          <div className="table-empty">Ninguém da equipe entra em ausência nos próximos 7 dias.</div>
-        ) : (
-          <div className="table-scroll">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Colaborador</th>
-                  <th>Início</th>
-                  <th>Término</th>
-                  <th>Dias</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {proximasAusencias.map((s, idx) => (
-                  <tr key={idx}>
-                    <td style={{ fontWeight: 600 }}>{s.colaborador_nome}</td>
-                    <td>{formatarData(s.inicio_ausencia)}</td>
-                    <td>{formatarData(s.fim_ausencia)}</td>
-                    <td>{s.dias_solicitados || 0} dias</td>
-                    <td>
-                      <span className="badge" style={{ backgroundColor: s.calc.cor, color: '#fff', fontSize: 'var(--font-size-2xs)' }}>
-                        {s.calc.label}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      {/* "Ausência(s) marcada(s) para próxima semana" mudou para o Dashboard da
+          Equipe da Gestão de Horas (modules/horas/app/components/AusenciasProximaSemana.jsx). */}
 
       {pendentes.length > 0 && (
         <div className="table-container">

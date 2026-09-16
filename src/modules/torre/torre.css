@@ -34,6 +34,9 @@
   margin: 0 0 16px;
 }
 
+/* De onde é o cartão (projeto, colaborador ou solicitante). */
+.tor-cartao-contexto b { font-weight: var(--fw-semibold); color: var(--m-ink); }
+
 /* Origem da linha na lista de Etapas: a Torre mistura etapa de mobilização e
    chamado do Adm na mesma tabela, e o ícone diz qual é antes de qualquer
    leitura. Sem ele as duas coisas se confundem, e elas não são a mesma. */

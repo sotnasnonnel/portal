@@ -7,9 +7,11 @@ import {
   fetchAcessoProjeto,
   setAcessoProjeto,
   limparAcessoProjeto,
+  definirAcessoEmMassa,
 } from '../../../lib/data';
 import { podeConfigurarHoras } from '../../../lib/roles';
 import SearchableSelect from '../../components/SearchableSelect';
+import ConfirmModal from '../../components/ConfirmModal';
 
 // Acesso a Projetos: quem enxerga cada projeto no seletor de "Apontar".
 // O padrão continua sendo a herança de área (a pessoa vê os projetos da sua
@@ -29,6 +31,8 @@ export default function ConfigProjetosPage() {
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState('');
   const [emVoo, setEmVoo] = useState(null); // colaboradorId sendo gravado
+  const [emMassa, setEmMassa] = useState(null); // true/false = pedindo confirmação de marcar/desmarcar todos
+  const [gravandoMassa, setGravandoMassa] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -69,6 +73,12 @@ export default function ConfigProjetosPage() {
     );
   }, [pessoas, busca]);
 
+  // "Marcar/Desmarcar todos" agem sobre a LISTA NA TELA (a busca vale): dá para
+  // filtrar uma equipe e tirar todo mundo dela sem mexer no resto. Só entra quem
+  // muda de fato, para não criar exceção em quem já estava como o alvo.
+  const aMarcar = filtradas.filter((p) => !p.efetivo);
+  const aDesmarcar = filtradas.filter((p) => p.efetivo);
+
   const quantosVeem = pessoas.filter((p) => p.efetivo).length;
   const excecoes = pessoas.filter((p) => p.override !== null).length;
 
@@ -90,6 +100,30 @@ export default function ConfigProjetosPage() {
       override: voltaAoPadrao ? null : alvo,
     });
     await gravar(pessoa.colaboradorId, voltaAoPadrao ? null : alvo);
+  }
+
+  async function aplicarEmMassa(alvo) {
+    const afetadas = alvo ? aMarcar : aDesmarcar;
+    const ids = new Set(afetadas.map((p) => p.colaboradorId));
+    setEmMassa(null);
+    if (!ids.size) return;
+    setErro('');
+    setGravandoMassa(true);
+    setPessoas((lista) =>
+      lista.map((p) =>
+        ids.has(p.colaboradorId)
+          ? { ...p, efetivo: alvo, override: alvo === p.porArea ? null : alvo }
+          : p
+      )
+    );
+    try {
+      await definirAcessoEmMassa({ projetoId, pessoas: afetadas, permitido: alvo, definidoPor: user?.id });
+    } catch (e) {
+      setErro(e?.message || 'Falha ao salvar. A lista foi recarregada.');
+      await carregar();
+    } finally {
+      setGravandoMassa(false);
+    }
   }
 
   async function voltarAoPadrao(pessoa) {
@@ -184,6 +218,23 @@ export default function ConfigProjetosPage() {
               />
             </div>
           </div>
+          <div className="horas-spacer" />
+          <button
+            className="horas-btn2"
+            type="button"
+            disabled={carregando || gravandoMassa || !aMarcar.length}
+            onClick={() => setEmMassa(true)}
+          >
+            Marcar todos{aMarcar.length ? ` (${aMarcar.length})` : ''}
+          </button>
+          <button
+            className="horas-btn2"
+            type="button"
+            disabled={carregando || gravandoMassa || !aDesmarcar.length}
+            onClick={() => setEmMassa(false)}
+          >
+            Desmarcar todos{aDesmarcar.length ? ` (${aDesmarcar.length})` : ''}
+          </button>
         </div>
       </div>
 
@@ -215,7 +266,7 @@ export default function ConfigProjetosPage() {
                       type="checkbox"
                       className="horas-check"
                       checked={p.efetivo}
-                      disabled={emVoo === p.colaboradorId}
+                      disabled={gravandoMassa || emVoo === p.colaboradorId}
                       onChange={() => alternar(p)}
                       aria-label={`${p.nome} vê este projeto`}
                     />
@@ -260,6 +311,20 @@ export default function ConfigProjetosPage() {
           </table>
         )}
       </div>
+
+      <ConfirmModal
+        open={emMassa !== null}
+        title={emMassa ? 'Marcar todos' : 'Desmarcar todos'}
+        message={
+          emMassa
+            ? `${aMarcar.length} pessoa(s)${busca.trim() ? ` da busca "${busca.trim()}"` : ''} passarão a ver este projeto no apontamento.`
+            : `${aDesmarcar.length} pessoa(s)${busca.trim() ? ` da busca "${busca.trim()}"` : ''} deixarão de ver este projeto no apontamento.`
+        }
+        confirmLabel={emMassa ? 'Marcar todos' : 'Desmarcar todos'}
+        danger={!emMassa}
+        onConfirm={() => aplicarEmMassa(emMassa)}
+        onCancel={() => setEmMassa(null)}
+      />
     </>
   );
 }

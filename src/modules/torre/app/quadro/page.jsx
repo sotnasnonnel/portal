@@ -16,7 +16,13 @@ const rotulo = (item) => (item.origem === 'adm'
   ? (STATUS_ADM[item.status] || item.status)
   : rotuloStatus(item.status));
 
-const VAZIO = { origem: '', responsavelId: '', responsavel: '', atrasados: false };
+/** Rótulo da linha que identifica o cartão (ver `contexto` em lib/dados.js). */
+const rotuloContexto = (item) => {
+  if (item.origem === 'adm') return 'Solicitante';
+  return item.fluxo === 'mobilizacao_empresa' ? 'Projeto' : 'Colaborador';
+};
+
+const VAZIO ={ origem: '', responsavelId: '', responsavel: '', atrasados: false };
 
 /**
  * Quadro da Torre — a mesma visão de /mobilizacao/torre, sem ação nenhuma.
@@ -141,6 +147,11 @@ export default function QuadroTorre() {
                       <span className="mob-cartao-num">#{i.numero}</span>
                     </div>
                     <strong className="mob-cartao-titulo">{i.titulo}</strong>
+                    {i.contexto && (
+                      <span className="mob-cartao-proc tor-cartao-contexto" title={i.contexto}>
+                        {rotuloContexto(i)}: <b>{i.contexto}</b>
+                      </span>
+                    )}
                     {/* O cartao mostra o NOME, e nao mais o codigo: e por ele
                         que a reuniao chama o contrato. */}
                     <span className="mob-cartao-proc">

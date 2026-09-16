@@ -101,9 +101,14 @@ export default function ReembolsoDetail() {
     reembolso.manager_id === profile?.id &&
     reembolso.requester_id !== profile?.id;
 
+  // Aguardando aprovação: quem pediu (ou o admin) cancela.
+  // Já aprovado: só o admin. Existe porque o pedido errado aprovado não tinha
+  // saída na tela — o admin só podia EXCLUIR, que apaga o registro e as notas
+  // de um pagamento que já foi decidido. Cancelar preserva o histórico.
   const canCancel =
-    reembolso.status === STATUS.EM_ANALISE &&
-    (profile?.isAdmin || reembolso.requester_id === profile?.id);
+    (reembolso.status === STATUS.EM_ANALISE &&
+      (profile?.isAdmin || reembolso.requester_id === profile?.id)) ||
+    (reembolso.status === STATUS.APROVADO && !!profile?.isAdmin);
 
   const canDelete = !!profile?.isAdmin;
   // Admin do reembolso ou do Financeiro: mesma visão (pagamento + PDF das notas).
@@ -229,7 +234,10 @@ export default function ReembolsoDetail() {
     if (actionLoading) return;
     const ok = await confirm({
       title: `Cancelar ${meta.singular}`,
-      message: `Tem certeza que deseja cancelar este ${meta.singular}?`,
+      message:
+        reembolso.status === STATUS.APROVADO
+          ? `Este ${meta.singular} já foi APROVADO e está na fila de pagamento. Cancelar tira o pagamento e não pode ser desfeito pela tela. Continuar?`
+          : `Tem certeza que deseja cancelar este ${meta.singular}?`,
       confirmLabel: `Cancelar ${meta.singular}`,
       cancelLabel: "Voltar",
       tone: "danger",

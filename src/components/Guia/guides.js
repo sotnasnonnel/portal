@@ -388,7 +388,7 @@ const HORAS_GESTAO_STEPS = [
     icon: BarChart3,
     titulo: "Dashboard da equipe",
     texto:
-      'No "Dashboard da Equipe" você acompanha as horas de todos, com totais e distribuição por colaborador, projeto e o campo do apontamento que escolher no gráfico.',
+      'No "Dashboard da Equipe" você acompanha as horas de todos, com totais e distribuição por colaborador, projeto e o campo do apontamento que escolher no gráfico. Logo abaixo dos totais ficam as ausências da equipe marcadas para os próximos 7 dias.',
   },
   {
     icon: ListChecks,

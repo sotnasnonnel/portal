@@ -185,6 +185,38 @@ export async function limparAcessoProjeto(projetoId, colaboradorId) {
   if (error) throw error;
 }
 
+// Marcar/desmarcar várias pessoas de uma vez ("Marcar todos"). Mesma regra da
+// caixa individual: quem, com o alvo, volta ao que a área já daria tem a
+// exceção APAGADA; o resto recebe a exceção. Uma ida ao banco para cada lado,
+// e não uma por pessoa — 90 pessoas eram 90 requisições.
+// Lotes de 200 ids: o delete vai com `in (...)` na URL, e a URL tem limite.
+export async function definirAcessoEmMassa({ projetoId, pessoas, permitido, definidoPor }) {
+  const apagar = pessoas.filter((p) => p.porArea === permitido).map((p) => p.colaboradorId);
+  const gravar = pessoas.filter((p) => p.porArea !== permitido).map((p) => p.colaboradorId);
+  const agora = new Date().toISOString();
+
+  for (let i = 0; i < apagar.length; i += 200) {
+    const { error } = await supabase
+      .from('horas_projeto_acesso')
+      .delete()
+      .eq('projeto_id', projetoId)
+      .in('colaborador_id', apagar.slice(i, i + 200));
+    if (error) throw error;
+  }
+  if (gravar.length) {
+    const { error } = await supabase.from('horas_projeto_acesso').upsert(
+      gravar.map((colaboradorId) => ({
+        projeto_id: projetoId,
+        colaborador_id: colaboradorId,
+        permitido,
+        definido_por: definidoPor || null,
+        definido_em: agora,
+      }))
+    );
+    if (error) throw error;
+  }
+}
+
 // ---- Apontamentos ---------------------------------------------------------
 // Escopo agora segue a HIERARQUIA da Gestão de Pessoas (via RLS):
 //   usuario                -> os próprios;
