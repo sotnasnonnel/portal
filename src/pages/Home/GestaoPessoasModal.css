@@ -1,0 +1,17 @@
+/* Popup "Gestão de Pessoas" — até cinco áreas. A grade do ProgramasModal
+   (duas colunas) deixaria 2 + 2 + 1; aqui são 3 + 2 ou 2 + 2, sem card sozinho. */
+.gpmodal { max-width: 880px; }
+
+.gpmodal .progmodal-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.gpmodal .progmodal-card { grid-column: span 2; }
+.gpmodal .progmodal-grid[data-n="2"] .progmodal-card,
+.gpmodal .progmodal-grid[data-n="4"] .progmodal-card,
+.gpmodal .progmodal-grid[data-n="5"] .progmodal-card:nth-child(n + 4) { grid-column: span 3; }
+
+@media (max-width: 640px) {
+  .gpmodal .progmodal-grid { grid-template-columns: 1fr; }
+  .gpmodal .progmodal-grid .progmodal-card { grid-column: auto; }
+}

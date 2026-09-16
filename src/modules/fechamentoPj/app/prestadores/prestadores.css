@@ -1,0 +1,190 @@
+/* Prestadores (cadastro PJ): só o que fechamentoPj.css ainda não cobre. Prefixo pjp-. */
+
+.pjp-filtros {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm, 8px);
+  flex-wrap: wrap;
+  padding: var(--space-md, 16px) var(--space-lg, 20px);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.pjp-filtros .table-search { flex: 1 1 260px; max-width: 460px; }
+
+.pjp-alerta-icone { color: var(--color-warning); vertical-align: -2px; margin-left: 4px; }
+.pjp-erro-icone { color: var(--color-danger); vertical-align: -2px; margin-left: 4px; }
+.pjp-ok { color: var(--color-success); }
+.pjp-muted { color: var(--color-text-muted); }
+
+.pjp-nome-celula { min-width: 220px; }
+.data-table td.pjp-nowrap, .data-table th.pjp-nowrap { white-space: nowrap; }
+
+/* Detalhe */
+.pjp-topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-md, 16px);
+  flex-wrap: wrap;
+}
+
+.pjp-voltar {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  margin-bottom: 6px;
+}
+
+.pjp-voltar:hover { color: var(--color-primary); }
+
+.pjp-titulo-linha {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pjp-titulo-linha .page-title { margin: 0; overflow-wrap: anywhere; }
+
+.pjp-acoes {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm, 8px);
+  flex-wrap: wrap;
+}
+
+.pjp-registro {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.pjp-painel { padding: var(--space-lg, 20px); }
+.pjp-painel > * + * { margin-top: var(--space-md, 16px); }
+
+.pjp-subtotal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: var(--font-size-sm);
+}
+
+.pjp-input-pct { max-width: 120px; text-align: right; }
+.pjp-input-cc { min-width: 160px; }
+
+.pjp-cartao-beneficio .pj-pares { margin-top: 10px; }
+.pjp-cartao-beneficio h3 { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+
+/* Assistentes (organograma, Bradesco) */
+.pjp-contadores {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: var(--space-md, 16px);
+}
+
+.pjp-contador {
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  background: var(--color-bg-white);
+}
+
+.pjp-contador b { display: block; font-size: var(--font-size-xl); font-variant-numeric: tabular-nums; }
+.pjp-contador span { font-size: var(--font-size-2xs); color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+.pjp-contador--alerta b { color: var(--color-warning); }
+
+.pjp-colunas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-md, 16px);
+  align-items: start;
+}
+
+.pjp-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.pjp-lista li {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--color-border-light);
+  font-size: var(--font-size-sm);
+}
+
+.pjp-lista li:last-child { border-bottom: 0; }
+
+.pjp-item-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pjp-item-linha > :first-child { min-width: 0; overflow-wrap: anywhere; }
+
+.pjp-recolher {
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  margin-bottom: 10px;
+}
+
+.pjp-recolher > summary {
+  cursor: pointer;
+  padding: 8px 12px;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.pjp-recolher[open] > summary { border-bottom: 1px solid var(--color-border-light); }
+.pjp-recolher .pjp-lista { border: 0; border-radius: 0; }
+
+.pjp-arquivos { display: grid; gap: 10px; }
+.pjp-arquivo-rotulo { flex: 1; min-width: 0; }
+.pjp-arquivo-rotulo b { display: block; font-size: var(--font-size-sm); }
+.pjp-arquivo-rotulo small { color: var(--color-text-secondary); font-size: var(--font-size-xs); overflow-wrap: anywhere; }
+
+.pjp-progresso {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--neutral-bg, #f1f5f9);
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.pjp-progresso > div { height: 100%; background: var(--color-primary); transition: width 0.2s ease; }
+
+.pjp-titular > summary { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.pjp-titular .table-scroll { padding: 0 12px 12px; }
+
+/* Distrato */
+.pjp-distrato p { text-align: justify; margin: 0 0 10px; }
+.pjp-assinaturas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 36px 28px;
+  margin-top: 48px;
+}
+
+.pjp-assinatura { border-top: 1px solid #111827; padding-top: 6px; text-align: center; font-size: var(--font-size-xs); }
+
+@media (max-width: 720px) {
+  .pjp-filtros { padding: var(--space-md, 16px); }
+  .pjp-painel { padding: var(--space-md, 16px); }
+  .pjp-assinaturas { grid-template-columns: 1fr; }
+  .pj-toolbar .table-search, .pjp-filtros .table-search { min-width: 0; max-width: none; }
+}
+
+.pjp-recolher-nota { padding: 8px 12px 0; margin: 0; }

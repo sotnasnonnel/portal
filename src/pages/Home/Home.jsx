@@ -15,6 +15,8 @@ import ProgramasModal from './ProgramasModal';
 import FinanceiroModal from './FinanceiroModal';
 import HorasModal from './HorasModal';
 import AdministrativoModal from './AdministrativoModal';
+import GestaoPessoasModal from './GestaoPessoasModal';
+import { areasGestaoPessoas } from '../../components/Layout/nav';
 import NovidadesModal from '../../components/Novidades/NovidadesModal';
 import SinoNotificacoes from '../../components/Notificacoes/SinoNotificacoes';
 import AvatarUsuario from '../../components/UI/AvatarUsuario';
@@ -39,6 +41,7 @@ export default function Home() {
   const [financeiroAberto, setFinanceiroAberto] = useState(false);
   const [horasAberto, setHorasAberto] = useState(false);
   const [admAberto, setAdmAberto] = useState(false);
+  const [gpAberto, setGpAberto] = useState(false);
 
   // "O que mudou na plataforma": a Home é a primeira tela depois do login, e é
   // aqui que o aviso aparece — uma vez por versão, por pessoa (o carimbo vai
@@ -60,6 +63,9 @@ export default function Home() {
   // entrar, como no card "Programas". Com uma só, o popup teria um botão
   // sozinho — um clique a mais para não escolher nada —, então vai direto.
   const areasFin = areasFinanceiroDe(modules);
+  // Mesma regra na Gestão de Pessoas: com uma área só (ex.: o colaborador
+  // comum), vai direto para a tela de sempre.
+  const areasGp = modules.dp ? areasGestaoPessoas({ perfil: user?.perfil, user }) : [];
 
   // Chamados, Estoque e Mobilização viraram um card só — são o mesmo time, e
   // três cards lado a lado faziam a Home pedir que a pessoa soubesse de antemão
@@ -69,7 +75,9 @@ export default function Home() {
 
   const cards = [
     {
-      to: DP_HOME[modules.dp] || '/usuario',
+      ...(areasGp.length > 1
+        ? { acao: () => setGpAberto(true) }
+        : { to: DP_HOME[modules.dp] || '/usuario' }),
       icon: Users,
       tone: 'blue',
       title: 'Gestão de Pessoas',
@@ -303,6 +311,7 @@ export default function Home() {
       {financeiroAberto && <FinanceiroModal onClose={() => setFinanceiroAberto(false)} />}
       {horasAberto && <HorasModal onClose={() => setHorasAberto(false)} />}
       {admAberto && <AdministrativoModal areas={areasAdm} onClose={() => setAdmAberto(false)} />}
+      {gpAberto && <GestaoPessoasModal onClose={() => setGpAberto(false)} />}
       {novidades && (
         <NovidadesModal
           novidades={novidades.itens}

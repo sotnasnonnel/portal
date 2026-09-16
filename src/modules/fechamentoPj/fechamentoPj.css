@@ -1,0 +1,426 @@
+/* ==========================================================================
+   Fechamento PJ (Gestão de Pessoas).
+   Só o que o design system do DP (components/UI/Components.css + Admin.css)
+   ainda não cobre. Tokens de ui.css/theme.css — nada de tamanho solto.
+   Prefixo pj- em tudo.
+   ========================================================================== */
+
+.pj-root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg, 20px);
+}
+
+.pj-cabecalho {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-md, 16px);
+  flex-wrap: wrap;
+}
+
+.pj-cabecalho .page-title { margin: 0; }
+.pj-cabecalho .page-subtitle { margin: 4px 0 0; }
+
+.pj-cabecalho-acoes {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm, 8px);
+  flex-wrap: wrap;
+}
+
+.pj-seletor-comp {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.pj-seletor-comp .form-select { min-width: 210px; }
+
+/* Faixa de status da competência */
+.pj-faixa {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-light);
+  background: var(--color-bg-white);
+  font-size: var(--font-size-sm);
+}
+
+.pj-faixa--fechada {
+  background: var(--color-success-bg);
+  border-color: color-mix(in srgb, var(--color-success) 30%, transparent);
+}
+
+.pj-faixa-meta { color: var(--color-text-secondary); }
+.pj-faixa .pj-faixa-acoes { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* KPIs */
+.pj-kpis {
+  display: grid;
+  /* auto-fit + mínimo menor: 5 ou 6 contadores cabem numa linha sem deixar um
+     card sozinho embaixo. */
+  grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+  gap: var(--space-md, 16px);
+}
+
+/* Valores em reais ganham linha própria e cards largos: é o número que mais
+   importa na tela e o que não cabia no card de contador. */
+.pj-kpis--valores {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  margin-top: calc(-1 * var(--space-sm, 8px));
+}
+
+.pj-kpis--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+@media (max-width: 768px) {
+  .pj-kpis--3 { grid-template-columns: 1fr; }
+}
+
+.pj-stat-detalhe { color: var(--color-text-muted); font-weight: 500; }
+
+/* Toolbar de tabela */
+.pj-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm, 8px);
+  flex-wrap: wrap;
+}
+
+.pj-toolbar .table-search { min-width: 240px; flex: 1 1 240px; max-width: 420px; }
+.pj-toolbar-direita { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+.pj-selecao {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+/* Tabela */
+.pj-num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.pj-num--forte { font-weight: 700; }
+.data-table td.pj-direita, .data-table th.pj-direita { text-align: right; }
+.data-table td.pj-centro, .data-table th.pj-centro { text-align: center; }
+
+.pj-sub {
+  color: var(--color-text-muted, #64748b);
+  font-size: var(--font-size-2xs);
+  margin-top: 2px;
+}
+
+.pj-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--color-secondary);
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  font-size: inherit;
+}
+
+.pj-link:hover { color: var(--color-primary); text-decoration: underline; }
+
+.data-table tr.pj-linha-divergente td { background: color-mix(in srgb, var(--color-danger-bg) 55%, transparent); }
+.data-table tr.pj-linha-selecionada td { background: var(--color-primary-bg); }
+
+.data-table tfoot td {
+  font-weight: 700;
+  border-top: 2px solid var(--color-border);
+  background: var(--neutral-bg, #f8fafc);
+}
+
+.pj-acoes-linha { display: flex; gap: 4px; justify-content: flex-end; flex-wrap: nowrap; }
+
+.badge.pj-neutro {
+  background: var(--neutral-bg, #f1f5f9);
+  color: var(--color-text-secondary);
+}
+
+.badge.pj-neutro::before { background: var(--neutral-border-strong, #cbd5e1); }
+
+/* Avisos */
+.pj-aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  border: 1px solid transparent;
+}
+
+.pj-aviso svg { flex-shrink: 0; margin-top: 2px; }
+.pj-aviso-texto { flex: 1; }
+.pj-aviso--erro { background: var(--color-danger-bg); color: #991b1b; border-color: #fecaca; }
+.pj-aviso--alerta { background: var(--color-warning-bg); color: #92400e; border-color: #fde68a; }
+.pj-aviso--sucesso { background: var(--color-success-bg); color: #065f46; border-color: #a7f3d0; }
+.pj-aviso--info { background: var(--color-primary-bg); color: var(--color-secondary); border-color: var(--color-border-light); }
+
+.pj-carregando {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 24px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.pj-girando { animation: pj-gira 0.9s linear infinite; }
+@keyframes pj-gira { to { transform: rotate(360deg); } }
+
+.pj-vazio { padding: 32px; }
+
+/* Toast */
+.pj-toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 3000;
+  max-width: 420px;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: #fff;
+  background: var(--color-secondary);
+  animation: pj-sobe 0.18s ease-out;
+}
+
+.pj-toast--sucesso { background: #047857; }
+.pj-toast--erro { background: #b91c1c; }
+.pj-toast--alerta { background: #b45309; }
+@keyframes pj-sobe { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* Modal */
+.pj-modal { width: 100%; max-height: calc(100vh - 48px); display: flex; flex-direction: column; }
+.pj-modal .modal-body { overflow-y: auto; }
+.pj-modal--sm { max-width: 480px; }
+.pj-modal--md { max-width: 720px; }
+.pj-modal--lg { max-width: 1040px; }
+.pj-modal--xl { max-width: 1320px; }
+.pj-modal-sub { font-size: var(--font-size-xs); color: var(--color-text-secondary); margin-top: 2px; }
+
+/* Abas */
+.pj-abas {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--color-border);
+  overflow-x: auto;
+}
+
+.pj-aba {
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 10px 14px;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pj-aba:hover { color: var(--color-secondary); }
+.pj-aba.ativa { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+
+.pj-aba-contador {
+  min-width: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--color-danger);
+  color: #fff;
+  font-size: var(--font-size-2xs);
+  line-height: 18px;
+  text-align: center;
+}
+
+/* Formulários */
+.pj-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px 16px;
+}
+
+.pj-campo { margin-bottom: 0; }
+.pj-campo--largo { grid-column: span 2; }
+.pj-campo--total { grid-column: 1 / -1; }
+.pj-obrig { color: var(--color-danger); }
+
+.pj-secao-titulo {
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  margin: 18px 0 8px;
+}
+
+.pj-secao-titulo:first-child { margin-top: 0; }
+
+.pj-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+/* Blocos de leitura (pares rótulo/valor) */
+.pj-pares {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px 16px;
+}
+
+.pj-par small {
+  display: block;
+  font-size: var(--font-size-2xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.pj-par b { font-size: var(--font-size-sm); font-weight: 600; }
+
+.pj-cartao {
+  background: var(--color-bg-white);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 16px;
+}
+
+.pj-cartoes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--space-md, 16px);
+}
+
+.pj-cartao h3 {
+  font-size: var(--font-size-lg);
+  margin: 0 0 6px;
+}
+
+.pj-cartao p { font-size: var(--font-size-sm); color: var(--color-text-secondary); margin: 0 0 12px; }
+
+/* Memória de cálculo / log */
+.pj-memoria {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: var(--font-size-xs);
+  background: var(--neutral-bg, #f8fafc);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+/* Etapas de assistente (input, organograma, Bradesco) */
+.pj-etapas {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.pj-etapa {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.pj-etapa b {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--neutral-bg, #f1f5f9);
+  border: 1px solid var(--color-border);
+}
+
+.pj-etapa.ativa { color: var(--color-primary); }
+.pj-etapa.ativa b { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+
+.pj-arquivo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px;
+  border: 1.5px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--neutral-bg, #f8fafc);
+}
+
+/* Documentos para impressão (termo, distrato, folha analítica) */
+.pj-documento {
+  background: #fff;
+  color: #111827;
+  padding: 32px 40px;
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+  border: 1px solid var(--color-border-light);
+}
+
+.pj-documento h1 { font-size: var(--font-size-xl); text-align: center; margin: 0 0 18px; }
+.pj-documento h2 { font-size: var(--font-size-md); margin: 18px 0 8px; }
+
+@media print {
+  body * { visibility: hidden !important; }
+  .pj-imprimir, .pj-imprimir * { visibility: visible !important; }
+  .pj-imprimir {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    border: 0 !important;
+    padding: 0 !important;
+  }
+  .pj-nao-imprimir { display: none !important; }
+  .pj-quebra-evitar { break-inside: avoid; }
+  @page { size: A4; margin: 10mm; }
+}
+
+@media (max-width: 720px) {
+  .pj-campo--largo { grid-column: 1 / -1; }
+  .pj-documento { padding: 20px 16px; }
+  .pj-seletor-comp .form-select { min-width: 0; }
+}
+
+/* Admin.css esconde .table-scroll da .admin-page no celular (a listagem de
+   colaboradores troca a tabela por cartões). No Fechamento PJ a tabela é a
+   tela: fica visível, com rolagem horizontal dentro do contêiner. */
+@media (max-width: 768px) {
+  .pj-root .table-scroll,
+  .pj-root.admin-page .table-scroll {
+    display: block !important;
+    overflow-x: auto;
+  }
+}
+
+.pj-toast--info { background: var(--color-secondary); }

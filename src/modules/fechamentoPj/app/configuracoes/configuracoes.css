@@ -1,0 +1,95 @@
+/* Configurações (Fechamento PJ). Prefixo pj-cfg-. */
+
+.pj-cfg-aba { display: flex; flex-direction: column; gap: 12px; }
+.pj-cfg-aba .pj-secao-titulo { margin: 8px 0 0; }
+.pj-cfg-aba > p { margin: 0; }
+
+.pj-cfg-chaves { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px 20px; }
+
+.pj-cfg-chave {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+}
+
+.pj-cfg-chave input { margin-top: 3px; }
+.pj-cfg-chave small { display: block; color: var(--color-text-secondary); font-size: var(--font-size-xs); margin-top: 2px; }
+
+.pj-cfg-barra {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border-light);
+}
+
+.pj-cfg-barra-extra { margin-right: auto; display: flex; gap: 8px; }
+.pj-cfg-estado { font-size: var(--font-size-xs); color: var(--color-text-muted); }
+.pj-cfg-estado--sujo { color: var(--color-warning); font-weight: 600; }
+
+.pj-cfg-previa {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  background: var(--neutral-bg, #f8fafc);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  word-break: break-word;
+}
+
+.pj-cfg-contato {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.pj-cfg-motivos .pj-cfg-contato,
+.pj-cfg-motivo-novo { grid-template-columns: minmax(0, 1fr) auto; }
+.pj-cfg-motivos { display: flex; flex-direction: column; gap: 8px; }
+
+.data-table tr.pj-cfg-clicavel { cursor: pointer; }
+.data-table tr.pj-cfg-clicavel:hover td { background: var(--color-primary-bg); }
+.data-table tr.pj-cfg-alterada td { background: color-mix(in srgb, var(--color-warning-bg) 60%, transparent); }
+
+.pj-cfg-nota { padding: 8px var(--space-lg, 20px) 12px; margin: 0; }
+.pj-cfg-modal-grid { margin-top: 4px; }
+.pj-cfg-espaco { margin: 12px 0; }
+
+.pj-cfg-resumo { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+
+.pj-cfg-resumo > div {
+  background: var(--color-bg-white);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+}
+
+.pj-cfg-resumo small {
+  display: block;
+  font-size: var(--font-size-2xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.pj-cfg-resumo b { font-size: var(--font-size-lg); font-variant-numeric: tabular-nums; }
+.pj-cfg-resumo--alerta b { color: var(--color-danger); }
+
+.pj-cfg-cc { min-width: 140px; max-width: 170px; font-variant-numeric: tabular-nums; }
+.pj-cfg-desc { min-width: 180px; }
+.pj-cfg-invalido { border-color: var(--color-danger); }
+.pj-cfg-novo-ct { width: 160px; }
+
+@media (max-width: 720px) {
+  .pj-cfg-contato { grid-template-columns: minmax(0, 1fr) auto; }
+  .pj-cfg-contato > input:nth-child(2) { grid-column: 1; }
+  .pj-cfg-novo-ct { width: auto; flex: 1 1 140px; }
+}

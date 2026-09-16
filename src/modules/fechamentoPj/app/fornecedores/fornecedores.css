@@ -1,0 +1,64 @@
+/* Fornecedores TOTVS (Fechamento PJ). Prefixo pj-forn-. */
+
+.pj-forn-chips { padding: 0 var(--space-lg) var(--space-md); }
+
+.data-table tr.pj-forn-linha { cursor: pointer; }
+.data-table tr.pj-forn-linha:hover td { background: var(--color-primary-bg); }
+
+.pj-forn-falta {
+  color: var(--color-danger);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.pj-forn-texto { font-size: var(--font-size-sm); margin: 0 0 12px; }
+
+.pj-forn-lista {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  font-size: var(--font-size-sm);
+  display: grid;
+  gap: 4px;
+}
+
+.pj-forn-lista .pj-sub { display: inline; margin-left: 6px; }
+
+.pj-forn-subtitulo { display: inline-flex; align-items: center; gap: 10px; margin-top: 4px; }
+.pj-forn-sujo { color: var(--color-warning); font-weight: 600; }
+
+.pj-forn-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 16px;
+}
+
+.pj-forn-corpo .pj-secao-titulo { margin: 8px 0 0; }
+
+.pj-forn-fonte {
+  margin-left: 8px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--color-text-muted);
+}
+
+.pj-forn-checks { display: flex; gap: 20px; flex-wrap: wrap; }
+
+.pj-forn-alerta {
+  font-size: var(--font-size-xs);
+  color: #92400e;
+}
+
+.pj-forn-banco { display: flex; flex-direction: column; gap: 12px; }
+
+.pj-forn-banco-topo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pj-forn-banco-remover { margin-left: auto; color: var(--color-danger); }
+
+.modal-footer .pj-forn-excluir { margin-right: auto; }

@@ -20,6 +20,7 @@ import MobilizacaoShell from '../modules/mobilizacao/app/components/AppShell';
 import { podeAcessarMobilizacao } from '../config/mobilizacao';
 import TorreShell from '../modules/torre/app/components/AppShell';
 import { podeVerTorre } from '../config/torre';
+import { podeAcessarFechamentoPj } from '../config/fechamentoPj';
 
 const Login = lazyPagina(() => import('../pages/Login/Login'));
 const Home = lazyPagina(() => import('../pages/Home/Home'));
@@ -68,6 +69,15 @@ const HorasExtrasAprovacoes = lazyPagina(() => import('../modules/horas/app/extr
 const PainelHorasExtras = lazyPagina(() => import('../pages/Admin/HorasExtras/PainelHorasExtras'));
 const ExcecoesPrazoHE = lazyPagina(() => import('../pages/Admin/HorasExtras/ExcecoesPrazo'));
 const AuditoriaHE = lazyPagina(() => import('../pages/Admin/HorasExtras/AuditoriaHorasExtras'));
+// Fechamento PJ — fechamento mensal dos prestadores PJ, também dentro da Gestão de Pessoas.
+const FechamentoPjShell = lazyPagina(() => import('../modules/fechamentoPj/app/components/FechamentoPjShell'));
+const PjFolha = lazyPagina(() => import('../modules/fechamentoPj/app/folha/page'));
+const PjPrestadores = lazyPagina(() => import('../modules/fechamentoPj/app/prestadores/page'));
+const PjPrestador = lazyPagina(() => import('../modules/fechamentoPj/app/prestadores/detalhe'));
+const PjFornecedores = lazyPagina(() => import('../modules/fechamentoPj/app/fornecedores/page'));
+const PjRelatorios = lazyPagina(() => import('../modules/fechamentoPj/app/relatorios/page'));
+const PjHistorico = lazyPagina(() => import('../modules/fechamentoPj/app/historico/page'));
+const PjConfiguracoes = lazyPagina(() => import('../modules/fechamentoPj/app/configuracoes/page'));
 const FinanceiroCartoes = lazyPagina(() => import('../modules/financeiro/app/cartoes/page'));
 const FinanceiroDashboard = lazyPagina(() => import('../modules/financeiro/app/dashboard/page'));
 const FinanceiroHub = lazyPagina(() => import('../modules/financeiro/app/solicitacoes/hub/page'));
@@ -195,6 +205,14 @@ function TorreRoute({ children }) {
 function MobilizacaoEmBreveRoute({ children }) {
   const { user } = useAuth();
   if (!podeAcessarMobilizacao(user)) return <Navigate to="/home" replace />;
+  return children;
+}
+
+// Fechamento PJ: DP + lista de liberados enquanto em lançamento. Gate de UI —
+// quem protege é app_private.pode_fechamento_pj() (mesma regra, mesma lista).
+function FechamentoPjRoute({ children }) {
+  const { user } = useAuth();
+  if (!podeAcessarFechamentoPj(user)) return <Navigate to="/home" replace />;
   return children;
 }
 
@@ -357,6 +375,28 @@ export default function AppRoutes() {
               </ModuleRoute>
             }
           />
+
+          {/* Fechamento PJ. A casca carrega a base e guarda a competência em exibição. */}
+          <Route
+            path="/admin/fechamento-pj"
+            element={
+              <ModuleRoute module="dp">
+                <FechamentoPjRoute>
+                  <LazyPage>
+                    <FechamentoPjShell />
+                  </LazyPage>
+                </FechamentoPjRoute>
+              </ModuleRoute>
+            }
+          >
+            <Route index element={<LazyPage><PjFolha /></LazyPage>} />
+            <Route path="prestadores" element={<LazyPage><PjPrestadores /></LazyPage>} />
+            <Route path="prestadores/:id" element={<LazyPage><PjPrestador /></LazyPage>} />
+            <Route path="fornecedores" element={<LazyPage><PjFornecedores /></LazyPage>} />
+            <Route path="relatorios" element={<LazyPage><PjRelatorios /></LazyPage>} />
+            <Route path="historico" element={<LazyPage><PjHistorico /></LazyPage>} />
+            <Route path="configuracoes" element={<LazyPage><PjConfiguracoes /></LazyPage>} />
+          </Route>
 
           <Route
             path="/gestor"

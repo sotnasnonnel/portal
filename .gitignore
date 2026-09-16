@@ -37,3 +37,7 @@ supabase/.temp/
 /*.xlsx
 /*.png
 /.fn_payload.json
+
+# Carga do Fechamento PJ: tem CPF e dados bancários (gerada por docs/gerar_carga_fechamento_pj.cjs)
+supabase/supabase_import_fechamento_pj.sql
+/pj_fechamento.html

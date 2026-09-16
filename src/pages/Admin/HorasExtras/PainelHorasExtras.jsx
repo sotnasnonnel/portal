@@ -155,7 +155,7 @@ export default function PainelHorasExtras() {
 
       {erro && <div className="he-alerta he-alerta--erro">{erro}</div>}
 
-      <div className="cards-grid" style={{ marginBottom: 'var(--space-xl)' }}>
+      <div className="cards-grid cards-grid--3" style={{ marginBottom: 'var(--space-xl)' }}>
         <StatCard tom="accent" icone={<Clock size={22} />} valor={stats.total} rotulo="Solicitações"
           ativo={filtro === 'todos'} onClick={() => setFiltro('todos')} />
         <StatCard tom="warning" icone={<Timer size={22} />} valor={stats.pendentes} rotulo="Pendentes"

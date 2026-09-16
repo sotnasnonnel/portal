@@ -1,7 +1,8 @@
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import logoCal from '../../assets/logo-cal.png';
 import ModuleSidebar from './ModuleSidebar';
-import { navSections } from './nav';
+import { areaDaRota, navSections } from './nav';
 
 const PERFIL_LABEL = {
   admin: 'Administrador',
@@ -23,6 +24,7 @@ export default function Sidebar({
   solicitacaoCount = 0,
 }) {
   const { user } = useAuth();
+  const { pathname } = useLocation();
   if (!user) return null;
 
   return (
@@ -35,6 +37,7 @@ export default function Sidebar({
         user,
         pendencias: pendingCount,
         requisicoes: solicitacaoCount,
+        area: areaDaRota(pathname),
       })}
       papelLabel={PERFIL_LABEL[user.perfil]}
       aberto={isOpen}

@@ -1,0 +1,13 @@
+/* Histórico (Fechamento PJ). Prefixo pj-hist-. */
+
+.data-table tr.pj-hist-clicavel { cursor: pointer; }
+.data-table tr.pj-hist-clicavel:hover td { background: var(--color-primary-bg); }
+
+.pj-hist-nota { padding: 8px var(--space-lg, 20px) 12px; margin: 0; }
+.pj-hist-select { min-width: 190px; }
+.pj-hist-quebra { word-break: break-word; max-width: 260px; }
+.pj-hist-detalhe { max-width: 460px; word-break: break-word; }
+
+@media (max-width: 720px) {
+  .pj-hist-select { min-width: 0; flex: 1 1 100%; }
+}
