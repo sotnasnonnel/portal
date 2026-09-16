@@ -432,10 +432,34 @@ export function itensExcedentes(items, keyOf = (it) => it) {
 // alternam entre os dois pagamentos do mês (dia 1º e dia 16). Confirmar com o
 // Financeiro — se estiver errada, é esta linha que muda.
 //
+// CALENDÁRIO DO FINANCEIRO (16/09/2026, rb.png): até o fim de 2026 a data sai
+// desta tabela, e não da regra acima. Cada linha vale para quem foi aprovado
+// depois do corte anterior e até o corte dela (inclusive). As datas já pulam
+// feriado (03/11 por causa de Finados). Aprovado antes do início ou depois do
+// último corte segue a regra de sempre.
+const CALENDARIO_INICIO = "2026-09-11";
+export const CALENDARIO_PAGAMENTO = [
+  ["2026-09-25", "2026-10-01"],
+  ["2026-10-09", "2026-10-14"],
+  ["2026-10-23", "2026-11-03"],
+  ["2026-11-13", "2026-11-18"],
+  ["2026-11-25", "2026-12-01"],
+  ["2026-12-11", "2026-12-16"],
+];
+
+const isoLocal = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
 // Retorna string "YYYY-MM-DD" (data local), ou null se a entrada for inválida.
 export function computePaymentDate(approvalIso) {
   const base = approvalIso ? new Date(approvalIso) : new Date();
   if (Number.isNaN(base.getTime())) return null;
+
+  const dia = isoLocal(base);
+  if (dia >= CALENDARIO_INICIO) {
+    const linha = CALENDARIO_PAGAMENTO.find(([ate]) => dia <= ate);
+    if (linha) return linha[1];
+  }
 
   const day = base.getDate();
   let payMonth = base.getMonth(); // 0-based
@@ -452,9 +476,5 @@ export function computePaymentDate(approvalIso) {
   }
 
   // O construtor normaliza o estouro de mês (ex.: dezembro -> janeiro).
-  const d = new Date(base.getFullYear(), payMonth, payDay);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${dd}`;
+  return isoLocal(new Date(base.getFullYear(), payMonth, payDay));
 }

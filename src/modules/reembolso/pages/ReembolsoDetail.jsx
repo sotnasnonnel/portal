@@ -10,6 +10,7 @@ import {
   deleteReimbursement,
   getReimbursement,
   markSettlement,
+  notifyApprover,
   notifyRequesterDecision,
   STATUS,
   updateReimbursementStatus,
@@ -177,7 +178,7 @@ export default function ReembolsoDetail() {
   async function handleDecision(next, note, approvedAmount = null) {
     if (actionLoading) return;
     setActionLoading(true);
-    const { error } = await updateReimbursementStatus(
+    const { data: salvo, error } = await updateReimbursementStatus(
       reembolso.id,
       next,
       profile,
@@ -193,13 +194,21 @@ export default function ReembolsoDetail() {
       showToast(`Não foi possível concluir: ${error.message}`, "error");
       return;
     }
+    // Segunda alçada (gatilho reembolso_segunda_alcada): a aprovação deste
+    // gestor não encerra o pedido — ele voltou para análise com o aprovador de
+    // cima. Avisa esse aprovador; o solicitante só recebe a decisão final.
+    if (next === STATUS.APROVADO && salvo?.status === STATUS.EM_ANALISE) {
+      notifyApprover(reembolso.id);
+      showToast(`Aprovado por você. Agora segue para ${salvo.manager_name || "a próxima aprovação"}.`, "success");
+      return;
+    }
     // Retorno para quem pediu: e-mail com o desfecho (e, no reembolso aprovado,
     // a data em que o pagamento cai). Não bloqueia o fluxo se falhar.
     notifyRequesterDecision(reembolso.id);
-    // Reembolso cobrado do cliente: o PDF vai para o Financeiro (pedido da
+    // Reembolso cobrado do cliente: o PDF fica anexado para o Financeiro (pedido da
     // Alinne). Sem await — a aprovação já foi gravada e não espera o PDF. Se
     // falhar ou a aba fechar, o banco já marcou o pedido como pendente e o
-    // Financeiro vê e reenvia pelo painel do detalhe.
+    // Financeiro vê e gera de novo pelo painel do detalhe.
     if (deveEnviarAoCliente({ ...reembolso, status: next })) {
       enviarPdfAoCliente(reembolso.id);
     }
@@ -452,6 +461,17 @@ export default function ReembolsoDetail() {
         </div>
       </header>
 
+      {/* Segunda alçada: a 1ª aprovação fica registrada e o pedido segue. */}
+      {reembolso.first_decided_at && (
+        <div className="alcada-banner">
+          <strong>1ª aprovação{reembolso.first_decided_by_name ? `: ${reembolso.first_decided_by_name}` : ""}</strong>{" "}
+          em {formatDate(reembolso.first_decided_at)}.
+          {reembolso.status === STATUS.EM_ANALISE && (
+            <> Aguardando a aprovação final de <strong>{reembolso.manager_name || "—"}</strong>.</>
+          )}
+        </div>
+      )}
+
       {reembolso.status === STATUS.REPROVADO && reembolso.decision_note && (
         <div className="reject-banner">
           <strong>Reprovado{reembolso.decided_by_name ? ` por ${reembolso.decided_by_name}` : ""}:</strong>{" "}
@@ -683,11 +703,11 @@ export default function ReembolsoDetail() {
             {isAdiantamento ? "Data que precisa do valor:" : "Data de pagamento:"}{" "}
             <strong>{reembolso.payment_date ? formatDate(reembolso.payment_date) : "—"}</strong>
           </p>
-          <p className="payment-hint">
-            {isAdiantamento
-              ? "Informada pelo solicitante ao pedir o adiantamento. Compõe o nome do arquivo do PDF."
-              : "Calculada automaticamente pela data de aprovação (aprovado do dia 1 ao 10 → pagamento no dia 16 do mesmo mês; do dia 11 ao 25 → dia 1º do mês seguinte; do 26 em diante → dia 16 do mês seguinte). Compõe o nome do arquivo do PDF."}
-          </p>
+          {isAdiantamento && (
+            <p className="payment-hint">
+              Informada pelo solicitante ao pedir o adiantamento. Compõe o nome do arquivo do PDF.
+            </p>
+          )}
         </section>
       )}
 

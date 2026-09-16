@@ -7,6 +7,7 @@ import {
   createReimbursement,
   getReimbursement,
   listGestores,
+  listSegundaAlcada,
   notifyApprover,
   STATUS,
   updateReimbursement,
@@ -73,6 +74,7 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
   const [billable, setBillable] = useState("");
   const [pixKey, setPixKey] = useState(profile?.pix_key ?? "");
   const [gestores, setGestores] = useState([]);
+  const [segundaAlcada, setSegundaAlcada] = useState({});
   const [managerId, setManagerId] = useState(profile?.manager_id ?? "");
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState([newItem(0)]);
@@ -119,8 +121,13 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
   useEffect(() => {
     let active = true;
     (async () => {
-      const { data } = await listGestores();
-      if (active) setGestores(data);
+      const [{ data }, { data: alcada }] = await Promise.all([listGestores(), listSegundaAlcada()]);
+      if (!active) return;
+      setSegundaAlcada(alcada);
+      setGestores(data);
+      // Gestor que saiu da lista não pode ficar escolhido às escondidas: o
+      // select mostraria "Selecione…" e o pedido iria para ele mesmo assim.
+      setManagerId((atual) => (atual && !data.some((g) => g.id === atual) ? "" : atual));
     })();
     return () => {
       active = false;
@@ -459,16 +466,28 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
     }
 
     // pedido de solicitante entra em análise -> avisa o gestor imediato.
-    // (gestor que cria o próprio já entra aprovado, sem gestor -> não notifica)
-    if (!selfApprove && managerId) notifyApprover(data.id);
+    // Gestor que cria o próprio entra aprovado — salvo quando há segunda
+    // alçada (gatilho reembolso_segunda_alcada): aí o banco manda para o
+    // aprovador de cima, e é ele quem recebe o aviso.
+    const subiu = selfApprove && data?.status === STATUS.EM_ANALISE && data?.manager_id;
+    if ((!selfApprove && managerId) || subiu) notifyApprover(data.id);
 
-    if (selfApprove)
+    if (subiu)
+      showToast(`Pedido criado e enviado para aprovação de ${data.manager_name || "seu gestor"}.`, "success");
+    else if (selfApprove)
       showToast(
         `${meta.singular[0].toUpperCase()}${meta.singular.slice(1)} criado e aprovado automaticamente.`,
         "success"
       );
     navigate(`${meta.base}/${data.id}`, { replace: true });
   }
+
+  // Quem aprova depois: do gestor escolhido ou, no pedido do próprio gestor, dele.
+  const nomeGestor = (gid) => {
+    const g = gestores.find((x) => x.id === gid);
+    return g ? g.display_name || g.full_name : "";
+  };
+  const aprovadorFinal = segundaAlcada[selfApprove ? profile?.id : managerId] || null;
 
   if (loadingExisting) {
     return (
@@ -602,10 +621,17 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
             {selfApprove ? (
               <label className="field">
                 <span>Aprovação</span>
-                <p className="field-note">
-                  Como gestor, seu {meta.singular} é <strong>aprovado automaticamente</strong> — sem
-                  gestor imediato.
-                </p>
+                {aprovadorFinal ? (
+                  <p className="field-note">
+                    Seu {meta.singular} segue direto para aprovação de{" "}
+                    <strong>{nomeGestor(aprovadorFinal) || "seu gestor"}</strong>.
+                  </p>
+                ) : (
+                  <p className="field-note">
+                    Como gestor, seu {meta.singular} é <strong>aprovado automaticamente</strong> — sem
+                    gestor imediato.
+                  </p>
+                )}
               </label>
             ) : (
               <label className="field">
@@ -624,6 +650,14 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
                       </option>
                     ))}
                 </select>
+              </label>
+            )}
+            {/* Segunda alçada: quem aprova depois do gestor imediato. Travado,
+                como o Nome — quem define é a regra, não o solicitante. */}
+            {aprovadorFinal && (
+              <label className="field">
+                <span>Aprovação final</span>
+                <input value={nomeGestor(aprovadorFinal)} disabled readOnly />
               </label>
             )}
             <label className="field">

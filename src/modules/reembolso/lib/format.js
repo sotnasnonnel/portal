@@ -17,7 +17,12 @@ export function formatCurrency(value) {
 
 export function formatDate(iso) {
   if (!iso) return "—";
-  const date = typeof iso === "string" ? new Date(iso) : iso;
+  // "yyyy-mm-dd" puro seria lido como meia-noite UTC e, no fuso do Brasil,
+  // apareceria como o dia anterior — então vira data local.
+  const soData = typeof iso === "string" && /^\d{4}-\d{2}-\d{2}$/.test(iso);
+  const date = soData
+    ? new Date(...iso.split("-").map((n, i) => Number(n) - (i === 1 ? 1 : 0)))
+    : typeof iso === "string" ? new Date(iso) : iso;
   if (Number.isNaN(date.getTime())) return "—";
   return DATE.format(date);
 }

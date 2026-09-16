@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Loader2, Inbox, ArrowRight } from "lucide-react";
+import { LayoutDashboard, Loader2, Inbox, ArrowRight, FileSpreadsheet } from "lucide-react";
 import { listReimbursements, paidAmount, STATUS } from "../services/reimbursements.js";
 import { formatCurrency, formatDate } from "../lib/format.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useToast } from "../context/FeedbackContext.jsx";
+import { baixarPlanilhaReembolsos } from "../services/reembolsoPlanilha.js";
 import StatusBadge from "../components/StatusBadge.jsx";
 import "./Reembolsos.css";
 
@@ -25,6 +27,8 @@ export default function DashboardReembolso() {
   const navigate = useNavigate();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [baixando, setBaixando] = useState(false);
+  const showToast = useToast();
 
   const carregar = useCallback(() => {
     listReimbursements()
@@ -52,6 +56,17 @@ export default function DashboardReembolso() {
     };
   }, [rows]);
 
+  const baixarPlanilha = async () => {
+    setBaixando(true);
+    try {
+      await baixarPlanilhaReembolsos(rows);
+    } catch (err) {
+      showToast(`Não foi possível gerar a planilha: ${err.message}`, "error");
+    } finally {
+      setBaixando(false);
+    }
+  };
+
   const recentes = rows.slice(0, 8);
   const isAdmin = !!profile?.isAdmin;
   // Solicitante não tem painel: a lista dele já é o painel. Barrado aqui também
@@ -71,7 +86,17 @@ export default function DashboardReembolso() {
           </p>
         </div>
         <div className="page-actions">
-          <LayoutDashboard size={20} aria-hidden="true" />
+          {/* Planilha só para o admin: é o time que concilia e paga. */}
+          {isAdmin && rows.length > 0 ? (
+            <button className="btn btn-ghost" onClick={baixarPlanilha} disabled={baixando}>
+              {baixando
+                ? <Loader2 size={16} className="spin" aria-hidden="true" />
+                : <FileSpreadsheet size={16} aria-hidden="true" />}
+              {baixando ? "Gerando…" : "Baixar Excel"}
+            </button>
+          ) : (
+            <LayoutDashboard size={20} aria-hidden="true" />
+          )}
         </div>
       </header>
 
@@ -97,18 +122,18 @@ export default function DashboardReembolso() {
             <Kpi label="Reprovados" value={m.reprovados.length} />
           </section>
 
-          <section className="kpi-grid" style={{ marginTop: 12 }}>
+          <section className="kpi-grid">
             <Kpi label="Valor aprovado" value={formatCurrency(m.valorAprovado)} accent="success" />
             <Kpi label="Valor em análise" value={formatCurrency(m.valorEmAnalise)} accent="warning" />
             <Kpi label="A pagar (sem data)" value={m.aguardandoPagamento.length} accent="warning" />
           </section>
 
-          <section className="kpi-grid" style={{ marginTop: 12 }}>
+          <section className="kpi-grid">
             <Kpi label="Reembolsos" value={m.reembolsos.length} />
             <Kpi label="Adiantamentos" value={m.adiantamentos.length} />
           </section>
 
-          <section className="list-card" style={{ marginTop: 16 }}>
+          <section className="list-card">
             <div className="list-card-head">
               <h3>Últimos pedidos</h3>
               <Link to="/reembolsos" className="list-see-all">

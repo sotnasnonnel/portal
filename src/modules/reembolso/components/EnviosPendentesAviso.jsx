@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { MailWarning } from "lucide-react";
+import { FileWarning } from "lucide-react";
 import { listarEnviosPendentes } from "../services/envioCliente.js";
 import "./EnvioClientePainel.css";
 
 /**
- * Reembolsos cobrados do cliente cujo PDF ainda NÃO chegou ao Financeiro.
+ * Reembolsos cobrados do cliente que ainda NÃO têm o PDF anexado.
  *
- * É a rede de segurança do envio automático, que depende do navegador de quem
+ * É a rede de segurança da geração automática, que depende do navegador de quem
  * aprovou: o que ficou para trás aparece aqui, na tela onde o Financeiro já
  * trabalha, e não só no detalhe de um pedido que ninguém vai abrir por acaso.
  *
@@ -30,17 +30,17 @@ export default function EnviosPendentesAviso({ rows = [] }) {
   const falharam = pendentes.filter((p) => p.status === "falhou").length;
 
   return (
-    <div className={`envio-cliente ${falharam ? "tom-erro" : "tom-alerta"}`} style={{ marginBottom: 12 }}>
-      <MailWarning size={16} aria-hidden="true" />
+    <div className={`envio-cliente ${falharam ? "tom-erro" : "tom-alerta"}`}>
+      <FileWarning size={16} aria-hidden="true" />
       <div className="envio-cliente-txt">
         <strong>
           {pendentes.length === 1
-            ? "1 reembolso cobrado do cliente ainda sem PDF enviado ao Financeiro"
-            : `${pendentes.length} reembolsos cobrados do cliente ainda sem PDF enviado ao Financeiro`}
+            ? "1 reembolso cobrado do cliente ainda sem PDF anexado"
+            : `${pendentes.length} reembolsos cobrados do cliente ainda sem PDF anexado`}
           {falharam ? ` (${falharam} com falha)` : ""}
         </strong>
         <span>
-          Abra e use "Enviar agora":{" "}
+          Abra e use "Gerar agora":{" "}
           {pendentes.map((p, i) => (
             <span key={p.reimbursement_id}>
               {i > 0 && ", "}

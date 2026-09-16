@@ -169,3 +169,39 @@
 .reembolso-root .page-loading p {
   margin: 0;
 }
+
+/* ---- casca das páginas ----
+   Mora aqui, e não no CSS da lista: o CSS de cada tela só carrega com ela, e
+   quem abria direto o detalhe ou o formulário ficava sem margem nenhuma,
+   com tudo colado na sidebar. A margem é a mesma do .finMain dos outros
+   módulos; o gap é o espaço padrão entre um bloco e o seguinte. */
+.reembolso-root .page {
+  padding: var(--shell-main-pad-y, 26px) var(--shell-main-pad-x, 32px) var(--shell-main-pad-bottom, 60px);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+.reembolso-root .page > * { margin-top: 0; margin-bottom: 0; }
+
+.reembolso-root .page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+.reembolso-root .page-header h2 { font-size: 22px; color: var(--ink); margin: 0; }
+.reembolso-root .page-sub { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+.reembolso-root .page-actions { display: flex; gap: var(--space-3); flex-wrap: wrap; }
+
+@media (max-width: 768px) {
+  .reembolso-root .page {
+    padding: var(--shell-main-pad-mobile, 20px 16px 48px);
+    gap: var(--space-4);
+  }
+}
+@media (max-width: 540px) {
+  .reembolso-root .page-actions { width: 100%; }
+  .reembolso-root .page-actions .btn { flex: 1; }
+}

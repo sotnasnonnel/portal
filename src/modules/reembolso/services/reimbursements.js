@@ -7,7 +7,6 @@ import { computePaymentDate } from "../lib/reimbursementPolicy.js";
 // um vê depende da RLS (auth.uid) — evita servir dados de um usuário para outro.
 const LIST_PREFIX = "reembolso:list:";
 const DETAIL_PREFIX = "reembolso:detail:";
-const GESTORES_KEY = "reembolso:gestores";
 
 async function currentUserId() {
   const { data } = await supabase.auth.getSession();
@@ -353,19 +352,25 @@ export async function notifyRequesterDecision(id) {
 }
 
 // Lista de gestores (id + nome) para o solicitante escolher o gestor imediato.
-// Catálogo que muda pouco -> TTL longo.
+// Sem cache, de propósito: a cópia guardada na aba (supabaseCache) é servida
+// sem conferir a validade, e o formulário lê a lista uma vez só — gestor
+// removido continuava aparecendo e o novo não aparecia. É uma consulta pequena.
 export async function listGestores() {
-  const { data, error } = await cachedQuery(
-    GESTORES_KEY,
-    () =>
-      supabase
-        .from("reembolso_gestores")
-        .select("id, full_name, display_name")
-        .order("full_name", { ascending: true }),
-    5 * 60_000,
-    { staleTtlMs: 60 * 60_000 }
-  );
+  const { data, error } = await supabase
+    .from("reembolso_gestores")
+    .select("id, full_name, display_name")
+    .order("full_name", { ascending: true });
   return { data: data ?? [], error };
+}
+
+// Segunda alçada: { gestor_id -> aprovador_id }. Quem aprova depois do gestor
+// imediato (a regra em si mora no gatilho reembolso_segunda_alcada; aqui é só
+// para o formulário avisar antes de enviar).
+export async function listSegundaAlcada() {
+  const { data, error } = await supabase
+    .from("reembolso_segunda_alcada")
+    .select("gestor_id, aprovador_id");
+  return { data: Object.fromEntries((data ?? []).map((r) => [r.gestor_id, r.aprovador_id])), error };
 }
 
 export async function cancelReimbursement(id) {

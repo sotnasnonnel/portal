@@ -19,3 +19,4 @@
 .envio-cliente.tom-ok { background: var(--status-aprovado-bg); color: var(--status-aprovado-fg); border-color: var(--status-aprovado-fg); }
 .envio-cliente.tom-alerta { background: #fff3d6; color: #8a6300; border-color: #e8c46a; }
 .envio-cliente.tom-erro { background: var(--status-reprovado-bg); color: var(--status-reprovado-fg); border-color: var(--status-reprovado-fg); }
+.envio-cliente-acoes { display: flex; gap: 8px; flex-wrap: wrap; }

@@ -549,3 +549,14 @@
 .acc-figures dd { margin: 0; font-weight: 600; color: var(--ink); }
 .acc-figures dd.acc-falta { color: var(--status-reprovado-fg); }
 .acc-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-3); }
+
+/* Segunda alçada: a 1ª aprovação registrada, com o pedido a caminho da final. */
+.alcada-banner {
+  background: #eef3f9;
+  color: var(--ink);
+  border: 1px solid #b9cbe0;
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  font-size: 14px;
+  line-height: 1.45;
+}

@@ -1,9 +1,10 @@
 /**
- * Envio automático do PDF ao Financeiro quando o reembolso é cobrado do cliente.
+ * PDF anexado automaticamente quando o reembolso é cobrado do cliente.
  *
  * Pedido da Alinne (Financeiro, 09/2026): todo reembolso marcado como
- * "reembolsável pelo cliente" precisa chegar a ela em PDF, para a cobrança
- * junto ao cliente — sem depender de alguém lembrar de gerar e mandar.
+ * "reembolsável pelo cliente" precisa ter o PDF no sistema, para a cobrança
+ * junto ao cliente — sem depender de alguém lembrar de gerar. Não vai por
+ * e-mail: fica anexado ao pedido e o Financeiro baixa pelo detalhe.
  *
  * Lógica pura, testada. A MESMA regra existe no gatilho do banco
  * (supabase_migration_reembolso_envio_cliente.sql), que é quem manda: aqui ela
@@ -29,9 +30,9 @@ export function deveEnviarAoCliente(r) {
   return r.billable_to_client === true;
 }
 
-/** Rótulos do registro de envio, para a tela. */
+/** Rótulos do registro, para a tela. No banco, 'enviado' quer dizer anexado. */
 export const SITUACAO_ENVIO = {
-  pendente: { label: 'Pendente de envio', tom: 'alerta' },
-  enviado: { label: 'Enviado', tom: 'ok' },
-  falhou: { label: 'Falhou', tom: 'erro' },
+  pendente: { label: 'Ainda não gerado', tom: 'alerta' },
+  enviado: { label: 'Anexado', tom: 'ok' },
+  falhou: { label: 'Não foi gerado', tom: 'erro' },
 };

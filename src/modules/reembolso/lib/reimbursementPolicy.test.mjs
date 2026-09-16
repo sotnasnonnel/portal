@@ -7,6 +7,7 @@ import {
   evaluateFoodOverage,
   evaluatePolicyOverage,
   itensExcedentes,
+  computePaymentDate,
 } from "./reimbursementPolicy.js";
 
 // Local padrão dos testes: Belo Horizonte, a coluna mais apertada da tabela
@@ -234,4 +235,31 @@ test("teto do dia continua freando quem repete refeição não classificada", ()
   ]);
   assert.equal(r.over, 20); // R$ 120 no dia, teto de BH é R$ 100
   assert.equal(r.allowed, 100);
+});
+
+// Data local ao meio-dia: sem risco de o fuso mudar o dia.
+const aprovadoEm = (iso) => new Date(`${iso}T12:00:00`).toISOString();
+
+test("calendário do Financeiro: cada corte paga na data da tabela (inclusive)", () => {
+  const casos = [
+    ["2026-09-16", "2026-10-01"],
+    ["2026-09-25", "2026-10-01"],
+    ["2026-09-26", "2026-10-14"],
+    ["2026-10-09", "2026-10-14"],
+    ["2026-10-10", "2026-11-03"],
+    ["2026-10-23", "2026-11-03"],
+    ["2026-10-24", "2026-11-18"],
+    ["2026-11-13", "2026-11-18"],
+    ["2026-11-14", "2026-12-01"],
+    ["2026-11-25", "2026-12-01"],
+    ["2026-11-26", "2026-12-16"],
+    ["2026-12-11", "2026-12-16"],
+  ];
+  for (const [aprov, paga] of casos) assert.equal(computePaymentDate(aprovadoEm(aprov)), paga, aprov);
+});
+
+test("fora do calendário vale a regra de sempre", () => {
+  assert.equal(computePaymentDate(aprovadoEm("2026-09-05")), "2026-09-16");
+  assert.equal(computePaymentDate(aprovadoEm("2026-12-12")), "2027-01-01");
+  assert.equal(computePaymentDate(aprovadoEm("2026-12-28")), "2027-01-16");
 });

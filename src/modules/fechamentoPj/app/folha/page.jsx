@@ -279,6 +279,8 @@ export default function Pagina() {
   const fechadaPor = nomes.get(competenciaAtual?.fechada_por);
   const reabertaPor = nomes.get(competenciaAtual?.reaberta_por);
   const semAcao = Boolean(ocupado) || carregandoEnvelopes;
+  // Botão travado sem explicação parece defeito: diz por quê.
+  const dicaFechada = aberta ? undefined : 'Competência fechada (só consulta). Abra uma competência para usar.';
 
   return (
     <div className="pj-folha">
@@ -347,12 +349,12 @@ export default function Pagina() {
       </div>
 
       <div className="pj-toolbar">
-        <button type="button" className="btn btn-outline" onClick={() => setDialogo('input')} disabled={!aberta || semAcao}>
+        <button type="button" className="btn btn-outline" onClick={() => setDialogo('input')} disabled={!aberta || semAcao} title={dicaFechada}>
           <Upload size={16} /> Input da planilha
         </button>
         <div className="pj-folha-menu" ref={menuRef}>
           <button type="button" className="btn btn-outline" onClick={() => setMenuCalculo((v) => !v)} disabled={!aberta || semAcao}
-            aria-expanded={menuCalculo}>
+            title={dicaFechada} aria-expanded={menuCalculo}>
             <Calculator size={16} /> {ocupado === 'calcular' ? 'Calculando…' : 'Calcular'} <ChevronDown size={14} />
           </button>
           {menuCalculo && (
@@ -370,15 +372,16 @@ export default function Pagina() {
             </div>
           )}
         </div>
-        <button type="button" className="btn btn-outline" disabled={semAcao}
+        <button type="button" className="btn btn-outline" disabled={!aberta || semAcao} title={dicaFechada}
           onClick={() => executar('termos', () => gerarTermos(ids.size ? selecionadas : termosParaGerar))}>
           <FileCheck size={16} /> {ocupado === 'termos' ? 'Gerando…' : `Gerar termos (${ids.size ? selecionadas.length : termosParaGerar.length})`}
         </button>
-        <button type="button" className="btn btn-outline" disabled={semAcao || !(ids.size ? selecionadas.length : termosParaEnviar.length)}
+        <button type="button" className="btn btn-outline" disabled={!aberta || semAcao || !(ids.size ? selecionadas.length : termosParaEnviar.length)}
+          title={dicaFechada}
           onClick={() => setEnvioIds((ids.size ? selecionadas : termosParaEnviar).map((l) => l.envelope.id))}>
           <Send size={16} /> Enviar por e-mail
         </button>
-        <button type="button" className="btn btn-outline" onClick={() => setDialogo('incluir')} disabled={!aberta || semAcao}>
+        <button type="button" className="btn btn-outline" onClick={() => setDialogo('incluir')} disabled={!aberta || semAcao} title={dicaFechada}>
           <UserPlus size={16} /> Incluir prestador
         </button>
         <div className="pj-toolbar-direita">

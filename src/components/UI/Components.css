@@ -279,6 +279,22 @@
   border-radius: var(--ctl-radius-sm);
 }
 
+/* Desativado com cara de desativado: só o primário tinha estilo próprio, e os
+   outros continuavam iguais (e acendiam no hover) sem funcionar. */
+.btn:disabled:not(.btn-primary),
+.btn:disabled:not(.btn-primary):hover {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: transparent;
+  color: var(--color-text-muted);
+  border-color: var(--color-border);
+}
+.btn-icon:disabled,
+.btn-icon:disabled:hover {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* ===== TABLE ===== */
 .table-container {
   background: var(--color-bg-white);

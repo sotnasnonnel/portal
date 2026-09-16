@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertCircle, CalendarCheck, Clock, FileText, Loader2, Plus, RefreshCw } from "lucide-react";
+import { AlertCircle, CalendarCheck, Clock, FileSpreadsheet, FileText, Loader2, Plus, RefreshCw } from "lucide-react";
 import { listReimbursements, paidAmount, STATUS, STATUS_LABEL } from "../services/reimbursements.js";
 import { formatBillable, formatCurrency, formatDate, relativeDays } from "../lib/format.js";
 import { kindMeta } from "../lib/kind.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useToast } from "../context/FeedbackContext.jsx";
+import { baixarPlanilhaReembolsos } from "../services/reembolsoPlanilha.js";
 import StatusBadge from "../components/StatusBadge.jsx";
 import EnviosPendentesAviso from "../components/EnviosPendentesAviso.jsx";
 import "./Reembolsos.css";
@@ -78,6 +80,8 @@ export default function Reembolsos({ kind = "reembolso" }) {
   const canCreate = true;
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [baixando, setBaixando] = useState(false);
+  const showToast = useToast();
   // null = ainda não escolhido: cada papel cai na sua fila de trabalho —
   // gestor em "Aguardando Aprovação", admin em "Aprovados" (a pagar/gerar PDF),
   // solicitante em "Todos". "" é uma escolha explícita do usuário.
@@ -120,6 +124,18 @@ export default function Reembolsos({ kind = "reembolso" }) {
     () => byStatus.filter((r) => matchBillable(r, activeBillable)),
     [byStatus, activeBillable]
   );
+
+  // A planilha sai com o que está na tela: status e recorte do cliente valem.
+  const baixarPlanilha = async () => {
+    setBaixando(true);
+    try {
+      await baixarPlanilhaReembolsos(filtered);
+    } catch (err) {
+      showToast(`Não foi possível gerar a planilha: ${err.message}`, "error");
+    } finally {
+      setBaixando(false);
+    }
+  };
 
   const counts = useMemo(() => {
     const c = { "": rows.length };
@@ -188,6 +204,17 @@ export default function Reembolsos({ kind = "reembolso" }) {
           <button className="btn btn-ghost" onClick={load} title="Recarregar">
             <RefreshCw size={16} /> Atualizar
           </button>
+          {isAdmin && (
+            <button
+              className="btn btn-ghost"
+              onClick={baixarPlanilha}
+              disabled={baixando || filtered.length === 0}
+              title="Baixa em Excel os pedidos filtrados na tela"
+            >
+              {baixando ? <Loader2 size={16} className="spin" /> : <FileSpreadsheet size={16} />}
+              {baixando ? "Gerando…" : "Baixar Excel"}
+            </button>
+          )}
           {canCreate && (
             <button className="btn btn-primary" onClick={() => navigate(`${meta.base}/novo`)}>
               <Plus size={18} /> {meta.novo}
