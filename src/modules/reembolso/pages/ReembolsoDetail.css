@@ -396,7 +396,41 @@
 }
 
 .nf-detail-thumb {
+  position: relative;
   width: 110px;
+}
+
+/* Mesmo "X" vermelho do formulário, no canto da miniatura. */
+.nf-detail-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--status-reprovado-fg, #b85236);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.1s ease;
+}
+
+.nf-detail-remove:hover {
+  transform: scale(1.1);
+}
+
+.nf-detail-remove:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.nf-detail-remove:disabled {
+  opacity: 0.5;
+  cursor: wait;
 }
 
 .nf-detail-thumb img {

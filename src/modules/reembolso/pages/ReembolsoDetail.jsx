@@ -6,6 +6,7 @@ import { useConfirm, useToast } from "../context/FeedbackContext.jsx";
 import {
   cancelReimbursement,
   decideAccountability,
+  deleteNfAttachment,
   deleteReimbursement,
   getReimbursement,
   markSettlement,
@@ -158,6 +159,15 @@ export default function ReembolsoDetail() {
     isAdiantamento && accStatus === "acertado" && accRec.outcome !== "exato" && !reembolso.settlement &&
     (profile?.isAdmin || (profile?.role === "gestor" && reembolso.manager_id === profile?.id));
 
+  // Anexo errado: o solicitante tira enquanto o pedido ainda não foi decidido
+  // (ou a prestação ainda está aberta); o admin tira a qualquer momento.
+  const canRemoveNf = (img) =>
+    isAdmin ||
+    (isRequester &&
+      (img.is_accountability
+        ? accStatus === "pendente" || accStatus === "em_analise"
+        : reembolso.status === STATUS.EM_ANALISE || reembolso.status === STATUS.REPROVADO));
+
   const fecharReprovacao = () => {
     if (actionLoading) return;
     setRejecting(false);
@@ -267,6 +277,27 @@ export default function ReembolsoDetail() {
     await deleteReimbursement(reembolso.id);
     showToast(`${meta.singular[0].toUpperCase()}${meta.singular.slice(1)} excluído.`, "success");
     navigate(meta.base, { replace: true });
+  }
+
+  async function handleRemoveNf(img, label) {
+    if (actionLoading) return;
+    const ok = await confirm({
+      title: "Excluir anexo",
+      message: `Excluir o anexo ${label}? Os itens lançados continuam no pedido.`,
+      confirmLabel: "Excluir anexo",
+      cancelLabel: "Voltar",
+      tone: "danger",
+    });
+    if (!ok) return;
+    setActionLoading(true);
+    const { error } = await deleteNfAttachment(img.id);
+    await load();
+    setActionLoading(false);
+    if (error) {
+      showToast(`Não foi possível excluir o anexo: ${error.message}`, "error");
+      return;
+    }
+    showToast("Anexo excluído.", "success");
   }
 
   async function handleGeneratePdf() {
@@ -675,6 +706,18 @@ export default function ReembolsoDetail() {
                       src={img.ref.value}
                       onOpenImage={setLightbox}
                     />
+                  )}
+                  {canRemoveNf(img) && (
+                    <button
+                      type="button"
+                      className="nf-detail-remove"
+                      onClick={() => handleRemoveNf(img, label)}
+                      disabled={actionLoading}
+                      title="Excluir este anexo"
+                      aria-label={`Excluir anexo ${label}`}
+                    >
+                      <X size={12} />
+                    </button>
                   )}
                   <span>{label}</span>
                 </div>

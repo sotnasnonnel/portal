@@ -398,6 +398,29 @@ export async function deleteReimbursement(id) {
   return { data: null, error };
 }
 
+// Exclui um anexo de NF que foi colocado errado, direto do detalhe. Os itens
+// ligados a ele continuam (o banco só zera o nf_image_id).
+export async function deleteNfAttachment(nfImageId) {
+  const { data: rows, error } = await supabase
+    .from(NFIMG)
+    .delete()
+    .eq("id", nfImageId)
+    .select("storage_path");
+  if (error) return { error };
+  // RLS barrou sem erro: nada foi apagado
+  if (!rows?.length) return { error: { message: "sem permissão para excluir este anexo" } };
+  invalidateReimbursements();
+  const paths = rows.map((r) => r.storage_path).filter(Boolean);
+  if (paths.length) {
+    try {
+      await removeNfImages(paths);
+    } catch {
+      /* limpeza de storage é best-effort */
+    }
+  }
+  return { error: null };
+}
+
 // === Prestação de contas do adiantamento ===
 // Notas de prestação são itens/nf com is_accountability=true; ficam separadas
 // dos itens do pedido (false). O accountability_total é mantido pela trigger.
