@@ -1,4 +1,4 @@
-import { Pencil, Trash2 } from 'lucide-react';
+import { Copy, Pencil, Trash2 } from 'lucide-react';
 import { fmtData, fmtDur } from '../../lib/format';
 
 // Tabela de apontamentos reutilizada em Apontar, Registros e drill-down.
@@ -8,12 +8,18 @@ import { fmtData, fmtDur } from '../../lib/format';
 //  - podeAlterar(apont) -> bool; sem ele, todas as linhas mostram os botões.
 //    Vale para os dois: no banco, as policies de update e delete de
 //    horas_apontamentos são a mesma regra (o próprio, ou a subárvore da gestão).
+//  - onDuplicate: se passado, mostra o botão de duplicar nas linhas em que
+//    podeDuplicar(apont) for verdadeiro (sem ele, em todas). É separado de
+//    podeAlterar porque duplicar cria um registro NOVO, sempre em nome de quem
+//    está logado — a gestão edita o da equipe, mas só duplica os próprios.
 //  - nameOf: se passado, mostra a coluna Colaborador (colaboradorId -> nome)
 // Os campos preenchidos (os que a equipe configurou) aparecem como tags, com a
 // descrição abaixo. A lista pode misturar equipes com campos diferentes — e
 // registros do catálogo fixo antigo —, então o rótulo de cada valor vai no
 // title, que é o que dá sentido a uma tag solta como "PTA".
-export default function ApontamentosTable({ list, projetoNome, projetoCor, onEdit, onDelete, podeAlterar, nameOf }) {
+export default function ApontamentosTable({
+  list, projetoNome, projetoCor, onEdit, onDelete, onDuplicate, podeAlterar, podeDuplicar, nameOf,
+}) {
   if (!list.length) {
     return <div className="horas-empty">Nenhum apontamento.</div>;
   }
@@ -30,7 +36,7 @@ export default function ApontamentosTable({ list, projetoNome, projetoCor, onEdi
           <th>Início</th>
           <th>Fim</th>
           <th className="horas-right">Duração</th>
-          {onEdit || onDelete ? <th></th> : null}
+          {onEdit || onDelete || onDuplicate ? <th></th> : null}
         </tr>
       </thead>
       <tbody>
@@ -62,8 +68,18 @@ export default function ApontamentosTable({ list, projetoNome, projetoCor, onEdi
             <td className="horas-right" data-label="Duração" style={{ fontVariantNumeric: 'tabular-nums' }}>
               {fmtDur(a.duracao)}
             </td>
-            {onEdit || onDelete ? (
+            {onEdit || onDelete || onDuplicate ? (
               <td className="horas-right horas-td-acao" style={{ whiteSpace: 'nowrap' }}>
+                {onDuplicate && (!podeDuplicar || podeDuplicar(a)) ? (
+                  <button
+                    className="horas-btn-icon"
+                    title="Duplicar (mesmos dados, outro horário)"
+                    type="button"
+                    onClick={() => onDuplicate(a)}
+                  >
+                    <Copy size={15} />
+                  </button>
+                ) : null}
                 {!podeAlterar || podeAlterar(a) ? (
                   <>
                     {onEdit ? (

@@ -45,6 +45,7 @@ export default function ApontarPage() {
   const [elapsed, setElapsed] = useState(0);
   const [showManual, setShowManual] = useState(false);
   const [aEditar, setAEditar] = useState(null);
+  const [aDuplicar, setADuplicar] = useState(null);
   const [aExcluir, setAExcluir] = useState(null);
 
   // Projeto e descrição são fixos do módulo; o miolo do formulário são os
@@ -228,6 +229,7 @@ export default function ApontarPage() {
   async function salvarManual(payload) {
     await createApontamento({ colaboradorId, gerenciaId: gerenciaDoProjeto(payload.projetoId), ...payload });
     setShowManual(false);
+    setADuplicar(null);
     await carregar();
   }
 
@@ -405,6 +407,7 @@ export default function ApontarPage() {
           projetoCor={proj.cor}
           onEdit={setAEditar}
           onDelete={setAExcluir}
+          onDuplicate={setADuplicar}
         />
       </div>
 
@@ -413,6 +416,16 @@ export default function ApontarPage() {
           projetos={projetos}
           campos={campos}
           onClose={() => setShowManual(false)}
+          onSave={salvarManual}
+        />
+      ) : null}
+
+      {aDuplicar ? (
+        <ApontamentoModal
+          projetos={projetos}
+          campos={campos}
+          modelo={aDuplicar}
+          onClose={() => setADuplicar(null)}
           onSave={salvarManual}
         />
       ) : null}

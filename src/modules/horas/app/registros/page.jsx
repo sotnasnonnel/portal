@@ -7,6 +7,7 @@ import {
   fetchColaboradores,
   fetchGerencias,
   fetchCamposEquipe,
+  createApontamento,
   updateApontamento,
   deleteApontamento,
 } from '../../lib/data';
@@ -33,6 +34,7 @@ export default function RegistrosPage() {
   const [range, setRange] = useState(() => periodoPadrao(30));
   const [filtro, setFiltro] = useState({ projeto: '', colab: '' });
   const [aEditar, setAEditar] = useState(null); // { apont, campos }
+  const [aDuplicar, setADuplicar] = useState(null); // { apont, campos }
   const [aExcluir, setAExcluir] = useState(null);
 
   useEffect(() => {
@@ -101,6 +103,27 @@ export default function RegistrosPage() {
     } catch (e) {
       setErro(e?.message || 'Falha ao carregar os campos da equipe.');
     }
+  }
+
+  // Duplicar é um lançamento manual pré-preenchido: sempre em nome de quem está
+  // logado e com os campos da PRÓPRIA equipe, por isso só aparece nos próprios.
+  async function abrirDuplicacao(a) {
+    setErro('');
+    try {
+      setADuplicar({ apont: a, campos: await fetchCamposEquipe(user?.horasGerenciaId) });
+    } catch (e) {
+      setErro(e?.message || 'Falha ao carregar os campos da equipe.');
+    }
+  }
+
+  async function salvarDuplicacao(payload) {
+    const novo = await createApontamento({
+      ...payload,
+      colaboradorId,
+      gerenciaId: projetos.find((p) => p.id === payload.projetoId)?.gerencia_id || aDuplicar.apont.gerenciaId,
+    });
+    setADuplicar(null);
+    setList((prev) => [novo, ...prev].sort((x, y) => y.inicio - x.inicio));
   }
 
   async function salvarEdicao(payload) {
@@ -221,6 +244,8 @@ export default function RegistrosPage() {
             onEdit={abrirEdicao}
             onDelete={setAExcluir}
             podeAlterar={podeAlterar}
+            onDuplicate={abrirDuplicacao}
+            podeDuplicar={(a) => a.colaboradorId === colaboradorId}
           />
         )}
       </div>
@@ -232,6 +257,16 @@ export default function RegistrosPage() {
           inicial={aEditar.apont}
           onClose={() => setAEditar(null)}
           onSave={salvarEdicao}
+        />
+      ) : null}
+
+      {aDuplicar ? (
+        <ApontamentoModal
+          projetos={projetos}
+          campos={aDuplicar.campos}
+          modelo={aDuplicar.apont}
+          onClose={() => setADuplicar(null)}
+          onSave={salvarDuplicacao}
         />
       ) : null}
 

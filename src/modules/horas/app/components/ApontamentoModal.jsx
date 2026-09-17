@@ -10,17 +10,25 @@ import {
 import CamposApontamento from './CamposApontamento';
 import SearchableSelect from './SearchableSelect';
 
-// O formulário completo de um apontamento, nos dois usos:
+// O formulário completo de um apontamento, nos três usos:
 //  - `inicial` vazio  -> lançamento manual (quem esqueceu de ligar o cronômetro)
 //  - `inicial` cheio  -> edição de um apontamento já gravado
+//  - `modelo` cheio   -> duplicar: um lançamento manual que já vem com projeto,
+//    campos e descrição de outro registro, e o mesmo horário trazido para hoje
 // Os campos são os mesmos do cronômetro, e vêm da configuração da equipe.
-export default function ApontamentoModal({ projetos, campos = [], inicial = null, onClose, onSave }) {
+export default function ApontamentoModal({ projetos, campos = [], inicial = null, modelo = null, onClose, onSave }) {
   const edicao = !!inicial;
-  const [projetoId, setProjetoId] = useState(inicial?.projetoId || projetos[0]?.id || '');
-  const [valores, setValores] = useState(() => valoresIniciais(campos, inicial?.campos));
-  const [descricao, setDescricao] = useState(inicial?.descricao || '');
-  const [ini, setIni] = useState(() => toDatetimeLocal(inicial?.inicio ?? Date.now() - 3600000));
-  const [fim, setFim] = useState(() => toDatetimeLocal(inicial?.fim ?? Date.now()));
+  const base = inicial || modelo;
+  // Na duplicação, mesmo horário do original, mas no dia de hoje: salvar sem
+  // mexer em nada não pode gerar um registro sobreposto ao original.
+  const deslocar = (ts) => (edicao ? ts : ts + inicioDoDia(Date.now()) - inicioDoDia(modelo.inicio));
+  const [projetoId, setProjetoId] = useState(base?.projetoId || projetos[0]?.id || '');
+  const [valores, setValores] = useState(() => valoresIniciais(campos, base?.campos));
+  const [descricao, setDescricao] = useState(base?.descricao || '');
+  const [ini, setIni] = useState(() =>
+    toDatetimeLocal(base ? deslocar(base.inicio) : Date.now() - 3600000)
+  );
+  const [fim, setFim] = useState(() => toDatetimeLocal(base ? deslocar(base.fim) : Date.now()));
   const [erro, setErro] = useState('');
   const [salvando, setSalvando] = useState(false);
 
@@ -63,7 +71,7 @@ export default function ApontamentoModal({ projetos, campos = [], inicial = null
   return (
     <div className="horas-modal-bg" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="horas-modal horas-modal-manual">
-        <h3>{edicao ? 'Editar apontamento' : 'Lançamento manual'}</h3>
+        <h3>{edicao ? 'Editar apontamento' : modelo ? 'Duplicar apontamento' : 'Lançamento manual'}</h3>
         <div className="horas-fld">
           <label>Projeto</label>
           <SearchableSelect
@@ -116,4 +124,10 @@ export default function ApontamentoModal({ projetos, campos = [], inicial = null
       </div>
     </div>
   );
+}
+
+function inicioDoDia(ts) {
+  const d = new Date(ts);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
 }
