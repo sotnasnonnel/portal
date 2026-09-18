@@ -23,8 +23,6 @@ import AvatarUsuario from '../../components/UI/AvatarUsuario';
 import { nomeCurto } from '../../utils/formatters';
 import './Home.css';
 
-const DP_HOME = { admin: '/admin/listagem', gestor: '/gestor', usuario: '/usuario', rh: '/gestor/solicitacoes/acompanhar' };
-
 function iniciais(nome) {
   if (!nome) return '?';
   const partes = nome.trim().split(/\s+/);
@@ -63,9 +61,10 @@ export default function Home() {
   // entrar, como no card "Programas". Com uma só, o popup teria um botão
   // sozinho — um clique a mais para não escolher nada —, então vai direto.
   const areasFin = areasFinanceiroDe(modules);
-  // Mesma regra na Gestão de Pessoas: com uma área só (ex.: o colaborador
-  // comum), vai direto para a tela de sempre.
-  const areasGp = modules.dp ? areasGestaoPessoas({ perfil: user?.perfil, user }) : [];
+  // Gestão de Pessoas: sempre abre o popup de áreas. A Ausência Programada é
+  // de todo colaborador, então até quem não tem perfil de DP (modules.dp) tem
+  // pelo menos esse card — as demais áreas continuam só para quem já as tinha.
+  const areasGp = areasGestaoPessoas({ perfil: user?.perfil, user });
 
   // Chamados, Estoque e Mobilização viraram um card só — são o mesmo time, e
   // três cards lado a lado faziam a Home pedir que a pessoa soubesse de antemão
@@ -75,16 +74,13 @@ export default function Home() {
 
   const cards = [
     {
-      ...(areasGp.length > 1
-        ? { acao: () => setGpAberto(true) }
-        : { to: DP_HOME[modules.dp] || '/usuario' }),
+      acao: () => setGpAberto(true),
       icon: Users,
       tone: 'blue',
       title: 'Gestão de Pessoas',
-      desc: 'Ausências, requisições e equipe',
-      // Sem perfil de DP: mostra o card com cadeado/esmaecido em vez de escondê-lo.
-      // A liberação é feita em "Gerenciar acessos" (/portal-admin).
-      locked: !modules.dp,
+      desc: 'Ausência programada, requisições e equipe',
+      // Sem nenhuma área (caso raro): card com cadeado em vez de sumir.
+      locked: areasGp.length === 0,
     },
     {
       to: '/solic/dashboard',

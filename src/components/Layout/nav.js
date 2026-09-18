@@ -1,10 +1,11 @@
 import {
   LayoutDashboard, ClipboardCheck, Users, CalendarClock, UserPlus, List, CalendarDays,
   FileText, Network, Coins, PlusCircle, Workflow, Clock, ShieldAlert, ScrollText, Search,
-  Receipt, Briefcase, Building2, FileBarChart, History, Settings,
+  Receipt, Briefcase, Building2, FileBarChart, History, Settings, CalendarRange,
 } from 'lucide-react';
 import { isHorasExtrasDp } from '../../config/horasExtras';
 import { podeAcessarFechamentoPj, ROTA_FECHAMENTO_PJ } from '../../config/fechamentoPj';
+import { isAusenciaRh, ROTA_AUSENCIA, veAprovacoes } from '../../config/ausenciaProgramada';
 
 // Navegação da sidebar de Gestão de Pessoas, na mesma divisão dos outros
 // módulos (padrão do Financeiro): grupos colapsáveis + seções simples.
@@ -43,6 +44,30 @@ const grupoFechamentoPj = {
   ],
 };
 
+// Ausência Programada: aberta a todo colaborador (qualquer modalidade), então
+// entra para todos os perfis. Aprovações e equipe aparecem para quem tem cargo
+// de gestão; o painel, para o RH.
+function grupoAusenciaProgramada(user) {
+  return {
+    group: true,
+    key: 'ausenciaProgramada',
+    label: 'Ausência Programada',
+    Icon: CalendarRange,
+    items: [
+      { label: 'Minha Ausência', Icon: CalendarDays, href: ROTA_AUSENCIA, exato: true },
+      ...(veAprovacoes(user)
+        ? [
+          { label: 'Aprovações', Icon: ClipboardCheck, href: `${ROTA_AUSENCIA}/aprovacoes` },
+          { label: 'Equipe', Icon: Users, href: `${ROTA_AUSENCIA}/equipe` },
+        ]
+        : []),
+      ...(isAusenciaRh(user)
+        ? [{ label: 'Painel RH', Icon: LayoutDashboard, href: `${ROTA_AUSENCIA}/painel` }]
+        : []),
+    ],
+  };
+}
+
 const consultas = (comValores) => ({
   label: 'Consultas',
   key: 'consultas',
@@ -60,6 +85,7 @@ const consultas = (comValores) => ({
 
 // Rota -> área. Ordem importa: prefixo mais específico primeiro.
 const ROTAS_AREA = [
+  [ROTA_AUSENCIA, 'ausenciaProgramada'],
   ['/admin/horas-extras', 'horasExtras'],
   [ROTA_FECHAMENTO_PJ, 'fechamentoPj'],
   ['/admin/cadastro', 'colaboradores'],
@@ -92,6 +118,7 @@ const CARTAO_AREA = {
   consultas: { Icon: Network, desc: 'Organograma e ajustes de valores.', cta: 'Abrir consultas' },
   horasExtras: { Icon: Clock, desc: 'Tratamento das horas extras pelo DP, prazos e auditoria.', cta: 'Abrir horas extras' },
   fechamentoPj: { Icon: Receipt, desc: 'Folha dos prestadores PJ, termos e pagamento no TOTVS.', cta: 'Abrir fechamento PJ' },
+  ausenciaProgramada: { Icon: CalendarRange, desc: 'Saldo, data limite e pedidos de ausência com aprovação do gestor.', cta: 'Abrir ausência programada' },
 };
 
 /**
@@ -192,6 +219,7 @@ export function navSections({ perfil, user, pendencias = 0, requisicoes = 0, are
     });
   }
 
+  secoes.push(grupoAusenciaProgramada(user));
   if (isHorasExtrasDp(user)) secoes.push(grupoHorasExtras);
   if (podeAcessarFechamentoPj(user)) secoes.push(grupoFechamentoPj);
   if (area && secoes.some((s) => s.key === area)) return secoes.filter((s) => s.key === area);

@@ -11,7 +11,8 @@ import './GestaoPessoasModal.css';
  * Escolha de área da Gestão de Pessoas, aberta pelo card da Home.
  *
  * Mesmo desenho do FinanceiroModal e do HorasModal: Colaboradores,
- * Requisições, Consultas, Horas Extras e Fechamento PJ são rotinas diferentes,
+ * Requisições, Consultas, Horas Extras, Fechamento PJ e Ausência Programada são
+ * rotinas diferentes,
  * então a escolha acontece antes de entrar, e o menu lá dentro mostra só a
  * área escolhida (areaDaRota em components/Layout/nav.js).
  *

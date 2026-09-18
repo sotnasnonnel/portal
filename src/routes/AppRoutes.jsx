@@ -21,6 +21,7 @@ import { podeAcessarMobilizacao } from '../config/mobilizacao';
 import TorreShell from '../modules/torre/app/components/AppShell';
 import { podeVerTorre } from '../config/torre';
 import { podeAcessarFechamentoPj } from '../config/fechamentoPj';
+import { ROTA_AUSENCIA, isAusenciaRh, veAprovacoes } from '../config/ausenciaProgramada';
 
 const Login = lazyPagina(() => import('../pages/Login/Login'));
 const Home = lazyPagina(() => import('../pages/Home/Home'));
@@ -69,6 +70,9 @@ const HorasExtrasAprovacoes = lazyPagina(() => import('../modules/horas/app/extr
 const PainelHorasExtras = lazyPagina(() => import('../pages/Admin/HorasExtras/PainelHorasExtras'));
 const ExcecoesPrazoHE = lazyPagina(() => import('../pages/Admin/HorasExtras/ExcecoesPrazo'));
 const AuditoriaHE = lazyPagina(() => import('../pages/Admin/HorasExtras/AuditoriaHorasExtras'));
+const MinhaAusencia = lazyPagina(() => import('../pages/AusenciaProgramada/MinhaAusencia'));
+const AprovacoesAusencia = lazyPagina(() => import('../pages/AusenciaProgramada/AprovacoesAusencia'));
+const VisaoGeralAusencia = lazyPagina(() => import('../pages/AusenciaProgramada/VisaoGeralAusencia'));
 // Fechamento PJ — fechamento mensal dos prestadores PJ, também dentro da Gestão de Pessoas.
 const FechamentoPjShell = lazyPagina(() => import('../modules/fechamentoPj/app/components/FechamentoPjShell'));
 const PjFolha = lazyPagina(() => import('../modules/fechamentoPj/app/folha/page'));
@@ -213,6 +217,21 @@ function MobilizacaoEmBreveRoute({ children }) {
 function FechamentoPjRoute({ children }) {
   const { user } = useAuth();
   if (!podeAcessarFechamentoPj(user)) return <Navigate to="/home" replace />;
+  return children;
+}
+
+// Ausência Programada: o pedido é aberto a todo logado (sem ModuleRoute dp).
+// A fila e a equipe são de quem tem cargo de gestão; o painel, do RH. Gates de
+// UI — o banco filtra por aprovador, subárvore e app_private.is_ausencia_rh().
+function AusenciaGestaoRoute({ children }) {
+  const { user } = useAuth();
+  if (!veAprovacoes(user)) return <Navigate to={ROTA_AUSENCIA} replace />;
+  return children;
+}
+
+function AusenciaRhRoute({ children }) {
+  const { user } = useAuth();
+  if (!isAusenciaRh(user)) return <Navigate to={ROTA_AUSENCIA} replace />;
   return children;
 }
 
@@ -397,6 +416,20 @@ export default function AppRoutes() {
             <Route path="historico" element={<LazyPage><PjHistorico /></LazyPage>} />
             <Route path="configuracoes" element={<LazyPage><PjConfiguracoes /></LazyPage>} />
           </Route>
+
+          <Route path={ROTA_AUSENCIA} element={<LazyPage><MinhaAusencia /></LazyPage>} />
+          <Route
+            path={`${ROTA_AUSENCIA}/aprovacoes`}
+            element={<AusenciaGestaoRoute><LazyPage><AprovacoesAusencia /></LazyPage></AusenciaGestaoRoute>}
+          />
+          <Route
+            path={`${ROTA_AUSENCIA}/equipe`}
+            element={<AusenciaGestaoRoute><LazyPage><VisaoGeralAusencia key="equipe" escopo="equipe" /></LazyPage></AusenciaGestaoRoute>}
+          />
+          <Route
+            path={`${ROTA_AUSENCIA}/painel`}
+            element={<AusenciaRhRoute><LazyPage><VisaoGeralAusencia key="todos" escopo="todos" /></LazyPage></AusenciaRhRoute>}
+          />
 
           <Route
             path="/gestor"

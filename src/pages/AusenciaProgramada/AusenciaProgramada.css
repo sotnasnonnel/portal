@@ -1,0 +1,139 @@
+/* ==========================================================================
+   Ausência Programada (Gestão de Pessoas).
+   Só o que o design system do DP (components/UI/Components.css + Admin.css)
+   ainda não cobre. Tokens em src/styles/ui.css.
+   ========================================================================== */
+
+.ap-sub {
+  color: var(--color-text-muted, #64748b);
+  font-size: var(--font-size-2xs);
+  margin-top: 2px;
+}
+
+.ap-num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ap-toolbar {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.ap-busca {
+  max-width: 260px;
+}
+
+.ap-secao {
+  margin-bottom: var(--space-xl);
+}
+
+/* O valor do stat-card também mostra datas ("31/12/2026"). */
+.ap-stat-data {
+  font-size: var(--font-size-2xl);
+}
+
+/* Avisos das telas e dos modais. */
+.ap-alerta {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md, 8px);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  margin-bottom: var(--space-md, 12px);
+  border-left: 3px solid transparent;
+}
+.ap-alerta svg { flex-shrink: 0; margin-top: 1px; }
+.ap-alerta ul { margin: 0; padding-left: 18px; }
+.ap-alerta--erro {
+  background: #fef2f2;
+  border-left-color: #ef4444;
+  color: #991b1b;
+}
+.ap-alerta--aviso {
+  background: #fffbeb;
+  border-left-color: #d97706;
+  color: #92400e;
+}
+.ap-alerta--info {
+  background: #eff6ff;
+  border-left-color: #2563eb;
+  color: #1e3a8a;
+}
+.ap-alerta--ok {
+  background: #ecfdf5;
+  border-left-color: #059669;
+  color: #065f46;
+}
+
+/* Situação do período (pílula). */
+.ap-situacao {
+  display: inline-block;
+  font-size: var(--font-size-2xs);
+  font-weight: 600;
+  white-space: nowrap;
+  padding: 3px 8px;
+  border-radius: var(--radius-full, 9999px);
+}
+.ap-situacao--disponivel { background: #ecfdf5; color: #065f46; }
+.ap-situacao--vencendo { background: #fef3c7; color: #92400e; }
+.ap-situacao--vencido { background: #fee2e2; color: #991b1b; }
+.ap-situacao--em_aquisicao { background: #eff6ff; color: #1e3a8a; }
+.ap-situacao--sem_saldo { background: #f1f5f9; color: #475569; }
+
+/* Marca de "fora do prazo" ao lado do status. */
+.ap-tag-prazo {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: var(--font-size-2xs);
+  font-weight: 600;
+  color: #92400e;
+  background: #fef3c7;
+  padding: 2px 6px;
+  border-radius: var(--radius-full, 9999px);
+  white-space: nowrap;
+}
+
+.ap-modal-sub {
+  color: var(--color-text-muted, #64748b);
+  font-size: var(--font-size-sm);
+  margin: 0 0 var(--space-md);
+}
+
+.ap-form-linha {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-md);
+}
+
+/* Alternância "Quantidade de dias" / "Data fim". */
+.ap-modo {
+  display: inline-flex;
+  gap: 4px;
+  margin-bottom: var(--space-sm, 8px);
+}
+
+.ap-resumo-pedido {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--space-md);
+}
+.ap-resumo-pedido strong { font-variant-numeric: tabular-nums; }
+
+.ap-vazio {
+  padding: var(--space-2xl, 32px) var(--space-lg);
+  text-align: center;
+  color: var(--color-text-muted, #64748b);
+  font-size: var(--font-size-sm);
+}
+
+@media (max-width: 640px) {
+  .ap-form-linha { grid-template-columns: 1fr; }
+  .ap-busca { max-width: none; width: 100%; }
+}
