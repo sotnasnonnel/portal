@@ -156,6 +156,9 @@ export function AuthProvider({ children }) {
         // papel — quem a tem pode ser admin ou atendente. O banco também barra.
         admReatribui: colab.administrativo_reatribui === true,
         programasRole: colab.programas_role || null,           // time comercial dos Programas
+        // Capacidade avulsa, como admReatribui: abre SÓ a Consulta do
+        // Organograma para quem não tem perfil de DP (ver config/organograma.js).
+        organogramaConsulta: colab.organograma_consulta === true,
         authId: authUser.id,
       });
       setReembolsoProfile(reemRes.data ?? null);

@@ -12,6 +12,7 @@ import { isHorasExtrasDp } from '../config/horasExtras';
 import FinanceiroShell from '../modules/financeiro/app/components/AppShell';
 import AdministrativoShell from '../modules/administrativo/app/components/AppShell';
 import { podeAcessarAdm } from '../config/administrativo';
+import { podeConsultarOrganograma } from '../config/organograma';
 import ProgramasShell from '../modules/programas/app/components/AppShell';
 import { podeAcessarProgramas } from '../config/programas';
 import EstoqueShell from '../modules/estoque/app/components/AppShell';
@@ -177,6 +178,15 @@ export function ModuleRoute({ module, children }) {
 function AdmEmBreveRoute({ children }) {
   const { user } = useAuth();
   if (!podeAcessarAdm(user)) return <Navigate to="/home" replace />;
+  return children;
+}
+
+// Consulta do Organograma: perfil de DP OU a flag avulsa (config/organograma.js).
+// Não dá para usar ModuleRoute + allowedRoles: quem entra pela flag não tem
+// perfil de DP nenhum. Gate de tela — os dados são views do backoffice_phd.
+function OrganogramaRoute({ children }) {
+  const { user } = useAuth();
+  if (!podeConsultarOrganograma(user)) return <Navigate to="/home" replace />;
   return children;
 }
 
@@ -556,13 +566,13 @@ export default function AppRoutes() {
           <Route
             path="/organograma"
             element={
-              <ModuleRoute module="dp">
-                <ProtectedRoute allowedRoles={['gestor', 'coordenador', 'admin', 'rh']}>
+              <ProtectedRoute>
+                <OrganogramaRoute>
                   <LazyPage>
                     <ConsultaOrganograma />
                   </LazyPage>
-                </ProtectedRoute>
-              </ModuleRoute>
+                </OrganogramaRoute>
+              </ProtectedRoute>
             }
           />
 

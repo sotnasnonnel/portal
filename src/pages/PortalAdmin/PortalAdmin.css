@@ -270,6 +270,17 @@
 
 /* Papel efetivo na Gestão de Horas, abaixo do select da elevação. O select
    diz o que foi CONFIGURADO; esta linha diz o que a pessoa tem hoje. */
+/* Capacidade avulsa embaixo do select do DP: mesma letra pequena do "Hoje:". */
+.pa-check {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+.pa-check input[disabled] {
+  cursor: default;
+}
+
 .pa-efetivo {
   display: block;
   margin-top: 3px;

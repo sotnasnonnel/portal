@@ -5,6 +5,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../services/supabase";
 import { isSuperAdmin } from "../../config/superAdmin";
 import { horasRoleFromPerfil, perfilEfetivoDp, HORAS_PAPEL_LABEL } from "../../config/horasPapel";
+import { PERFIS_COM_ORGANOGRAMA } from "../../config/organograma";
 import "./PortalAdmin.css";
 
 const DP_ROLES = [
@@ -73,7 +74,7 @@ export default function PortalAdmin() {
     setLoading(true);
     setErr("");
     const [colab, reemb, solic] = await Promise.all([
-      supabase.from("colaboradores").select("id, nome, email, perfil, rh_dp, horas_role, financeiro_role, administrativo_role, programas_role, auth_id, ativo").order("nome"),
+      supabase.from("colaboradores").select("id, nome, email, perfil, rh_dp, organograma_consulta, horas_role, financeiro_role, administrativo_role, programas_role, auth_id, ativo").order("nome"),
       supabase.from("reembolso_profiles").select("id, email, role"),
       supabase.from("solic_profiles").select("id, email, role"),
     ]);
@@ -96,6 +97,9 @@ export default function PortalAdmin() {
         jaLogou: !!c.auth_id,
         dpRole: c.perfil,
         dpRh: c.rh_dp === true,
+        // Capacidade avulsa (nao e papel): abre so a Consulta do Organograma
+        // para quem nao tem perfil de DP. Ver config/organograma.js.
+        orgConsulta: c.organograma_consulta === true,
         // 'usuario' e NULL são a mesma coisa (sem elevação) — o select mostra
         // ambos como "Pela hierarquia".
         horasRole: c.horas_role && c.horas_role !== "usuario" ? c.horas_role : "",
@@ -132,6 +136,11 @@ export default function PortalAdmin() {
         res = await supabase.from("colaboradores").update({ rh_dp: false, perfil: stored }).eq("id", row.colabId);
         patch = { dpRole: stored, dpRh: false };
       }
+    } else if (app === "organograma") {
+      // Booleana, e nao um papel: quem ja e do DP entra pelo perfil, entao ela
+      // so faz diferenca para os outros (o select fica marcado e desativado).
+      res = await supabase.from("colaboradores").update({ organograma_consulta: value }).eq("id", row.colabId);
+      patch = { orgConsulta: value };
     } else if (app === "reembolso") {
       res = await supabase.from("reembolso_profiles").update({ role: value }).eq("id", row.reembId);
       patch = { reembRole: value };
@@ -185,6 +194,30 @@ export default function PortalAdmin() {
 
   // Gate de UI (a RLS é quem realmente protege as escritas).
   if (!isSuperAdmin(user)) return <Navigate to="/home" replace />;
+
+  function OrganogramaCheck({ row }) {
+    const key = `${row.email}:organograma`;
+    const saving = savingKey === key;
+    const peloPerfil = PERFIS_COM_ORGANOGRAMA.includes(perfilEfetivoDp(row.dpRole, row.dpRh));
+    return (
+      <label
+        className="pa-efetivo pa-check"
+        title={
+          peloPerfil
+            ? "Este perfil ja entra na Consulta do Organograma."
+            : "Abre so a Consulta do Organograma, sem nenhuma outra tela do DP."
+        }
+      >
+        <input
+          type="checkbox"
+          checked={peloPerfil || row.orgConsulta}
+          disabled={peloPerfil || saving}
+          onChange={(e) => changeRole(row, "organograma", e.target.checked)}
+        />
+        Consulta do Organograma
+      </label>
+    );
+  }
 
   function RoleSelect({ row, app, value, options, hasAccess }) {
     const key = `${row.email}:${app}`;
@@ -306,6 +339,11 @@ export default function PortalAdmin() {
                   </td>
                   <td>
                     <RoleSelect row={row} app="dp" value={row.dpRh ? "rh" : (row.dpRole ?? "")} options={DP_ROLES} hasAccess />
+                    {/* Consulta do Organograma: a unica tela do DP que se
+                        libera sozinha. Antes dela, dar o organograma a alguem
+                        de fora do DP exigia torna-lo RH — que leva junto
+                        Requisicoes DP, Horas Extras e Fechamento PJ. */}
+                    <OrganogramaCheck row={row} />
                   </td>
                   <td>
                     <RoleSelect row={row} app="horas" value={row.horasRole} options={HORAS_ROLES} hasAccess />

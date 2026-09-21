@@ -6,6 +6,7 @@ import {
 import { isHorasExtrasDp } from '../../config/horasExtras';
 import { podeAcessarFechamentoPj, ROTA_FECHAMENTO_PJ } from '../../config/fechamentoPj';
 import { isAusenciaRh, ROTA_AUSENCIA, veAprovacoes } from '../../config/ausenciaProgramada';
+import { soPelaFlagDoOrganograma } from '../../config/organograma';
 
 // Navegação da sidebar de Gestão de Pessoas, na mesma divisão dos outros
 // módulos (padrão do Financeiro): grupos colapsáveis + seções simples.
@@ -218,6 +219,12 @@ export function navSections({ perfil, user, pendencias = 0, requisicoes = 0, are
       items: [{ label: 'Minha Ausência', Icon: CalendarDays, href: '/usuario', locked: true }],
     });
   }
+
+  // Consulta do Organograma liberada por flag, para quem não é do DP: entra
+  // como grupo próprio porque o perfil dessa pessoa não tem seção "Consultas"
+  // nenhuma (ver config/organograma.js). Sem Ajustes de Valores — a flag abre
+  // só a consulta.
+  if (soPelaFlagDoOrganograma(user)) secoes.push(consultas(false));
 
   secoes.push(grupoAusenciaProgramada(user));
   if (isHorasExtrasDp(user)) secoes.push(grupoHorasExtras);
