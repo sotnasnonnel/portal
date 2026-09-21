@@ -138,9 +138,15 @@ export default function AdminListagem() {
 
   const handleSalvarEdicao = async (e) => {
     e.preventDefault();
+
+    const nome = editForm.nome.trim();
+    const email = editForm.email.trim();
+
     setSavingEdit(true);
 
     const payload = {
+      nome,
+      email,
       perfil: editForm.perfil,
       formato: editForm.formato || null,
       funcao: editForm.funcao,
@@ -152,6 +158,19 @@ export default function AdminListagem() {
     };
 
     try {
+      // E-mail é a chave do acesso: não pode colidir com outro colaborador.
+      const { data: jaUsado } = await supabase
+        .from('colaboradores')
+        .select('id, nome')
+        .ilike('email', email)
+        .neq('id', editForm.id)
+        .maybeSingle();
+
+      if (jaUsado) {
+        alert(`Este e-mail já é do colaborador ${jaUsado.nome}. Use outro.`);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('colaboradores')
         .update(payload)
@@ -437,13 +456,29 @@ export default function AdminListagem() {
               <div className="modal-body">
                 <div className="form-grid">
                   <div className="form-group">
-                    <label className="form-label">Nome Completo</label>
-                    <input className="form-input" value={editForm.nome} readOnly disabled />
+                    <label className="form-label">Nome Completo <span className="required">*</span></label>
+                    <input
+                      className="form-input"
+                      name="nome"
+                      value={editForm.nome}
+                      onChange={handleEditChange}
+                      required
+                    />
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">E-mail</label>
-                    <input className="form-input" type="email" value={editForm.email} readOnly disabled />
+                    <label className="form-label">E-mail <span className="required">*</span></label>
+                    <input
+                      className="form-input"
+                      type="email"
+                      name="email"
+                      value={editForm.email}
+                      onChange={handleEditChange}
+                      required
+                    />
+                    <span className="form-hint">
+                      É por este e-mail que a pessoa entra com a conta Microsoft da PHD. Trocar aqui muda o acesso dela.
+                    </span>
                   </div>
 
                   <div className="form-group">
