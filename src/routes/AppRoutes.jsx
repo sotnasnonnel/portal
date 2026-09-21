@@ -71,6 +71,8 @@ const PainelHorasExtras = lazyPagina(() => import('../pages/Admin/HorasExtras/Pa
 const ExcecoesPrazoHE = lazyPagina(() => import('../pages/Admin/HorasExtras/ExcecoesPrazo'));
 const AuditoriaHE = lazyPagina(() => import('../pages/Admin/HorasExtras/AuditoriaHorasExtras'));
 const MinhaAusencia = lazyPagina(() => import('../pages/AusenciaProgramada/MinhaAusencia'));
+// Avisos de desligamento enviados pelo DP "para conhecimento" — aberta a todo logado.
+const AvisosConhecimento = lazyPagina(() => import('../pages/Conhecimento/AvisosConhecimento'));
 const AprovacoesAusencia = lazyPagina(() => import('../pages/AusenciaProgramada/AprovacoesAusencia'));
 const VisaoGeralAusencia = lazyPagina(() => import('../pages/AusenciaProgramada/VisaoGeralAusencia'));
 // Fechamento PJ — fechamento mensal dos prestadores PJ, também dentro da Gestão de Pessoas.
@@ -416,6 +418,9 @@ export default function AppRoutes() {
             <Route path="historico" element={<LazyPage><PjHistorico /></LazyPage>} />
             <Route path="configuracoes" element={<LazyPage><PjConfiguracoes /></LazyPage>} />
           </Route>
+
+          {/* Para conhecimento: a RPC devolve só os avisos da própria pessoa. */}
+          <Route path="/conhecimento" element={<LazyPage><AvisosConhecimento /></LazyPage>} />
 
           <Route path={ROTA_AUSENCIA} element={<LazyPage><MinhaAusencia /></LazyPage>} />
           <Route

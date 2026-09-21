@@ -4,7 +4,7 @@ import { supabase } from '../../services/supabase';
 import { formatarMoeda } from '../../utils/formatters';
 import {
   FileText, Check, X, CheckCheck,
-  Loader2, Filter, Trash2, Wrench, FastForward, History, ChevronDown, Ban, Search,
+  Loader2, Filter, Trash2, Wrench, FastForward, History, ChevronDown, Ban, Search, Send,
 } from 'lucide-react';
 import FluxoTimeline from '../../components/Solicitacoes/FluxoTimeline';
 import {
@@ -13,6 +13,7 @@ import {
 } from '../../config/aprovacao';
 import ModalRespostas, { DETALHE, buscarRespostas } from '../Gestor/requisicoes/ModalRespostas';
 import BotaoPdfRequisicao from '../../components/BotaoPdfRequisicao';
+import EnviarConhecimentoModal from './EnviarConhecimentoModal';
 import { notificarAprovadorSolic } from '../../services/notificarAprovadorSolic';
 import { notificarSolicitanteReprovacao } from '../../services/notificarSolicitanteReprovacao';
 import '../../components/UI/Components.css';
@@ -24,7 +25,8 @@ const SELECT_SOL = `
   reenvios, edicao_motivo, edicao_em,
   colaborador:colaborador_id ( id, nome, funcao, salario ),
   gestor:gestor_id ( nome ),
-  etapas:solicitacoes_rh_etapas ( id, ordem, aprovador_id, papel, tipo_etapa, status, justificativa, decidido_em )
+  etapas:solicitacoes_rh_etapas ( id, ordem, aprovador_id, papel, tipo_etapa, status, justificativa, decidido_em ),
+  ciencias:solicitacoes_rh_ciencia ( id, destinatario_id, enviado_em, ciente_em, destinatario:destinatario_id ( nome ) )
 `;
 
 /** Normaliza para busca: sem acento, sem caixa. */
@@ -55,6 +57,9 @@ export default function AdminSolicitacoes() {
   const [poolReatribuir, setPoolReatribuir] = useState([]); // colaboradores ativos (gestor/admin)
   const [reatribuirSol, setReatribuirSol] = useState(null);
   const [reatribuirId, setReatribuirId] = useState('');
+
+  // "Enviar para conhecimento" (só desligamento): ADM, TI etc. escolhidos pelo DP.
+  const [conhecimentoSol, setConhecimentoSol] = useState(null);
 
   useEffect(() => {
     markSolicVisto?.();
@@ -488,6 +493,13 @@ export default function AdminSolicitacoes() {
                         <FileText size={14} /> Ver respostas
                       </button>
                     )}
+                    {s.tipo === 'desligamento' && s.status !== 'cancelada' && (
+                      <button className="btn btn-outline btn-sm" disabled={acaoId === s.id}
+                        title="Avisar ADM, TI e outros envolvidos no recolhimento"
+                        onClick={() => setConhecimentoSol(s)}>
+                        <Send size={14} /> Enviar para conhecimento{s.ciencias?.length ? ` (${s.ciencias.length})` : ''}
+                      </button>
+                    )}
                     {acao === 'aprovacao' && (
                       <>
                         <button className="btn btn-success btn-sm" disabled={acaoId === s.id} onClick={() => { setDecisao({ sol: s, modo: 'aprovar' }); setComentario(''); }}>
@@ -536,6 +548,14 @@ export default function AdminSolicitacoes() {
         nomeSolicitante={solRespostas?.gestor?.nome}
         onClose={() => { setVerRespostas(null); setSolRespostas(null); }}
       />
+
+      {conhecimentoSol && (
+        <EnviarConhecimentoModal
+          sol={conhecimentoSol}
+          onClose={() => setConhecimentoSol(null)}
+          onEnviado={async () => { setConhecimentoSol(null); await fetchSolicitacoes(); }}
+        />
+      )}
 
       {/* Modal de decisão: aprovar / reprovar / cancelar */}
       {decisao && (() => {
