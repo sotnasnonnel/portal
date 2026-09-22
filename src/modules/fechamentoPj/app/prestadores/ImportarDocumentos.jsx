@@ -1,15 +1,34 @@
-import { useMemo, useState } from 'react';
-import { FolderArchive, Check, AlertTriangle, RefreshCw, Plus } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { FolderArchive, Check, AlertTriangle, RefreshCw, Plus, Trash2, Undo2 } from 'lucide-react';
 import { useFechamentoPj } from '../components/contexto';
 import { Modal, Aviso } from '../components/ui';
 import { lerPastaDoPrestador } from '../../lib/pastaDocumentos';
 import { diferencas } from '../../lib/documentos';
-import { normalizar, dataBr, fmtBRL, mascararCpf, mascararCnpj } from '../../lib/formato';
+import { normalizar, dataBr, fmtBRL, mascararCpf, mascararCnpj, cpfValido, digitos } from '../../lib/formato';
 import { salvarPrestador, registrarImportacao, auditar } from '../../lib/dados';
 import { Contador, Etapas, Progresso } from './pecas';
 import TableScroll from '../../../../components/UI/TableScroll';
 
 const MASCARA = { cpf: mascararCpf, cnpj: mascararCnpj };
+
+const PARENTESCOS = ['Cônjuge', 'Filho', 'Filha', 'Filho(a)', 'Enteado(a)', 'Pai', 'Mãe', 'Outro'];
+
+const BADGE_DEPENDENTE = {
+  'Dados localizados': 'aprovada',
+  'Preenchido na conferência': 'aprovada',
+  Descartado: 'reprovada',
+};
+
+// O que falta para o dependente entrar no cadastro sem pendência.
+const LACUNAS = [['cpf', 'CPF'], ['nascimento', 'nascimento'], ['sexo', 'sexo'], ['parentesco', 'parentesco']];
+
+function situacaoDoDependente(d) {
+  if (d.descartado) return 'Descartado';
+  if (d.cpf && !cpfValido(d.cpf)) return 'CPF inválido';
+  const faltando = LACUNAS.filter(([campo]) => !d[campo]).map(([, rotulo]) => rotulo);
+  if (!faltando.length) return d.lido ? 'Dados localizados' : 'Preenchido na conferência';
+  return `Falta ${faltando.join(', ')}`;
+}
 
 function valorLegivel(campo, valor) {
   if (valor === null || valor === undefined || valor === '') return '—';
@@ -45,6 +64,24 @@ export default function ImportarDocumentos({ prestador = null, onFechar }) {
 
   const mudancas = useMemo(() => (leitura ? diferencas(leitura.perfil, alvo) : []), [leitura, alvo]);
 
+  // Os dependentes viram rascunho editável: o que a certidão não entregou (é o
+  // caso de quem só tem documento digitalizado) fica em branco para preencher
+  // aqui, em vez de entrar no cadastro pela metade.
+  const [dependentes, setDependentes] = useState([]);
+  useEffect(() => {
+    setDependentes((leitura?.dependentes || []).map((d, i) => ({
+      ...d,
+      chave: `${normalizar(d.nome)}-${i}`,
+      lido: d.situacao === 'Dados localizados',
+      descartado: false,
+    })));
+  }, [leitura]);
+
+  const alterarDependente = (i, patch) => setDependentes((atual) => atual.map((d, k) => (k === i ? { ...d, ...patch } : d)));
+
+  const paraGravar = useMemo(() => dependentes.filter((d) => !d.descartado), [dependentes]);
+  const cpfRuim = paraGravar.some((d) => d.cpf && !cpfValido(d.cpf));
+
   async function processar() {
     setErro('');
     setLendo(true);
@@ -69,9 +106,10 @@ export default function ImportarDocumentos({ prestador = null, onFechar }) {
       // entra pelo nome — importar de novo não duplica ninguém.
       const atuais = Array.isArray(alvo?.dependentes) ? alvo.dependentes : [];
       const porNome = new Map(atuais.map((d) => [normalizar(d.nome), d]));
-      leitura.dependentes.forEach((d) => {
-        const chave = normalizar(d.nome);
-        porNome.set(chave, { ...porNome.get(chave), ...d, fonte: d.fonte });
+      paraGravar.forEach(({ chave, lido, descartado, ...d }) => { // eslint-disable-line no-unused-vars
+        porNome.set(normalizar(d.nome), {
+          ...porNome.get(normalizar(d.nome)), ...d, situacao: situacaoDoDependente(d),
+        });
       });
 
       const salvo = await salvarPrestador({
@@ -81,27 +119,37 @@ export default function ImportarDocumentos({ prestador = null, onFechar }) {
         dependentes: [...porNome.values()],
       });
 
-      await registrarImportacao({
-        tipo: 'documental',
-        arquivo: leitura.arquivo,
-        linhas: leitura.documentos.length,
-        localizados: alvo ? 1 : 0,
-        sem_correspondencia: alvo ? 0 : 1,
-        resumo: {
-          prestador: salvo.nome,
-          campos: leitura.campos.map((c) => ({ campo: c.campo, valor: c.valor, fonte: c.fonte })),
-          dependentes: leitura.dependentes.length,
-          alteracoes: mudancas.map((m) => ({ campo: m.campo, de: m.atual, para: m.novo })),
-          avisos: leitura.avisos,
-          digitalizados: leitura.documentos.filter((d) => d.status !== 'Lido').length,
-        },
-      });
-      await auditar(alvo ? 'Cadastro atualizado pela pasta documental' : 'Prestador cadastrado pela pasta documental',
-        `${leitura.arquivo} • ${leitura.campos.length} campo(s) lido(s), ${leitura.dependentes.length} dependente(s), ${mudancas.length} alteração(ões)`,
-        { prestadorId: salvo.id });
+      // O cadastro já está salvo neste ponto. Se o histórico falhar, ele não
+      // pode derrubar a importação inteira nem fazer parecer que nada foi
+      // gravado — vira um aviso.
+      let historico = '';
+      try {
+        await registrarImportacao({
+          tipo: 'documental',
+          arquivo: leitura.arquivo,
+          linhas: leitura.documentos.length,
+          localizados: alvo ? 1 : 0,
+          sem_correspondencia: alvo ? 0 : 1,
+          resumo: {
+            prestador: salvo.nome,
+            campos: leitura.campos.map((c) => ({ campo: c.campo, valor: c.valor, fonte: c.fonte })),
+            dependentes: paraGravar.length,
+            descartados: dependentes.length - paraGravar.length,
+            alteracoes: mudancas.map((m) => ({ campo: m.campo, de: m.atual, para: m.novo })),
+            avisos: leitura.avisos,
+            digitalizados: leitura.documentos.filter((d) => d.status !== 'Lido').length,
+          },
+        });
+        await auditar(alvo ? 'Cadastro atualizado pela pasta documental' : 'Prestador cadastrado pela pasta documental',
+          `${leitura.arquivo} • ${leitura.campos.length} campo(s) lido(s), ${paraGravar.length} dependente(s), ${mudancas.length} alteração(ões)`,
+          { prestadorId: salvo.id });
+      } catch (e) {
+        historico = ` O cadastro foi salvo, mas o histórico da importação não: ${e.message}`;
+      }
 
       await recarregar();
-      notificar(`${salvo.nome}: ${leitura.campos.length} campo(s) e ${leitura.dependentes.length} dependente(s) gravados.`);
+      notificar(`${salvo.nome}: ${leitura.campos.length} campo(s) e ${paraGravar.length} dependente(s) gravados.${historico}`,
+        historico ? 'alerta' : 'sucesso');
       onFechar();
     } catch (e) {
       setErro(e.message || 'Falha ao gravar o cadastro.');
@@ -113,7 +161,7 @@ export default function ImportarDocumentos({ prestador = null, onFechar }) {
   }
 
   const etapa = leitura ? 2 : 1;
-  const bloqueado = !leitura?.podeConfirmar || !conferido;
+  const bloqueado = !leitura?.podeConfirmar || !conferido || cpfRuim;
 
   const rodape = etapa === 1 ? (
     <>
@@ -224,23 +272,58 @@ export default function ImportarDocumentos({ prestador = null, onFechar }) {
             </section>
 
             <section>
-              <div className="pj-secao-titulo">Dependentes encontrados ({leitura.dependentes.length})</div>
-              {leitura.dependentes.length ? (
+              <div className="pj-secao-titulo">Dependentes encontrados ({dependentes.filter((d) => !d.descartado).length})</div>
+              <p className="form-hint">
+                O que a certidão não entregou fica em branco para você preencher aqui. Dependente que não deveria estar na
+                lista pode ser descartado — a pasta às vezes traz o nome no arquivo sem o documento correspondente.
+              </p>
+              {dependentes.length ? (
                 <div className="pjd-dependentes">
-                  {leitura.dependentes.map((d) => (
-                    <article key={d.nome}>
+                  {dependentes.map((d, i) => (
+                    <article key={d.chave} className={d.descartado ? 'pjd-descartado' : ''}>
                       <header>
                         <div>
                           <b>{d.nome}</b>
-                          <small>{d.parentesco || 'Parentesco não identificado'} • {d.fonte}</small>
+                          <small>{d.fonte}</small>
                         </div>
-                        <span className={`badge ${d.situacao === 'Dados localizados' ? 'aprovada' : 'pj-neutro'}`}>{d.situacao}</span>
+                        <span className={`badge ${BADGE_DEPENDENTE[situacaoDoDependente(d)] || 'pj-neutro'}`}>
+                          {situacaoDoDependente(d)}
+                        </span>
+                        <button type="button" className="btn-icon" title={d.descartado ? 'Trazer de volta' : 'Descartar dependente'}
+                          onClick={() => alterarDependente(i, { descartado: !d.descartado })}>
+                          {d.descartado ? <Undo2 size={15} /> : <Trash2 size={15} />}
+                        </button>
                       </header>
-                      <div className="pjd-dependente-campos">
-                        <span><small>CPF</small><b>{d.cpf ? mascararCpf(d.cpf) : '—'}</b></span>
-                        <span><small>Nascimento</small><b>{d.nascimento ? dataBr(d.nascimento) : '—'}</b></span>
-                        <span><small>Sexo</small><b>{d.sexo || '—'}</b></span>
-                      </div>
+                      {!d.descartado && (
+                        <div className="pjd-dependente-campos">
+                          <label>
+                            <small>CPF</small>
+                            <input type="text" inputMode="numeric" value={mascararCpf(d.cpf)} placeholder="000.000.000-00"
+                              onChange={(e) => alterarDependente(i, { cpf: digitos(e.target.value).slice(0, 11) })} />
+                            {d.cpf && !cpfValido(d.cpf) && <em className="pjd-erro">CPF inválido</em>}
+                          </label>
+                          <label>
+                            <small>Nascimento</small>
+                            <input type="date" value={d.nascimento || ''}
+                              onChange={(e) => alterarDependente(i, { nascimento: e.target.value || null })} />
+                          </label>
+                          <label>
+                            <small>Sexo</small>
+                            <select value={d.sexo || ''} onChange={(e) => alterarDependente(i, { sexo: e.target.value })}>
+                              <option value="">—</option>
+                              <option value="Feminino">Feminino</option>
+                              <option value="Masculino">Masculino</option>
+                            </select>
+                          </label>
+                          <label>
+                            <small>Parentesco</small>
+                            <select value={d.parentesco || ''} onChange={(e) => alterarDependente(i, { parentesco: e.target.value })}>
+                              <option value="">—</option>
+                              {PARENTESCOS.map((p) => <option key={p} value={p}>{p}</option>)}
+                            </select>
+                          </label>
+                        </div>
+                      )}
                     </article>
                   ))}
                 </div>
@@ -333,6 +416,8 @@ export default function ImportarDocumentos({ prestador = null, onFechar }) {
               a pasta ou preencha o cadastro à mão.
             </Aviso>
           )}
+
+          {cpfRuim && <Aviso tipo="alerta">Há CPF de dependente com dígito inválido. Corrija ou apague o campo para conseguir gravar.</Aviso>}
 
           <label className="pjd-confirmar">
             <input type="checkbox" checked={conferido} onChange={(e) => setConferido(e.target.checked)}

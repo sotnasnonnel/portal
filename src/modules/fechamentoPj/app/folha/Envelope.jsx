@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, RefreshCw, Plus, Pencil, Trash2, FileCheck, Eye, Send,
-  AlertTriangle, CheckCircle2, Clock, ExternalLink, Lock,
+  AlertTriangle, CheckCircle2, Clock, ExternalLink, Lock, RotateCcw,
 } from 'lucide-react';
 import { useFechamentoPj } from '../components/contexto';
 import {
@@ -26,7 +26,7 @@ import TableScroll from '../../../../components/UI/TableScroll';
 const ABAS = ['eventos', 'rateio', 'conferencia', 'log'];
 
 export default function Envelope({
-  linhas, todas, envelopeId, abaInicial = 'eventos', onTrocar, onFechar, onGravado, onGerarTermo, onVerTermo, onRegistrarEnvio,
+  linhas, todas, envelopeId, abaInicial = 'eventos', onTrocar, onFechar, onGravado, onGerarTermo, onVerTermo, onRegistrarEnvio, onReenviar,
 }) {
   const ctx = useFechamentoPj();
   const {
@@ -142,6 +142,11 @@ export default function Envelope({
           {podeEnviar && (
             <button type="button" className="btn btn-primary" onClick={() => onRegistrarEnvio([linha])}>
               <Send size={16} /> Enviar por e-mail
+            </button>
+          )}
+          {envelope.termo === 'gerado' && envelope.envio === 'enviado' && (
+            <button type="button" className="btn btn-outline" onClick={() => onReenviar([linha])}>
+              <RotateCcw size={16} /> Reenviar e-mail
             </button>
           )}
         </>

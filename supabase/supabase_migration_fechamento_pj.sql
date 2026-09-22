@@ -404,7 +404,7 @@ create unique index if not exists pj_encerramentos_vigente_uidx
 -- ----------------------------------------------------------------------------
 create table if not exists public.pj_importacoes (
   id uuid primary key default gen_random_uuid(),
-  tipo text not null check (tipo in ('folha', 'organograma', 'bradesco', 'historico')),
+  tipo text not null check (tipo in ('folha', 'organograma', 'bradesco', 'historico', 'documental')),
   competencia date,
   arquivo text not null,
   modo text check (modo is null or modo in ('descontos', 'completo')),

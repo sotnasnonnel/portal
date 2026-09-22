@@ -11,9 +11,17 @@
 // e-mail sai. O navegador só manda ids; assunto, corpo e destinatários são
 // montados aqui a partir do banco, para a função não virar um disparador livre.
 //
-// Body: { envelope_ids: string[], dry_run?: boolean }
+// O termo vai duas vezes: no corpo do e-mail (HTML) e anexado em PDF, com o
+// mesmo conteúdo do termo da tela — só o total compensado, sem a abertura dos
+// descontos.
+//
+// Body: { envelope_ids: string[], dry_run?: boolean, reenviar?: boolean }
+// reenviar: manda de novo o termo que já consta como enviado (e-mail perdido,
+// endereço corrigido). Sem ele, o que já foi enviado é ignorado.
 // Resposta: { resultados: [{ envelope_id, status: 'enviado'|'ignorado'|'falhou', motivo? }] }
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { montarPdfTermo } from "./termoPdf.ts";
+import { LOGO_PDF } from "./logoPdf.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -50,6 +58,23 @@ const mascararCnpj = (v: unknown) => {
   if (d.length !== 14) return String(v ?? "");
   return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`;
 };
+
+// contentBytes do Graph é base64; btoa não aguenta a string toda de uma vez.
+function base64(bytes: Uint8Array): string {
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(bin);
+}
+
+// Nome do anexo sem acento nem sinal que atrapalhe cliente de e-mail.
+function nomeArquivo(nome: string, competencia: string): string {
+  const limpo = String(nome || "prestador")
+    .normalize("NFD").replace(/[\u0300-\u036F]/g, "")
+    .replace(/[^A-Za-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "prestador";
+  return `Termo-${competenciaRotulo(competencia).replace("/", "-")}-${limpo}.pdf`;
+}
 
 async function graphToken(tenant: string, clientId: string, secret: string): Promise<string> {
   const res = await fetch(`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`, {
@@ -147,8 +172,9 @@ Deno.serve(async (req) => {
 
     let envelope_ids: unknown = null;
     let dry_run = false;
+    let reenviar = false;
     try {
-      ({ envelope_ids, dry_run = false } = await req.json());
+      ({ envelope_ids, dry_run = false, reenviar = false } = await req.json());
     } catch {
       return json({ error: "invalid_body" }, 400);
     }
@@ -192,10 +218,11 @@ Deno.serve(async (req) => {
       const e = String(c?.email ?? "").trim();
       if (emailValido(e) && !copias.includes(e)) copias.push(e);
     }
+    // Logo do corpo do e-mail (URL). O PDF usa a cópia pequena de logoPdf.ts.
     const logo = Deno.env.get("LOGO_URL") ?? "https://bogsuuhrgvopzgcceoqz.supabase.co/storage/v1/object/public/public-assets/logo_phd.png";
 
     const resultados: Array<{ envelope_id: string; nome?: string; email?: string; status: string; motivo?: string }> = [];
-    const envios: Array<{ env: any; pessoa: Pessoa; subject: string; html: string }> = [];
+    const envios: Array<{ env: any; pessoa: Pessoa; subject: string; html: string; pdf: Uint8Array | null; nomePdf: string }> = [];
 
     for (const id of ids) {
       const env = envelopes.find((e) => e.id === id);
@@ -203,22 +230,53 @@ Deno.serve(async (req) => {
       const pessoa = pessoaDoEnvelope(env, prestadores?.find((p) => p.id === env.prestador_id));
       const base = { envelope_id: id, nome: pessoa.nome, email: pessoa.email };
       if (env.termo !== "gerado") { resultados.push({ ...base, status: "ignorado", motivo: "Termo não gerado." }); continue; }
-      if (env.envio === "enviado") { resultados.push({ ...base, status: "ignorado", motivo: "Já enviado." }); continue; }
+      if (env.envio === "enviado" && reenviar !== true) { resultados.push({ ...base, status: "ignorado", motivo: "Já enviado." }); continue; }
       if (!emailValido(pessoa.email)) { resultados.push({ ...base, status: "ignorado", motivo: "Sem e-mail válido no cadastro." }); continue; }
       const subject = String(config?.assunto_email || "Termo para emissão da Nota Fiscal — {{competencia}}")
         .replace(/\{\{\s*competencia\s*\}\}/gi, competenciaRotulo(env.competencia));
+      const bruto = Number(env.bruto) || 0;
+      const descontos = Number(env.descontos) || 0;
+      const liquido = Math.round((bruto - descontos) * 100) / 100;
+      const comp = competencias?.find((c) => c.competencia === env.competencia);
       const html = montarHtml({
-        pessoa, competencia: env.competencia, bruto: Number(env.bruto) || 0, descontos: Number(env.descontos) || 0,
-        comp: competencias?.find((c) => c.competencia === env.competencia), emailFinanceiro: emailFin, logo,
+        pessoa, competencia: env.competencia, bruto, descontos,
+        comp, emailFinanceiro: emailFin, logo,
       });
-      envios.push({ env, pessoa, subject, html });
+      // PDF com o mesmo termo. Se a geração falhar, o e-mail ainda sai com o
+      // termo no corpo — e o resultado avisa que foi sem anexo.
+      let pdf: Uint8Array | null = null;
+      try {
+        pdf = await montarPdfTermo({
+          pessoa: { codigo: pessoa.codigo, nome: pessoa.nome, razaoSocial: pessoa.razaoSocial, cnpj: pessoa.cnpj ? mascararCnpj(pessoa.cnpj) : "" },
+          competenciaRotulo: competenciaRotulo(env.competencia),
+          descontos,
+          brutoTexto: brl(bruto),
+          liquidoTexto: brl(liquido),
+          descontosTexto: brl(descontos),
+          tomador: TOMADOR,
+          enderecoTomador: ENDERECO_TOMADOR,
+          emailFinanceiro: emailFin,
+          prazos: {
+            envioTermos: dataBr(comp?.data_envio_termos),
+            prazoNf: dataHoraBr(comp?.prazo_nf),
+            pagamento: dataBr(comp?.data_pagamento),
+          },
+          logoPng: LOGO_PDF,
+        });
+      } catch (e) {
+        console.error("[send-termo-pj] pdf:", e);
+      }
+      envios.push({ env, pessoa, subject, html, pdf, nomePdf: nomeArquivo(pessoa.nome, env.competencia) });
     }
 
     if (dry_run) {
       return json({
         dry_run: true,
         cc: copias,
-        enviaria: envios.map((x) => ({ envelope_id: x.env.id, nome: x.pessoa.nome, email: x.pessoa.email, subject: x.subject })),
+        enviaria: envios.map((x) => ({
+          envelope_id: x.env.id, nome: x.pessoa.nome, email: x.pessoa.email, subject: x.subject,
+          anexo: x.pdf ? `${x.nomePdf} (${x.pdf.length} bytes)` : null,
+        })),
         resultados,
       });
     }
@@ -231,7 +289,7 @@ Deno.serve(async (req) => {
     if (!tenant || !clientId || !secret) return json({ error: "graph_not_configured" }, 500);
     const token = await graphToken(tenant, clientId, secret);
 
-    for (const { env, pessoa, subject, html } of envios) {
+    for (const { env, pessoa, subject, html, pdf, nomePdf } of envios) {
       const base = { envelope_id: env.id, nome: pessoa.nome, email: pessoa.email };
       try {
         const res = await fetch(`https://graph.microsoft.com/v1.0/users/${encodeURIComponent(sender)}/sendMail`, {
@@ -244,6 +302,14 @@ Deno.serve(async (req) => {
               toRecipients: [{ emailAddress: { address: pessoa.email } }],
               ccRecipients: copias.map((address) => ({ emailAddress: { address } })),
               ...(emailValido(emailFin) ? { replyTo: [{ emailAddress: { address: emailFin } }] } : {}),
+              ...(pdf ? {
+                attachments: [{
+                  "@odata.type": "#microsoft.graph.fileAttachment",
+                  name: nomePdf,
+                  contentType: "application/pdf",
+                  contentBytes: base64(pdf),
+                }],
+              } : {}),
             },
             saveToSentItems: true,
           }),
@@ -266,14 +332,15 @@ Deno.serve(async (req) => {
         .update({ envio: "enviado", enviado_em: new Date().toISOString(), enviado_por: eu?.id ?? null })
         .eq("id", env.id).eq("termo", "gerado");
       await db.from("pj_auditoria").insert({
-        acao: "Termo enviado por e-mail",
+        acao: env.envio === "enviado" ? "Termo reenviado por e-mail" : "Termo enviado por e-mail",
         detalhe: `${pessoa.nome} • ${pessoa.email} • assunto: ${subject} • cópia: ${copias.length ? copias.join(", ") : "sem cópia"}`,
         competencia: env.competencia,
         prestador_id: env.prestador_id,
       });
+      const semAnexo = pdf ? "" : "Enviado sem o anexo em PDF (o termo foi no corpo do e-mail).";
       resultados.push(eUp
         ? { ...base, status: "enviado", motivo: `E-mail enviado, mas o status não foi gravado: ${eUp.message}` }
-        : { ...base, status: "enviado" });
+        : { ...base, status: "enviado", ...(semAnexo ? { motivo: semAnexo } : {}) });
     }
 
     return json({ resultados });

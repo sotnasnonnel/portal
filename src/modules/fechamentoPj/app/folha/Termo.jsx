@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Printer, Send, Mail, CheckCircle2 } from 'lucide-react';
+import { Printer, Send, Mail, CheckCircle2, RotateCcw } from 'lucide-react';
 import { useFechamentoPj } from '../components/contexto';
 import { Modal, Aviso, Badge, Moeda } from '../components/ui';
 import { marcarTermo, auditar, enviarTermosEmail } from '../../lib/dados';
@@ -93,7 +93,7 @@ function DocumentoTermo({ linha, competenciaAtual, config }) {
   );
 }
 
-export function ModalTermo({ linha, onFechar, onRegistrarEnvio }) {
+export function ModalTermo({ linha, onFechar, onRegistrarEnvio, onReenviar }) {
   const { config, competencias } = useFechamentoPj();
   const competenciaAtual = competencias.find((c) => c.competencia === linha.envelope.competencia) || null;
   const assunto = substituirAssunto(config?.assunto_email, linha.envelope.competencia);
@@ -116,6 +116,11 @@ export function ModalTermo({ linha, onFechar, onRegistrarEnvio }) {
               <Send size={16} /> Enviar por e-mail
             </button>
           )}
+          {envelope.termo === 'gerado' && envelope.envio === 'enviado' && onReenviar && (
+            <button type="button" className="btn btn-outline" onClick={() => onReenviar([linha])}>
+              <RotateCcw size={16} /> Reenviar e-mail
+            </button>
+          )}
         </>
       )}
     >
@@ -135,17 +140,19 @@ const BADGE_RESULTADO = { enviado: 'aprovada', ignorado: 'pendente', falhou: 're
 
 /**
  * Envio dos termos por e-mail. O portal manda um e-mail por prestador (Edge
- * Function send-termo-pj), com o termo no corpo e cópia para o Financeiro, e
- * marca como enviado só o que saiu. "Só registrar" continua existindo para o
- * termo que foi mandado por fora do portal.
+ * Function send-termo-pj), com o termo no corpo, o mesmo termo em PDF anexo e
+ * cópia para o Financeiro, e marca como enviado só o que saiu. "Só registrar" continua existindo para o
+ * termo que foi mandado por fora do portal. Em reenvio, manda de novo o termo
+ * que já consta como enviado (não há o que registrar).
  */
-export function DialogoEnvio({ linhas, onFechar, onConcluido }) {
+export function DialogoEnvio({ linhas, reenvio = false, onFechar, onConcluido }) {
   const { config, user, notificar } = useFechamentoPj();
   const [gravando, setGravando] = useState(null); // null | 'email' | 'registro'
   const [erro, setErro] = useState('');
   const [resultados, setResultados] = useState(null);
+  const [progresso, setProgresso] = useState(null); // { feitos, total } durante o envio em lotes
 
-  const aptas = useMemo(() => linhas.filter((l) => l.envelope.termo === 'gerado' && l.envelope.envio !== 'enviado'), [linhas]);
+  const aptas = useMemo(() => linhas.filter((l) => l.envelope.termo === 'gerado' && (reenvio || l.envelope.envio !== 'enviado')), [linhas, reenvio]);
   const semEmail = aptas.filter((l) => !emailValido(l.pessoa.email));
   const comEmail = aptas.length - semEmail.length;
   const copias = copiasDoTermo(config);
@@ -156,17 +163,24 @@ export function DialogoEnvio({ linhas, onFechar, onConcluido }) {
     setGravando('email');
     setErro('');
     try {
-      const res = await enviarTermosEmail(aptas.map((l) => l.envelope.id));
-      setResultados(res);
+      const res = await enviarTermosEmail(aptas.map((l) => l.envelope.id), {
+        reenviar: reenvio,
+        onProgresso: (feitos, total) => setProgresso(total > 1 ? { feitos, total } : null),
+      });
+      // Lote que falhou volta só com o id: completa nome e e-mail pela tela.
+      const porId = new Map(aptas.map((l) => [l.envelope.id, l.pessoa]));
+      setResultados(res.map((r) => ({ nome: porId.get(r.envelope_id)?.nome, email: porId.get(r.envelope_id)?.email, ...r })));
       const ok = res.filter((r) => r.status === 'enviado').length;
       const falhas = res.length - ok;
-      notificar(falhas ? `${ok} termo(s) enviado(s), ${falhas} não enviado(s). Veja o detalhe.` : `${ok} termo(s) enviado(s) por e-mail.`,
+      const verbo = reenvio ? 'reenviado(s)' : 'enviado(s)';
+      notificar(falhas ? `${ok} termo(s) ${verbo}, ${falhas} não enviado(s). Veja o detalhe.` : `${ok} termo(s) ${verbo} por e-mail.`,
         falhas ? 'alerta' : 'sucesso');
       await onConcluido({ manterAberto: true });
     } catch (e) {
       setErro(e.message);
     } finally {
       setGravando(null);
+      setProgresso(null);
     }
   }
 
@@ -221,28 +235,33 @@ export function DialogoEnvio({ linhas, onFechar, onConcluido }) {
   return (
     <Modal
       largura="md"
-      titulo="Enviar termos por e-mail"
+      titulo={reenvio ? 'Reenviar termo por e-mail' : 'Enviar termos por e-mail'}
       subtitulo={`${aptas.length} termo(s) · ${competenciaRotulo(competencia)}`}
       onFechar={onFechar}
       bloqueado={Boolean(gravando)}
       rodape={(
         <>
           <button type="button" className="btn btn-ghost" onClick={onFechar} disabled={Boolean(gravando)}>Cancelar</button>
-          <button type="button" className="btn btn-outline" onClick={soRegistrar} disabled={Boolean(gravando) || !aptas.length}
-            title="Marca como enviado sem mandar e-mail (termo enviado por fora do portal)">
-            <CheckCircle2 size={16} /> {gravando === 'registro' ? 'Registrando…' : 'Só registrar'}
-          </button>
+          {!reenvio && (
+            <button type="button" className="btn btn-outline" onClick={soRegistrar} disabled={Boolean(gravando) || !aptas.length}
+              title="Marca como enviado sem mandar e-mail (termo enviado por fora do portal)">
+              <CheckCircle2 size={16} /> {gravando === 'registro' ? 'Registrando…' : 'Só registrar'}
+            </button>
+          )}
           <button type="button" className="btn btn-primary" onClick={enviar} disabled={Boolean(gravando) || !comEmail}>
-            <Mail size={16} /> {gravando === 'email' ? 'Enviando…' : `Enviar ${comEmail} e-mail(s)`}
+            <Mail size={16} /> {gravando === 'email' ? (progresso ? `Enviando ${progresso.feitos}/${progresso.total}…` : 'Enviando…') : `${reenvio ? 'Reenviar' : 'Enviar'} ${comEmail} e-mail(s)`}
           </button>
         </>
       )}
     >
       <div className="pj-folha-pilha">
         <Aviso tipo="info">
-          Cada prestador recebe um e-mail só com o próprio termo. As respostas vão para o e-mail do Financeiro.
+          Cada prestador recebe um e-mail só com o próprio termo — no corpo e também em PDF anexo. As respostas vão para o e-mail do Financeiro.
         </Aviso>
-        {!aptas.length && <Aviso tipo="alerta">Nenhum termo selecionado está gerado e pendente de envio.</Aviso>}
+        {reenvio && aptas.length > 0 && (
+          <Aviso tipo="alerta">Este termo já consta como enviado. O prestador vai receber o e-mail de novo, com os valores atuais do envelope.</Aviso>
+        )}
+        {!aptas.length && <Aviso tipo="alerta">{reenvio ? 'Nenhum termo selecionado está gerado.' : 'Nenhum termo selecionado está gerado e pendente de envio.'}</Aviso>}
         {aptas.length < linhas.length && aptas.length > 0 && (
           <Aviso tipo="alerta">{linhas.length - aptas.length} envelope(s) ficaram de fora: termo não gerado ou já enviado.</Aviso>
         )}

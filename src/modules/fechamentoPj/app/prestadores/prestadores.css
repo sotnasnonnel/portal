@@ -249,10 +249,40 @@
 .pjd-dependentes header > div { display: flex; flex-direction: column; min-width: 0; }
 .pjd-dependentes header small { color: var(--text-muted, #64748b); font-size: var(--font-size-xs); overflow-wrap: anywhere; }
 
-.pjd-dependente-campos { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; }
-.pjd-dependente-campos span { display: flex; flex-direction: column; }
+.pjd-dependentes header > .btn-icon { flex-shrink: 0; }
+
+/* Campos do dependente: editáveis, porque documento digitalizado não entrega
+   CPF, nascimento nem sexo e alguém precisa completar na conferência. */
+.pjd-dependente-campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px 12px;
+  margin-top: 8px;
+}
+
+.pjd-dependente-campos label { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .pjd-dependente-campos small { color: var(--text-muted, #64748b); font-size: var(--font-size-xs); text-transform: uppercase; letter-spacing: 0.06em; }
-.pjd-dependente-campos b { font-size: var(--font-size-sm); }
+
+.pjd-dependente-campos input,
+.pjd-dependente-campos select {
+  width: 100%;
+  min-width: 0;
+  padding: 5px 8px;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius-sm, 6px);
+  font-size: var(--font-size-sm);
+  font-family: inherit;
+  background: var(--color-bg-white, #fff);
+  color: inherit;
+}
+
+.pjd-dependente-campos input:focus,
+.pjd-dependente-campos select:focus { outline: 2px solid var(--color-primary); outline-offset: -1px; }
+
+.pjd-erro { font-style: normal; font-size: var(--font-size-xs); color: var(--color-danger, #b91c1c); }
+
+.pjd-descartado { opacity: 0.55; }
+.pjd-descartado b { text-decoration: line-through; }
 
 .pjd-validacao { display: flex; flex-direction: column; gap: 6px; }
 

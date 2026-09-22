@@ -298,16 +298,34 @@ export async function marcarTermo(envelopeIds, acao, userId) {
  * Envia o termo por e-mail (Edge Function send-termo-pj), um e-mail por
  * prestador. A função marca como enviado só o que de fato saiu e grava a
  * auditoria. Devolve [{ envelope_id, nome, email, status, motivo }], com
- * status 'enviado' | 'ignorado' | 'falhou'.
+ * status 'enviado' | 'ignorado' | 'falhou'. Com reenviar, manda de novo o
+ * que já consta como enviado.
+ *
+ * Vai em lotes: cada termo vira um PDF dentro da função, e a folha inteira
+ * numa chamada só estoura o limite de CPU da Edge Function (546). Lote que
+ * falha volta como 'falhou' para os seus termos e o resto segue; o que já saiu
+ * nos lotes anteriores fica marcado como enviado.
  */
-export async function enviarTermosEmail(envelopeIds) {
-  const { data, error } = await supabase.functions.invoke('send-termo-pj', { body: { envelope_ids: envelopeIds } });
-  if (error) {
-    let msg = error.message;
-    try { msg = (await error.context?.json())?.error || msg; } catch { /* corpo não é JSON */ }
-    throw new Error(`Não foi possível enviar os termos: ${msg}`);
+const LOTE_TERMOS = 5;
+
+export async function enviarTermosEmail(envelopeIds, { reenviar = false, onProgresso } = {}) {
+  const resultados = [];
+  for (let i = 0; i < envelopeIds.length; i += LOTE_TERMOS) {
+    const lote = envelopeIds.slice(i, i + LOTE_TERMOS);
+    onProgresso?.(i, envelopeIds.length);
+    const { data, error } = await supabase.functions.invoke('send-termo-pj', { body: { envelope_ids: lote, reenviar } });
+    if (error) {
+      let msg = error.message;
+      try { msg = (await error.context?.json())?.error || msg; } catch { /* corpo não é JSON */ }
+      // Nada saiu ainda: erro direto, como antes.
+      if (!resultados.length) throw new Error(`Não foi possível enviar os termos: ${msg}`);
+      resultados.push(...lote.map((envelope_id) => ({ envelope_id, status: 'falhou', motivo: `Não foi possível enviar: ${msg}` })));
+      continue;
+    }
+    resultados.push(...(data?.resultados || []));
   }
-  return data?.resultados || [];
+  onProgresso?.(envelopeIds.length, envelopeIds.length);
+  return resultados;
 }
 
 export async function salvarDocumentoPagamento(envelopeId, { nf_numero, rm_documento }) {

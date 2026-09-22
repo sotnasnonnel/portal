@@ -58,6 +58,7 @@ export default function Pagina() {
   const [envelopeAberto, setEnvelopeAberto] = useState(null); // { id, aba }
   const [termoId, setTermoId] = useState(null);
   const [envioIds, setEnvioIds] = useState(null);
+  const [reenvio, setReenvio] = useState(false);
   const [ocupado, setOcupado] = useState('');
   const [menuCalculo, setMenuCalculo] = useState(false);
   const [nomes, setNomes] = useState(new Map());
@@ -284,6 +285,7 @@ export default function Pagina() {
   }
 
   const termoLinha = termoId ? linhas.find((l) => l.envelope.id === termoId) : null;
+  const abrirEnvio = (novosIds, comoReenvio = false) => { setReenvio(comoReenvio); setEnvioIds(novosIds); };
   const envioLinhas = envioIds ? linhas.filter((l) => envioIds.includes(l.envelope.id)) : null;
   const fechadaPor = nomes.get(competenciaAtual?.fechada_por);
   const reabertaPor = nomes.get(competenciaAtual?.reaberta_por);
@@ -387,7 +389,7 @@ export default function Pagina() {
         </button>
         <button type="button" className="btn btn-outline" disabled={!aberta || semAcao || !(ids.size ? selecionadas.length : termosParaEnviar.length)}
           title={dicaFechada}
-          onClick={() => setEnvioIds((ids.size ? selecionadas : termosParaEnviar).map((l) => l.envelope.id))}>
+          onClick={() => abrirEnvio((ids.size ? selecionadas : termosParaEnviar).map((l) => l.envelope.id))}>
           <Send size={16} /> Enviar por e-mail
         </button>
         <button type="button" className="btn btn-outline" onClick={() => setDialogo('incluir')} disabled={!aberta || semAcao} title={dicaFechada}>
@@ -504,7 +506,7 @@ export default function Pagina() {
                             <button type="button" className="btn-icon" title="Ver termo" onClick={() => setTermoId(e.id)}><Eye size={16} /></button>
                           )}
                           {e.termo === 'gerado' && e.envio !== 'enviado' && (
-                            <button type="button" className="btn-icon" title="Enviar por e-mail" onClick={() => setEnvioIds([e.id])}><Send size={16} /></button>
+                            <button type="button" className="btn-icon" title="Enviar por e-mail" onClick={() => abrirEnvio([e.id])}><Send size={16} /></button>
                           )}
                         </div>
                       </td>
@@ -547,17 +549,20 @@ export default function Pagina() {
           onGravado={recarregarEnvelopes}
           onGerarTermo={(l) => executar('termos', () => gerarTermos([l], { abrir: true }))}
           onVerTermo={(l) => setTermoId(l.envelope.id)}
-          onRegistrarEnvio={(ls) => setEnvioIds(ls.map((l) => l.envelope.id))}
+          onRegistrarEnvio={(ls) => abrirEnvio(ls.map((l) => l.envelope.id))}
+          onReenviar={(ls) => abrirEnvio(ls.map((l) => l.envelope.id), true)}
         />
       )}
       {termoLinha && (
-        <ModalTermo linha={termoLinha} onFechar={() => setTermoId(null)} onRegistrarEnvio={(ls) => setEnvioIds(ls.map((l) => l.envelope.id))} />
+        <ModalTermo linha={termoLinha} onFechar={() => setTermoId(null)} onRegistrarEnvio={(ls) => abrirEnvio(ls.map((l) => l.envelope.id))}
+          onReenviar={(ls) => abrirEnvio(ls.map((l) => l.envelope.id), true)} />
       )}
       {envioLinhas && (
         <DialogoEnvio
           linhas={envioLinhas}
-          onFechar={() => setEnvioIds(null)}
-          onConcluido={async ({ manterAberto = false } = {}) => { if (!manterAberto) setEnvioIds(null); await recarregarEnvelopes(); }}
+          reenvio={reenvio}
+          onFechar={() => abrirEnvio(null)}
+          onConcluido={async ({ manterAberto = false } = {}) => { if (!manterAberto) abrirEnvio(null); await recarregarEnvelopes(); }}
         />
       )}
       {dialogos}
