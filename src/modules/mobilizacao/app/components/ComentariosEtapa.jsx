@@ -1,8 +1,11 @@
 import { useRef, useState } from 'react';
 import {
   MessageSquare, Paperclip, FileText, X, Send, Loader2, ChevronDown, ChevronRight,
+  Pencil, History,
 } from 'lucide-react';
-import { comentarEtapa, urlDoAnexoMob } from '../../lib/mobilizacao';
+import {
+  comentarEtapa, editarComentarioEtapa, listarVersoesComentario, urlDoAnexoMob,
+} from '../../lib/mobilizacao';
 import { formatarTamanho } from '../../../administrativo/lib/arquivo';
 
 const dataHora = (iso) => (iso
@@ -27,6 +30,11 @@ const dataHora = (iso) => (iso
  * A lista de "Arquivos desta etapa" repete os anexos que já aparecem nos
  * comentários, de propósito: quem procura um documento não quer ler a conversa
  * inteira para achá-lo.
+ *
+ * EDIÇÃO: cada um corrige o que escreveu (a RLS também barra o resto). A
+ * mensagem editada diz "Editada", com data, hora e quem editou, e as versões
+ * anteriores abrem ali mesmo — sem isso, corrigir um texto apagaria em silêncio
+ * aquilo a que alguém já respondeu.
  */
 export default function ComentariosEtapa({ etapaId, comentarios = [], meuId, onEnviado }) {
   const [aberto, setAberto] = useState(false);
@@ -34,6 +42,9 @@ export default function ComentariosEtapa({ etapaId, comentarios = [], meuId, onE
   const [arquivos, setArquivos] = useState([]);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState('');
+  const [editando, setEditando] = useState(null);      // id do comentário em edição
+  const [textoEdicao, setTextoEdicao] = useState('');
+  const [versoes, setVersoes] = useState({});          // id -> versões já buscadas
   const inputArquivo = useRef(null);
 
   // Todos os anexos da etapa, com o autor de cada um — é a lista consolidada.
@@ -52,6 +63,41 @@ export default function ComentariosEtapa({ etapaId, comentarios = [], meuId, onE
   const abrirAnexo = async (path) => {
     try {
       window.open(await urlDoAnexoMob(path), '_blank', 'noopener');
+    } catch (e) {
+      setErro(e.message);
+    }
+  };
+
+  const comecarEdicao = (c) => {
+    setEditando(c.id);
+    setTextoEdicao(c.texto || '');
+    setErro('');
+  };
+
+  const salvarEdicao = async () => {
+    setEnviando(true);
+    setErro('');
+    try {
+      await editarComentarioEtapa(editando, textoEdicao);
+      setEditando(null);
+      await onEnviado();
+    } catch (e) {
+      setErro(e.message);
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  // As versões só são buscadas quando alguém quer vê-las: são poucas, mas são
+  // uma consulta por comentário, e a tela já carrega o processo inteiro.
+  const verVersoes = async (comentarioId) => {
+    if (versoes[comentarioId]) {
+      setVersoes((v) => ({ ...v, [comentarioId]: null }));
+      return;
+    }
+    try {
+      const lista = await listarVersoesComentario(comentarioId);
+      setVersoes((v) => ({ ...v, [comentarioId]: lista }));
     } catch (e) {
       setErro(e.message);
     }
@@ -102,9 +148,59 @@ export default function ComentariosEtapa({ etapaId, comentarios = [], meuId, onE
                   <div className="mob-coment-cab">
                     <strong>{c.autorNome || 'Usuário'}</strong>
                     <span>{dataHora(c.created_at)}</span>
+                    {/* Só o autor edita, e só o texto: anexo não se corrige. */}
+                    {c.autor_id === meuId && c.texto && editando !== c.id && (
+                      <button type="button" className="mob-coment-editar" onClick={() => comecarEdicao(c)}>
+                        <Pencil size={12} /> Editar
+                      </button>
+                    )}
                   </div>
-                  {/* Comentário só de anexo não desenha parágrafo vazio. */}
-                  {c.texto && <p className="mob-coment-txt">{c.texto}</p>}
+
+                  {editando === c.id ? (
+                    <div className="mob-coment-edicao">
+                      <textarea className="mob-coment-campo" rows={2} value={textoEdicao}
+                        onChange={(ev) => setTextoEdicao(ev.target.value)} />
+                      <div className="mob-coment-acoes">
+                        <button type="button" className="mob-btn mob-btn-ghost mob-btn-sm"
+                          disabled={enviando} onClick={() => setEditando(null)}>
+                          Cancelar
+                        </button>
+                        <button type="button" className="mob-btn mob-btn-primary mob-btn-sm"
+                          disabled={enviando || !textoEdicao.trim()} onClick={salvarEdicao}>
+                          {enviando ? <Loader2 size={14} className="mob-spin" /> : null} Salvar
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Comentário só de anexo não desenha parágrafo vazio. */
+                    c.texto && <p className="mob-coment-txt">{c.texto}</p>
+                  )}
+
+                  {c.editado_em && editando !== c.id && (
+                    <div className="mob-coment-editada">
+                      <span>
+                        Editada em {dataHora(c.editado_em)}
+                        {c.editadoPorNome ? ` por ${c.editadoPorNome}` : ''}
+                      </span>
+                      <button type="button" className="mob-link" onClick={() => verVersoes(c.id)}>
+                        <History size={12} /> {versoes[c.id] ? 'ocultar versões' : 'ver versões'}
+                      </button>
+                    </div>
+                  )}
+
+                  {versoes[c.id]?.length > 0 && (
+                    <ul className="mob-coment-versoes">
+                      {versoes[c.id].map((v) => (
+                        <li key={v.id}>
+                          <span className="mob-coment-versao-cab">
+                            Até {dataHora(v.vigorou_ate)}
+                            {v.editadoPorNome ? ` · trocada por ${v.editadoPorNome}` : ''}
+                          </span>
+                          <p className="mob-coment-txt">{v.texto}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                   {(c.anexos || []).length > 0 && (
                     <ul className="mob-anexo-lista">
                       {c.anexos.map((a) => (

@@ -305,6 +305,29 @@
   padding: 10px 12px; background: var(--neutral-surface);
 }
 .mob-etapa.is-concluida { background: var(--m-gray-50); }
+/* "Não se aplica": cor própria, e não a da concluída. As duas encerram a etapa,
+   mas só uma delas foi feita — e é essa diferença que se procura ao bater o
+   olho no passo a passo. */
+.mob-etapa.is-dispensada {
+  background: #fbf7ef;
+  border-color: #e8d9bd;
+  border-style: dashed;
+}
+.mob-etapa.is-dispensada .mob-etapa-ord { background: #f3e7d0; color: #8a6300; }
+.mob-etapa.is-dispensada .mob-etapa-tit { color: var(--m-gray-600); }
+.mob-etapa-na {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #f3e7d0;
+  color: #8a6300;
+  font-size: var(--font-size-2xs);
+  font-weight: var(--fw-semibold);
+  vertical-align: middle;
+}
 .mob-etapa.is-atrasada { border-color: #fecaca; }
 .mob-etapa-ord {
   display: inline-flex; align-items: center; justify-content: center;
@@ -699,3 +722,42 @@ button.mob-conta:focus-visible { outline: 2px solid var(--m-primary); outline-of
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0;
 }
 .mob-link:hover { text-decoration: underline; }
+
+/* ---- Comentário editado ------------------------------------------------- */
+.mob-coment-editar {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border: 0;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--m-primary);
+  font-size: var(--font-size-2xs);
+}
+.mob-coment-editar:hover { text-decoration: underline; }
+.mob-coment-edicao { display: grid; gap: 6px; margin-top: 4px; }
+.mob-coment-editada {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 3px;
+  font-size: var(--font-size-2xs);
+  color: var(--m-muted);
+  font-style: italic;
+}
+.mob-coment-editada .mob-link { font-style: normal; display: inline-flex; align-items: center; gap: 3px; }
+.mob-coment-versoes {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 6px 10px;
+  border-left: 2px solid var(--m-border);
+  display: grid;
+  gap: 8px;
+  background: var(--m-gray-50);
+  border-radius: 0 8px 8px 0;
+}
+.mob-coment-versao-cab { font-size: var(--font-size-2xs); color: var(--m-muted); }
+.mob-coment-versoes .mob-coment-txt { color: var(--m-gray-600); }

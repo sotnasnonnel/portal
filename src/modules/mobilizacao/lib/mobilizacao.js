@@ -371,16 +371,22 @@ export async function listarComentariosDasEtapas(etapaIds = []) {
 
   const { data, error } = await supabase
     .from('mobilizacao_etapa_comentarios')
-    .select('id, etapa_id, autor_id, texto, anexos, created_at')
+    .select('id, etapa_id, autor_id, texto, anexos, created_at, editado_em, editado_por')
     .in('etapa_id', ids)
     .order('created_at', { ascending: true });
   if (error) throw new Error(`Não foi possível carregar os comentários: ${error.message}`);
 
-  const nomes = await nomesDe((data || []).map((c) => c.autor_id));
+  // Quem editou entra na mesma busca de nomes: quase sempre é o próprio autor,
+  // mas a tela mostra o nome de quem editou, não o de quem escreveu.
+  const nomes = await nomesDe((data || []).flatMap((c) => [c.autor_id, c.editado_por]));
   const porEtapa = new Map();
   for (const c of data || []) {
     const lista = porEtapa.get(c.etapa_id) || [];
-    lista.push({ ...c, autorNome: nomes.get(c.autor_id) || '' });
+    lista.push({
+      ...c,
+      autorNome: nomes.get(c.autor_id) || '',
+      editadoPorNome: c.editado_por ? (nomes.get(c.editado_por) || '') : '',
+    });
     porEtapa.set(c.etapa_id, lista);
   }
   return porEtapa;
@@ -406,6 +412,43 @@ export async function comentarEtapa({ etapaId, autorId, texto = '', arquivos = [
     .single();
   if (error) throw new Error(`Não foi possível enviar o comentário: ${error.message}`);
   return data;
+}
+
+/**
+ * Corrige o texto de um comentário já enviado.
+ *
+ * Só o texto viaja: o anexo não se corrige (some ou entra outro, e os dois
+ * casos são um comentário novo), e quem carimba "editado em / por" é o gatilho
+ * no banco — mandar isso do front seria deixar o autor da edição ser escolhido
+ * por quem edita. A RLS deixa só o AUTOR passar; se ela barrar, o update não dá
+ * erro, volta sem linha nenhuma, e é por isso que o retorno é conferido.
+ */
+export async function editarComentarioEtapa(comentarioId, texto) {
+  const limpo = (texto || '').trim();
+  if (!limpo) throw new Error('O comentário não pode ficar vazio.');
+
+  const { data, error } = await supabase
+    .from('mobilizacao_etapa_comentarios')
+    .update({ texto: limpo })
+    .eq('id', comentarioId)
+    .select('id')
+    .maybeSingle();
+  if (error) throw new Error(`Não foi possível salvar a edição: ${error.message}`);
+  if (!data) throw new Error('Só quem escreveu o comentário pode editá-lo.');
+  return data;
+}
+
+/** As versões anteriores de um comentário, da mais recente para a mais antiga. */
+export async function listarVersoesComentario(comentarioId) {
+  const { data, error } = await supabase
+    .from('mobilizacao_etapa_comentario_versoes')
+    .select('id, texto, vigorou_de, vigorou_ate, editado_por')
+    .eq('comentario_id', comentarioId)
+    .order('vigorou_ate', { ascending: false });
+  if (error) throw new Error(`Não foi possível carregar o histórico: ${error.message}`);
+
+  const nomes = await nomesDe((data || []).map((v) => v.editado_por));
+  return (data || []).map((v) => ({ ...v, editadoPorNome: nomes.get(v.editado_por) || '' }));
 }
 
 /** URL assinada do anexo: o bucket é privado, não há link direto. */

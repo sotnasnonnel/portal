@@ -215,15 +215,28 @@ export default function ProcessoMob() {
               const tom = semaforoDias(e.dias_atraso);
               const atrasada = tom === 'vencido' && !ehEncerrada(e.status);
 
+              // "Não se aplica" tem cor e selo próprios: desenhada como
+              // concluída, ela some no meio do passo a passo, e a diferença —
+              // ninguém fez, porque não havia o que fazer — só aparecia para
+              // quem abrisse os comentários.
+              const dispensada = e.status === 'dispensada';
+
               return (
                 <article key={e.id}
-                  className={`mob-etapa ${ehEncerrada(e.status) ? 'is-concluida' : ''} ${atrasada ? 'is-atrasada' : ''}`}>
+                  className={`mob-etapa ${ehEncerrada(e.status) ? 'is-concluida' : ''} ${dispensada ? 'is-dispensada' : ''} ${atrasada ? 'is-atrasada' : ''}`}>
                   <span className="mob-etapa-ord">
-                    {ehEncerrada(e.status) ? <Check size={14} /> : e.ordem}
+                    {dispensada ? <MinusCircle size={14} /> : ehEncerrada(e.status) ? <Check size={14} /> : e.ordem}
                   </span>
 
                   <div className="mob-etapa-txt">
-                    <div className="mob-etapa-tit">{e.titulo}</div>
+                    <div className="mob-etapa-tit">
+                      {e.titulo}
+                      {dispensada && (
+                        <span className="mob-etapa-na">
+                          <MinusCircle size={11} /> {rotuloStatus(e.status)}
+                        </span>
+                      )}
+                    </div>
                     {e.descricao && <div className="mob-campo-dica" style={{ margin: '2px 0 0' }}>{e.descricao}</div>}
 
                     <div className="mob-etapa-meta">
