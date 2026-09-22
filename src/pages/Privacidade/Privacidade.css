@@ -1,0 +1,98 @@
+/* Aviso de Privacidade — página de leitura longa, aberta também para quem não
+   está logado (o link fica no login). Por isso não usa o Layout do DP: é uma
+   folha de papel centralizada, larga o suficiente para ler sem cansar. */
+.priv-page {
+  min-height: 100vh;
+  background: var(--ice);
+  padding: 32px 20px 64px;
+}
+
+.priv-folha {
+  max-width: 860px;
+  margin: 0 auto;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 36px 40px 44px;
+}
+
+.priv-voltar {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: none; border: none; cursor: pointer;
+  color: var(--muted); font-size: 0.875rem;
+  padding: 4px 0; margin-bottom: 18px;
+  text-decoration: none;
+}
+.priv-voltar:hover { color: var(--ink); }
+
+.priv-cab h1 {
+  font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em;
+  margin: 0 0 8px; line-height: 1.25; color: var(--ink);
+}
+.priv-cab p { margin: 0; color: var(--muted); font-size: 0.9375rem; line-height: 1.6; }
+.priv-versao {
+  display: inline-block; margin-top: 12px;
+  font-size: 0.75rem; color: var(--muted);
+  background: var(--ice); border: 1px solid var(--border);
+  border-radius: 999px; padding: 3px 10px;
+}
+
+/* Encarregado: é o bloco que a lei manda publicar, então não pode parecer só
+   mais um parágrafo do meio do texto. */
+.priv-dpo {
+  margin: 26px 0 8px;
+  border: 1px solid var(--terracotta-soft);
+  background: var(--terracotta-light);
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+.priv-dpo h2 { font-size: 1rem; font-weight: 700; margin: 0 0 10px; color: var(--ink); }
+.priv-dpo dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; }
+.priv-dpo dt { font-size: 0.8125rem; color: var(--muted); }
+.priv-dpo dd { margin: 0; font-size: 0.875rem; color: var(--ink); }
+
+.priv-secao { margin-top: 30px; }
+.priv-secao h2 {
+  font-size: 1.0625rem; font-weight: 700; margin: 0 0 10px;
+  color: var(--ink); line-height: 1.35;
+}
+.priv-secao p {
+  margin: 0 0 10px; font-size: 0.9375rem; line-height: 1.65; color: var(--ink-soft);
+}
+.priv-secao ul { margin: 0 0 10px; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
+.priv-secao li { font-size: 0.9375rem; line-height: 1.6; color: var(--ink-soft); }
+.priv-secao li strong { color: var(--ink); }
+
+/* Tabela de finalidade x base legal: é o coração do aviso e fica ilegível
+   empilhada em parágrafo. */
+.priv-tabela { width: 100%; border-collapse: collapse; margin: 4px 0 10px; }
+.priv-tabela th, .priv-tabela td {
+  text-align: left; vertical-align: top;
+  padding: 9px 10px; border-bottom: 1px solid var(--border);
+  font-size: 0.875rem; line-height: 1.55;
+}
+.priv-tabela th { font-weight: 600; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.priv-tabela td { color: var(--ink-soft); }
+.priv-tabela td:first-child { font-weight: 600; color: var(--ink); white-space: nowrap; }
+
+/* O que ainda falta a empresa decidir aparece marcado, não escondido: melhor
+   publicar com a lacuna à vista do que com um nome inventado. */
+.priv-pendente {
+  background: #fef3c7; border: 1px dashed #d97706; color: #92400e;
+  border-radius: 6px; padding: 0 6px; font-size: 0.8125rem; font-weight: 600;
+  white-space: nowrap;
+}
+
+.priv-rodape {
+  margin-top: 34px; padding-top: 18px; border-top: 1px solid var(--border);
+  font-size: 0.8125rem; color: var(--muted); line-height: 1.6;
+}
+
+@media (max-width: 640px) {
+  .priv-page { padding: 16px 12px 40px; }
+  .priv-folha { padding: 24px 20px 32px; border-radius: 12px; }
+  .priv-cab h1 { font-size: 1.375rem; }
+  .priv-dpo dl { grid-template-columns: 1fr; gap: 2px; }
+  .priv-dpo dt { margin-top: 8px; }
+  .priv-tabela td:first-child { white-space: normal; }
+}

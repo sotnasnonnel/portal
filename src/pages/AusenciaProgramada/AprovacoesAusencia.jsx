@@ -4,7 +4,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import {
   fmtDataBr, isAusenciaRh, podeCancelar, podeDecidir, statusExibido,
 } from '../../config/ausenciaProgramada';
-import { cancelar, decidir, gerarAlertas, listarSolicitacoes } from '../../services/ausenciaProgramada';
+import { MOD_AUSENCIA } from '../../config/modulosAusencia';
+import { servicoAusencia } from '../../services/ausenciaProgramada';
 import { Alerta, ModalMotivo, StatCard, StatusBadge } from './componentes';
 import { useRecarregarAoMudar } from './useRecarregarAoMudar';
 import '../../components/UI/Components.css';
@@ -22,8 +23,11 @@ const FILTROS = [
 
 // Fila do gestor direto: os pedidos em que ele é o aprovador. O RH também vê
 // aqui os pedidos sem aprovador (colaborador sem gestor no cadastro).
-export default function AprovacoesAusencia() {
+//
+// Serve aos dois módulos (`mod`): Ausência Programada e Folga de Campo.
+export default function AprovacoesAusencia({ mod = MOD_AUSENCIA }) {
   const { user } = useAuth();
+  const api = servicoAusencia(mod);
   const ehRh = isAusenciaRh(user);
   const [lista, setLista] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -36,16 +40,16 @@ export default function AprovacoesAusencia() {
   const carregar = useCallback(async () => {
     setErro('');
     try {
-      setLista(await listarSolicitacoes('aprovar'));
+      setLista(await api.listarSolicitacoes('aprovar'));
     } catch (e) {
       setErro(e?.message || 'Falha ao carregar as aprovações.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [api]);
 
-  useEffect(() => { gerarAlertas(); carregar(); }, [carregar]);
-  useRecarregarAoMudar(carregar);
+  useEffect(() => { api.gerarAlertas(); carregar(); }, [api, carregar]);
+  useRecarregarAoMudar(mod.evento, carregar);
 
   const contagem = useMemo(() => {
     const c = {};
@@ -64,7 +68,7 @@ export default function AprovacoesAusencia() {
     setSalvandoId(s.id);
     setErro('');
     try {
-      await decidir(s.id, { aprovar: true });
+      await api.decidir(s.id, { aprovar: true });
       await carregar();
     } catch (e) {
       setErro(e?.message || 'Falha ao aprovar.');
@@ -76,7 +80,7 @@ export default function AprovacoesAusencia() {
   if (loading) {
     return (
       <div className="admin-page animate-fade-in-up">
-        <h1 className="page-title"><ClipboardCheck size={28} /> Aprovações de Ausência</h1>
+        <h1 className="page-title"><ClipboardCheck size={28} /> {mod.tituloAprovacoes}</h1>
         <div className="ap-vazio">Carregando...</div>
       </div>
     );
@@ -84,9 +88,9 @@ export default function AprovacoesAusencia() {
 
   return (
     <div className="admin-page animate-fade-in-up">
-      <h1 className="page-title"><ClipboardCheck size={28} /> Aprovações de Ausência</h1>
+      <h1 className="page-title"><ClipboardCheck size={28} /> {mod.tituloAprovacoes}</h1>
       <p className="page-subtitle">
-        Pedidos de ausência programada da sua equipe direta. Pedido fora do prazo chega marcado: a
+        Pedidos de {mod.nomeMinusculo} da sua equipe direta. Pedido fora do prazo chega marcado: a
         decisão é sua.
       </p>
 
@@ -123,7 +127,7 @@ export default function AprovacoesAusencia() {
               <tr>
                 <th>#</th>
                 <th>Colaborador</th>
-                <th>Ausência</th>
+                <th>{mod.substantivoTitulo}</th>
                 <th>Dias</th>
                 <th>Período / data limite</th>
                 <th>Saldo do período</th>
@@ -179,7 +183,7 @@ export default function AprovacoesAusencia() {
                           </>
                         )}
                         {cancela && (
-                          <button className="btn-icon" title="Cancelar ausência" onClick={() => setACancelar(s)}>
+                          <button className="btn-icon" title={`Cancelar ${mod.substantivo}`} onClick={() => setACancelar(s)}>
                             <Ban size={16} />
                           </button>
                         )}
@@ -204,7 +208,7 @@ export default function AprovacoesAusencia() {
           confirmar="Reprovar"
           onClose={() => setAReprovar(null)}
           onConfirm={async (motivo) => {
-            await decidir(aReprovar.id, { aprovar: false, motivo });
+            await api.decidir(aReprovar.id, { aprovar: false, motivo });
             setAReprovar(null);
             await carregar();
           }}
@@ -213,13 +217,13 @@ export default function AprovacoesAusencia() {
 
       {aCancelar && (
         <ModalMotivo
-          titulo={`Cancelar ausência #${aCancelar.numero}`}
+          titulo={`Cancelar ${mod.substantivo} #${aCancelar.numero}`}
           descricao={`${aCancelar.colaborador_nome} · ${fmtDataBr(aCancelar.data_inicio)} a ${fmtDataBr(aCancelar.data_fim)}. Os dias voltam para o saldo.`}
           rotulo="Motivo do cancelamento"
-          confirmar="Cancelar ausência"
+          confirmar={`Cancelar ${mod.substantivo}`}
           onClose={() => setACancelar(null)}
           onConfirm={async (motivo) => {
-            await cancelar(aCancelar.id, { motivo });
+            await api.cancelar(aCancelar.id, { motivo });
             setACancelar(null);
             await carregar();
           }}

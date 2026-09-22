@@ -22,9 +22,11 @@ import { podeAcessarMobilizacao } from '../config/mobilizacao';
 import TorreShell from '../modules/torre/app/components/AppShell';
 import { podeVerTorre } from '../config/torre';
 import { podeAcessarFechamentoPj } from '../config/fechamentoPj';
-import { ROTA_AUSENCIA, isAusenciaRh, veAprovacoes } from '../config/ausenciaProgramada';
+import { isAusenciaRh, veAprovacoes } from '../config/ausenciaProgramada';
+import { MODULOS_AUSENCIA } from '../config/modulosAusencia';
 
 const Login = lazyPagina(() => import('../pages/Login/Login'));
+const Privacidade = lazyPagina(() => import('../pages/Privacidade/Privacidade'));
 const Home = lazyPagina(() => import('../pages/Home/Home'));
 const PortalAdmin = lazyPagina(() => import('../pages/PortalAdmin/PortalAdmin'));
 const FaleConoscoCaixa = lazyPagina(() => import('../pages/FaleConosco/FaleConoscoCaixa'));
@@ -232,19 +234,48 @@ function FechamentoPjRoute({ children }) {
   return children;
 }
 
-// Ausência Programada: o pedido é aberto a todo logado (sem ModuleRoute dp).
-// A fila e a equipe são de quem tem cargo de gestão; o painel, do RH. Gates de
-// UI — o banco filtra por aprovador, subárvore e app_private.is_ausencia_rh().
-function AusenciaGestaoRoute({ children }) {
+// Ausência Programada e Folga de Campo: o pedido é aberto a todo logado (sem
+// ModuleRoute dp). A fila e a equipe são de quem tem cargo de gestão; o painel,
+// do RH. Gates de UI — o banco filtra por aprovador, subárvore e
+// app_private.is_ausencia_rh() / is_folga_campo_rh().
+function AusenciaGestaoRoute({ rota, children }) {
   const { user } = useAuth();
-  if (!veAprovacoes(user)) return <Navigate to={ROTA_AUSENCIA} replace />;
+  if (!veAprovacoes(user)) return <Navigate to={rota} replace />;
   return children;
 }
 
-function AusenciaRhRoute({ children }) {
+function AusenciaRhRoute({ rota, children }) {
   const { user } = useAuth();
-  if (!isAusenciaRh(user)) return <Navigate to={ROTA_AUSENCIA} replace />;
+  if (!isAusenciaRh(user)) return <Navigate to={rota} replace />;
   return children;
+}
+
+// As quatro telas dos dois módulos: mesmo componente, descritor diferente
+// (config/modulosAusencia.js). `key` obriga o React a remontar ao trocar de
+// módulo ou de escopo, em vez de reaproveitar o estado da tela anterior.
+function rotasAusencia(mod) {
+  return [
+    <Route key={`${mod.chave}-minha`} path={mod.rota}
+      element={<LazyPage><MinhaAusencia key={mod.chave} mod={mod} /></LazyPage>} />,
+    <Route key={`${mod.chave}-aprovacoes`} path={`${mod.rota}/aprovacoes`}
+      element={(
+        <AusenciaGestaoRoute rota={mod.rota}>
+          <LazyPage><AprovacoesAusencia key={mod.chave} mod={mod} /></LazyPage>
+        </AusenciaGestaoRoute>
+      )} />,
+    <Route key={`${mod.chave}-equipe`} path={`${mod.rota}/equipe`}
+      element={(
+        <AusenciaGestaoRoute rota={mod.rota}>
+          <LazyPage><VisaoGeralAusencia key={`${mod.chave}-equipe`} mod={mod} escopo="equipe" /></LazyPage>
+        </AusenciaGestaoRoute>
+      )} />,
+    <Route key={`${mod.chave}-painel`} path={`${mod.rota}/painel`}
+      element={(
+        <AusenciaRhRoute rota={mod.rota}>
+          <LazyPage><VisaoGeralAusencia key={`${mod.chave}-todos`} mod={mod} escopo="todos" /></LazyPage>
+        </AusenciaRhRoute>
+      )} />,
+  ];
 }
 
 function HorasDpRoute({ children }) {
@@ -273,6 +304,12 @@ export default function AppRoutes() {
             </PublicRoute>
           }
         />
+
+        {/* Aviso de Privacidade (LGPD): fora do ProtectedRoute de propósito. A
+            lei manda divulgar o contato do encarregado, e o link também fica na
+            tela de login — onde ninguém está autenticado. Não mostra dado de
+            ninguém: é texto institucional. */}
+        <Route path="/privacidade" element={<LazyPage><Privacidade /></LazyPage>} />
 
         {/* Home do portal: tela cheia, fora do Layout do DP (sem sidebar/header) */}
         <Route
@@ -432,19 +469,7 @@ export default function AppRoutes() {
           {/* Para conhecimento: a RPC devolve só os avisos da própria pessoa. */}
           <Route path="/conhecimento" element={<LazyPage><AvisosConhecimento /></LazyPage>} />
 
-          <Route path={ROTA_AUSENCIA} element={<LazyPage><MinhaAusencia /></LazyPage>} />
-          <Route
-            path={`${ROTA_AUSENCIA}/aprovacoes`}
-            element={<AusenciaGestaoRoute><LazyPage><AprovacoesAusencia /></LazyPage></AusenciaGestaoRoute>}
-          />
-          <Route
-            path={`${ROTA_AUSENCIA}/equipe`}
-            element={<AusenciaGestaoRoute><LazyPage><VisaoGeralAusencia key="equipe" escopo="equipe" /></LazyPage></AusenciaGestaoRoute>}
-          />
-          <Route
-            path={`${ROTA_AUSENCIA}/painel`}
-            element={<AusenciaRhRoute><LazyPage><VisaoGeralAusencia key="todos" escopo="todos" /></LazyPage></AusenciaRhRoute>}
-          />
+          {MODULOS_AUSENCIA.flatMap((mod) => rotasAusencia(mod))}
 
           <Route
             path="/gestor"

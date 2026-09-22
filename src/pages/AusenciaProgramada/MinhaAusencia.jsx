@@ -6,10 +6,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import {
   fmtDataBr, podeCancelar, resumoSaldo, rotuloPeriodo,
 } from '../../config/ausenciaProgramada';
-import {
-  cancelar, excluirRascunho, fetchMeuAprovador, gerarAlertas, gerarPeriodos, listarPeriodos,
-  listarSolicitacoes, salvarPedido,
-} from '../../services/ausenciaProgramada';
+import { MOD_AUSENCIA } from '../../config/modulosAusencia';
+import { servicoAusencia } from '../../services/ausenciaProgramada';
 import {
   Alerta, ModalMotivo, ModalPedido, SituacaoPeriodo, StatCard, StatusBadge,
 } from './componentes';
@@ -20,8 +18,11 @@ import './AusenciaProgramada.css';
 
 // Tela do colaborador: saldo, períodos e os próprios pedidos. Aberta a todos
 // os logados — cada um vê só o que é seu (RPCs com escopo 'meus').
-export default function MinhaAusencia() {
+//
+// Serve aos dois módulos (`mod`): Ausência Programada e Folga de Campo.
+export default function MinhaAusencia({ mod = MOD_AUSENCIA }) {
   const { user } = useAuth();
+  const api = servicoAusencia(mod);
   const [periodos, setPeriodos] = useState([]);
   const [pedidos, setPedidos] = useState([]);
   const [aprovador, setAprovador] = useState(null);
@@ -34,33 +35,33 @@ export default function MinhaAusencia() {
   const carregar = useCallback(async () => {
     setErro('');
     try {
-      const [ps, ss] = await Promise.all([listarPeriodos('meus'), listarSolicitacoes('meus')]);
+      const [ps, ss] = await Promise.all([api.listarPeriodos('meus'), api.listarSolicitacoes('meus')]);
       setPeriodos(ps);
       setPedidos(ss);
     } catch (e) {
-      setErro(e?.message || 'Falha ao carregar sua ausência programada.');
+      setErro(e?.message || `Falha ao carregar sua ${mod.nomeMinusculo}.`);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [api, mod]);
 
   // Ao abrir: completa os períodos que faltam (colaborador novo, período que
   // virou) e roda os alertas de vencimento. Os dois são best-effort.
   useEffect(() => {
     (async () => {
-      await gerarPeriodos().catch(() => {});
-      gerarAlertas();
-      fetchMeuAprovador().then(setAprovador).catch(() => {});
+      await api.gerarPeriodos().catch(() => {});
+      api.gerarAlertas();
+      api.fetchMeuAprovador().then(setAprovador).catch(() => {});
       carregar();
     })();
-  }, [carregar]);
+  }, [api, carregar]);
 
-  useRecarregarAoMudar(carregar);
+  useRecarregarAoMudar(mod.evento, carregar);
 
   const resumo = useMemo(() => resumoSaldo(periodos), [periodos]);
 
   async function onSalvar(payload) {
-    const r = await salvarPedido(payload);
+    const r = await api.salvarPedido(payload);
     setEditando(null);
     if (!payload.enviar) setOkMsg('Rascunho guardado.');
     else if (r?.fora_do_prazo) setOkMsg(`Pedido #${r.numero} enviado fora do prazo. Seu gestor vai decidir.`);
@@ -71,7 +72,7 @@ export default function MinhaAusencia() {
   async function onExcluir(s) {
     if (!window.confirm(`Excluir o rascunho #${s.numero}?`)) return;
     try {
-      await excluirRascunho(s.id);
+      await api.excluirRascunho(s.id);
       await carregar();
     } catch (e) {
       setErro(e?.message || 'Falha ao excluir.');
@@ -81,7 +82,7 @@ export default function MinhaAusencia() {
   if (loading) {
     return (
       <div className="admin-page animate-fade-in-up">
-        <h1 className="page-title"><CalendarDays size={28} /> Ausência Programada</h1>
+        <h1 className="page-title"><CalendarDays size={28} /> {mod.nome}</h1>
         <div className="ap-vazio">Carregando...</div>
       </div>
     );
@@ -91,7 +92,7 @@ export default function MinhaAusencia() {
 
   return (
     <div className="admin-page animate-fade-in-up">
-      <h1 className="page-title"><CalendarDays size={28} /> Ausência Programada</h1>
+      <h1 className="page-title"><CalendarDays size={28} /> {mod.nome}</h1>
       <p className="page-subtitle">
         Seu saldo por período, a data limite para usar e os pedidos enviados ao seu gestor.
       </p>
@@ -101,12 +102,12 @@ export default function MinhaAusencia() {
 
       {semPeriodo && (
         <Alerta tipo="info">
-          Seu saldo de ausência ainda não foi cadastrado. Fale com o RH para liberar seus períodos.
+          Seu saldo {mod.doModulo} ainda não foi cadastrado. Fale com o RH para liberar seus períodos.
         </Alerta>
       )}
       {resumo.bloqueado && (
         <Alerta tipo="info">
-          Você poderá usar sua ausência programada a partir de {fmtDataBr(resumo.dataInicial)}, quando
+          Você poderá usar sua {mod.nomeMinusculo} a partir de {fmtDataBr(resumo.dataInicial)}, quando
           completar o período.
         </Alerta>
       )}
@@ -133,7 +134,7 @@ export default function MinhaAusencia() {
           <div className="ap-toolbar">
             <button className="btn btn-primary" onClick={() => { setOkMsg(''); setEditando('novo'); }}
               disabled={semPeriodo}>
-              <CalendarPlus size={18} /> Nova ausência
+              <CalendarPlus size={18} /> Nova {mod.substantivo}
             </button>
           </div>
         </div>
@@ -243,6 +244,7 @@ export default function MinhaAusencia() {
 
       {editando && (
         <ModalPedido
+          mod={mod}
           periodos={periodos}
           minhas={pedidos}
           rascunho={editando === 'novo' ? null : editando}
@@ -261,7 +263,7 @@ export default function MinhaAusencia() {
           confirmar="Cancelar pedido"
           onClose={() => setACancelar(null)}
           onConfirm={async (motivo) => {
-            await cancelar(aCancelar.id, { motivo: motivo || null });
+            await api.cancelar(aCancelar.id, { motivo: motivo || null });
             setACancelar(null);
             setOkMsg(`Pedido #${aCancelar.numero} cancelado.`);
             await carregar();

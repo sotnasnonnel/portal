@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Shield, Users, CalendarCheck } from 'lucide-react';
 import './Login.css';
@@ -70,6 +71,9 @@ export default function Login() {
 
             <div className="login-card-footer">
               <span className="login-card-logo" role="img" aria-label="PHD Engenharia" />
+              {/* Exigência do art. 41 §1º da LGPD: o contato do encarregado tem
+                  que estar divulgado, inclusive para quem ainda não entrou. */}
+              <Link className="login-privacidade" to="/privacidade">Aviso de Privacidade</Link>
             </div>
           </div>
         </div>

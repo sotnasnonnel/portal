@@ -1,9 +1,16 @@
 import { supabase } from './supabase';
+import { notificarAusencia } from './notificarAusencia';
 
 // ============================================================================
-// Camada de dados da AUSÊNCIA PROGRAMADA (Gestão de Pessoas).
+// Camada de dados da AUSÊNCIA PROGRAMADA e da FOLGA DE CAMPO (Gestão de
+// Pessoas). As duas são a mesma rotina em tabelas separadas, então o serviço é
+// um só, montado a partir do descritor do módulo (config/modulosAusencia.js):
+// `mod.rpc` é o prefixo das funções no banco e `mod.tabelaPeriodos` a única
+// tabela escrita direto.
+//
 // Regras puras em src/config/ausenciaProgramada.js; banco em
-// supabase/supabase_migration_ausencia_programada.sql.
+// supabase/supabase_migration_ausencia_programada.sql e
+// supabase/supabase_migration_folga_campo.sql.
 //
 // Leituras e escritas do colaborador e do gestor passam por RPC: as leituras
 // trazem os nomes (o RH sem perfil admin não lê `colaboradores` inteiro), e as
@@ -12,113 +19,148 @@ import { supabase } from './supabase';
 // quando a RLS barrou.
 // ============================================================================
 
-// Disparado quando um pedido muda, para as outras telas abertas recarregarem.
-export const AUSENCIA_EVENT = 'ausencias_programadas_atualizadas';
-const avisar = () => window.dispatchEvent(new Event(AUSENCIA_EVENT));
-
 function checar(error) {
   if (error) throw new Error(error.message || 'Falha ao falar com o banco.');
 }
 
-// escopo: 'meus' | 'equipe' | 'todos'
-export async function listarPeriodos(escopo = 'meus') {
-  const { data, error } = await supabase.rpc('ausencia_periodos_listar', { p_escopo: escopo });
-  checar(error);
-  return data || [];
+// Um serviço por módulo, criado uma vez: as telas chamam servicoAusencia(mod)
+// no corpo do componente e não podem receber um objeto novo a cada render
+// (ele entra nas dependências dos useCallback/useEffect).
+const cache = new Map();
+
+export function servicoAusencia(mod) {
+  if (!cache.has(mod.chave)) cache.set(mod.chave, montar(mod));
+  return cache.get(mod.chave);
 }
 
-// escopo: 'meus' | 'aprovar' | 'equipe' | 'todos'
-export async function listarSolicitacoes(escopo = 'meus') {
-  const { data, error } = await supabase.rpc('ausencia_solicitacoes_listar', { p_escopo: escopo });
-  checar(error);
-  return data || [];
-}
+function montar(mod) {
+  const fn = (sufixo) => `${mod.rpc}_${sufixo}`;
+  // Disparado quando um pedido muda, para as outras telas abertas recarregarem.
+  const avisar = () => window.dispatchEvent(new Event(mod.evento));
 
-export async function fetchMeuAprovador() {
-  const { data, error } = await supabase.rpc('ausencia_meu_aprovador');
-  checar(error);
-  return (data || [])[0] || null;
-}
-
-export async function listarSemPeriodo() {
-  const { data, error } = await supabase.rpc('ausencia_sem_periodo');
-  checar(error);
-  return data || [];
-}
-
-// Completa os períodos que faltam (os meus, de alguém ou de todos — RH).
-// Best-effort ao abrir a tela: falha aqui não impede de mostrar o que já existe.
-export async function gerarPeriodos({ colaboradorId = null, todos = false } = {}) {
-  const { data, error } = await supabase.rpc('ausencia_gerar_periodos', {
-    p_colaborador: colaboradorId,
-    p_todos: todos,
-  });
-  checar(error);
-  return data || 0;
-}
-
-// Alertas de vencimento (idempotente). Silencioso: é manutenção, não ação.
-export async function gerarAlertas() {
-  try {
-    await supabase.rpc('ausencia_gerar_alertas');
-  } catch {
-    /* sem alerta hoje; a próxima abertura tenta de novo */
+  // escopo: 'meus' | 'equipe' | 'todos'
+  async function listarPeriodos(escopo = 'meus') {
+    const { data, error } = await supabase.rpc(fn('periodos_listar'), { p_escopo: escopo });
+    checar(error);
+    return data || [];
   }
-}
 
-export async function salvarPedido({ id = null, periodoId, inicio, fim, observacao = '', enviar = true }) {
-  const { data, error } = await supabase.rpc('ausencia_salvar', {
-    p_id: id,
-    p_periodo: periodoId,
-    p_inicio: inicio,
-    p_fim: fim,
-    p_observacao: observacao || null,
-    p_enviar: enviar,
-  });
-  checar(error);
-  avisar();
-  return (data || [])[0] || null;
-}
+  // escopo: 'meus' | 'aprovar' | 'equipe' | 'todos'
+  async function listarSolicitacoes(escopo = 'meus') {
+    const { data, error } = await supabase.rpc(fn('solicitacoes_listar'), { p_escopo: escopo });
+    checar(error);
+    return data || [];
+  }
 
-export async function excluirRascunho(id) {
-  const { error } = await supabase.rpc('ausencia_excluir_rascunho', { p_id: id });
-  checar(error);
-  avisar();
-}
+  async function fetchMeuAprovador() {
+    const { data, error } = await supabase.rpc(fn('meu_aprovador'));
+    checar(error);
+    return (data || [])[0] || null;
+  }
 
-export async function decidir(id, { aprovar, motivo = null }) {
-  const { error } = await supabase.rpc('ausencia_decidir', {
-    p_id: id,
-    p_aprovar: aprovar,
-    p_motivo: motivo,
-  });
-  checar(error);
-  avisar();
-}
+  async function listarSemPeriodo() {
+    const { data, error } = await supabase.rpc(fn('sem_periodo'));
+    checar(error);
+    return data || [];
+  }
 
-export async function cancelar(id, { motivo = null } = {}) {
-  const { error } = await supabase.rpc('ausencia_cancelar', { p_id: id, p_motivo: motivo });
-  checar(error);
-  avisar();
-}
+  // Completa os períodos que faltam (os meus, de alguém ou de todos — RH).
+  // Best-effort ao abrir a tela: falha aqui não impede de mostrar o que já existe.
+  async function gerarPeriodos({ colaboradorId = null, todos = false } = {}) {
+    const { data, error } = await supabase.rpc(fn('gerar_periodos'), {
+      p_colaborador: colaboradorId,
+      p_todos: todos,
+    });
+    checar(error);
+    return data || 0;
+  }
 
-// RH: corrige um período (direito, ajuste com motivo, janela, observação).
-export async function atualizarPeriodo(id, campos) {
-  const { data, error } = await supabase
-    .from('ausencia_periodos')
-    .update(campos)
-    .eq('id', id)
-    .select('id');
-  checar(error);
-  if (!data?.length) throw new Error('Sem permissão para alterar este período.');
-  avisar();
-}
+  // Alertas de vencimento (idempotente). Silencioso: é manutenção, não ação.
+  async function gerarAlertas() {
+    try {
+      await supabase.rpc(fn('gerar_alertas'));
+    } catch {
+      /* sem alerta hoje; a próxima abertura tenta de novo */
+    }
+  }
 
-// RH: cadastra um período à mão (colaborador sem histórico).
-export async function criarPeriodo(campos) {
-  const { error } = await supabase
-    .from('ausencia_periodos')
-    .insert({ ...campos, origem: 'manual' });
-  checar(error);
-  avisar();
+  async function salvarPedido({ id = null, periodoId, inicio, fim, observacao = '', enviar = true }) {
+    const { data, error } = await supabase.rpc(fn('salvar'), {
+      p_id: id,
+      p_periodo: periodoId,
+      p_inicio: inicio,
+      p_fim: fim,
+      p_observacao: observacao || null,
+      p_enviar: enviar,
+    });
+    checar(error);
+    avisar();
+    const salvo = (data || [])[0] || null;
+    // Só o ENVIO avisa o gestor: rascunho salvo não é pedido, e mandar e-mail a
+    // cada salvamento treinaria o gestor a ignorar o aviso.
+    if (enviar && salvo?.id) notificarAusencia(mod.chave, salvo.id, 'nova');
+    return salvo;
+  }
+
+  async function excluirRascunho(id) {
+    const { error } = await supabase.rpc(fn('excluir_rascunho'), { p_id: id });
+    checar(error);
+    avisar();
+  }
+
+  async function decidir(id, { aprovar, motivo = null }) {
+    const { error } = await supabase.rpc(fn('decidir'), {
+      p_id: id,
+      p_aprovar: aprovar,
+      p_motivo: motivo,
+    });
+    checar(error);
+    avisar();
+    // Vale para aprovado e reprovado: o colaborador precisa do desfecho, e no
+    // reprovado o e-mail leva o motivo junto.
+    notificarAusencia(mod.chave, id, 'decidida');
+  }
+
+  async function cancelar(id, { motivo = null } = {}) {
+    const { error } = await supabase.rpc(fn('cancelar'), { p_id: id, p_motivo: motivo });
+    checar(error);
+    avisar();
+  }
+
+  // RH: corrige um período (direito, ajuste com motivo, janela, observação).
+  async function atualizarPeriodo(id, campos) {
+    const { data, error } = await supabase
+      .from(mod.tabelaPeriodos)
+      .update(campos)
+      .eq('id', id)
+      .select('id');
+    checar(error);
+    if (!data?.length) throw new Error('Sem permissão para alterar este período.');
+    avisar();
+  }
+
+  // RH: cadastra um período à mão (colaborador sem histórico).
+  async function criarPeriodo(campos) {
+    const { error } = await supabase
+      .from(mod.tabelaPeriodos)
+      .insert({ ...campos, origem: 'manual' });
+    checar(error);
+    avisar();
+  }
+
+  return {
+    evento: mod.evento,
+    listarPeriodos,
+    listarSolicitacoes,
+    fetchMeuAprovador,
+    listarSemPeriodo,
+    gerarPeriodos,
+    gerarAlertas,
+    salvarPedido,
+    excluirRascunho,
+    decidir,
+    cancelar,
+    atualizarPeriodo,
+    criarPeriodo,
+  };
 }

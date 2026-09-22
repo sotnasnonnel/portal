@@ -100,3 +100,21 @@ export function resumoSatisfacao(avaliacoes = []) {
 
   return { total, media: media(notas), distribuicao, porServico };
 }
+
+/** Nota até aqui é o que o POP chama de "regular para baixo" — e exige comentário. */
+export const NOTA_BAIXA_ATE = 3;
+
+/**
+ * As avaliações que têm observação escrita, para a lista da tela.
+ *
+ * Pior nota primeiro, e dentro da mesma nota a mais recente antes: quem abre
+ * esta lista vai atuar nas notas baixas, então elas não podem depender de
+ * rolagem. `apenasBaixas` é o filtro da tela.
+ */
+export function comentarios(avaliacoes = [], { apenasBaixas = false } = {}) {
+  return avaliacoes
+    .filter((a) => (a.comentario || '').trim())
+    .filter((a) => !apenasBaixas || Number(a.nota) <= NOTA_BAIXA_ATE)
+    .sort((a, b) => (Number(a.nota) - Number(b.nota))
+      || (new Date(b.avaliado_em) - new Date(a.avaliado_em)));
+}

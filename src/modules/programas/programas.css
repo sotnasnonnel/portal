@@ -108,6 +108,8 @@
 .pg-form-cab .pg-prog-ico { width: 46px; height: 46px; }
 .pg-form-cab h1 { font-size: var(--font-size-2xl); font-weight: 700; letter-spacing: -0.02em; margin: 0; line-height: 1.25; }
 .pg-form-cab small { font-size: var(--font-size-xs); color: var(--p-muted); }
+/* Regras do programa: encostadas na direita do cabeçalho, longe do título. */
+.pg-form-cab .pg-btn { margin-left: auto; flex-shrink: 0; }
 
 .pg-campo { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
 .pg-campo:last-child { margin-bottom: 0; }
@@ -231,6 +233,10 @@
 .pg-regras { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 10px; }
 .pg-regras li { font-size: var(--font-size-sm); line-height: 1.55; color: var(--p-gray-600); }
 .pg-regras strong { color: var(--p-ink); }
+/* Lista numerada (elegibilidade do Programa de Inovação): sem flex, senão o
+   número de cada regra some — e a última regra cita "a regra número 5". */
+.pg-regras-num { display: block; padding-left: 20px; list-style: decimal; }
+.pg-regras-num li { margin-bottom: 10px; }
 
 .pg-modal-overlay {
   position: fixed; inset: 0; z-index: 200; background: rgba(15, 23, 42, 0.5);

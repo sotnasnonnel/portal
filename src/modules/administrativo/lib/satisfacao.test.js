@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   media, resumoSatisfacao, NOTAS_POSSIVEIS, faixaDaMedia, posicaoNaEscala, temAvaliacao,
+  comentarios,
 } from './satisfacao.js';
 
 const av = (nota, servico = 'a', classe = 'ti') => ({ nota, classe, servico });
@@ -123,4 +124,26 @@ test('embed lista também conta, se a UNIQUE cair um dia', () => {
 test('sem avaliação, nas duas formas de vazio', () => {
   assert.equal(temAvaliacao(null), false);
   assert.equal(temAvaliacao(undefined), false);
+});
+
+test('comentarios: só o que tem texto, pior nota primeiro', () => {
+  const lista = [
+    { nota: 5, comentario: 'rápido', avaliado_em: '2026-09-01T10:00:00Z' },
+    { nota: 2, comentario: 'demorou', avaliado_em: '2026-09-02T10:00:00Z' },
+    { nota: 4, comentario: '   ', avaliado_em: '2026-09-03T10:00:00Z' },
+    { nota: 2, comentario: 'ninguém respondeu', avaliado_em: '2026-09-05T10:00:00Z' },
+  ];
+  const out = comentarios(lista);
+  assert.deepEqual(out.map((a) => a.comentario), ['ninguém respondeu', 'demorou', 'rápido']);
+});
+
+test('comentarios: o filtro corta acima de 3', () => {
+  const lista = [
+    { nota: 5, comentario: 'ótimo', avaliado_em: '2026-09-01T10:00:00Z' },
+    { nota: 3, comentario: 'faltou retorno', avaliado_em: '2026-09-02T10:00:00Z' },
+  ];
+  assert.deepEqual(
+    comentarios(lista, { apenasBaixas: true }).map((a) => a.nota),
+    [3]
+  );
 });

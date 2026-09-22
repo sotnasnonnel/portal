@@ -8,6 +8,7 @@ import {
   CATEGORIAS, SETORES, SITUACOES, getForma,
 } from '../../../../../config/programas';
 import { criarIdeia } from '../../../lib/ideias';
+import RegrasInovacao from '../RegrasInovacao';
 
 /**
  * Formulário do Campo de Ideias. Uma tela para as duas formas (ideia e
@@ -160,6 +161,9 @@ export default function NovaIdeia() {
           <h1>{ehIniciativa ? 'Cadastrar iniciativa' : 'Registrar ideia'}</h1>
           <small>{forma.ajuda}</small>
         </div>
+        {/* Quem chegou direto no formulário também precisa alcançar as regras
+            de elegibilidade — o prazo de cadastro é uma delas. */}
+        <RegrasInovacao variante="link" />
       </div>
 
       {erro && (

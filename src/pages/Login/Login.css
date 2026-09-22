@@ -272,8 +272,19 @@
   padding-top: var(--space-lg);
   border-top: 1px solid var(--color-border);
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
 }
+
+/* Aviso de Privacidade: discreto abaixo da logo, mas alcançável sem login. */
+.login-privacidade {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.login-privacidade:hover { color: var(--color-primary); }
 
 .login-card-logo {
   display: block;

@@ -1,4 +1,4 @@
-import { BarChart3, Clock, FileClock } from 'lucide-react';
+import { BarChart3, Clock, FileClock, HardHat, Lightbulb, ShieldCheck } from 'lucide-react';
 
 /**
  * O que mudou na plataforma, do mais novo para o mais antigo.
@@ -32,6 +32,33 @@ import { BarChart3, Clock, FileClock } from 'lucide-react';
  *   marca    -> selo do canto do cartão ('Novo nome', 'Novidade', ...)
  */
 export const NOVIDADES = [
+  {
+    id: '2026-09-22-folga-campo-inovacao-privacidade',
+    data: '2026-09-22',
+    itens: [
+      {
+        icon: HardHat,
+        modulo: 'Gestão de Pessoas',
+        marca: 'Novidade',
+        titulo: 'Folga de Campo entrou na Gestão de Pessoas',
+        texto: 'As equipes de campo registram o período fora da obra e o gestor aprova, como na Ausência Programada.',
+      },
+      {
+        icon: Lightbulb,
+        modulo: 'Programas',
+        marca: 'Novidade',
+        titulo: 'As regras do Programa de Inovação estão no Campo de Ideias',
+        texto: 'Elegibilidade, pontuação da premiação e prazos ficam a um clique do formulário.',
+      },
+      {
+        icon: ShieldCheck,
+        modulo: 'Portal',
+        marca: 'Novidade',
+        titulo: 'Aviso de Privacidade publicado',
+        texto: 'O rodapé da Home leva ao que a PHD faz com seus dados e a quem procurar.',
+      },
+    ],
+  },
   {
     id: '2026-09-01-dados-horas',
     data: '2026-09-01',

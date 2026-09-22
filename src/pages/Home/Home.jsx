@@ -300,7 +300,11 @@ export default function Home() {
         </div>
       </main>
 
-      <footer className="home-footer">PHD Engenharia</footer>
+      <footer className="home-footer">
+        PHD Engenharia
+        {' · '}
+        <Link to="/privacidade">Aviso de Privacidade</Link>
+      </footer>
 
       {solucoesAbertas && <SolucoesModal onClose={() => setSolucoesAbertas(false)} />}
       {programasAbertos && <ProgramasModal onClose={() => setProgramasAbertos(false)} />}

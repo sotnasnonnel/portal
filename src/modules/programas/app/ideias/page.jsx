@@ -11,6 +11,7 @@ import {
   listarIdeias, atualizarSituacao, atualizarIdeia, excluirIdeia,
 } from '../../lib/ideias';
 import { DetalheIdeia } from '../components/Detalhe';
+import RegrasInovacao from './RegrasInovacao';
 
 /**
  * Campo de Ideias — a tela de QUEM PARTICIPA, gêmea de "Alavanca PHD":
@@ -100,10 +101,17 @@ export default function CampoDeIdeias() {
           <Wrench size={16} /> Registrar iniciativa
         </Link>
       </div>
-      <p className="pg-campo-dica" style={{ marginBottom: 22 }}>
+      <p className="pg-campo-dica" style={{ marginBottom: 16 }}>
         <strong>Ideia</strong> é o que ainda não existe e você acha que a PHD deveria ter.{' '}
         <strong>Iniciativa</strong> é o que você já está construindo, para uso próprio ou em projeto.
       </p>
+
+      {/* As regras ficam aqui, e não só no formulário: a diferença entre ideia
+          e iniciativa decide se a solução concorre ao prêmio, e essa escolha é
+          feita nesta tela, nos botões acima. */}
+      <div style={{ marginBottom: 22 }}>
+        <RegrasInovacao />
+      </div>
 
       {erro && <div className="pg-aviso tom-erro"><AlertCircle size={16} /> {erro}</div>}
 

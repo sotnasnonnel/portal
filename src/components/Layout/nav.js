@@ -1,11 +1,12 @@
 import {
   LayoutDashboard, ClipboardCheck, Users, CalendarClock, UserPlus, List, CalendarDays,
   FileText, Network, Coins, PlusCircle, Workflow, Clock, ShieldAlert, ScrollText, Search,
-  Receipt, Briefcase, Building2, FileBarChart, History, Settings, CalendarRange,
+  Receipt, Briefcase, Building2, FileBarChart, History, Settings, CalendarRange, HardHat,
 } from 'lucide-react';
 import { isHorasExtrasDp } from '../../config/horasExtras';
 import { podeAcessarFechamentoPj, ROTA_FECHAMENTO_PJ } from '../../config/fechamentoPj';
-import { isAusenciaRh, ROTA_AUSENCIA, veAprovacoes } from '../../config/ausenciaProgramada';
+import { isAusenciaRh, veAprovacoes } from '../../config/ausenciaProgramada';
+import { MODULOS_AUSENCIA, MOD_AUSENCIA, MOD_FOLGA_CAMPO } from '../../config/modulosAusencia';
 import { soPelaFlagDoOrganograma } from '../../config/organograma';
 
 // Navegação da sidebar de Gestão de Pessoas, na mesma divisão dos outros
@@ -45,25 +46,30 @@ const grupoFechamentoPj = {
   ],
 };
 
-// Ausência Programada: aberta a todo colaborador (qualquer modalidade), então
-// entra para todos os perfis. Aprovações e equipe aparecem para quem tem cargo
-// de gestão; o painel, para o RH.
-function grupoAusenciaProgramada(user) {
+// Ícone de cada módulo de afastamento — fica aqui, e não no descritor, para o
+// config não depender de lucide-react.
+const ICONE_MODULO = { [MOD_AUSENCIA.navKey]: CalendarRange, [MOD_FOLGA_CAMPO.navKey]: HardHat };
+
+// Ausência Programada e Folga de Campo: abertas a todo colaborador (qualquer
+// modalidade), então entram para todos os perfis. Aprovações e equipe aparecem
+// para quem tem cargo de gestão; o painel, para o RH. As duas são a mesma
+// rotina — o menu sai do descritor (config/modulosAusencia.js).
+function grupoAusencia(user, mod) {
   return {
     group: true,
-    key: 'ausenciaProgramada',
-    label: 'Ausência Programada',
-    Icon: CalendarRange,
+    key: mod.navKey,
+    label: mod.nome,
+    Icon: ICONE_MODULO[mod.navKey],
     items: [
-      { label: 'Minha Ausência', Icon: CalendarDays, href: ROTA_AUSENCIA, exato: true },
+      { label: mod.menuMinha, Icon: CalendarDays, href: mod.rota, exato: true },
       ...(veAprovacoes(user)
         ? [
-          { label: 'Aprovações', Icon: ClipboardCheck, href: `${ROTA_AUSENCIA}/aprovacoes` },
-          { label: 'Equipe', Icon: Users, href: `${ROTA_AUSENCIA}/equipe` },
+          { label: 'Aprovações', Icon: ClipboardCheck, href: `${mod.rota}/aprovacoes` },
+          { label: 'Equipe', Icon: Users, href: `${mod.rota}/equipe` },
         ]
         : []),
       ...(isAusenciaRh(user)
-        ? [{ label: 'Painel RH', Icon: LayoutDashboard, href: `${ROTA_AUSENCIA}/painel` }]
+        ? [{ label: 'Painel RH', Icon: LayoutDashboard, href: `${mod.rota}/painel` }]
         : []),
     ],
   };
@@ -86,7 +92,7 @@ const consultas = (comValores) => ({
 
 // Rota -> área. Ordem importa: prefixo mais específico primeiro.
 const ROTAS_AREA = [
-  [ROTA_AUSENCIA, 'ausenciaProgramada'],
+  ...MODULOS_AUSENCIA.map((m) => [m.rota, m.navKey]),
   ['/admin/horas-extras', 'horasExtras'],
   [ROTA_FECHAMENTO_PJ, 'fechamentoPj'],
   ['/admin/cadastro', 'colaboradores'],
@@ -119,7 +125,10 @@ const CARTAO_AREA = {
   consultas: { Icon: Network, desc: 'Organograma e ajustes de valores.', cta: 'Abrir consultas' },
   horasExtras: { Icon: Clock, desc: 'Tratamento das horas extras pelo DP, prazos e auditoria.', cta: 'Abrir horas extras' },
   fechamentoPj: { Icon: Receipt, desc: 'Folha dos prestadores PJ, termos e pagamento no TOTVS.', cta: 'Abrir fechamento PJ' },
-  ausenciaProgramada: { Icon: CalendarRange, desc: 'Saldo, data limite e pedidos de ausência com aprovação do gestor.', cta: 'Abrir ausência programada' },
+  ...Object.fromEntries(MODULOS_AUSENCIA.map((m) => [
+    m.navKey,
+    { Icon: ICONE_MODULO[m.navKey], desc: m.descricaoCartao, cta: m.ctaCartao },
+  ])),
 };
 
 /**
@@ -226,7 +235,7 @@ export function navSections({ perfil, user, pendencias = 0, requisicoes = 0, are
   // só a consulta.
   if (soPelaFlagDoOrganograma(user)) secoes.push(consultas(false));
 
-  secoes.push(grupoAusenciaProgramada(user));
+  MODULOS_AUSENCIA.forEach((m) => secoes.push(grupoAusencia(user, m)));
   if (isHorasExtrasDp(user)) secoes.push(grupoHorasExtras);
   if (podeAcessarFechamentoPj(user)) secoes.push(grupoFechamentoPj);
   if (area && secoes.some((s) => s.key === area)) return secoes.filter((s) => s.key === area);

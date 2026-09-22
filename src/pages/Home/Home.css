@@ -250,6 +250,11 @@
 
 /* ---------- rodapé ---------- */
 
+/* O link do Aviso de Privacidade mora no rodapé, como em qualquer site: é
+   consulta eventual, não item de menu. */
+.home-footer a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.home-footer a:hover { color: var(--ink); }
+
 .home-footer {
   padding: 18px;
   text-align: center;

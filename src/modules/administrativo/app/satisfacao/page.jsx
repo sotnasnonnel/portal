@@ -1,14 +1,16 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
-import { Star, Loader2, AlertCircle } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link, Navigate } from 'react-router-dom';
+import { Star, Loader2, AlertCircle, MessageSquareText } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { getClasse, getServico } from '../../../../config/administrativo';
 import { listarAvaliacoes } from '../../lib/chamados';
 import {
-  resumoSatisfacao, faixaDaMedia, posicaoNaEscala, MINIMO_CONFIAVEL, NOTA_MIN, NOTA_MAX,
+  resumoSatisfacao, faixaDaMedia, posicaoNaEscala, comentarios,
+  MINIMO_CONFIAVEL, NOTA_MIN, NOTA_MAX, NOTA_BAIXA_ATE,
 } from '../../lib/satisfacao';
 
 const umaCasa = (n) => (n === null ? '—' : n.toFixed(1).replace('.', ','));
+const dataCurta = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR') : '—');
 
 /** Marcas do eixo: 1, 2, 3, 4, 5. */
 const MARCAS = Array.from({ length: NOTA_MAX - NOTA_MIN + 1 }, (_, i) => NOTA_MIN + i);
@@ -18,6 +20,7 @@ export default function SatisfacaoAdm() {
   const [avaliacoes, setAvaliacoes] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
+  const [soBaixas, setSoBaixas] = useState(false);
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -32,6 +35,12 @@ export default function SatisfacaoAdm() {
   }, []);
 
   useEffect(() => { carregar(); }, [carregar]);
+
+  const observacoes = useMemo(
+    () => comentarios(avaliacoes, { apenasBaixas: soBaixas }),
+    [avaliacoes, soBaixas]
+  );
+  const quantasBaixas = useMemo(() => comentarios(avaliacoes, { apenasBaixas: true }).length, [avaliacoes]);
 
   // Gate de UI — a RLS é quem realmente restringe os dados.
   if (modules?.administrativo !== 'admin') return <Navigate to="/administrativo/novo" replace />;
@@ -162,6 +171,60 @@ export default function SatisfacaoAdm() {
                 </tbody>
               </table>
             </div>
+          </div>
+
+          {/* As observações são o que o gráfico não diz. Nota até 3 exige
+              comentário (POP 9.2), então é aqui que está o motivo de cada nota
+              baixa — e o link leva ao chamado, que é onde se atua. */}
+          <div className="adm-card">
+            <div className="adm-sat-obs-cab">
+              <h2 className="adm-card-tit"><MessageSquareText size={18} /> Observações dos solicitantes</h2>
+              <label className="adm-sat-obs-filtro">
+                <input
+                  type="checkbox"
+                  checked={soBaixas}
+                  onChange={(e) => setSoBaixas(e.target.checked)}
+                />
+                Só notas até {NOTA_BAIXA_ATE} ({quantasBaixas})
+              </label>
+            </div>
+            <p className="adm-campo-dica">
+              Da pior nota para a melhor. Notas de 4 e 5 só aparecem quando o solicitante
+              escreveu algo — nelas o comentário é opcional.
+            </p>
+
+            {observacoes.length === 0 ? (
+              <div className="adm-vazio">
+                {soBaixas
+                  ? `Nenhuma avaliação com nota até ${NOTA_BAIXA_ATE}.`
+                  : 'Nenhuma observação registrada ainda.'}
+              </div>
+            ) : (
+              <ul className="adm-sat-obs">
+                {observacoes.map((a) => {
+                  const srv = getServico(a.classe, a.servico);
+                  return (
+                    <li key={`${a.chamadoId || a.numero}-${a.avaliado_em}`} className="adm-sat-obs-item">
+                      <div className="adm-sat-obs-topo">
+                        <span className={`adm-sat-obs-nota tom-${faixaDaMedia(Number(a.nota))}`}>
+                          {a.nota}<Star size={12} />
+                        </span>
+                        <span className="adm-sat-obs-srv">{srv?.label || a.servico}</span>
+                        {a.chamadoId ? (
+                          <Link className="adm-sat-obs-link" to={`/administrativo/chamado/${a.chamadoId}`}>
+                            #{a.numero} {a.assunto}
+                          </Link>
+                        ) : (
+                          <span className="adm-sat-obs-link">#{a.numero} {a.assunto}</span>
+                        )}
+                        <span className="adm-sat-obs-data">{dataCurta(a.avaliado_em)}</span>
+                      </div>
+                      <p className="adm-sat-obs-txt">{a.comentario}</p>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
         </>
       )}

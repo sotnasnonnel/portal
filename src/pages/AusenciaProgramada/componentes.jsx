@@ -113,9 +113,10 @@ export function ModalMotivo({
   );
 }
 
-// Novo pedido ou edição de rascunho. `periodos` são os MEUS períodos (com
-// saldo calculado); `minhas` são as minhas solicitações, para a sobreposição.
-export function ModalPedido({ periodos, minhas, rascunho = null, aprovador, onClose, onSalvar }) {
+// Novo pedido ou edição de rascunho. `mod` é o descritor do módulo (ausência
+// programada ou folga de campo); `periodos` são os MEUS períodos (com saldo
+// calculado); `minhas` são as minhas solicitações, para a sobreposição.
+export function ModalPedido({ mod, periodos, minhas, rascunho = null, aprovador, onClose, onSalvar }) {
   const hoje = diaISO();
   const [inicio, setInicio] = useState(rascunho?.data_inicio || '');
   const [modo, setModo] = useState('dias');
@@ -170,7 +171,7 @@ export function ModalPedido({ periodos, minhas, rascunho = null, aprovador, onCl
 
   return (
     <Modal
-      titulo={rascunho ? `Rascunho #${rascunho.numero}` : 'Nova ausência programada'}
+      titulo={rascunho ? `Rascunho #${rascunho.numero}` : `Nova ${mod.nomeMinusculo}`}
       onClose={onClose}
       bloqueado={salvando}
       rodape={(

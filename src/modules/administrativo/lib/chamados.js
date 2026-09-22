@@ -1131,13 +1131,18 @@ export async function urlDoAnexo(path, segundos = 120) {
 export async function listarAvaliacoes() {
   const { data, error } = await supabase
     .from('chamados_adm_avaliacoes')
-    .select('nota, comentario, avaliado_em, chamados_adm(classe, servico)')
+    .select('nota, comentario, avaliado_em, chamados_adm(id, numero, assunto, classe, servico)')
     .order('avaliado_em', { ascending: false });
   if (error) throw new Error(`Não foi possível carregar as avaliações: ${error.message}`);
   return (data || []).map((a) => ({
     nota: a.nota,
     comentario: a.comentario,
     avaliado_em: a.avaliado_em,
+    // O chamado vem junto para a lista de observações abrir o caso: ler "não
+    // resolveram nada" sem poder ir ao chamado não ajuda quem vai atuar.
+    chamadoId: a.chamados_adm?.id || null,
+    numero: a.chamados_adm?.numero ?? null,
+    assunto: a.chamados_adm?.assunto || '',
     classe: a.chamados_adm?.classe || '',
     servico: a.chamados_adm?.servico || '',
   }));

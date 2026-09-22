@@ -6,10 +6,8 @@ import {
   csv, diaISO, diasAteLimite, fmtDataBr, rotuloPeriodo, situacaoPeriodo, statusExibido, statusLabel,
   SITUACAO_LABEL,
 } from '../../config/ausenciaProgramada';
-import {
-  atualizarPeriodo, criarPeriodo, gerarAlertas, gerarPeriodos, listarPeriodos, listarSemPeriodo,
-  listarSolicitacoes,
-} from '../../services/ausenciaProgramada';
+import { MOD_AUSENCIA } from '../../config/modulosAusencia';
+import { servicoAusencia } from '../../services/ausenciaProgramada';
 import {
   Alerta, ModalPeriodo, SituacaoPeriodo, StatCard, StatusBadge,
 } from './componentes';
@@ -24,7 +22,10 @@ const normal = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').t
 //  * escopo 'equipe' — o gestor acompanha a subárvore dele;
 //  * escopo 'todos'  — o RH acompanha a empresa, corrige períodos e cadastra
 //    quem ainda não tem saldo.
-export default function VisaoGeralAusencia({ escopo = 'equipe' }) {
+//
+// Serve aos dois módulos (`mod`): Ausência Programada e Folga de Campo.
+export default function VisaoGeralAusencia({ mod = MOD_AUSENCIA, escopo = 'equipe' }) {
+  const api = servicoAusencia(mod);
   const ehRh = escopo === 'todos';
   const [periodos, setPeriodos] = useState([]);
   const [pedidos, setPedidos] = useState([]);
@@ -42,9 +43,9 @@ export default function VisaoGeralAusencia({ escopo = 'equipe' }) {
     setErro('');
     try {
       const [ps, ss, sp] = await Promise.all([
-        listarPeriodos(escopo),
-        listarSolicitacoes(escopo),
-        ehRh ? listarSemPeriodo() : Promise.resolve([]),
+        api.listarPeriodos(escopo),
+        api.listarSolicitacoes(escopo),
+        ehRh ? api.listarSemPeriodo() : Promise.resolve([]),
       ]);
       setPeriodos(ps);
       setPedidos(ss);
@@ -54,10 +55,10 @@ export default function VisaoGeralAusencia({ escopo = 'equipe' }) {
     } finally {
       setLoading(false);
     }
-  }, [escopo, ehRh]);
+  }, [api, escopo, ehRh]);
 
-  useEffect(() => { gerarAlertas(); carregar(); }, [carregar]);
-  useRecarregarAoMudar(carregar);
+  useEffect(() => { api.gerarAlertas(); carregar(); }, [api, carregar]);
+  useRecarregarAoMudar(mod.evento, carregar);
 
   const hoje = diaISO();
 
@@ -111,7 +112,7 @@ export default function VisaoGeralAusencia({ escopo = 'equipe' }) {
 
   function exportar() {
     if (aba === 'saldos') {
-      baixar('ausencia_programada_saldos.csv', [
+      baixar(`${mod.arquivo}_saldos.csv`, [
         ['Colaborador', 'Funcao', 'Modalidade', 'Gestor', 'Inicio Periodo', 'Fim Periodo', 'Data Inicial',
           'Data Limite', 'Direito', 'Ajuste', 'Motivo Ajuste', 'Tirados', 'Agendados', 'Pendentes', 'Saldo',
           'Situacao', 'Dias ate a Data Limite', 'Observacao'],
@@ -124,7 +125,7 @@ export default function VisaoGeralAusencia({ escopo = 'equipe' }) {
         ]),
       ]);
     } else {
-      baixar('ausencia_programada_pedidos.csv', [
+      baixar(`${mod.arquivo}_pedidos.csv`, [
         ['Numero', 'Colaborador', 'Inicio', 'Fim', 'Dias', 'Periodo', 'Data Limite', 'Status',
           'Fora do Prazo', 'Gestor', 'Decidido Por', 'Decidido Em', 'Motivo Reprovacao', 'Observacao'],
         ...pedidosFiltrados.map((s) => [
@@ -141,7 +142,7 @@ export default function VisaoGeralAusencia({ escopo = 'equipe' }) {
     setGerando(true);
     setErro('');
     try {
-      const n = await gerarPeriodos({ todos: true });
+      const n = await api.gerarPeriodos({ todos: true });
       setOkMsg(n ? `${n} período(s) novo(s) gerado(s).` : 'Nenhum período novo a gerar.');
       await carregar();
     } catch (e) {
@@ -151,7 +152,7 @@ export default function VisaoGeralAusencia({ escopo = 'equipe' }) {
     }
   }
 
-  const titulo = ehRh ? 'Painel de Ausência Programada' : 'Ausência da Equipe';
+  const titulo = ehRh ? mod.tituloPainel : mod.tituloEquipe;
   const Icone = ehRh ? LayoutDashboard : Users;
 
   if (loading) {
@@ -174,7 +175,7 @@ export default function VisaoGeralAusencia({ escopo = 'equipe' }) {
       <p className="page-subtitle">
         {ehRh
           ? 'Saldos, datas limite e pedidos da empresa toda. Correções de saldo ficam registradas com motivo.'
-          : 'Saldos e ausências de quem está abaixo de você no organograma.'}
+          : `Saldos e ${mod.plural.toLowerCase()} de quem está abaixo de você no organograma.`}
       </p>
 
       {erro && <Alerta tipo="erro">{erro}</Alerta>}
@@ -195,7 +196,7 @@ export default function VisaoGeralAusencia({ escopo = 'equipe' }) {
           rotulo="Data limite passou" ativo={aba === 'saldos' && filtro === 'vencido'}
           onClick={() => { setAba('saldos'); setFiltro('vencido'); }} />
         <StatCard tom="accent" icone={<CalendarDays size={22} />} valor={stats.proximas}
-          rotulo="Ausências aprovadas a acontecer" ativo={aba === 'pedidos' && filtro === 'proximas'}
+          rotulo={`${mod.plural} aprovadas a acontecer`} ativo={aba === 'pedidos' && filtro === 'proximas'}
           onClick={() => { setAba('pedidos'); setFiltro('proximas'); }} />
         <StatCard tom="warning" icone={<CalendarDays size={22} />} valor={stats.pendentes}
           rotulo="Pedidos pendentes" ativo={aba === 'pedidos' && filtro === 'pendente'}
@@ -339,7 +340,7 @@ export default function VisaoGeralAusencia({ escopo = 'equipe' }) {
                 <tr>
                   <th>#</th>
                   <th>Colaborador</th>
-                  <th>Ausência</th>
+                  <th>{mod.substantivoTitulo}</th>
                   <th>Dias</th>
                   <th>Data limite</th>
                   <th>Status</th>
@@ -381,8 +382,8 @@ export default function VisaoGeralAusencia({ escopo = 'equipe' }) {
           colaborador={editando.colaborador || null}
           onClose={() => setEditando(null)}
           onSalvar={async (campos) => {
-            if (editando.periodo) await atualizarPeriodo(editando.periodo.id, campos);
-            else await criarPeriodo(campos);
+            if (editando.periodo) await api.atualizarPeriodo(editando.periodo.id, campos);
+            else await api.criarPeriodo(campos);
             setEditando(null);
             setOkMsg('Período salvo.');
             await carregar();
