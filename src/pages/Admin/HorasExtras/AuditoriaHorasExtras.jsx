@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ScrollText, Download, Search, ArrowLeft } from 'lucide-react';
 import { fetchAuditoria } from '../../../services/horasExtras';
+import TableScroll from '../../../components/UI/TableScroll';
 import '../../../components/UI/Components.css';
 import '../Admin.css';
 import './HorasExtras.css';
@@ -88,7 +89,7 @@ export default function AuditoriaHorasExtras() {
           </div>
         </div>
 
-        <div className="table-scroll">
+        <TableScroll>
           <table className="data-table">
             <thead>
               <tr>
@@ -122,7 +123,7 @@ export default function AuditoriaHorasExtras() {
               )}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
       </div>
     </div>
   );

@@ -12,6 +12,7 @@ import {
   Alerta, ModalMotivo, ModalPedido, SituacaoPeriodo, StatCard, StatusBadge,
 } from './componentes';
 import { useRecarregarAoMudar } from './useRecarregarAoMudar';
+import TableScroll from '../../components/UI/TableScroll';
 import '../../components/UI/Components.css';
 import '../Admin/Admin.css';
 import './AusenciaProgramada.css';
@@ -138,7 +139,7 @@ export default function MinhaAusencia({ mod = MOD_AUSENCIA }) {
             </button>
           </div>
         </div>
-        <div className="table-scroll">
+        <TableScroll>
           <table className="data-table">
             <thead>
               <tr>
@@ -195,14 +196,14 @@ export default function MinhaAusencia({ mod = MOD_AUSENCIA }) {
               )}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
       </div>
 
       <div className="table-container">
         <div className="table-header">
           <div className="table-header-title">Meus períodos</div>
         </div>
-        <div className="table-scroll">
+        <TableScroll>
           <table className="data-table">
             <thead>
               <tr>
@@ -239,7 +240,7 @@ export default function MinhaAusencia({ mod = MOD_AUSENCIA }) {
               )}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
       </div>
 
       {editando && (

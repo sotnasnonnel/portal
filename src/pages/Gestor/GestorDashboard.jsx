@@ -6,6 +6,7 @@ import { getStatusCalculado, formatarData } from '../../utils/formatters';
 import { Users, ClipboardCheck, CalendarClock, TrendingUp, AlertCircle, ClipboardList, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { acaoDisponivel, resumoAndamento, badgeDeStatus, TIPO_LABEL } from '../../config/aprovacao';
+import TableScroll from '../../components/UI/TableScroll';
 import '../../components/UI/Components.css';
 import './Gestor.css';
 
@@ -181,7 +182,7 @@ export default function GestorDashboard() {
         {reqRecentes.length === 0 ? (
           <div className="table-empty">Nenhuma requisição ainda.</div>
         ) : (
-          <div className="table-scroll">
+          <TableScroll>
             <table className="data-table">
               <thead>
                 <tr>
@@ -204,7 +205,7 @@ export default function GestorDashboard() {
                 })}
               </tbody>
             </table>
-          </div>
+          </TableScroll>
         )}
       </div>
 
@@ -219,7 +220,7 @@ export default function GestorDashboard() {
               Ver Todas
             </button>
           </div>
-          <div className="table-scroll">
+          <TableScroll>
             <table className="data-table">
               <thead>
                 <tr>
@@ -246,7 +247,7 @@ export default function GestorDashboard() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </TableScroll>
         </div>
       )}
     </div>

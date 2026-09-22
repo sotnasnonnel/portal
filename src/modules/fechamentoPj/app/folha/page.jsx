@@ -14,13 +14,14 @@ import { indexar, loteCalculo } from '../../lib/lote';
 import {
   competenciaRotulo, dataBr, dataHoraBr, fmtBRL, somar,
 } from '../../lib/formato';
-import { pessoaDoEnvelope, combinaBusca } from './folhaUtil';
+import { pessoaDoEnvelope, combinaBusca, naFolhaDaCompetencia } from './folhaUtil';
 import Envelope from './Envelope';
 import InputFolha from './InputFolha';
 import { ModalTermo, DialogoEnvio } from './Termo';
 import {
   DialogoAbrirCompetencia, DialogoFecharCompetencia, DialogoReabrirCompetencia, DialogoCalendario, DialogoIncluirPrestador,
 } from './DialogosCompetencia';
+import TableScroll from '../../../../components/UI/TableScroll';
 import './folha.css';
 
 // Folha do mês: grade dos envelopes da competência em exibição, com cálculo,
@@ -106,7 +107,15 @@ export default function Pagina() {
       pessoa: pessoaDoEnvelope(env, prestador),
       encerramento: indice.encerramentoPorPrestador.get(env.prestador_id) || null,
     };
-  }).sort((a, b) => String(a.pessoa.codigo).localeCompare(String(b.pessoa.codigo))), [envelopes, indice]);
+  })
+    // Fora quem já estava desligado antes do mês começar. O envelope pode ter
+    // sobrado de uma reabertura ou da carga histórica; quem saiu no meio do mês
+    // continua, porque ainda tem proporcional a receber.
+    .filter((l) => naFolhaDaCompetencia(l.prestador, competencia))
+    .sort((a, b) => String(a.pessoa.codigo).localeCompare(String(b.pessoa.codigo))), [envelopes, indice, competencia]);
+
+  // Os cards contam o que está na tela, não o que veio do banco.
+  const naFolha = useMemo(() => linhas.map((l) => l.envelope), [linhas]);
 
   const filtradas = useMemo(() => linhas.filter((l) => {
     const e = l.envelope;
@@ -117,15 +126,15 @@ export default function Pagina() {
   }), [linhas, filtro, busca]);
 
   const kpis = useMemo(() => ({
-    total: envelopes.length,
-    calculados: envelopes.filter((e) => e.calculado_em).length,
-    ok: envelopes.filter((e) => e.conferencia === 'ok').length,
-    divergentes: envelopes.filter((e) => e.conferencia === 'divergente').length,
-    gerados: envelopes.filter((e) => e.termo === 'gerado').length,
-    bruto: somar(envelopes, 'bruto'),
-    descontos: somar(envelopes, 'descontos'),
-    liquido: somar(envelopes, 'liquido'),
-  }), [envelopes]);
+    total: naFolha.length,
+    calculados: naFolha.filter((e) => e.calculado_em).length,
+    ok: naFolha.filter((e) => e.conferencia === 'ok').length,
+    divergentes: naFolha.filter((e) => e.conferencia === 'divergente').length,
+    gerados: naFolha.filter((e) => e.termo === 'gerado').length,
+    bruto: somar(naFolha, 'bruto'),
+    descontos: somar(naFolha, 'descontos'),
+    liquido: somar(naFolha, 'liquido'),
+  }), [naFolha]);
 
   const totaisFiltro = {
     bruto: somar(filtradas.map((l) => l.envelope), 'bruto'),
@@ -166,7 +175,7 @@ export default function Pagina() {
   // Lança erro para quem chamou (o diálogo de fechamento mostra inline).
   async function calcular(escopo, origem = ORIGENS_CALCULO[escopo]) {
     const payloads = loteCalculo({
-      envelopes, indice, config, competencia, centros: centrosMapa, origem,
+      envelopes: naFolha, indice, config, competencia, centros: centrosMapa, origem,
       ids: escopo === 'selecionados' ? [...ids] : null,
       pendentes: escopo === 'pendentes',
     });
@@ -224,7 +233,7 @@ export default function Pagina() {
       )}
       {dialogo === 'fechar' && (
         <DialogoFecharCompetencia
-          envelopes={envelopes}
+          envelopes={naFolha}
           onFechar={() => setDialogo(null)}
           onCalcularPendentes={() => calcular('pendentes', 'Cálculo automático antes do fechamento da competência')}
           onConcluido={() => aposCompetencia(`Competência ${competenciaRotulo(competencia)} fechada.`)}
@@ -428,7 +437,7 @@ export default function Pagina() {
         )}
 
         {carregandoEnvelopes ? <Carregando texto="Carregando envelopes…" /> : (
-          <div className="table-scroll">
+          <TableScroll>
             <table className="data-table pj-folha-grade">
               <thead>
                 <tr>
@@ -522,7 +531,7 @@ export default function Pagina() {
                 </tfoot>
               )}
             </table>
-          </div>
+          </TableScroll>
         )}
       </div>
 

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft, ChevronLeft, ChevronRight, Pencil, Save, X, CalendarX, FileText, Ban, HeartPulse, Stethoscope, Smile,
+  FolderArchive,
 } from 'lucide-react';
 import { useFechamentoPj } from '../components/contexto';
 import { Abas, Aviso, Badge, Campo, Carregando, Moeda, Vazio } from '../components/ui';
@@ -19,7 +20,9 @@ import RateioEditor from './RateioEditor';
 import Encerramento, { CancelarEncerramento } from './Encerramento';
 import Distrato from './Distrato';
 import ImportarOrganograma from './ImportarOrganograma';
+import ImportarDocumentos from './ImportarDocumentos';
 import ConferenciaBradesco from './ConferenciaBradesco';
+import TableScroll from '../../../../components/UI/TableScroll';
 import './prestadores.css';
 
 const CAMPOS = ['nome', 'situacao', 'sexo', 'email', 'email_pessoal', 'telefone', 'empresa', 'razao_social', 'cnpj', 'cpf', 'rg',
@@ -321,7 +324,14 @@ function DetalheConteudo({ id }) {
               </button>
             </>
           ) : (
-            <button type="button" className="btn btn-primary" onClick={iniciarEdicao}><Pencil size={18} /> Editar</button>
+            <>
+              {!novo && (
+                <button type="button" className="btn btn-outline" onClick={() => setModal({ tipo: 'documentos' })}>
+                  <FolderArchive size={18} /> Importar pasta do prestador
+                </button>
+              )}
+              <button type="button" className="btn btn-primary" onClick={iniciarEdicao}><Pencil size={18} /> Editar</button>
+            </>
           )}
         </div>
       </div>
@@ -471,6 +481,7 @@ function DetalheConteudo({ id }) {
         <Distrato encerramento={modal.encerramento} prestador={modal.prestador || prestador} onFechar={() => setModal(null)} />
       )}
       {modal?.tipo === 'organograma' && <ImportarOrganograma onFechar={() => setModal(null)} />}
+      {modal?.tipo === 'documentos' && <ImportarDocumentos prestador={prestador} onFechar={() => setModal(null)} />}
       {modal?.tipo === 'bradesco' && <ConferenciaBradesco onFechar={() => setModal(null)} />}
     </>
   );
@@ -481,7 +492,7 @@ function HistoricoSalarial({ extras }) {
     <>
       <div className="pj-secao-titulo">Histórico de valor e função</div>
       {extras.carregando ? <Carregando /> : extras.historico.length ? (
-        <div className="table-scroll">
+        <TableScroll>
           <table className="data-table">
             <thead>
               <tr>
@@ -511,7 +522,7 @@ function HistoricoSalarial({ extras }) {
               })}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
       ) : <p className="form-hint">Nenhuma alteração de valor ou função registrada. As mudanças são gravadas automaticamente ao salvar.</p>}
     </>
   );
@@ -556,7 +567,7 @@ function Beneficios({ prestador, onBradesco }) {
       </div>
       <div className="pj-secao-titulo">Dependentes cadastrados ({dependentes.length})</div>
       {dependentes.length ? (
-        <div className="table-scroll">
+        <TableScroll>
           <table className="data-table">
             <thead><tr><th>Nome</th><th>CPF</th><th>Nascimento</th><th>Parentesco</th><th>Situação</th><th>Fonte</th><th>Benefício</th></tr></thead>
             <tbody>
@@ -573,7 +584,7 @@ function Beneficios({ prestador, onBradesco }) {
               ))}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
       ) : <Vazio>Nenhum dependente cadastrado.</Vazio>}
     </div>
   );
@@ -583,7 +594,7 @@ function Envelopes({ extras }) {
   if (extras.carregando) return <Carregando />;
   if (!extras.envelopes.length) return <Vazio>O prestador ainda não tem envelopes.</Vazio>;
   return (
-    <div className="table-scroll">
+    <TableScroll>
       <table className="data-table">
         <thead>
           <tr>
@@ -606,7 +617,7 @@ function Envelopes({ extras }) {
           ))}
         </tbody>
       </table>
-    </div>
+    </TableScroll>
   );
 }
 
@@ -621,7 +632,7 @@ function Encerramentos({ extras, onDistrato, onCancelar, onNovo }) {
         </div>
       </div>
       {extras.encerramentos.length ? (
-        <div className="table-scroll">
+        <TableScroll>
           <table className="data-table">
             <thead>
               <tr>
@@ -664,7 +675,7 @@ function Encerramentos({ extras, onDistrato, onCancelar, onNovo }) {
               ))}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
       ) : <Vazio>Nenhum encerramento registrado.</Vazio>}
     </div>
   );

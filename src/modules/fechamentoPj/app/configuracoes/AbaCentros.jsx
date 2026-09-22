@@ -4,6 +4,7 @@ import { useFechamentoPj } from '../components/contexto';
 import { Aviso, Vazio } from '../components/ui';
 import { salvarCentros, excluirCentro, auditar } from '../../lib/dados';
 import { CC_RM_REGEX, codigoRmCentroCusto, normalizar } from '../../lib/formato';
+import TableScroll from '../../../../components/UI/TableScroll';
 
 const paraLinha = (c) => ({ cod_ct: c.cod_ct, codigo_rm: c.codigo_rm || '', descricao: c.descricao || '', origem: c.origem, salvo: true });
 
@@ -151,7 +152,7 @@ export default function AbaCentros({ onSujo }) {
             </button>
           </div>
         </div>
-        <div className="table-scroll">
+        <TableScroll>
           <table className="data-table">
             <thead>
               <tr><th>COD CT</th><th>Código RM</th><th>Descrição</th><th className="pj-centro">Prestadores</th><th>Status</th><th /></tr>
@@ -184,7 +185,7 @@ export default function AbaCentros({ onSujo }) {
             </tbody>
           </table>
           {!visiveis.length && <Vazio>{linhas.length ? 'Nenhum centro com essa busca.' : 'Nenhum centro de custo cadastrado.'}</Vazio>}
-        </div>
+        </TableScroll>
       </div>
 
       <div className="pj-cfg-barra">

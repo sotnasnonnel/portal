@@ -6,6 +6,7 @@ import { StatCard, Badge, Vazio } from '../components/ui';
 import { salvarDocumentoPagamento, auditar } from '../../lib/dados';
 import { prontoParaTxt, ratearLiquido, ccValido } from '../../lib/totvs';
 import { fmtBRL, fmtNum, somar } from '../../lib/formato';
+import TableScroll from '../../../../components/UI/TableScroll';
 
 const RAIZ = '/admin/fechamento-pj';
 
@@ -110,7 +111,7 @@ export default function PagamentoTotvs({ linhas, competencia, onSalvo }) {
             ))}
           </div>
         </div>
-        <div className="table-scroll">
+        <TableScroll>
           <table className="data-table pj-rel-tabela">
             <thead>
               <tr>
@@ -153,7 +154,7 @@ export default function PagamentoTotvs({ linhas, competencia, onSalvo }) {
             </tbody>
           </table>
           {!visiveis.length && <Vazio>Nenhum prestador neste filtro.</Vazio>}
-        </div>
+        </TableScroll>
       </div>
 
       {(pendencias.semCodigo.length > 0 || pendencias.ccs.length > 0 || pendencias.semRateio.length > 0) && (

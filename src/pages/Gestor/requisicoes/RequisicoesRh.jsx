@@ -7,6 +7,7 @@ import ModalRespostas, { DETALHE, buscarRespostas } from './ModalRespostas';
 import BotaoPdfRequisicao from '../../../components/BotaoPdfRequisicao';
 import SearchSelect from '../../../components/UI/SearchSelect';
 import { opcoesSolicitantes } from './solicitantes';
+import TableScroll from '../../../components/UI/TableScroll';
 
 // Visão do RH/DP: vê TODAS as requisições (somente leitura). Cards de status no
 // topo filtram a lista compacta; clicar numa requisição abre o detalhe (fluxo).
@@ -86,7 +87,7 @@ export default function RequisicoesRh({ participa, nomes, loading }) {
         ) : filtradas.length === 0 ? (
           <div className="table-empty" style={{ padding: 'var(--space-3xl)' }}>Nenhuma requisição neste filtro.</div>
         ) : (
-          <div className="table-scroll">
+          <TableScroll>
             <table className="data-table">
               <thead>
                 <tr>
@@ -114,7 +115,7 @@ export default function RequisicoesRh({ participa, nomes, loading }) {
                 })}
               </tbody>
             </table>
-          </div>
+          </TableScroll>
         )}
       </div>
 

@@ -7,6 +7,7 @@ import {
   fetchExcecoes, criarExcecao, setExcecaoAtiva, fetchColaboradoresDp,
 } from '../../../services/horasExtras';
 import { EXC_TIPO_LABEL, LIMITE_PADRAO, diaISO, fmtDataBr, fmtHora } from '../../../config/horasExtras';
+import TableScroll from '../../../components/UI/TableScroll';
 import '../../../components/UI/Components.css';
 import '../Admin.css';
 import './HorasExtras.css';
@@ -231,7 +232,7 @@ export default function ExcecoesPrazo() {
         <div className="table-header">
           <div className="table-header-title">Exceções registradas</div>
         </div>
-        <div className="table-scroll">
+        <TableScroll>
           <table className="data-table">
             <thead>
               <tr>
@@ -278,7 +279,7 @@ export default function ExcecoesPrazo() {
               )}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
       </div>
     </div>
   );

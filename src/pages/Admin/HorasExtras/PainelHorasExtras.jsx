@@ -12,6 +12,7 @@ import {
   podeAlterarDestino, podeCancelar, podeCompensar, rotuloPrazo, situacaoCompensacao,
   statusLabel, validarCompensacao,
 } from '../../../config/horasExtras';
+import TableScroll from '../../../components/UI/TableScroll';
 import '../../../components/UI/Components.css';
 import '../Admin.css';
 import './HorasExtras.css';
@@ -210,7 +211,7 @@ export default function PainelHorasExtras() {
           ))}
         </div>
 
-        <div className="table-scroll">
+        <TableScroll>
           <table className="data-table">
             <thead>
               <tr>
@@ -294,7 +295,7 @@ export default function PainelHorasExtras() {
               )}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
       </div>
 
       {aAlterar && (

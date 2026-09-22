@@ -1,4 +1,4 @@
-import { normalizar, digitos, partesCompetencia } from '../../lib/formato';
+import { normalizar, digitos, partesCompetencia } from '../../lib/formato.js';
 
 // Apoio da tela Folha do mês: dados de exibição da linha, busca e datas de
 // formulário. Sem React, para o fast refresh não reclamar de export misto.
@@ -19,6 +19,23 @@ export function pessoaDoEnvelope(env, prestador) {
     funcao: c?.funcao || p.funcao || '',
     dataInicio: c?.dataInicio || p.data_inicio || null,
   };
+}
+
+/**
+ * Quem tem lugar na folha da competência.
+ *
+ * Espelha a regra que o banco usa ao gerar os envelopes (pj_abrir_competencia):
+ * fica quem está ativo e quem foi desligado com data dentro do mês ou depois —
+ * esse ainda recebe o proporcional. Sai quem já estava desligado antes do mês
+ * começar, inclusive o desligado sem data de término: é o caso dos prestadores
+ * que vieram da carga histórica, e é justamente esse pessoal que não deve mais
+ * aparecer. Envelope sem cadastro atual fica: sem o prestador não há como
+ * julgar, e esconder um pagamento por falta de dado é pior do que mostrar.
+ */
+export function naFolhaDaCompetencia(prestador, competencia) {
+  if (!prestador) return true;
+  if (prestador.situacao !== 'desligado') return true;
+  return Boolean(prestador.data_fim) && prestador.data_fim >= competencia;
 }
 
 export function combinaBusca(linha, termo) {

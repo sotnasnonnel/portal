@@ -7,6 +7,7 @@ import { salvarFornecedor, auditar } from '../../lib/dados';
 import { statusFornecedor, RM_PADRAO } from '../../lib/totvs';
 import { normalizar, digitos, mascararCnpj } from '../../lib/formato';
 import EditorFornecedor from './EditorFornecedor';
+import TableScroll from '../../../../components/UI/TableScroll';
 import './fornecedores.css';
 
 const FILTROS = [
@@ -165,7 +166,7 @@ export default function PaginaFornecedores() {
             </button>
           ))}
         </div>
-        <div className="table-scroll">
+        <TableScroll>
           <table className="data-table">
             <thead>
               <tr>
@@ -202,7 +203,7 @@ export default function PaginaFornecedores() {
           {!filtradas.length && (
             <Vazio>{linhas.length ? 'Nenhum cadastro com esses filtros.' : 'Nenhum fornecedor cadastrado ainda.'}</Vazio>
           )}
-        </div>
+        </TableScroll>
       </div>
 
       {editando && (

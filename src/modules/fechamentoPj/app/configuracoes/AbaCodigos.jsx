@@ -3,6 +3,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { useFechamentoPj } from '../components/contexto';
 import { Modal, Campo, Aviso, Vazio } from '../components/ui';
 import { salvarCodigo, excluirCodigo, auditar } from '../../lib/dados';
+import TableScroll from '../../../../components/UI/TableScroll';
 
 const NOVO = { codigo: '', descricao: '', natureza: 'desconto', ativo: true };
 
@@ -59,7 +60,7 @@ export default function AbaCodigos() {
         <div className="table-header-title">Códigos de cálculo ({codigos.length} · {planilha} alimentado(s) por planilha)</div>
         <button type="button" className="btn btn-primary" onClick={() => abrir(null)}><Plus size={16} /> Novo código</button>
       </div>
-      <div className="table-scroll">
+      <TableScroll>
         <table className="data-table">
           <thead>
             <tr><th>Código</th><th>Descrição</th><th>Natureza</th><th>Origem</th><th>Situação</th><th /></tr>
@@ -83,7 +84,7 @@ export default function AbaCodigos() {
           </tbody>
         </table>
         {!codigos.length && <Vazio>Nenhum código cadastrado.</Vazio>}
-      </div>
+      </TableScroll>
       <p className="pj-sub pj-cfg-nota">Código usado em algum envelope não pode ser excluído — inative para tirá-lo de novos lançamentos.</p>
 
       {editando && (

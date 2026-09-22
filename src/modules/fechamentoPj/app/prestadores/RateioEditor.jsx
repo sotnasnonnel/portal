@@ -6,6 +6,7 @@ import { Aviso, Vazio } from '../components/ui';
 import { dataHoraBr, fmtNum, paraNumero, round2 } from '../../lib/formato';
 import { salvarRateio, auditar } from '../../lib/dados';
 import { rateiosDoPrestador, situacaoRateio, ROTA_CONFIGURACOES, ROTA_FOLHA } from './comum';
+import TableScroll from '../../../../components/UI/TableScroll';
 
 /** Rateio fixo do prestador por centro de custo, com edição manual. */
 export default function RateioEditor({ prestador, temEnvelopeAberto, onImportar }) {
@@ -95,7 +96,7 @@ export default function RateioEditor({ prestador, temEnvelopeAberto, onImportar 
       )}
 
       {editando ? (
-        <div className="table-scroll">
+        <TableScroll>
           <datalist id="pjp-centros">
             {centros.map((c) => <option key={c.cod_ct} value={c.cod_ct}>{c.codigo_rm || 'sem código RM'}</option>)}
           </datalist>
@@ -116,9 +117,9 @@ export default function RateioEditor({ prestador, temEnvelopeAberto, onImportar 
               ))}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
       ) : atuais.length ? (
-        <div className="table-scroll">
+        <TableScroll>
           <table className="data-table">
             <thead><tr><th>COD CT</th><th>Código RM</th><th className="pj-direita">Percentual</th><th>Origem</th><th>Importado em</th></tr></thead>
             <tbody>
@@ -137,7 +138,7 @@ export default function RateioEditor({ prestador, temEnvelopeAberto, onImportar 
               ))}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
       ) : <Vazio>Sem rateio cadastrado. Importe o organograma ou edite manualmente.</Vazio>}
 
       {editando && itens.length === 0 && <Aviso tipo="alerta">Sem linhas, o rateio do prestador será apagado.</Aviso>}

@@ -7,6 +7,7 @@ import { formatarMoeda } from '../../../../utils/formatters';
 import { SOLICITACOES_FIN } from '../../../../config/financeiro';
 import { acaoDisponivelFin, TIPO_LABEL_FIN } from '../../../../config/aprovacaoFinanceiro';
 import { meusPapeisAlcada } from '../../../../services/alcadas';
+import TableScroll from '../../../../components/UI/TableScroll';
 
 const SELECT = `
   id, numero, tipo, status, valor, aplicacao, nome_despesa, created_at, solicitante_id, modalidade_cartao,
@@ -179,7 +180,7 @@ export default function FinanceiroDashboard() {
           <div className="fin-card">
             {/* Sao 7 colunas: sem este wrapper a tabela estoura o card e faz a
                 pagina inteira rolar de lado no celular. */}
-            <div className="fin-table-scroll">
+            <TableScroll className="fin-table-scroll">
               <table className="fin-table">
                 <thead>
                   <tr>
@@ -204,7 +205,7 @@ export default function FinanceiroDashboard() {
                   })}
                 </tbody>
               </table>
-            </div>
+            </TableScroll>
             <Link to="/financeiro/solicitacoes/acompanhar" className="fin-card-foot">
               Ver todas <ArrowRight size={14} />
             </Link>

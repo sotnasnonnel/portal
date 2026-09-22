@@ -12,6 +12,7 @@ import {
   Alerta, ModalPeriodo, SituacaoPeriodo, StatCard, StatusBadge,
 } from './componentes';
 import { useRecarregarAoMudar } from './useRecarregarAoMudar';
+import TableScroll from '../../components/UI/TableScroll';
 import '../../components/UI/Components.css';
 import '../Admin/Admin.css';
 import './AusenciaProgramada.css';
@@ -212,7 +213,7 @@ export default function VisaoGeralAusencia({ mod = MOD_AUSENCIA, escopo = 'equip
             Estas pessoas não têm nenhum período. O portal só gera sozinho para quem entrou há menos de um
             ano; para os demais, cadastre o período com o saldo atual.
           </Alerta>
-          <div className="table-scroll">
+          <TableScroll>
             <table className="data-table">
               <thead>
                 <tr><th>Colaborador</th><th>Modalidade</th><th>Admissão</th><th>Ações</th></tr>
@@ -232,7 +233,7 @@ export default function VisaoGeralAusencia({ mod = MOD_AUSENCIA, escopo = 'equip
                 ))}
               </tbody>
             </table>
-          </div>
+          </TableScroll>
         </div>
       )}
 
@@ -269,7 +270,7 @@ export default function VisaoGeralAusencia({ mod = MOD_AUSENCIA, escopo = 'equip
           ))}
         </div>
 
-        <div className="table-scroll">
+        <TableScroll>
           {aba === 'saldos' ? (
             <table className="data-table">
               <thead>
@@ -373,7 +374,7 @@ export default function VisaoGeralAusencia({ mod = MOD_AUSENCIA, escopo = 'equip
               </tbody>
             </table>
           )}
-        </div>
+        </TableScroll>
       </div>
 
       {editando && (

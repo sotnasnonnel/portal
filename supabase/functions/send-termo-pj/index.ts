@@ -63,7 +63,6 @@ async function graphToken(tenant: string, clientId: string, secret: string): Pro
 }
 
 type Pessoa = { codigo: string; nome: string; email: string; razaoSocial: string; cnpj: string };
-type Evento = { codigo: string; descricao: string; natureza: string; valor: number; ordem: number | null };
 
 // Mesma regra de pessoaDoEnvelope (folhaUtil.js): o cadastro congelado no
 // fechamento vence o cadastro atual.
@@ -80,20 +79,19 @@ function pessoaDoEnvelope(env: any, p: any): Pessoa {
 
 // Corpo do e-mail = o mesmo termo da tela (DocumentoTermo em Termo.jsx).
 function montarHtml(o: {
-  pessoa: Pessoa; competencia: string; bruto: number; descontos: number; eventos: Evento[];
+  pessoa: Pessoa; competencia: string; bruto: number; descontos: number;
   comp: any; emailFinanceiro: string; logo: string;
 }) {
-  const { pessoa, competencia, bruto, descontos, eventos, comp, emailFinanceiro, logo } = o;
+  const { pessoa, competencia, bruto, descontos, comp, emailFinanceiro, logo } = o;
   const rot = competenciaRotulo(competencia);
   const liquido = Math.round((bruto - descontos) * 100) / 100;
   const th = 'style="text-align:left;color:#6b7280;font-weight:500;padding:6px 14px 6px 0;border-bottom:1px solid #eef0f3;vertical-align:top"';
   const td = 'style="color:#1b2735;padding:6px 0;border-bottom:1px solid #eef0f3"';
   const linha = (a: string, b: string) => `<tr><th ${th}>${a}</th><td ${td}>${b}</td></tr>`;
+  // Só o total compensado. A abertura dos descontos não vai no e-mail do
+  // prestador: ela fica no envelope e na folha analítica, como no termo da tela.
   const descontosHtml = descontos > 0
-    ? `<p style="margin:16px 0 8px">Já se encontra compensado no valor líquido acima o valor total de <strong>${brl(descontos)}</strong>, referente aos descontos abaixo:</p>
-       <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;font-size:14px">
-         ${eventos.filter((e) => e.natureza === "desconto").map((e) => linha(`${esc(e.codigo)} · ${esc(e.descricao)}`, brl(e.valor))).join("")}
-       </table>`
+    ? `<p style="margin:16px 0 8px">Já se encontra compensado no valor líquido acima o valor total de <strong>${brl(descontos)}</strong>.</p>`
     : "";
   return `
   <div style="background:#f2f2f2;padding:24px 0;font-family:Inter,Segoe UI,Arial,sans-serif">
@@ -172,7 +170,7 @@ Deno.serve(async (req) => {
 
     const { data: envelopes, error: eEnv } = await db
       .from("pj_envelopes")
-      .select("id, competencia, prestador_id, bruto, descontos, termo, envio, cadastro, pj_eventos(codigo, descricao, natureza, valor, ordem)")
+      .select("id, competencia, prestador_id, bruto, descontos, termo, envio, cadastro")
       .in("id", ids);
     if (eEnv) return json({ error: eEnv.message }, 500);
     // Sem acesso ao módulo, a RLS devolve zero linhas.
@@ -207,12 +205,11 @@ Deno.serve(async (req) => {
       if (env.termo !== "gerado") { resultados.push({ ...base, status: "ignorado", motivo: "Termo não gerado." }); continue; }
       if (env.envio === "enviado") { resultados.push({ ...base, status: "ignorado", motivo: "Já enviado." }); continue; }
       if (!emailValido(pessoa.email)) { resultados.push({ ...base, status: "ignorado", motivo: "Sem e-mail válido no cadastro." }); continue; }
-      const eventos = [...(env.pj_eventos ?? [])].sort((a: Evento, b: Evento) => (a.ordem ?? 0) - (b.ordem ?? 0));
       const subject = String(config?.assunto_email || "Termo para emissão da Nota Fiscal — {{competencia}}")
         .replace(/\{\{\s*competencia\s*\}\}/gi, competenciaRotulo(env.competencia));
       const html = montarHtml({
         pessoa, competencia: env.competencia, bruto: Number(env.bruto) || 0, descontos: Number(env.descontos) || 0,
-        eventos, comp: competencias?.find((c) => c.competencia === env.competencia), emailFinanceiro: emailFin, logo,
+        comp: competencias?.find((c) => c.competencia === env.competencia), emailFinanceiro: emailFin, logo,
       });
       envios.push({ env, pessoa, subject, html });
     }

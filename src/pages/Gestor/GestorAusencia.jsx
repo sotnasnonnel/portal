@@ -4,6 +4,7 @@ import { supabase } from '../../services/supabase';
 import { getEquipeIds } from '../../services/equipe';
 import { formatarData, getStatusCalculado } from '../../utils/formatters';
 import { CalendarClock, UserCheck, AlertTriangle, Clock, Timer, FileSpreadsheet, Users } from 'lucide-react';
+import TableScroll from '../../components/UI/TableScroll';
 import '../../components/UI/Components.css';
 import './Gestor.css';
 
@@ -327,7 +328,7 @@ export default function GestorAusencia() {
               Exportar Lista
             </button>
           </div>
-          <div className="table-scroll">
+          <TableScroll>
             <table className="data-table">
               <thead>
                 <tr>
@@ -359,7 +360,7 @@ export default function GestorAusencia() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </TableScroll>
           <div className="absence-mobile-list">
             {listaFiltrada.map((item, i) => (
               <div key={i} className="absence-mobile-card">

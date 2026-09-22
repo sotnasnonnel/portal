@@ -212,10 +212,14 @@
 /* Modal */
 .pj-modal { width: 100%; max-height: calc(100vh - 48px); display: flex; flex-direction: column; }
 .pj-modal .modal-body { overflow-y: auto; }
-.pj-modal--sm { max-width: 480px; }
-.pj-modal--md { max-width: 720px; }
-.pj-modal--lg { max-width: 1040px; }
-.pj-modal--xl { max-width: 1320px; }
+/* Dobrados de propósito: .modal do Components.css também fixa max-width (560px)
+   com a mesma especificidade, então quem ganhava dependia da ordem em que os
+   CSS entravam — e essa ordem muda conforme a rota por onde se chega. Era isso
+   que fazia o envelope abrir ora grande, ora estreito. */
+.pj-modal.pj-modal--sm { max-width: 480px; }
+.pj-modal.pj-modal--md { max-width: 720px; }
+.pj-modal.pj-modal--lg { max-width: 1040px; }
+.pj-modal.pj-modal--xl { max-width: 1320px; }
 .pj-modal-sub { font-size: var(--font-size-xs); color: var(--color-text-secondary); margin-top: 2px; }
 
 /* Abas */

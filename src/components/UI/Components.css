@@ -642,6 +642,19 @@
   -webkit-overflow-scrolling: touch;
 }
 
+/* Barra de rolagem horizontal espelhada ACIMA da tabela, sincronizada por JS
+   com a .table-scroll de baixo (componente UI/TableScroll.jsx). Só existe no
+   DOM quando a tabela transborda. O filho é uma faixa de 1px cuja largura é a
+   do conteúdo real: é ela que dá tamanho ao polegar da barra. */
+.table-scroll-top {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.table-scroll-top > div {
+  height: 1px;
+}
+
 /* ===== SOLICITAÇÕES DP — fluxo de aprovação ===== */
 .tab-badge {
   display: inline-flex;

@@ -188,3 +188,114 @@
 }
 
 .pjp-recolher-nota { padding: 8px 12px 0; margin: 0; }
+
+/* Importação documental do prestador (pasta .zip) */
+.pjd-correspondencia {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.pjd-correspondencia > div {
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: var(--radius-md, 8px);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pjd-correspondencia small { color: var(--text-muted, #64748b); font-size: var(--font-size-xs); text-transform: uppercase; letter-spacing: 0.06em; }
+.pjd-correspondencia b { font-size: var(--font-size-sm); }
+.pjd-correspondencia span { color: var(--text-muted, #64748b); font-size: var(--font-size-xs); }
+
+.pjd-colunas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.pjd-campos { display: flex; flex-direction: column; gap: 6px; }
+
+.pjd-campos article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 4px 10px;
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: var(--radius-sm, 6px);
+  padding: 8px 10px;
+}
+
+.pjd-campos article > div { display: flex; flex-direction: column; min-width: 0; }
+.pjd-campos b { font-size: var(--font-size-xs); }
+.pjd-campos small { color: var(--text-muted, #64748b); font-size: var(--font-size-xs); overflow-wrap: anywhere; }
+.pjd-campos strong { font-size: var(--font-size-sm); text-align: right; overflow-wrap: anywhere; }
+.pjd-campos em { grid-column: 1 / -1; font-style: normal; font-size: var(--font-size-xs); }
+.pjd-campos em.ok { color: var(--color-success, #15803d); }
+.pjd-campos em.alerta { color: var(--color-warning, #b45309); }
+
+.pjd-dependentes { display: flex; flex-direction: column; gap: 8px; }
+
+.pjd-dependentes article {
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: var(--radius-sm, 6px);
+  padding: 10px;
+}
+
+.pjd-dependentes header { display: flex; gap: 8px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
+.pjd-dependentes header > div { display: flex; flex-direction: column; min-width: 0; }
+.pjd-dependentes header small { color: var(--text-muted, #64748b); font-size: var(--font-size-xs); overflow-wrap: anywhere; }
+
+.pjd-dependente-campos { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; }
+.pjd-dependente-campos span { display: flex; flex-direction: column; }
+.pjd-dependente-campos small { color: var(--text-muted, #64748b); font-size: var(--font-size-xs); text-transform: uppercase; letter-spacing: 0.06em; }
+.pjd-dependente-campos b { font-size: var(--font-size-sm); }
+
+.pjd-validacao { display: flex; flex-direction: column; gap: 6px; }
+
+.pjd-validacao article {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-left-width: 3px;
+  border-radius: var(--radius-sm, 6px);
+  padding: 8px 10px;
+}
+
+.pjd-validacao article > span { display: flex; flex-direction: column; min-width: 0; }
+.pjd-validacao strong { font-size: var(--font-size-xs); }
+.pjd-validacao small { color: var(--text-muted, #64748b); font-size: var(--font-size-xs); overflow-wrap: anywhere; }
+.pjd-validacao article.ok { border-left-color: var(--color-success, #15803d); }
+.pjd-validacao article.ok > svg { color: var(--color-success, #15803d); }
+.pjd-validacao article.alerta { border-left-color: var(--color-warning, #b45309); }
+.pjd-validacao article.alerta > svg { color: var(--color-warning, #b45309); }
+.pjd-validacao article.mudanca { border-left-color: var(--color-primary); }
+.pjd-validacao article.mudanca > svg { color: var(--color-primary); }
+
+.pjd-avisos { margin: 6px 0 0; padding-left: 18px; }
+.pjd-avisos li { margin-bottom: 3px; }
+
+.pjd-arquivos { margin-top: 12px; }
+.pjd-arquivos > summary { cursor: pointer; font-size: var(--font-size-sm); padding: 6px 0; }
+
+.pjd-confirmar {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-top: 14px;
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: var(--radius-md, 8px);
+  padding: 12px 14px;
+  cursor: pointer;
+}
+
+.pjd-confirmar > span { display: flex; flex-direction: column; }
+.pjd-confirmar small { color: var(--text-muted, #64748b); font-size: var(--font-size-xs); }
+
+@media (max-width: 860px) {
+  .pjd-correspondencia, .pjd-colunas { grid-template-columns: 1fr; }
+}

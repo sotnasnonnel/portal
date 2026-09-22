@@ -17,6 +17,7 @@ import {
   competenciaRotulo, dataBr, dataHoraBr, fmtBRL, fmtNum, fmtPct, maiusculo, mascararCnpj, paraNumero, round2, somar,
 } from '../../lib/formato';
 import { eventosOrdenados } from './folhaUtil';
+import TableScroll from '../../../../components/UI/TableScroll';
 
 // Envelope de pagamento de um prestador na competência: eventos, rateio,
 // conferência e log de cálculo. Todo cálculo passa por lib/calculo; a tela só
@@ -312,7 +313,7 @@ function AbaEventos({ eventos, envelope, bloqueado, aberta, onGravar }) {
       {historico ? (
         <Vazio>Envelope da carga histórica: só há os totais do mês, sem eventos.</Vazio>
       ) : (
-        <div className="table-scroll">
+        <TableScroll>
           <table className="data-table">
             <thead>
               <tr>
@@ -362,7 +363,7 @@ function AbaEventos({ eventos, envelope, bloqueado, aberta, onGravar }) {
               </tr>
             </tfoot>
           </table>
-        </div>
+        </TableScroll>
       )}
     </div>
   );
@@ -498,7 +499,7 @@ function AbaRateio({ envelope, rateiosPrestador, centrosMapa, aberta, eventos })
       {!itens.length ? (
         <Vazio>Prestador sem rateio cadastrado. Importe o organograma ou cadastre o rateio no prestador.</Vazio>
       ) : (
-        <div className="table-scroll">
+        <TableScroll>
           <table className="data-table">
             <thead>
               <tr>
@@ -532,7 +533,7 @@ function AbaRateio({ envelope, rateiosPrestador, centrosMapa, aberta, eventos })
               </tr>
             </tfoot>
           </table>
-        </div>
+        </TableScroll>
       )}
       {itens.length > 0 && !fecha && <Aviso tipo="alerta">O rateio não fecha 100%. Isso vira divergência no próximo cálculo.</Aviso>}
       {semRm > 0 && <Aviso tipo="alerta">Centro de custo sem código RM não entra no TXT do TOTVS. Cadastre o de-para em Configurações.</Aviso>}
@@ -751,7 +752,7 @@ function DocumentoMemoria({ calculo, pessoa, competencia, nomePor }) {
             : `Competência integral: base ${fmtBRL(prop.valorBase)} (${prop.diasAtivos}/${prop.divisor} dias)`}
         </p>
       )}
-      <div className="table-scroll">
+      <TableScroll>
         <table className="data-table pj-folha-memoria-tabela">
           <thead>
             <tr><th>Código</th><th>Descrição</th><th>Regra</th><th>Fórmula</th><th className="pj-direita">Valor</th></tr>
@@ -769,7 +770,7 @@ function DocumentoMemoria({ calculo, pessoa, competencia, nomePor }) {
             {!eventos.length && <tr><td colSpan={5} className="table-empty">Sem eventos na memória.</td></tr>}
           </tbody>
         </table>
-      </div>
+      </TableScroll>
 
       <div className="pj-secao-titulo">2ª fase · rateio e conferência</div>
       <ul className="pj-folha-lista pj-folha-lista--ok">
@@ -781,7 +782,7 @@ function DocumentoMemoria({ calculo, pessoa, competencia, nomePor }) {
         </li>
       </ul>
       {rateio.length > 0 && (
-        <div className="table-scroll">
+        <TableScroll>
           <table className="data-table pj-folha-memoria-tabela">
             <thead><tr><th>COD CT</th><th>Código RM</th><th className="pj-direita">%</th><th className="pj-direita">Valor rateado</th></tr></thead>
             <tbody>
@@ -795,7 +796,7 @@ function DocumentoMemoria({ calculo, pessoa, competencia, nomePor }) {
               ))}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
       )}
 
       <div className="pj-secao-titulo">Resultado final do envelope</div>

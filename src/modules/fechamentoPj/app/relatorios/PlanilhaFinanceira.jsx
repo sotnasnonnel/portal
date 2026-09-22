@@ -4,6 +4,7 @@ import { Modal, Vazio } from '../components/ui';
 import { planilhaFinanceira } from '../../lib/relatorios';
 import { gravarXlsx } from '../../lib/arquivos';
 import { fmtBRL, somar, normalizar, digitos, partesCompetencia } from '../../lib/formato';
+import TableScroll from '../../../../components/UI/TableScroll';
 
 const CABECALHO = ['Nome Completo', 'Valor Líquido para emissão da nota fiscal', 'Razão Social', 'CNPJ', 'Banco', 'Código banco',
   'Agência', 'Conta', 'PIX', 'Contabilidade'];
@@ -71,7 +72,7 @@ export default function PlanilhaFinanceira({ envelopes, prestadores, competencia
         </div>
         <span className="pj-sub">{filtradas.length}/{linhas.length}</span>
       </div>
-      <div className="table-scroll">
+      <TableScroll>
         <table className="data-table">
           <thead>
             <tr>
@@ -97,7 +98,7 @@ export default function PlanilhaFinanceira({ envelopes, prestadores, competencia
           </tbody>
         </table>
         {!filtradas.length && <Vazio>Nenhum prestador encontrado.</Vazio>}
-      </div>
+      </TableScroll>
     </Modal>
   );
 }

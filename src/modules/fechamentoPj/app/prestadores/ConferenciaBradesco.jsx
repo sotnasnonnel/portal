@@ -9,6 +9,7 @@ import { normalizar, dataBr, mascararCpf, mascararCnpj, competenciaRotulo } from
 import { salvarPrestador, registrarImportacao, auditar } from '../../lib/dados';
 import { mesclarDependentes, ROTA_FOLHA } from './comum';
 import { Contador, Etapas, Progresso, BadgeVida } from './pecas';
+import TableScroll from '../../../../components/UI/TableScroll';
 
 const ARQUIVOS = [
   ['liquido', 'Planilha de Líquido PJ', 'Aba EMISSÃO NF: os prestadores da folha.'],
@@ -243,7 +244,7 @@ export default function ConferenciaBradesco({ onFechar }) {
                   <div className="pj-par"><small>CNPJ</small><b>{linha.cnpj ? mascararCnpj(linha.cnpj) : '—'}</b></div>
                 </div>
                 {vidas.length ? (
-                  <div className="table-scroll">
+                  <TableScroll>
                     <table className="data-table">
                       <thead>
                         <tr><th>Vida</th><th>Tipo</th><th>CPF</th><th>Nascimento</th><th className="pj-direita">Valor</th><th>Situação</th><th>Conferência</th></tr>
@@ -262,7 +263,7 @@ export default function ConferenciaBradesco({ onFechar }) {
                         ))}
                       </tbody>
                     </table>
-                  </div>
+                  </TableScroll>
                 ) : <p className="form-hint pjp-recolher-nota">Sem plano médico na conferência.</p>}
               </details>
             ))}

@@ -6,9 +6,10 @@ import { marcarTermo, auditar, enviarTermosEmail } from '../../lib/dados';
 import { substituirAssunto } from '../../lib/calculo';
 import { competenciaRotulo, dataBr, dataHoraBr, fmtBRL, mascararCnpj, round2 } from '../../lib/formato';
 import {
-  tomadorDaEmpresa, ENDERECO_TOMADOR, copiasDoTermo, emailValido, eventosOrdenados,
+  tomadorDaEmpresa, ENDERECO_TOMADOR, copiasDoTermo, emailValido,
 } from './folhaUtil';
 import logoPhd from '../../../../assets/logo-phd.png';
+import TableScroll from '../../../../components/UI/TableScroll';
 
 // Termo de medição e autorização de faturamento (o "termo para emissão da NF").
 // Diferente do protótipo, o destinatário é a razão social do cadastro (não
@@ -20,7 +21,6 @@ function DocumentoTermo({ linha, competenciaAtual, config }) {
   const bruto = Number(envelope.bruto) || 0;
   const descontos = Number(envelope.descontos) || 0;
   const liquido = round2(bruto - descontos);
-  const eventos = eventosOrdenados(envelope);
 
   return (
     <article className="pj-documento pj-imprimir pj-termo">
@@ -56,20 +56,13 @@ function DocumentoTermo({ linha, competenciaAtual, config }) {
         </tbody>
       </table>
 
+      {/* O termo informa só o total compensado. A abertura dos descontos (plano
+          de saúde, coparticipação, odontológico, previdência) não vai para o
+          prestador: ela fica no envelope e na folha analítica. */}
       {descontos > 0 && (
-        <>
-          <p>
-            Já se encontra compensado no valor líquido acima o valor total de <b>{fmtBRL(descontos)}</b>,
-            referente aos descontos abaixo:
-          </p>
-          <table className="pj-termo-tabela pj-termo-eventos">
-            <tbody>
-              {eventos.filter((e) => e.natureza === 'desconto').map((e) => (
-                <tr key={e.codigo}><th>{e.codigo} · {e.descricao}</th><td>{fmtBRL(e.valor)}</td></tr>
-              ))}
-            </tbody>
-          </table>
-        </>
+        <p>
+          Já se encontra compensado no valor líquido acima o valor total de <b>{fmtBRL(descontos)}</b>.
+        </p>
       )}
 
       <p>
@@ -204,7 +197,7 @@ export function DialogoEnvio({ linhas, onFechar, onConcluido }) {
     return (
       <Modal largura="md" titulo="Resultado do envio" subtitulo={competenciaRotulo(competencia)} onFechar={onFechar}
         rodape={<button type="button" className="btn btn-primary" onClick={onFechar}>Fechar</button>}>
-        <div className="table-scroll">
+        <TableScroll>
           <table className="data-table">
             <thead><tr><th>Prestador</th><th>E-mail</th><th>Situação</th></tr></thead>
             <tbody>
@@ -220,7 +213,7 @@ export function DialogoEnvio({ linhas, onFechar, onConcluido }) {
               ))}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
       </Modal>
     );
   }
@@ -262,7 +255,7 @@ export function DialogoEnvio({ linhas, onFechar, onConcluido }) {
           <div className="pj-par"><small>Cópia</small><b>{copias.length ? copias.join(', ') : 'Sem cópia'}</b></div>
         </div>
 
-        <div className="table-scroll">
+        <TableScroll>
           <table className="data-table">
             <thead>
               <tr><th>Prestador</th><th>E-mail</th><th className="pj-direita">Líquido</th></tr>
@@ -277,7 +270,7 @@ export function DialogoEnvio({ linhas, onFechar, onConcluido }) {
               ))}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
         {erro && <Aviso tipo="erro">{erro}</Aviso>}
       </div>
     </Modal>

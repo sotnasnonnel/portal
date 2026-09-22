@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../services/supabase';
 import { PERFIL_OPCOES, PERFIL_LABEL, precisaSuperior, candidatosASuperior } from '../../config/perfis';
 import { formatarData, formatarMoeda } from '../../utils/formatters';
 import { Search, Edit3, ToggleLeft, ToggleRight, Users, X, Loader2, FileSpreadsheet, CalendarClock } from 'lucide-react';
 import AdminAusenciasModal from './AdminAusenciasModal';
+import TableScroll from '../../components/UI/TableScroll';
 import '../../components/UI/Components.css';
 import './Admin.css';
 
@@ -39,33 +40,6 @@ export default function AdminListagem() {
   const [editForm, setEditForm] = useState(initialEditForm);
   const [confirmandoDesativacao, setConfirmandoDesativacao] = useState(initialConfirmacao);
   const [ausenciasColab, setAusenciasColab] = useState(null);
-
-  // Barra de rolagem horizontal espelhada acima da tabela (sincroniza com a de baixo).
-  const topScrollRef = useRef(null);
-  const tableScrollRef = useRef(null);
-  const [scrollWidth, setScrollWidth] = useState(0); // 0 = sem overflow, barra oculta
-
-  useEffect(() => {
-    const el = tableScrollRef.current;
-    if (loading || !el) return undefined;
-    const medir = () => setScrollWidth(el.scrollWidth > el.clientWidth ? el.scrollWidth : 0);
-    medir();
-    const ro = new ResizeObserver(medir);
-    ro.observe(el);
-    if (el.firstElementChild) ro.observe(el.firstElementChild);
-    return () => ro.disconnect();
-  }, [loading]);
-
-  const syncFromTop = () => {
-    if (tableScrollRef.current && topScrollRef.current) {
-      tableScrollRef.current.scrollLeft = topScrollRef.current.scrollLeft;
-    }
-  };
-  const syncFromTable = () => {
-    if (tableScrollRef.current && topScrollRef.current) {
-      topScrollRef.current.scrollLeft = tableScrollRef.current.scrollLeft;
-    }
-  };
 
   useEffect(() => {
     const carregarColaboradores = async () => {
@@ -357,12 +331,7 @@ export default function AdminListagem() {
             </button>
           </div>
         </div>
-        {scrollWidth > 0 && (
-          <div className="table-scroll-top" ref={topScrollRef} onScroll={syncFromTop} aria-hidden="true">
-            <div style={{ width: scrollWidth }} />
-          </div>
-        )}
-        <div className="table-scroll" ref={tableScrollRef} onScroll={syncFromTable}>
+        <TableScroll>
           <table className="data-table">
             <thead>
               <tr>
@@ -448,7 +417,7 @@ export default function AdminListagem() {
               ))}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
         {filtrados.length === 0 && (
           <div className="table-empty">Nenhum colaborador encontrado.</div>
         )}

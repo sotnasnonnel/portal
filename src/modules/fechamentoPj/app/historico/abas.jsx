@@ -6,6 +6,7 @@ import { Badge, Carregando, Vazio, SeletorCompetencia } from '../components/ui';
 import { listarEnvelopes, nomesColaboradores, auditar } from '../../lib/dados';
 import { gravarXlsx } from '../../lib/arquivos';
 import { competenciaRotulo, dataHoraBr, fmtBRL, normalizar, digitos, partesCompetencia } from '../../lib/formato';
+import TableScroll from '../../../../components/UI/TableScroll';
 
 const RAIZ = '/admin/fechamento-pj';
 const LIMITE_TELA = 500;
@@ -39,7 +40,7 @@ export function AbaCompetencias({ nomes }) {
         <div className="table-header-title">Competências ({competencias.length})</div>
         <span className="pj-sub">Clique para abrir a competência na Folha de Pagamento.</span>
       </div>
-      <div className="table-scroll">
+      <TableScroll>
         <table className="data-table">
           <thead>
             <tr>
@@ -74,7 +75,7 @@ export function AbaCompetencias({ nomes }) {
           </tbody>
         </table>
         {!competencias.length && <Vazio>Nenhuma competência registrada.</Vazio>}
-      </div>
+      </TableScroll>
       <p className="pj-sub pj-hist-nota">Totais de competência em aberto só aparecem depois do fechamento.</p>
     </div>
   );
@@ -154,7 +155,7 @@ export function AbaValores({ linhas }) {
           </button>
         </div>
       </div>
-      <div className="table-scroll">
+      <TableScroll>
         <table className="data-table">
           <thead>
             <tr>
@@ -179,7 +180,7 @@ export function AbaValores({ linhas }) {
           </tbody>
         </table>
         {!filtradas.length && <Vazio>Nenhum registro de valores.</Vazio>}
-      </div>
+      </TableScroll>
       {filtradas.length > LIMITE_TELA && (
         <p className="pj-sub pj-hist-nota">
           Mostrando {LIMITE_TELA} de {filtradas.length}. Filtre por competência ou exporte para ver tudo.
@@ -229,7 +230,7 @@ export function AbaTermos() {
         <SeletorCompetencia competencias={competencias} valor={comp} onTrocar={setComp} />
       </div>
       {dados?.comp !== comp ? <Carregando texto="Carregando termos…" /> : (
-        <div className="table-scroll">
+        <TableScroll>
           {dados.erro && <div className="pj-aviso pj-aviso--erro">{dados.erro}</div>}
           <table className="data-table">
             <thead>
@@ -254,7 +255,7 @@ export function AbaTermos() {
             </tbody>
           </table>
           {!linhas.length && <Vazio>Sem envelopes nesta competência.</Vazio>}
-        </div>
+        </TableScroll>
       )}
     </div>
   );
@@ -269,7 +270,7 @@ export function AbaImportacoes({ linhas, nomes }) {
         <div className="table-header-title">Importações ({linhas.length})</div>
         <span className="pj-sub">As últimas 200.</span>
       </div>
-      <div className="table-scroll">
+      <TableScroll>
         <table className="data-table">
           <thead>
             <tr>
@@ -299,7 +300,7 @@ export function AbaImportacoes({ linhas, nomes }) {
           </tbody>
         </table>
         {!linhas.length && <Vazio>Nenhuma importação registrada.</Vazio>}
-      </div>
+      </TableScroll>
     </div>
   );
 }
@@ -328,7 +329,7 @@ export function AbaAuditoria({ linhas, nomes }) {
           <Busca valor={busca} onTrocar={setBusca} placeholder="Ação, detalhe, competência, pessoa…" />
         </div>
       </div>
-      <div className="table-scroll">
+      <TableScroll>
         <table className="data-table">
           <thead>
             <tr><th>Em</th><th>Ação</th><th>Detalhe</th><th>Competência</th><th>Prestador</th><th>Por</th></tr>
@@ -347,7 +348,7 @@ export function AbaAuditoria({ linhas, nomes }) {
           </tbody>
         </table>
         {!filtradas.length && <Vazio>Nenhum registro de auditoria.</Vazio>}
-      </div>
+      </TableScroll>
       <p className="pj-sub pj-hist-nota">Os 500 registros mais recentes.</p>
     </div>
   );

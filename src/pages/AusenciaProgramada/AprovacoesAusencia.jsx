@@ -8,6 +8,7 @@ import { MOD_AUSENCIA } from '../../config/modulosAusencia';
 import { servicoAusencia } from '../../services/ausenciaProgramada';
 import { Alerta, ModalMotivo, StatCard, StatusBadge } from './componentes';
 import { useRecarregarAoMudar } from './useRecarregarAoMudar';
+import TableScroll from '../../components/UI/TableScroll';
 import '../../components/UI/Components.css';
 import '../Admin/Admin.css';
 import './AusenciaProgramada.css';
@@ -121,7 +122,7 @@ export default function AprovacoesAusencia({ mod = MOD_AUSENCIA }) {
             </button>
           ))}
         </div>
-        <div className="table-scroll">
+        <TableScroll>
           <table className="data-table">
             <thead>
               <tr>
@@ -197,7 +198,7 @@ export default function AprovacoesAusencia({ mod = MOD_AUSENCIA }) {
               )}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
       </div>
 
       {aReprovar && (

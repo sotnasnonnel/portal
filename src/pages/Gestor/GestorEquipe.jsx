@@ -4,6 +4,7 @@ import { supabase } from '../../services/supabase';
 import { getEquipeIds } from '../../services/equipe';
 import { formatarData, formatarMoeda, calcularSaldoAusencia } from '../../utils/formatters';
 import { Users, Search, FileSpreadsheet } from 'lucide-react';
+import TableScroll from '../../components/UI/TableScroll';
 import '../../components/UI/Components.css';
 import './Gestor.css';
 
@@ -120,7 +121,7 @@ export default function GestorEquipe() {
             Exportar Excel
           </button>
         </div>
-        <div className="table-scroll">
+        <TableScroll>
           <table className="data-table">
             <thead>
               <tr>
@@ -164,7 +165,7 @@ export default function GestorEquipe() {
               ))}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
         <div className="team-mobile-list">
           {filtrados.map((u) => (
             <div key={u.id} className="team-mobile-card">

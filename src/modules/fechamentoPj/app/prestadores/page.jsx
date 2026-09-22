@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  UserPlus, Network, HeartPulse, Download, Search, Users, UserX, PieChart, Landmark, CreditCard, Stethoscope,
+  UserPlus, Network, HeartPulse, Download, Search, Users, PieChart, Landmark, CreditCard, Stethoscope, FolderArchive,
   AlertTriangle,
 } from 'lucide-react';
 import { useFechamentoPj } from '../components/contexto';
@@ -13,13 +13,16 @@ import {
   ROTA_PRESTADORES, rateiosDoPrestador, situacaoRateio, temDadosBancarios, temPlanoMedico, casaBusca, hojeIso,
 } from './comum';
 import ImportarOrganograma from './ImportarOrganograma';
+import ImportarDocumentos from './ImportarDocumentos';
 import ConferenciaBradesco from './ConferenciaBradesco';
+import TableScroll from '../../../../components/UI/TableScroll';
 import './prestadores.css';
 
+// A tela é só de quem está ativo: desligado não entra em nenhum filtro. Quem
+// precisa consultar um cadastro encerrado chega pelo link direto do prestador
+// ou pelo histórico de encerramentos.
 const CHIPS = [
   ['ativos', 'Ativos'],
-  ['desligados', 'Desligados'],
-  ['todos', 'Todos'],
   ['pendencias', 'Pendências'],
 ];
 
@@ -63,7 +66,6 @@ export default function Pagina() {
 
   const stats = useMemo(() => ({
     ativos: linhas.filter((l) => l.ativo).length,
-    desligados: linhas.filter((l) => !l.ativo).length,
     semRateio: linhas.filter((l) => l.semRateio).length,
     semRm: linhas.filter((l) => l.semRm).length,
     semBanco: linhas.filter((l) => l.semBanco).length,
@@ -71,8 +73,7 @@ export default function Pagina() {
   }), [linhas]);
 
   const visiveis = useMemo(() => linhas.filter((l) => {
-    if (filtro === 'ativos' && !l.ativo) return false;
-    if (filtro === 'desligados' && l.ativo) return false;
+    if (!l.ativo) return false;
     if (filtro === 'pendencias' && !(l.semRateio || l.semRm || l.semBanco)) return false;
     if (filtro === 'sem_rateio' && !l.semRateio) return false;
     if (filtro === 'sem_rm' && !l.semRm) return false;
@@ -112,6 +113,9 @@ export default function Pagina() {
         <button type="button" className="btn btn-outline" onClick={() => setModal('organograma')}>
           <Network size={18} /> Importar organograma
         </button>
+        <button type="button" className="btn btn-outline" onClick={() => setModal('documentos')}>
+          <FolderArchive size={18} /> Importar pasta do prestador
+        </button>
         <button type="button" className="btn btn-outline" onClick={() => setModal('bradesco')}>
           <HeartPulse size={18} /> Conferência Bradesco
         </button>
@@ -126,8 +130,6 @@ export default function Pagina() {
       <div className="pj-kpis pj-kpis--3">
         <StatCard tom="success" icone={<Users size={22} />} valor={stats.ativos} rotulo="Ativos"
           ativo={filtro === 'ativos'} onClick={() => setFiltro('ativos')} />
-        <StatCard tom="secondary" icone={<UserX size={22} />} valor={stats.desligados} rotulo="Desligados"
-          ativo={filtro === 'desligados'} onClick={() => setFiltro('desligados')} />
         <StatCard tom="warning" icone={<PieChart size={22} />} valor={stats.semRateio} rotulo="Sem rateio 100%"
           detalhe="ativos" ativo={filtro === 'sem_rateio'} onClick={() => trocarFiltroCard('sem_rateio')} />
         <StatCard tom="warning" icone={<Landmark size={22} />} valor={stats.semRm} rotulo="CC sem código RM"
@@ -157,11 +159,11 @@ export default function Pagina() {
             <input type="text" value={busca} onChange={(e) => setBusca(e.target.value)}
               placeholder="Código, nome, e-mail, CPF, CNPJ, razão social, função, seção…" aria-label="Buscar prestador" />
           </div>
-          <span className="pjp-registro">{visiveis.length}/{prestadores.length} prestadores</span>
+          <span className="pjp-registro">{visiveis.length}/{stats.ativos} prestadores ativos</span>
         </div>
 
         {carregando ? <Carregando texto="Carregando prestadores…" /> : (
-          <div className="table-scroll">
+          <TableScroll>
             <table className="data-table">
               <thead>
                 <tr>
@@ -207,11 +209,12 @@ export default function Pagina() {
             {!visiveis.length && (
               <Vazio>{prestadores.length ? 'Nenhum prestador com esses filtros.' : 'Nenhum prestador cadastrado ainda.'}</Vazio>
             )}
-          </div>
+          </TableScroll>
         )}
       </div>
 
       {modal === 'organograma' && <ImportarOrganograma onFechar={() => setModal(null)} />}
+      {modal === 'documentos' && <ImportarDocumentos onFechar={() => setModal(null)} />}
       {modal === 'bradesco' && <ConferenciaBradesco onFechar={() => setModal(null)} />}
     </>
   );

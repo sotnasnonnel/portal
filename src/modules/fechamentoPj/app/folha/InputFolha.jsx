@@ -9,6 +9,7 @@ import { lerArquivoXlsx } from '../../lib/arquivos';
 import { lerFolha, casarLinhas } from '../../lib/planilha';
 import { indexar, loteInput, atualizacaoCadastral, prestadorDaLinha } from '../../lib/lote';
 import { competenciaRotulo, dataHoraBr, digitos, fmtBRL } from '../../lib/formato';
+import TableScroll from '../../../../components/UI/TableScroll';
 
 // Input da planilha Líquido PJ NF em 3 etapas: ler, conferir, confirmar.
 // Nada é gravado antes da etapa 3.
@@ -303,7 +304,7 @@ export default function InputFolha({ envelopes, onFechar, onConcluido }) {
               </Aviso>
             )}
 
-            <div className="table-scroll pj-folha-rolagem">
+            <TableScroll className="pj-folha-rolagem">
               <table className="data-table">
                 <thead>
                   <tr>
@@ -336,7 +337,7 @@ export default function InputFolha({ envelopes, onFechar, onConcluido }) {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </TableScroll>
           </>
         )}
 
