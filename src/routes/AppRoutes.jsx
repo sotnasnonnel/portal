@@ -23,7 +23,7 @@ import TorreShell from '../modules/torre/app/components/AppShell';
 import { podeVerTorre } from '../config/torre';
 import { podeAcessarFechamentoPj } from '../config/fechamentoPj';
 import { isAusenciaRh, veAprovacoes } from '../config/ausenciaProgramada';
-import { MODULOS_AUSENCIA } from '../config/modulosAusencia';
+import { MODULOS_AUSENCIA, moduloAusenciaLiberado } from '../config/modulosAusencia';
 
 const Login = lazyPagina(() => import('../pages/Login/Login'));
 const Privacidade = lazyPagina(() => import('../pages/Privacidade/Privacidade'));
@@ -250,30 +250,50 @@ function AusenciaRhRoute({ rota, children }) {
   return children;
 }
 
+// A Folga de Campo está em piloto: quem não foi liberado cai na Home, mesmo
+// digitando a rota na mão. Precisa ser componente (e não um filtro na lista de
+// rotas): rota que não existe na árvore cairia no "*" e mandaria para a Home
+// TAMBÉM quem tem acesso, no instante em que a sessão ainda está carregando.
+function AusenciaPilotoRoute({ mod, children }) {
+  const { user } = useAuth();
+  if (!moduloAusenciaLiberado(mod, user)) return <Navigate to="/home" replace />;
+  return children;
+}
+
 // As quatro telas dos dois módulos: mesmo componente, descritor diferente
 // (config/modulosAusencia.js). `key` obriga o React a remontar ao trocar de
 // módulo ou de escopo, em vez de reaproveitar o estado da tela anterior.
 function rotasAusencia(mod) {
   return [
     <Route key={`${mod.chave}-minha`} path={mod.rota}
-      element={<LazyPage><MinhaAusencia key={mod.chave} mod={mod} /></LazyPage>} />,
+      element={(
+        <AusenciaPilotoRoute mod={mod}>
+          <LazyPage><MinhaAusencia key={mod.chave} mod={mod} /></LazyPage>
+        </AusenciaPilotoRoute>
+      )} />,
     <Route key={`${mod.chave}-aprovacoes`} path={`${mod.rota}/aprovacoes`}
       element={(
-        <AusenciaGestaoRoute rota={mod.rota}>
-          <LazyPage><AprovacoesAusencia key={mod.chave} mod={mod} /></LazyPage>
-        </AusenciaGestaoRoute>
+        <AusenciaPilotoRoute mod={mod}>
+          <AusenciaGestaoRoute rota={mod.rota}>
+            <LazyPage><AprovacoesAusencia key={mod.chave} mod={mod} /></LazyPage>
+          </AusenciaGestaoRoute>
+        </AusenciaPilotoRoute>
       )} />,
     <Route key={`${mod.chave}-equipe`} path={`${mod.rota}/equipe`}
       element={(
-        <AusenciaGestaoRoute rota={mod.rota}>
-          <LazyPage><VisaoGeralAusencia key={`${mod.chave}-equipe`} mod={mod} escopo="equipe" /></LazyPage>
-        </AusenciaGestaoRoute>
+        <AusenciaPilotoRoute mod={mod}>
+          <AusenciaGestaoRoute rota={mod.rota}>
+            <LazyPage><VisaoGeralAusencia key={`${mod.chave}-equipe`} mod={mod} escopo="equipe" /></LazyPage>
+          </AusenciaGestaoRoute>
+        </AusenciaPilotoRoute>
       )} />,
     <Route key={`${mod.chave}-painel`} path={`${mod.rota}/painel`}
       element={(
-        <AusenciaRhRoute rota={mod.rota}>
-          <LazyPage><VisaoGeralAusencia key={`${mod.chave}-todos`} mod={mod} escopo="todos" /></LazyPage>
-        </AusenciaRhRoute>
+        <AusenciaPilotoRoute mod={mod}>
+          <AusenciaRhRoute rota={mod.rota}>
+            <LazyPage><VisaoGeralAusencia key={`${mod.chave}-todos`} mod={mod} escopo="todos" /></LazyPage>
+          </AusenciaRhRoute>
+        </AusenciaPilotoRoute>
       )} />,
   ];
 }

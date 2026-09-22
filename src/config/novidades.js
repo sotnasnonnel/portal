@@ -1,4 +1,4 @@
-import { BarChart3, Clock, FileClock, HardHat, Lightbulb, ShieldCheck } from 'lucide-react';
+import { BarChart3, Clock, FileClock, Lightbulb, ShieldCheck } from 'lucide-react';
 
 /**
  * O que mudou na plataforma, do mais novo para o mais antigo.
@@ -33,16 +33,12 @@ import { BarChart3, Clock, FileClock, HardHat, Lightbulb, ShieldCheck } from 'lu
  */
 export const NOVIDADES = [
   {
-    id: '2026-09-22-folga-campo-inovacao-privacidade',
+    // A Folga de Campo NÃO entra aqui: está em piloto para duas pessoas
+    // (FOLGA_CAMPO_LIBERADOS), e o aviso de novidade é lido pela empresa toda —
+    // anunciar porta que ninguém pode abrir só gera chamado para o DP.
+    id: '2026-09-22-inovacao-privacidade',
     data: '2026-09-22',
     itens: [
-      {
-        icon: HardHat,
-        modulo: 'Gestão de Pessoas',
-        marca: 'Novidade',
-        titulo: 'Folga de Campo entrou na Gestão de Pessoas',
-        texto: 'As equipes de campo registram o período fora da obra e o gestor aprova, como na Ausência Programada.',
-      },
       {
         icon: Lightbulb,
         modulo: 'Programas',

@@ -6,7 +6,9 @@ import {
 import { isHorasExtrasDp } from '../../config/horasExtras';
 import { podeAcessarFechamentoPj, ROTA_FECHAMENTO_PJ } from '../../config/fechamentoPj';
 import { isAusenciaRh, veAprovacoes } from '../../config/ausenciaProgramada';
-import { MODULOS_AUSENCIA, MOD_AUSENCIA, MOD_FOLGA_CAMPO } from '../../config/modulosAusencia';
+import {
+  MODULOS_AUSENCIA, MOD_AUSENCIA, MOD_FOLGA_CAMPO, modulosAusenciaDe,
+} from '../../config/modulosAusencia';
 import { soPelaFlagDoOrganograma } from '../../config/organograma';
 
 // Navegação da sidebar de Gestão de Pessoas, na mesma divisão dos outros
@@ -235,7 +237,9 @@ export function navSections({ perfil, user, pendencias = 0, requisicoes = 0, are
   // só a consulta.
   if (soPelaFlagDoOrganograma(user)) secoes.push(consultas(false));
 
-  MODULOS_AUSENCIA.forEach((m) => secoes.push(grupoAusencia(user, m)));
+  // A Folga de Campo está em piloto e só aparece para quem foi liberado
+  // (modulosAusenciaDe). O card da Home sai daqui, então some junto.
+  modulosAusenciaDe(user).forEach((m) => secoes.push(grupoAusencia(user, m)));
   if (isHorasExtrasDp(user)) secoes.push(grupoHorasExtras);
   if (podeAcessarFechamentoPj(user)) secoes.push(grupoFechamentoPj);
   if (area && secoes.some((s) => s.key === area)) return secoes.filter((s) => s.key === area);

@@ -71,3 +71,40 @@ export const MOD_FOLGA_CAMPO = {
 };
 
 export const MODULOS_AUSENCIA = [MOD_AUSENCIA, MOD_FOLGA_CAMPO];
+
+// ---------------------------------------------------------------------------
+// PILOTO da Folga de Campo
+// ---------------------------------------------------------------------------
+// Enquanto o RH não cadastra o saldo das equipes de campo, o módulo fica
+// visível só para quem está na lista — mesma trava do módulo Programas
+// (PROGRAMAS_LIBERADOS em config/programas.js). A Ausência Programada não é
+// afetada: continua aberta a todo colaborador.
+//
+// Para liberar para a empresa inteira, basta trocar FOLGA_CAMPO_EM_PILOTO para
+// false — a lista pode ficar onde está, deixa de ser consultada.
+//
+// ATENÇÃO: isto é trava de INTERFACE, não de banco. As RPCs folga_campo_*
+// continuam existindo para qualquer usuário autenticado, como as da ausência.
+// Ninguém fora do piloto tem por onde chegar nelas pelo portal, mas o piloto
+// não é sigilo: é um lançamento controlado.
+export const FOLGA_CAMPO_EM_PILOTO = true;
+
+export const FOLGA_CAMPO_LIBERADOS = [
+  'marcus.guimaraes@phdengenharia.eng.br',
+  'andre.guimaraes@phdengenharia.eng.br',
+];
+
+export function podeAcessarFolgaCampo(user) {
+  if (!FOLGA_CAMPO_EM_PILOTO) return true;
+  return FOLGA_CAMPO_LIBERADOS.includes(String(user?.email || '').trim().toLowerCase());
+}
+
+/** Este módulo está liberado para esta pessoa? (só a folga tem piloto) */
+export function moduloAusenciaLiberado(mod, user) {
+  return mod !== MOD_FOLGA_CAMPO || podeAcessarFolgaCampo(user);
+}
+
+/** Os módulos que ESTA pessoa enxerga, na ordem do menu. */
+export function modulosAusenciaDe(user) {
+  return MODULOS_AUSENCIA.filter((mod) => moduloAusenciaLiberado(mod, user));
+}
