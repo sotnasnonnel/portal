@@ -29,22 +29,27 @@ export const PENDENTE = '[DEFINIR]';
 export const ehPendente = (valor) => typeof valor === 'string' && valor.includes('[DEFINIR');
 
 export const AVISO_PRIVACIDADE = {
-  versao: '1.0',
-  atualizadoEm: '2026-09-22',
+  versao: '1.1',
+  atualizadoEm: '2026-09-23',
 
   controlador: {
     nomeCurto: 'PHD Engenharia',
-    razaoSocial: `PHD Engenharia — razão social completa: ${PENDENTE}`,
-    cnpj: PENDENTE,
-    endereco: PENDENTE,
+    razaoSocial: 'PHD Soluções em Engenharia S.A.',
+    cnpj: '30.860.911/0001-50',
+    endereco: 'Av. Raja Gabaglia, 4343, sala 400, 5º andar — Belo Horizonte/MG',
   },
 
   // Art. 41, §1º: a identidade e as informações de contato do encarregado
   // devem ser divulgadas publicamente, de forma clara e objetiva.
+  //
+  // SEM TELEFONE por decisão de 23/09/2026: a lei pede identidade e contato, e
+  // o e-mail cumpre isso. Esta página fica FORA do login, então um celular aqui
+  // seria número pessoal publicado para qualquer um com o link. A tela omite a
+  // linha quando o telefone é nulo — não mostra rótulo vazio.
   encarregado: {
-    nome: PENDENTE,
-    email: PENDENTE,
-    telefone: PENDENTE,
+    nome: 'Lennon Santos',
+    email: 'lennon.santos@phdengenharia.eng.br',
+    telefone: null,
   },
 
   secoes: [

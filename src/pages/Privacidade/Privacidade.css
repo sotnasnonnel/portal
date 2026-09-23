@@ -64,8 +64,19 @@
 .priv-secao li strong { color: var(--ink); }
 
 /* Tabela de finalidade x base legal: é o coração do aviso e fica ilegível
-   empilhada em parágrafo. */
-.priv-tabela { width: 100%; border-collapse: collapse; margin: 4px 0 10px; }
+   empilhada em parágrafo.
+
+   `table-layout: fixed` + as larguras abaixo são o que a prende à folha: com o
+   layout automático, a primeira coluna (frases inteiras) esticava a tabela para
+   além do card e o texto saía flutuando à direita da tela. */
+.priv-tabela {
+  width: 100%;
+  max-width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  margin: 4px 0 10px;
+}
+.priv-tabela th:first-child, .priv-tabela td:first-child { width: 58%; }
 .priv-tabela th, .priv-tabela td {
   text-align: left; vertical-align: top;
   padding: 9px 10px; border-bottom: 1px solid var(--border);
@@ -73,7 +84,9 @@
 }
 .priv-tabela th { font-weight: 600; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
 .priv-tabela td { color: var(--ink-soft); }
-.priv-tabela td:first-child { font-weight: 600; color: var(--ink); white-space: nowrap; }
+/* Sem `nowrap`: aqui a primeira coluna é uma frase, não um rótulo curto, e
+   proibir a quebra era o que estourava a largura da folha. */
+.priv-tabela td:first-child { font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
 
 /* O que ainda falta a empresa decidir aparece marcado, não escondido: melhor
    publicar com a lacuna à vista do que com um nome inventado. */
@@ -94,5 +107,5 @@
   .priv-cab h1 { font-size: 1.375rem; }
   .priv-dpo dl { grid-template-columns: 1fr; gap: 2px; }
   .priv-dpo dt { margin-top: 8px; }
-  .priv-tabela td:first-child { white-space: normal; }
+  .priv-tabela th:first-child, .priv-tabela td:first-child { width: 50%; }
 }

@@ -92,8 +92,14 @@ export default function Privacidade() {
             <dd><Texto>{encarregado.nome}</Texto></dd>
             <dt>E-mail</dt>
             <dd><Texto>{encarregado.email}</Texto></dd>
-            <dt>Telefone</dt>
-            <dd><Texto>{encarregado.telefone}</Texto></dd>
+            {/* Telefone é opcional: o contato que a lei exige é o e-mail
+                acima. Sem número, a linha some em vez de ficar em branco. */}
+            {encarregado.telefone && (
+              <>
+                <dt>Telefone</dt>
+                <dd><Texto>{encarregado.telefone}</Texto></dd>
+              </>
+            )}
             <dt>Controlador</dt>
             <dd>
               <Texto>{controlador.razaoSocial}</Texto>
