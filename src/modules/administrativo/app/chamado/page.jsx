@@ -20,6 +20,7 @@ import BaixaEstoque from './BaixaEstoque';
 import { montarLinhaDoTempo, textoDoEvento } from '../../lib/linhaDoTempo';
 import { formatarTamanho } from '../../lib/arquivo';
 import { ehEncerrado } from '../../lib/statusChamado';
+import { prazoAdiado } from '../../lib/prazo';
 import {
   chamadoDeEstoque, chamadoUsaEstoque, categoriaDoChamado, montarLinhasDeBaixa, validarLinhasDeBaixa,
   linhasComQuantidade,
@@ -350,6 +351,21 @@ export default function ChamadoAdm() {
           <div><dt>Responsável</dt><dd>{chamado.atendenteNome || 'Sem responsável'}</dd></div>
           <div><dt>Criação</dt><dd>{dataHora(chamado.criado_em)}</dd></div>
           <div><dt>Análise</dt><dd>{dataHora(chamado.analise_em)}</dd></div>
+          {/* Só aparece quando o relógio começou depois da fila — o responsável
+              estava ausente. Sem esta linha, um chamado aberto hoje e vencendo
+              em três semanas parece conta errada. */}
+          {prazoAdiado(chamado) && (
+            <div>
+              <dt>Início do prazo</dt>
+              <dd>
+                {dataHora(chamado.sla_inicio_em)}
+                <span className="adm-campo-dica" style={{ display: 'block', margin: 0 }}>
+                  {chamado.atendenteNome || 'O responsável'} estava ausente na abertura; o prazo
+                  conta a partir da volta.
+                </span>
+              </dd>
+            </div>
+          )}
           <div><dt>Vencimento SLA</dt><dd>{dataHora(chamado.sla_vence_em)}</dd></div>
           {chamado.fechado_em && <div><dt>Fechamento</dt><dd>{dataHora(chamado.fechado_em)}</dd></div>}
           {campos.map(([chave, valor]) => (
