@@ -83,7 +83,11 @@ export function AuthProvider({ children }) {
   const [reembolsoProfile, setReembolsoProfile] = useState(null);
   const [solicProfile, setSolicProfile] = useState(null);
   const [fotoUrl, setFotoUrl] = useState(null);    // foto do Microsoft 365 (bolinha do usuário)
-  const [blocked, setBlocked] = useState(null);    // e-mail sem cadastro em colaboradores
+  // { email, motivo } — 'sem_cadastro' (e-mail que não existe em colaboradores)
+  // ou 'inativo' (cadastro desativado). A tela de login diz qual é: os dois
+  // casos se resolvem com o DP, mas por caminhos diferentes, e a mesma frase
+  // para ambos fazia o desligado e o recém-contratado abrirem o mesmo chamado.
+  const [blocked, setBlocked] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -127,7 +131,7 @@ export function AuthProvider({ children }) {
       }
       const colab = colabRes.colab;
       if (!colab || colab.ativo === false) {
-        setBlocked(authUser.email);
+        setBlocked({ email: authUser.email, motivo: colab ? 'inativo' : 'sem_cadastro' });
         cleanOAuthParams();
         await supabase.auth.signOut();
         setLoading(false);

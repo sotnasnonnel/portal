@@ -53,8 +53,17 @@ export default function Login() {
             <div className="login-actions">
               {blocked && (
                 <div className="login-blocked">
-                  Seu acesso ainda não foi liberado para <strong>{blocked}</strong>.<br />
-                  Procure o DP para liberar seu cadastro.
+                  {blocked.motivo === 'inativo' ? (
+                    <>
+                      O cadastro de <strong>{blocked.email}</strong> está inativo no portal.<br />
+                      Se você voltou para a empresa, peça ao DP para reativá-lo.
+                    </>
+                  ) : (
+                    <>
+                      Seu acesso ainda não foi liberado para <strong>{blocked.email}</strong>.<br />
+                      Procure o DP para liberar seu cadastro.
+                    </>
+                  )}
                 </div>
               )}
               {error && <div className="login-error">{error}</div>}
