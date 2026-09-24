@@ -1,0 +1,96 @@
+/* ==========================================================================
+   Folga de Campo (Gestão de Pessoas).
+   Só o que o design system do DP (components/UI/Components.css + Admin.css)
+   ainda não cobre. Tokens em src/styles/ui.css.
+
+   Classes próprias (fc-), e não as da Ausência Programada (ap-): os dois
+   módulos parecem irmãos na tela, mas não são o mesmo — a folga não tem saldo.
+   Reaproveitar a folha de lá amarraria um ao outro de novo.
+   ========================================================================== */
+
+.fc-sub {
+  color: var(--color-text-muted, #64748b);
+  font-size: var(--font-size-2xs);
+  margin-top: 2px;
+}
+
+.fc-num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.fc-toolbar {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.fc-busca {
+  max-width: 260px;
+}
+
+.fc-secao {
+  margin-bottom: var(--space-xl);
+}
+
+/* Avisos das telas e dos modais. */
+.fc-alerta {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md, 8px);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  margin-bottom: var(--space-md, 12px);
+  border-left: 3px solid transparent;
+}
+.fc-alerta svg { flex-shrink: 0; margin-top: 1px; }
+.fc-alerta ul { margin: 0; padding-left: 18px; }
+.fc-alerta--erro { background: #fef2f2; border-left-color: #ef4444; color: #991b1b; }
+.fc-alerta--aviso { background: #fffbeb; border-left-color: #d97706; color: #92400e; }
+.fc-alerta--info { background: #eff6ff; border-left-color: #2563eb; color: #1e3a8a; }
+.fc-alerta--ok { background: #ecfdf5; border-left-color: #059669; color: #065f46; }
+
+.fc-modal-sub {
+  color: var(--color-text-muted, #64748b);
+  font-size: var(--font-size-sm);
+  margin: 0 0 var(--space-md);
+}
+
+.fc-form-linha {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-md);
+}
+
+.fc-resumo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--space-md);
+}
+.fc-resumo strong { font-variant-numeric: tabular-nums; }
+
+/* Motivo na tabela: é o texto que o responsável lê para decidir, então não
+   pode virar uma linha espremida entre as datas. */
+.fc-motivo {
+  max-width: 320px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.fc-vazio {
+  padding: var(--space-2xl, 32px) var(--space-lg);
+  text-align: center;
+  color: var(--color-text-muted, #64748b);
+  font-size: var(--font-size-sm);
+}
+
+@media (max-width: 640px) {
+  .fc-form-linha { grid-template-columns: 1fr; }
+  .fc-busca { max-width: none; width: 100%; }
+  .fc-motivo { max-width: none; }
+}

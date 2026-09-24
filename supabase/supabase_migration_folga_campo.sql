@@ -1,50 +1,51 @@
 -- Migration: folga_campo (projeto bogsuuhrgvopzgcceoqz)
 -- ============================================================================
--- FOLGA DE CAMPO — card novo da Gestão de Pessoas, para as equipes de campo
--- registrarem e aprovarem seus períodos de ausência de obra.
+-- FOLGA DE CAMPO — o colaborador avisa que vai ficar ausente da obra por alguns
+-- dias, o responsável aprova, e o registro fica para consulta.
 --
--- É a MESMA rotina da Ausência Programada, com outro nome e outra conta de
--- saldo: supabase_migration_ausencia_programada.sql com os identificadores
--- trocados de ausencia_* para folga_campo_*. As telas também são as mesmas,
--- escolhidas pelo descritor em src/config/modulosAusencia.js.
+-- NÃO tem saldo, período aquisitivo nem data limite. A primeira versão disto
+-- (aplicada em 23/09/2026) era uma cópia da Ausência Programada, com saldo por
+-- período — o usuário corrigiu: folga de campo não tem saldo. Como nada chegou
+-- a ser usado (zero linhas), esta migração DERRUBA aquelas tabelas e refaz o
+-- módulo na forma certa, em vez de deixar colunas mortas.
 --
--- Por que TABELAS SEPARADAS, e não uma coluna "tipo" nas tabelas da ausência:
---  * saldo de ausência e saldo de folga de campo são contas diferentes da mesma
---    pessoa, e nenhuma consulta precisa somar as duas;
---  * a ausência já está em produção com dados reais — pôr um "tipo" nela exigia
---    recriar todas as RPCs e a chave única, com risco para o que já roda;
---  * se um dia as regras da folga divergirem (escala de obra, por exemplo), o
---    corte já está feito.
--- Em troca, mudança de regra que valha para as duas tem que ser aplicada NOS
--- DOIS arquivos. Está escrito aqui para ninguém descobrir isso por acidente.
---
--- Regras (iguais às da ausência programada):
---  * Qualquer modalidade usa (CLT, PJ, Sócio Cotista, Diretoria).
---  * Dias CORRIDOS: fim = início + dias - 1.
+-- Decisões:
 --  * APROVADOR = superior direto (colaboradores.superior_id), resolvido no
---    envio. Se ele estiver inativo ou sem login, sobe a árvore. O RH/admin
---    também decide (reserva para quem não tem ninguém acima).
---  * Fora da data limite: AVISA e deixa enviar (o gestor decide). Antes da data
---    inicial do período: BLOQUEIA (período aquisitivo ainda não completo).
---  * Saldo do período = dias_direito + dias_ajuste - (pendentes + aprovadas).
---    Pendente já reserva saldo.
+--    envio. Se ele estiver inativo ou sem login, sobe a árvore — mesma regra do
+--    resto do portal. O RH/admin também decide (reserva para quem não tem
+--    ninguém acima).
+--  * MOTIVO é obrigatório: é com ele que o responsável decide.
+--  * Sem rascunho. O registro nasce pendente de aprovação — guardar rascunho de
+--    um aviso de três dias só adiciona um botão.
+--  * Datas no passado são BLOQUEADAS no envio: isto é aviso de ausência futura,
+--    não lançamento retroativo.
+--  * Sobreposição com outro registro pendente ou aprovado é bloqueada: duas
+--    ausências da mesma pessoa no mesmo dia é erro de digitação.
 --  * "Concluída" não é gravada: é a aprovada cujo fim já passou (a tela deriva).
---  * Todas as ESCRITAS do colaborador e do gestor passam por RPC com a regra
---    explícita e erro legível. A escrita direta nas tabelas é só do RH.
---  * O alerta de vencimento (3 meses antes da data limite) é gerado por
---    folga_campo_gerar_alertas(), idempotente, chamada ao abrir o módulo.
---
--- CARGA INICIAL: não há planilha de origem. Quem tem menos de um ano de casa
--- ganha o primeiro período automaticamente (folga_campo_gerar_periodos); para
--- os demais, o RH cadastra o saldo pela lista "Sem saldo cadastrado" do Painel.
--- Enquanto isso não acontece, a pessoa vê a tela com saldo zerado — e não um
--- saldo inventado pelo sistema.
+--  * Escrita do colaborador e do gestor passa por RPC com erro legível. A
+--    escrita direta na tabela é só do RH.
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
--- 0) Helpers
+-- 0) Limpeza da versão com saldo (nunca usada)
 -- ----------------------------------------------------------------------------
--- RH da folga de campo: acompanha todos, importa e corrige períodos.
+drop table if exists public.folga_campo_solicitacoes cascade;
+drop table if exists public.folga_campo_periodos cascade;
+drop function if exists public.folga_campo_periodos_listar(text);
+drop function if exists public.folga_campo_solicitacoes_listar(text);
+drop function if exists public.folga_campo_sem_periodo();
+drop function if exists public.folga_campo_gerar_periodos(uuid, boolean);
+drop function if exists public.folga_campo_gerar_alertas();
+drop function if exists public.folga_campo_salvar(uuid, uuid, date, date, text, boolean);
+drop function if exists public.folga_campo_excluir_rascunho(uuid);
+drop function if exists app_private.folga_campo_saldo(uuid, uuid);
+drop function if exists app_private.folga_campo_sol_confere_periodo();
+drop function if exists app_private.folga_campo_per_carimbo();
+
+-- ----------------------------------------------------------------------------
+-- 1) Helpers
+-- ----------------------------------------------------------------------------
+-- RH da folga de campo: enxerga e corrige a empresa toda.
 create or replace function app_private.is_folga_campo_rh()
 returns boolean language sql stable security definer set search_path = '' as $$
   select app_private.is_rh_dp()
@@ -54,7 +55,7 @@ $$;
 revoke all on function app_private.is_folga_campo_rh() from public;
 grant execute on function app_private.is_folga_campo_rh() to authenticated;
 
--- Quem decide a folga de campo de um colaborador: o superior direto ou, se ele não
+-- Quem aprova a folga de um colaborador: o superior direto ou, se ele não
 -- consegue entrar no portal, o primeiro acima dele que consegue.
 create or replace function app_private.folga_campo_aprovador_de(p_colab uuid)
 returns uuid language plpgsql stable security definer set search_path = '' as $$
@@ -79,155 +80,65 @@ end $$;
 revoke all on function app_private.folga_campo_aprovador_de(uuid) from public;
 
 -- ----------------------------------------------------------------------------
--- 1) Períodos (saldo por período de referência)
+-- 2) Registros
 -- ----------------------------------------------------------------------------
-create table if not exists public.folga_campo_periodos (
-  id              uuid primary key default gen_random_uuid(),
-  colaborador_id  uuid not null references public.colaboradores(id) on delete cascade,
-  -- Período aquisitivo: começa no aniversário da data de referência (admissão
-  -- ou mudança de modalidade) e dura um ano.
-  inicio_periodo  date not null,
-  fim_periodo     date not null,
-  -- Janela de uso: a partir de data_inicial, até data_limite.
-  data_inicial    date not null,
-  data_limite     date not null,
-  dias_direito    int  not null default 21 check (dias_direito >= 0),
-  -- Correção do RH (sobra levada de outro período, acerto de saldo...).
-  -- Pode ser negativa. Sempre com motivo.
-  dias_ajuste     int  not null default 0,
-  ajuste_motivo   text,
-  observacao      text,
-  origem          text not null default 'automatico'
-                    check (origem in ('automatico', 'importacao', 'manual')),
-  -- Carimbo do alerta de vencimento (evita avisar duas vezes).
-  alerta_vencimento_em timestamptz,
-  created_at      timestamptz not null default now(),
-  updated_at      timestamptz,
-  atualizado_por  uuid references public.colaboradores(id),
-  constraint fcampo_per_datas check (fim_periodo > inicio_periodo and data_limite >= data_inicial),
-  constraint fcampo_per_ajuste_motivo check (dias_ajuste = 0 or nullif(trim(ajuste_motivo), '') is not null),
-  constraint fcampo_per_unico unique (colaborador_id, inicio_periodo)
-);
-create index if not exists folga_campo_per_limite_idx on public.folga_campo_periodos (data_limite);
-
--- ----------------------------------------------------------------------------
--- 2) Solicitações
--- ----------------------------------------------------------------------------
-create table if not exists public.folga_campo_solicitacoes (
+create table if not exists public.folga_campo_registros (
   id              uuid primary key default gen_random_uuid(),
   numero          bigint,
   colaborador_id  uuid not null references public.colaboradores(id) on delete cascade,
-  periodo_id      uuid not null references public.folga_campo_periodos(id) on delete restrict,
   aprovador_id    uuid references public.colaboradores(id),
+  -- Obra/local de onde a pessoa vai se ausentar. Texto livre: a alocação em
+  -- obra não está no cadastro de todo mundo, e exigir um código travaria o
+  -- registro de quem está em obra nova.
+  obra            text,
   data_inicio     date not null,
   data_fim        date not null,
   dias            int generated always as (data_fim - data_inicio + 1) stored,
-  observacao      text,
-  status          text not null default 'rascunho'
-                    check (status in ('rascunho', 'pendente', 'aprovada', 'reprovada', 'cancelada')),
-  -- Snapshot do envio: o fim passava da data limite do período.
-  fora_do_prazo   boolean not null default false,
-  origem          text not null default 'portal' check (origem in ('portal', 'importacao')),
+  motivo          text not null,
+  status          text not null default 'pendente'
+                    check (status in ('pendente', 'aprovada', 'reprovada', 'cancelada')),
   motivo_reprovacao   text,
   motivo_cancelamento text,
-  enviado_em      timestamptz,
+  enviado_em      timestamptz not null default now(),
   decidido_em     timestamptz,
   decidido_por    uuid references public.colaboradores(id),
   cancelado_em    timestamptz,
   cancelado_por   uuid references public.colaboradores(id),
   created_at      timestamptz not null default now(),
   updated_at      timestamptz,
-  constraint fcampo_sol_datas check (data_fim >= data_inicio),
-  constraint fcampo_sol_reprovacao check (status <> 'reprovada' or nullif(trim(motivo_reprovacao), '') is not null)
+  constraint fcampo_datas check (data_fim >= data_inicio),
+  constraint fcampo_motivo check (nullif(trim(motivo), '') is not null),
+  constraint fcampo_reprovacao check (status <> 'reprovada' or nullif(trim(motivo_reprovacao), '') is not null)
 );
 
-create sequence if not exists public.folga_campo_solicitacoes_numero_seq
-  owned by public.folga_campo_solicitacoes.numero;
-alter table public.folga_campo_solicitacoes
-  alter column numero set default nextval('public.folga_campo_solicitacoes_numero_seq');
-alter table public.folga_campo_solicitacoes alter column numero set not null;
-create unique index if not exists folga_campo_solic_numero_key on public.folga_campo_solicitacoes (numero);
-create index if not exists folga_campo_solic_colab_idx on public.folga_campo_solicitacoes (colaborador_id, data_inicio);
-create index if not exists folga_campo_solic_aprov_idx on public.folga_campo_solicitacoes (aprovador_id, status);
-create index if not exists folga_campo_solic_periodo_idx on public.folga_campo_solicitacoes (periodo_id);
+create sequence if not exists public.folga_campo_registros_numero_seq
+  owned by public.folga_campo_registros.numero;
+alter table public.folga_campo_registros
+  alter column numero set default nextval('public.folga_campo_registros_numero_seq');
+alter table public.folga_campo_registros alter column numero set not null;
+create unique index if not exists folga_campo_numero_key on public.folga_campo_registros (numero);
+create index if not exists folga_campo_colab_idx on public.folga_campo_registros (colaborador_id, data_inicio);
+create index if not exists folga_campo_aprov_idx on public.folga_campo_registros (aprovador_id, status);
+create index if not exists folga_campo_periodo_idx on public.folga_campo_registros (data_inicio, data_fim);
 
--- Solicitação sempre no período do próprio colaborador (vale também para a
--- escrita direta do RH).
-create or replace function app_private.folga_campo_sol_confere_periodo()
+create or replace function app_private.folga_campo_carimbo()
 returns trigger language plpgsql security definer set search_path = '' as $$
 begin
-  if not exists (
-    select 1 from public.folga_campo_periodos p
-    where p.id = new.periodo_id and p.colaborador_id = new.colaborador_id
-  ) then
-    raise exception 'O período informado não pertence a este colaborador.';
-  end if;
   new.updated_at := now();
   return new;
 end $$;
-drop trigger if exists folga_campo_sol_confere_periodo_trg on public.folga_campo_solicitacoes;
-create trigger folga_campo_sol_confere_periodo_trg
-before insert or update on public.folga_campo_solicitacoes
-for each row execute function app_private.folga_campo_sol_confere_periodo();
-
-create or replace function app_private.folga_campo_per_carimbo()
-returns trigger language plpgsql security definer set search_path = '' as $$
-begin
-  -- O carimbo do alerta (folga_campo_gerar_alertas) não é edição de ninguém.
-  if new.alerta_vencimento_em is distinct from old.alerta_vencimento_em then
-    return new;
-  end if;
-  new.updated_at := now();
-  new.atualizado_por := app_private.my_colaborador_id();
-  return new;
-end $$;
-drop trigger if exists folga_campo_per_carimbo_trg on public.folga_campo_periodos;
-create trigger folga_campo_per_carimbo_trg
-before update on public.folga_campo_periodos
-for each row execute function app_private.folga_campo_per_carimbo();
+drop trigger if exists folga_campo_carimbo_trg on public.folga_campo_registros;
+create trigger folga_campo_carimbo_trg
+before update on public.folga_campo_registros
+for each row execute function app_private.folga_campo_carimbo();
 
 -- ----------------------------------------------------------------------------
--- 3) Saldo
+-- 3) RLS — vê quem é dono, quem aprova, quem está acima no organograma, e o RH
 -- ----------------------------------------------------------------------------
--- Dias que o período ainda tem, sem contar a solicitação p_ignorar (a que está
--- sendo editada/enviada).
-create or replace function app_private.folga_campo_saldo(p_periodo uuid, p_ignorar uuid default null)
-returns int language sql stable security definer set search_path = '' as $$
-  select p.dias_direito + p.dias_ajuste - coalesce((
-    select sum(s.dias)::int
-    from public.folga_campo_solicitacoes s
-    where s.periodo_id = p.id
-      and s.status in ('pendente', 'aprovada')
-      and s.id is distinct from p_ignorar
-  ), 0)
-  from public.folga_campo_periodos p
-  where p.id = p_periodo
-$$;
-revoke all on function app_private.folga_campo_saldo(uuid, uuid) from public;
+alter table public.folga_campo_registros enable row level security;
 
--- ============================================================================
--- 4) RLS — leitura por escopo; escrita direta só do RH
--- ============================================================================
-alter table public.folga_campo_periodos     enable row level security;
-alter table public.folga_campo_solicitacoes enable row level security;
-
-drop policy if exists folga_campo_periodos_select on public.folga_campo_periodos;
-create policy folga_campo_periodos_select on public.folga_campo_periodos
-for select to authenticated
-using (
-  app_private.is_folga_campo_rh()
-  or colaborador_id = app_private.my_colaborador_id()
-  or colaborador_id in (select app_private.descendentes(app_private.my_colaborador_id()))
-);
-
-drop policy if exists folga_campo_periodos_rh on public.folga_campo_periodos;
-create policy folga_campo_periodos_rh on public.folga_campo_periodos
-for all to authenticated
-using ( app_private.is_folga_campo_rh() )
-with check ( app_private.is_folga_campo_rh() );
-
-drop policy if exists folga_campo_solic_select on public.folga_campo_solicitacoes;
-create policy folga_campo_solic_select on public.folga_campo_solicitacoes
+drop policy if exists folga_campo_select on public.folga_campo_registros;
+create policy folga_campo_select on public.folga_campo_registros
 for select to authenticated
 using (
   app_private.is_folga_campo_rh()
@@ -236,105 +147,56 @@ using (
   or colaborador_id in (select app_private.descendentes(app_private.my_colaborador_id()))
 );
 
-drop policy if exists folga_campo_solic_rh on public.folga_campo_solicitacoes;
-create policy folga_campo_solic_rh on public.folga_campo_solicitacoes
+drop policy if exists folga_campo_rh on public.folga_campo_registros;
+create policy folga_campo_rh on public.folga_campo_registros
 for all to authenticated
 using ( app_private.is_folga_campo_rh() )
 with check ( app_private.is_folga_campo_rh() );
 
--- ============================================================================
--- 5) RPCs de leitura (com nomes resolvidos — o RH sem perfil admin não lê
---    colaboradores da empresa toda pela RLS)
--- ============================================================================
-
--- p_escopo: 'meus' | 'equipe' (subárvore de quem chama) | 'todos' (só RH).
-create or replace function public.folga_campo_periodos_listar(p_escopo text default 'meus')
+-- ----------------------------------------------------------------------------
+-- 4) Leitura (RPC resolve os nomes: o RH sem perfil admin não lê a tabela
+--    colaboradores inteira pela RLS)
+-- ----------------------------------------------------------------------------
+-- p_escopo: 'meus' | 'aprovar' | 'equipe' (subárvore) | 'todos' (só RH).
+create or replace function public.folga_campo_listar(p_escopo text default 'meus')
 returns table (
-  id uuid, colaborador_id uuid, colaborador_nome text, colaborador_funcao text,
-  colaborador_formato text, superior_nome text,
-  inicio_periodo date, fim_periodo date, data_inicial date, data_limite date,
-  dias_direito int, dias_ajuste int, ajuste_motivo text, observacao text, origem text,
-  dias_tirados int, dias_agendados int, dias_pendentes int, saldo int
-)
-language sql stable security definer set search_path = '' as $$
-  with me as (select app_private.my_colaborador_id() as id)
-  select p.id, p.colaborador_id, c.nome, c.funcao, c.formato, sup.nome,
-         p.inicio_periodo, p.fim_periodo, p.data_inicial, p.data_limite,
-         p.dias_direito, p.dias_ajuste, p.ajuste_motivo, p.observacao, p.origem,
-         coalesce(u.tirados, 0), coalesce(u.agendados, 0), coalesce(u.pendentes, 0),
-         p.dias_direito + p.dias_ajuste
-           - coalesce(u.tirados, 0) - coalesce(u.agendados, 0) - coalesce(u.pendentes, 0)
-  from public.folga_campo_periodos p
-  join public.colaboradores c on c.id = p.colaborador_id
-  left join public.colaboradores sup on sup.id = c.superior_id
-  left join lateral (
-    select
-      sum(s.dias) filter (where s.status = 'aprovada' and s.data_fim < current_date)::int  as tirados,
-      sum(s.dias) filter (where s.status = 'aprovada' and s.data_fim >= current_date)::int as agendados,
-      sum(s.dias) filter (where s.status = 'pendente')::int                                as pendentes
-    from public.folga_campo_solicitacoes s
-    where s.periodo_id = p.id
-  ) u on true
-  cross join me
-  where case p_escopo
-          when 'meus'   then p.colaborador_id = me.id
-          when 'equipe' then p.colaborador_id in (select app_private.descendentes(me.id))
-          when 'todos'  then app_private.is_folga_campo_rh()
-          else false
-        end
-  order by c.nome, p.inicio_periodo
-$$;
-revoke all on function public.folga_campo_periodos_listar(text) from public;
-revoke execute on function public.folga_campo_periodos_listar(text) from anon;
-grant execute on function public.folga_campo_periodos_listar(text) to authenticated;
-
--- p_escopo: 'meus' | 'aprovar' (onde sou o aprovador) | 'equipe' | 'todos' (RH).
-create or replace function public.folga_campo_solicitacoes_listar(p_escopo text default 'meus')
-returns table (
-  id uuid, numero bigint, status text, origem text, fora_do_prazo boolean,
+  id uuid, numero bigint, status text,
   colaborador_id uuid, colaborador_nome text, colaborador_funcao text,
   aprovador_id uuid, aprovador_nome text,
-  periodo_id uuid, inicio_periodo date, fim_periodo date, data_inicial date, data_limite date,
-  saldo_periodo int,
-  data_inicio date, data_fim date, dias int, observacao text,
+  obra text, data_inicio date, data_fim date, dias int, motivo text,
   motivo_reprovacao text, motivo_cancelamento text,
   enviado_em timestamptz, decidido_em timestamptz, decidido_por_nome text,
   cancelado_em timestamptz, created_at timestamptz
 )
 language sql stable security definer set search_path = '' as $$
   with me as (select app_private.my_colaborador_id() as id)
-  select s.id, s.numero, s.status, s.origem, s.fora_do_prazo,
-         s.colaborador_id, c.nome, c.funcao,
-         s.aprovador_id, a.nome,
-         s.periodo_id, p.inicio_periodo, p.fim_periodo, p.data_inicial, p.data_limite,
-         app_private.folga_campo_saldo(p.id),
-         s.data_inicio, s.data_fim, s.dias, s.observacao,
-         s.motivo_reprovacao, s.motivo_cancelamento,
-         s.enviado_em, s.decidido_em, d.nome,
-         s.cancelado_em, s.created_at
-  from public.folga_campo_solicitacoes s
-  join public.colaboradores c on c.id = s.colaborador_id
-  join public.folga_campo_periodos p on p.id = s.periodo_id
-  left join public.colaboradores a on a.id = s.aprovador_id
-  left join public.colaboradores d on d.id = s.decidido_por
+  select r.id, r.numero, r.status,
+         r.colaborador_id, c.nome, c.funcao,
+         r.aprovador_id, a.nome,
+         r.obra, r.data_inicio, r.data_fim, r.dias, r.motivo,
+         r.motivo_reprovacao, r.motivo_cancelamento,
+         r.enviado_em, r.decidido_em, d.nome,
+         r.cancelado_em, r.created_at
+  from public.folga_campo_registros r
+  join public.colaboradores c on c.id = r.colaborador_id
+  left join public.colaboradores a on a.id = r.aprovador_id
+  left join public.colaboradores d on d.id = r.decidido_por
   cross join me
   where case p_escopo
-          when 'meus'    then s.colaborador_id = me.id
-          when 'aprovar' then s.status <> 'rascunho'
-                              and (s.aprovador_id = me.id
-                                   or (s.aprovador_id is null and app_private.is_folga_campo_rh()))
-          when 'equipe'  then s.status <> 'rascunho'
-                              and s.colaborador_id in (select app_private.descendentes(me.id))
-          when 'todos'   then s.status <> 'rascunho' and app_private.is_folga_campo_rh()
+          when 'meus'    then r.colaborador_id = me.id
+          when 'aprovar' then r.aprovador_id = me.id
+                              or (r.aprovador_id is null and app_private.is_folga_campo_rh())
+          when 'equipe'  then r.colaborador_id in (select app_private.descendentes(me.id))
+          when 'todos'   then app_private.is_folga_campo_rh()
           else false
         end
-  order by s.data_inicio desc, s.numero desc
+  order by r.data_inicio desc, r.numero desc
 $$;
-revoke all on function public.folga_campo_solicitacoes_listar(text) from public;
-revoke execute on function public.folga_campo_solicitacoes_listar(text) from anon;
-grant execute on function public.folga_campo_solicitacoes_listar(text) to authenticated;
+revoke all on function public.folga_campo_listar(text) from public;
+revoke execute on function public.folga_campo_listar(text) from anon;
+grant execute on function public.folga_campo_listar(text) to authenticated;
 
--- Quem vai decidir a MINHA folga de campo (para a tela mostrar antes do envio).
+-- Quem vai decidir a MINHA folga (a tela mostra antes de enviar).
 create or replace function public.folga_campo_meu_aprovador()
 returns table (id uuid, nome text, email text)
 language sql stable security definer set search_path = '' as $$
@@ -346,48 +208,21 @@ revoke all on function public.folga_campo_meu_aprovador() from public;
 revoke execute on function public.folga_campo_meu_aprovador() from anon;
 grant execute on function public.folga_campo_meu_aprovador() to authenticated;
 
--- Colaboradores ativos SEM nenhum período (o RH precisa cadastrar o saldo).
-create or replace function public.folga_campo_sem_periodo()
-returns table (id uuid, nome text, funcao text, formato text, data_admissao date)
-language sql stable security definer set search_path = '' as $$
-  select c.id, c.nome, c.funcao, c.formato, c.data_admissao
-  from public.colaboradores c
-  where app_private.is_folga_campo_rh()
-    and c.ativo is distinct from false
-    and c.auth_id is not null
-    and not exists (select 1 from public.folga_campo_periodos p where p.colaborador_id = c.id)
-  order by c.nome
-$$;
-revoke all on function public.folga_campo_sem_periodo() from public;
-revoke execute on function public.folga_campo_sem_periodo() from anon;
-grant execute on function public.folga_campo_sem_periodo() to authenticated;
-
--- ============================================================================
--- 6) RPCs de escrita
--- ============================================================================
-
--- Cria ou edita um pedido do PRÓPRIO colaborador. p_enviar = true manda para
--- aprovação (valida saldo, data inicial e sobreposição); false guarda rascunho.
--- Devolve o id e se o pedido saiu fora do prazo (aviso para a tela).
-create or replace function public.folga_campo_salvar(
-  p_id uuid,
-  p_periodo uuid,
+-- ----------------------------------------------------------------------------
+-- 5) Escrita
+-- ----------------------------------------------------------------------------
+-- Registra a ausência de obra do PRÓPRIO colaborador. Sempre nasce pendente.
+create or replace function public.folga_campo_registrar(
   p_inicio date,
   p_fim date,
-  p_observacao text default null,
-  p_enviar boolean default true
+  p_motivo text,
+  p_obra text default null
 )
-returns table (id uuid, numero bigint, fora_do_prazo boolean)
+returns table (id uuid, numero bigint)
 language plpgsql security definer set search_path = '' as $$
-#variable_conflict use_column
 declare
-  v_me     uuid := app_private.my_colaborador_id();
-  v_per    public.folga_campo_periodos;
-  v_atual  public.folga_campo_solicitacoes;
-  v_dias   int;
-  v_saldo  int;
-  v_fora   boolean;
-  v_id     uuid;
+  v_me uuid := app_private.my_colaborador_id();
+  v_id uuid;
 begin
   if v_me is null then
     raise exception 'Seu usuário não está vinculado a um colaborador.';
@@ -398,235 +233,114 @@ begin
   if p_fim < p_inicio then
     raise exception 'A data fim não pode ser anterior à data de início.';
   end if;
-
-  select * into v_per from public.folga_campo_periodos p where p.id = p_periodo;
-  if v_per.id is null or v_per.colaborador_id <> v_me then
-    raise exception 'Período de referência inválido.';
+  if p_inicio < current_date then
+    raise exception 'A data de início não pode estar no passado.';
+  end if;
+  if nullif(trim(p_motivo), '') is null then
+    raise exception 'Informe o motivo da ausência.';
+  end if;
+  if exists (
+    select 1 from public.folga_campo_registros r
+    where r.colaborador_id = v_me
+      and r.status in ('pendente', 'aprovada')
+      and r.data_inicio <= p_fim and r.data_fim >= p_inicio
+  ) then
+    raise exception 'Você já tem uma folga de campo pendente ou aprovada nessas datas.';
   end if;
 
-  if p_id is not null then
-    select * into v_atual from public.folga_campo_solicitacoes s where s.id = p_id for update;
-    if v_atual.id is null or v_atual.colaborador_id <> v_me then
-      raise exception 'Solicitação não encontrada.';
-    end if;
-    if v_atual.status <> 'rascunho' then
-      raise exception 'Só é possível editar uma solicitação em rascunho.';
-    end if;
-  end if;
+  insert into public.folga_campo_registros as r
+    (colaborador_id, aprovador_id, obra, data_inicio, data_fim, motivo)
+  values
+    (v_me, app_private.folga_campo_aprovador_de(v_me), nullif(trim(p_obra), ''),
+     p_inicio, p_fim, trim(p_motivo))
+  returning r.id into v_id;
 
-  v_dias := p_fim - p_inicio + 1;
-  v_fora := p_fim > v_per.data_limite;
-
-  if p_enviar then
-    if p_inicio < current_date then
-      raise exception 'A data de início não pode estar no passado.';
-    end if;
-    if p_inicio < v_per.data_inicial then
-      raise exception 'Este período só pode ser usado a partir de %.', to_char(v_per.data_inicial, 'DD/MM/YYYY');
-    end if;
-    -- Trava o período: dois envios simultâneos não gastam o mesmo saldo.
-    perform 1 from public.folga_campo_periodos p where p.id = v_per.id for update;
-    v_saldo := app_private.folga_campo_saldo(v_per.id, p_id);
-    if v_dias > v_saldo then
-      raise exception 'Saldo insuficiente: o período tem % dia(s) disponível(is) e o pedido usa %.', greatest(v_saldo, 0), v_dias;
-    end if;
-    if exists (
-      select 1 from public.folga_campo_solicitacoes s
-      where s.colaborador_id = v_me
-        and s.status in ('pendente', 'aprovada')
-        and s.id is distinct from p_id
-        and s.data_inicio <= p_fim and s.data_fim >= p_inicio
-    ) then
-      raise exception 'Já existe uma folga de campo pendente ou aprovada que se sobrepõe a essas datas.';
-    end if;
-  end if;
-
-  if p_id is null then
-    insert into public.folga_campo_solicitacoes as s
-      (colaborador_id, periodo_id, data_inicio, data_fim, observacao, status,
-       fora_do_prazo, aprovador_id, enviado_em)
-    values
-      (v_me, v_per.id, p_inicio, p_fim, nullif(trim(p_observacao), ''),
-       case when p_enviar then 'pendente' else 'rascunho' end,
-       v_fora,
-       case when p_enviar then app_private.folga_campo_aprovador_de(v_me) end,
-       case when p_enviar then now() end)
-    returning s.id into v_id;
-  else
-    update public.folga_campo_solicitacoes s
-       set periodo_id    = v_per.id,
-           data_inicio   = p_inicio,
-           data_fim      = p_fim,
-           observacao    = nullif(trim(p_observacao), ''),
-           fora_do_prazo = v_fora,
-           status        = case when p_enviar then 'pendente' else 'rascunho' end,
-           aprovador_id  = case when p_enviar then app_private.folga_campo_aprovador_de(v_me) end,
-           enviado_em    = case when p_enviar then now() end
-     where s.id = p_id;
-    v_id := p_id;
-  end if;
-
-  return query
-    select s.id, s.numero, s.fora_do_prazo from public.folga_campo_solicitacoes s where s.id = v_id;
+  return query select r.id, r.numero from public.folga_campo_registros r where r.id = v_id;
 end $$;
-revoke all on function public.folga_campo_salvar(uuid, uuid, date, date, text, boolean) from public;
-revoke execute on function public.folga_campo_salvar(uuid, uuid, date, date, text, boolean) from anon;
-grant execute on function public.folga_campo_salvar(uuid, uuid, date, date, text, boolean) to authenticated;
+revoke all on function public.folga_campo_registrar(date, date, text, text) from public;
+revoke execute on function public.folga_campo_registrar(date, date, text, text) from anon;
+grant execute on function public.folga_campo_registrar(date, date, text, text) to authenticated;
 
-create or replace function public.folga_campo_excluir_rascunho(p_id uuid)
-returns void language plpgsql security definer set search_path = '' as $$
-begin
-  delete from public.folga_campo_solicitacoes s
-   where s.id = p_id
-     and s.status = 'rascunho'
-     and s.colaborador_id = app_private.my_colaborador_id();
-  if not found then
-    raise exception 'Rascunho não encontrado.';
-  end if;
-end $$;
-revoke all on function public.folga_campo_excluir_rascunho(uuid) from public;
-revoke execute on function public.folga_campo_excluir_rascunho(uuid) from anon;
-grant execute on function public.folga_campo_excluir_rascunho(uuid) to authenticated;
-
--- Decisão: o aprovador do pedido ou o RH. Reprovar exige motivo.
+-- Decisão: o aprovador do registro ou o RH. Reprovar exige motivo.
 create or replace function public.folga_campo_decidir(p_id uuid, p_aprovar boolean, p_motivo text default null)
 returns void language plpgsql security definer set search_path = '' as $$
 declare
   v_me  uuid := app_private.my_colaborador_id();
-  v_sol public.folga_campo_solicitacoes;
+  v_reg public.folga_campo_registros;
 begin
-  select * into v_sol from public.folga_campo_solicitacoes s where s.id = p_id for update;
-  if v_sol.id is null then
-    raise exception 'Solicitação não encontrada.';
+  select * into v_reg from public.folga_campo_registros r where r.id = p_id for update;
+  if v_reg.id is null then
+    raise exception 'Registro não encontrado.';
   end if;
-  if not (v_sol.aprovador_id = v_me or app_private.is_folga_campo_rh()) then
-    raise exception 'Você não é o aprovador desta solicitação.';
+  if not (v_reg.aprovador_id = v_me or app_private.is_folga_campo_rh()) then
+    raise exception 'Você não é o responsável por este registro.';
   end if;
-  if v_sol.colaborador_id = v_me then
+  if v_reg.colaborador_id = v_me then
     raise exception 'Não é possível decidir a própria folga de campo.';
   end if;
-  if v_sol.status <> 'pendente' then
-    raise exception 'Esta solicitação não está pendente de aprovação.';
+  if v_reg.status <> 'pendente' then
+    raise exception 'Este registro não está pendente de aprovação.';
   end if;
   if not p_aprovar and nullif(trim(p_motivo), '') is null then
     raise exception 'Informe o motivo da reprovação.';
   end if;
 
-  update public.folga_campo_solicitacoes s
+  update public.folga_campo_registros r
      set status            = case when p_aprovar then 'aprovada' else 'reprovada' end,
          motivo_reprovacao = case when p_aprovar then null else trim(p_motivo) end,
          decidido_em       = now(),
          decidido_por      = v_me
-   where s.id = p_id;
+   where r.id = p_id;
 end $$;
 revoke all on function public.folga_campo_decidir(uuid, boolean, text) from public;
 revoke execute on function public.folga_campo_decidir(uuid, boolean, text) from anon;
 grant execute on function public.folga_campo_decidir(uuid, boolean, text) to authenticated;
 
--- Cancelamento (devolve o saldo):
---  * o colaborador cancela o próprio pedido pendente, ou o aprovado que ainda
---    não começou;
---  * o aprovador e o RH cancelam pendente ou aprovado, com motivo.
+-- Cancelamento: o dono cancela o que ainda não começou; o responsável e o RH
+-- cancelam pendente ou aprovada, com motivo.
 create or replace function public.folga_campo_cancelar(p_id uuid, p_motivo text default null)
 returns void language plpgsql security definer set search_path = '' as $$
 declare
   v_me   uuid := app_private.my_colaborador_id();
-  v_sol  public.folga_campo_solicitacoes;
+  v_reg  public.folga_campo_registros;
   v_dono boolean;
   v_gest boolean;
 begin
-  select * into v_sol from public.folga_campo_solicitacoes s where s.id = p_id for update;
-  if v_sol.id is null then
-    raise exception 'Solicitação não encontrada.';
+  select * into v_reg from public.folga_campo_registros r where r.id = p_id for update;
+  if v_reg.id is null then
+    raise exception 'Registro não encontrado.';
   end if;
-  if v_sol.status not in ('pendente', 'aprovada') then
-    raise exception 'Só é possível cancelar uma solicitação pendente ou aprovada.';
+  if v_reg.status not in ('pendente', 'aprovada') then
+    raise exception 'Só é possível cancelar um registro pendente ou aprovado.';
   end if;
 
-  v_dono := v_sol.colaborador_id = v_me;
-  v_gest := v_sol.aprovador_id = v_me or app_private.is_folga_campo_rh();
+  v_dono := v_reg.colaborador_id = v_me;
+  v_gest := v_reg.aprovador_id = v_me or app_private.is_folga_campo_rh();
 
   if not (v_dono or v_gest) then
-    raise exception 'Você não pode cancelar esta solicitação.';
+    raise exception 'Você não pode cancelar este registro.';
   end if;
-  if not v_gest and v_sol.status = 'aprovada' and v_sol.data_inicio <= current_date then
-    raise exception 'A folga já começou. Peça o cancelamento ao seu gestor ou ao RH.';
+  if not v_gest and v_reg.status = 'aprovada' and v_reg.data_inicio <= current_date then
+    raise exception 'A folga já começou. Peça o cancelamento ao seu responsável ou ao RH.';
   end if;
   if not v_dono and nullif(trim(p_motivo), '') is null then
     raise exception 'Informe o motivo do cancelamento.';
   end if;
 
-  update public.folga_campo_solicitacoes s
+  update public.folga_campo_registros r
      set status              = 'cancelada',
          motivo_cancelamento = nullif(trim(p_motivo), ''),
          cancelado_em        = now(),
          cancelado_por       = v_me
-   where s.id = p_id;
+   where r.id = p_id;
 end $$;
 revoke all on function public.folga_campo_cancelar(uuid, text) from public;
 revoke execute on function public.folga_campo_cancelar(uuid, text) from anon;
 grant execute on function public.folga_campo_cancelar(uuid, text) to authenticated;
 
--- Gera os períodos que faltam, continuando a cadeia do último período.
---  * Quem já tem período: cria os seguintes até o que está em aquisição hoje.
---  * Quem NÃO tem nenhum: só gera sozinho se a admissão é do último ano
---    (colaborador novo, bloqueado até completar o período). Para os antigos,
---    gerar 21 dias por ano desde a admissão inventaria saldo — esses ficam na
---    lista "sem período" para o RH cadastrar.
--- p_colaborador null = eu. Outra pessoa, ou 'todos' (p_todos), só o RH.
-create or replace function public.folga_campo_gerar_periodos(p_colaborador uuid default null, p_todos boolean default false)
-returns int language plpgsql security definer set search_path = '' as $$
-declare
-  v_me     uuid := app_private.my_colaborador_id();
-  v_rh     boolean := app_private.is_folga_campo_rh();
-  v_colab  record;
-  v_base   date;
-  v_criados int := 0;
-  v_guarda int;
-begin
-  if (p_todos or (p_colaborador is not null and p_colaborador <> v_me)) and not v_rh then
-    raise exception 'Apenas o RH gera períodos de outros colaboradores.';
-  end if;
-
-  for v_colab in
-    select c.id, c.data_admissao
-    from public.colaboradores c
-    where c.ativo is distinct from false
-      and (p_todos or c.id = coalesce(p_colaborador, v_me))
-  loop
-    select max(p.fim_periodo) into v_base from public.folga_campo_periodos p where p.colaborador_id = v_colab.id;
-    if v_base is null then
-      if v_colab.data_admissao is null or v_colab.data_admissao < (current_date - interval '1 year')::date then
-        continue;
-      end if;
-      v_base := v_colab.data_admissao;
-    end if;
-
-    v_guarda := 0;
-    while v_base <= current_date and v_guarda < 5 loop
-      insert into public.folga_campo_periodos
-        (colaborador_id, inicio_periodo, fim_periodo, data_inicial, data_limite, origem)
-      values
-        (v_colab.id, v_base, (v_base + interval '1 year')::date,
-         (v_base + interval '1 year')::date, (v_base + interval '2 years')::date, 'automatico')
-      on conflict (colaborador_id, inicio_periodo) do nothing;
-      if found then
-        v_criados := v_criados + 1;
-      end if;
-      v_base := (v_base + interval '1 year')::date;
-      v_guarda := v_guarda + 1;
-    end loop;
-  end loop;
-
-  return v_criados;
-end $$;
-revoke all on function public.folga_campo_gerar_periodos(uuid, boolean) from public;
-revoke execute on function public.folga_campo_gerar_periodos(uuid, boolean) from anon;
-grant execute on function public.folga_campo_gerar_periodos(uuid, boolean) to authenticated;
-
--- ============================================================================
--- 7) Notificações (modulo 'dp') — criadas por gatilho, como no resto do portal
--- ============================================================================
+-- ----------------------------------------------------------------------------
+-- 6) Notificações (módulo 'dp') — por gatilho, como no resto do portal
+-- ----------------------------------------------------------------------------
 create or replace function app_private.notif_folga_campo()
 returns trigger language plpgsql security definer set search_path to 'public' as $$
 declare
@@ -641,9 +355,9 @@ begin
   if new.status = 'pendente' then
     perform app_private.notificar(new.aprovador_id, 'dp', 'sua_vez',
       format('Folga de campo #%s aguarda sua aprovação', new.numero),
-      format('%s · %s%s', quem, periodo, case when new.fora_do_prazo then ' · fora do prazo' else '' end),
+      format('%s · %s', quem, periodo),
       '/folga-de-campo/aprovacoes', new.id);
-  elsif new.status = 'aprovada' and new.origem = 'portal' then
+  elsif new.status = 'aprovada' then
     perform app_private.notificar(new.colaborador_id, 'dp', 'concluida',
       format('Folga de campo #%s aprovada', new.numero), periodo,
       '/folga-de-campo', new.id);
@@ -653,7 +367,7 @@ begin
       '/folga-de-campo', new.id);
   elsif new.status = 'cancelada' and tg_op = 'UPDATE' then
     if new.cancelado_por = new.colaborador_id then
-      -- O colaborador desistiu: o gestor precisa saber (a agenda da equipe mudou).
+      -- O colaborador desistiu: o responsável precisa saber, a escala da obra mudou.
       perform app_private.notificar(new.aprovador_id, 'dp', 'andamento',
         format('Folga de campo #%s cancelada por %s', new.numero, quem), periodo,
         '/folga-de-campo/aprovacoes', new.id);
@@ -666,49 +380,9 @@ begin
   return null;
 end $$;
 
-drop trigger if exists trg_notif_folga_campo on public.folga_campo_solicitacoes;
+drop trigger if exists trg_notif_folga_campo on public.folga_campo_registros;
 create trigger trg_notif_folga_campo
-after insert or update of status on public.folga_campo_solicitacoes
+after insert or update of status on public.folga_campo_registros
 for each row execute function app_private.notif_folga_campo();
-
--- Alerta de vencimento: saldo > 0 e data limite nos próximos 3 meses. Avisa o
--- gestor direto e o próprio colaborador, uma vez por período.
-create or replace function public.folga_campo_gerar_alertas()
-returns int language plpgsql security definer set search_path = '' as $$
-declare
-  r record;
-  v_qtd int := 0;
-  v_gestor uuid;
-begin
-  for r in
-    select p.id, p.colaborador_id, p.data_limite, c.nome,
-           app_private.folga_campo_saldo(p.id) as saldo
-    from public.folga_campo_periodos p
-    join public.colaboradores c on c.id = p.colaborador_id
-    where p.alerta_vencimento_em is null
-      and p.data_limite >= current_date
-      and p.data_limite <= (current_date + interval '3 months')::date
-      and c.ativo is distinct from false
-    for update of p skip locked
-  loop
-    if r.saldo > 0 then
-      v_gestor := app_private.folga_campo_aprovador_de(r.colaborador_id);
-      perform app_private.notificar(v_gestor, 'dp', 'andamento',
-        format('Saldo de folga de campo vencendo: %s', r.nome),
-        format('%s dia(s) com data limite em %s', r.saldo, to_char(r.data_limite, 'DD/MM/YYYY')),
-        '/folga-de-campo/equipe', null);
-      perform app_private.notificar(r.colaborador_id, 'dp', 'andamento',
-        'Seu saldo de folga de campo está perto da data limite',
-        format('%s dia(s) para usar até %s', r.saldo, to_char(r.data_limite, 'DD/MM/YYYY')),
-        '/folga-de-campo', null);
-      update public.folga_campo_periodos p set alerta_vencimento_em = now() where p.id = r.id;
-      v_qtd := v_qtd + 1;
-    end if;
-  end loop;
-  return v_qtd;
-end $$;
-revoke all on function public.folga_campo_gerar_alertas() from public;
-revoke execute on function public.folga_campo_gerar_alertas() from anon;
-grant execute on function public.folga_campo_gerar_alertas() to authenticated;
 
 notify pgrst, 'reload schema';

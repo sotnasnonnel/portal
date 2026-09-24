@@ -23,7 +23,11 @@ import TorreShell from '../modules/torre/app/components/AppShell';
 import { podeVerTorre } from '../config/torre';
 import { podeAcessarFechamentoPj } from '../config/fechamentoPj';
 import { isAusenciaRh, veAprovacoes } from '../config/ausenciaProgramada';
-import { MODULOS_AUSENCIA, moduloAusenciaLiberado } from '../config/modulosAusencia';
+import { MODULOS_AUSENCIA } from '../config/modulosAusencia';
+import {
+  ROTA_FOLGA_CAMPO, isFolgaCampoRh, podeAcessarFolgaCampo,
+  veAprovacoes as veAprovacoesFolga,
+} from '../config/folgaCampo';
 
 const Login = lazyPagina(() => import('../pages/Login/Login'));
 const Privacidade = lazyPagina(() => import('../pages/Privacidade/Privacidade'));
@@ -78,6 +82,9 @@ const MinhaAusencia = lazyPagina(() => import('../pages/AusenciaProgramada/Minha
 const AvisosConhecimento = lazyPagina(() => import('../pages/Conhecimento/AvisosConhecimento'));
 const AprovacoesAusencia = lazyPagina(() => import('../pages/AusenciaProgramada/AprovacoesAusencia'));
 const VisaoGeralAusencia = lazyPagina(() => import('../pages/AusenciaProgramada/VisaoGeralAusencia'));
+const MinhaFolga = lazyPagina(() => import('../pages/FolgaCampo/MinhaFolga'));
+const AprovacoesFolga = lazyPagina(() => import('../pages/FolgaCampo/AprovacoesFolga'));
+const ConsultaFolga = lazyPagina(() => import('../pages/FolgaCampo/ConsultaFolga'));
 // Fechamento PJ — fechamento mensal dos prestadores PJ, também dentro da Gestão de Pessoas.
 const FechamentoPjShell = lazyPagina(() => import('../modules/fechamentoPj/app/components/FechamentoPjShell'));
 const PjFolha = lazyPagina(() => import('../modules/fechamentoPj/app/folha/page'));
@@ -254,9 +261,11 @@ function AusenciaRhRoute({ rota, children }) {
 // digitando a rota na mão. Precisa ser componente (e não um filtro na lista de
 // rotas): rota que não existe na árvore cairia no "*" e mandaria para a Home
 // TAMBÉM quem tem acesso, no instante em que a sessão ainda está carregando.
-function AusenciaPilotoRoute({ mod, children }) {
+function FolgaCampoRoute({ gestao = false, rh = false, children }) {
   const { user } = useAuth();
-  if (!moduloAusenciaLiberado(mod, user)) return <Navigate to="/home" replace />;
+  if (!podeAcessarFolgaCampo(user)) return <Navigate to="/home" replace />;
+  if (gestao && !veAprovacoesFolga(user)) return <Navigate to={ROTA_FOLGA_CAMPO} replace />;
+  if (rh && !isFolgaCampoRh(user)) return <Navigate to={ROTA_FOLGA_CAMPO} replace />;
   return children;
 }
 
@@ -266,34 +275,24 @@ function AusenciaPilotoRoute({ mod, children }) {
 function rotasAusencia(mod) {
   return [
     <Route key={`${mod.chave}-minha`} path={mod.rota}
-      element={(
-        <AusenciaPilotoRoute mod={mod}>
-          <LazyPage><MinhaAusencia key={mod.chave} mod={mod} /></LazyPage>
-        </AusenciaPilotoRoute>
-      )} />,
+      element={<LazyPage><MinhaAusencia key={mod.chave} mod={mod} /></LazyPage>} />,
     <Route key={`${mod.chave}-aprovacoes`} path={`${mod.rota}/aprovacoes`}
       element={(
-        <AusenciaPilotoRoute mod={mod}>
-          <AusenciaGestaoRoute rota={mod.rota}>
-            <LazyPage><AprovacoesAusencia key={mod.chave} mod={mod} /></LazyPage>
-          </AusenciaGestaoRoute>
-        </AusenciaPilotoRoute>
+        <AusenciaGestaoRoute rota={mod.rota}>
+          <LazyPage><AprovacoesAusencia key={mod.chave} mod={mod} /></LazyPage>
+        </AusenciaGestaoRoute>
       )} />,
     <Route key={`${mod.chave}-equipe`} path={`${mod.rota}/equipe`}
       element={(
-        <AusenciaPilotoRoute mod={mod}>
-          <AusenciaGestaoRoute rota={mod.rota}>
-            <LazyPage><VisaoGeralAusencia key={`${mod.chave}-equipe`} mod={mod} escopo="equipe" /></LazyPage>
-          </AusenciaGestaoRoute>
-        </AusenciaPilotoRoute>
+        <AusenciaGestaoRoute rota={mod.rota}>
+          <LazyPage><VisaoGeralAusencia key={`${mod.chave}-equipe`} mod={mod} escopo="equipe" /></LazyPage>
+        </AusenciaGestaoRoute>
       )} />,
     <Route key={`${mod.chave}-painel`} path={`${mod.rota}/painel`}
       element={(
-        <AusenciaPilotoRoute mod={mod}>
-          <AusenciaRhRoute rota={mod.rota}>
-            <LazyPage><VisaoGeralAusencia key={`${mod.chave}-todos`} mod={mod} escopo="todos" /></LazyPage>
-          </AusenciaRhRoute>
-        </AusenciaPilotoRoute>
+        <AusenciaRhRoute rota={mod.rota}>
+          <LazyPage><VisaoGeralAusencia key={`${mod.chave}-todos`} mod={mod} escopo="todos" /></LazyPage>
+        </AusenciaRhRoute>
       )} />,
   ];
 }
@@ -490,6 +489,24 @@ export default function AppRoutes() {
           <Route path="/conhecimento" element={<LazyPage><AvisosConhecimento /></LazyPage>} />
 
           {MODULOS_AUSENCIA.flatMap((mod) => rotasAusencia(mod))}
+
+          {/* Folga de Campo: módulo próprio, sem saldo (config/folgaCampo.js). */}
+          <Route
+            path={ROTA_FOLGA_CAMPO}
+            element={<FolgaCampoRoute><LazyPage><MinhaFolga /></LazyPage></FolgaCampoRoute>}
+          />
+          <Route
+            path={`${ROTA_FOLGA_CAMPO}/aprovacoes`}
+            element={<FolgaCampoRoute gestao><LazyPage><AprovacoesFolga /></LazyPage></FolgaCampoRoute>}
+          />
+          <Route
+            path={`${ROTA_FOLGA_CAMPO}/equipe`}
+            element={<FolgaCampoRoute gestao><LazyPage><ConsultaFolga key="equipe" escopo="equipe" /></LazyPage></FolgaCampoRoute>}
+          />
+          <Route
+            path={`${ROTA_FOLGA_CAMPO}/painel`}
+            element={<FolgaCampoRoute rh><LazyPage><ConsultaFolga key="todos" escopo="todos" /></LazyPage></FolgaCampoRoute>}
+          />
 
           <Route
             path="/gestor"

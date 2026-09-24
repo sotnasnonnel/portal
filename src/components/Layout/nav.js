@@ -6,9 +6,11 @@ import {
 import { isHorasExtrasDp } from '../../config/horasExtras';
 import { podeAcessarFechamentoPj, ROTA_FECHAMENTO_PJ } from '../../config/fechamentoPj';
 import { isAusenciaRh, veAprovacoes } from '../../config/ausenciaProgramada';
+import { MODULOS_AUSENCIA, MOD_AUSENCIA } from '../../config/modulosAusencia';
 import {
-  MODULOS_AUSENCIA, MOD_AUSENCIA, MOD_FOLGA_CAMPO, modulosAusenciaDe,
-} from '../../config/modulosAusencia';
+  ROTA_FOLGA_CAMPO, isFolgaCampoRh, podeAcessarFolgaCampo,
+  veAprovacoes as veAprovacoesFolga,
+} from '../../config/folgaCampo';
 import { soPelaFlagDoOrganograma } from '../../config/organograma';
 
 // Navegação da sidebar de Gestão de Pessoas, na mesma divisão dos outros
@@ -48,14 +50,13 @@ const grupoFechamentoPj = {
   ],
 };
 
-// Ícone de cada módulo de afastamento — fica aqui, e não no descritor, para o
-// config não depender de lucide-react.
-const ICONE_MODULO = { [MOD_AUSENCIA.navKey]: CalendarRange, [MOD_FOLGA_CAMPO.navKey]: HardHat };
+// Ícone do módulo — fica aqui, e não no descritor, para o config não depender
+// de lucide-react.
+const ICONE_MODULO = { [MOD_AUSENCIA.navKey]: CalendarRange };
 
-// Ausência Programada e Folga de Campo: abertas a todo colaborador (qualquer
-// modalidade), então entram para todos os perfis. Aprovações e equipe aparecem
-// para quem tem cargo de gestão; o painel, para o RH. As duas são a mesma
-// rotina — o menu sai do descritor (config/modulosAusencia.js).
+// Ausência Programada: aberta a todo colaborador (qualquer modalidade), então
+// entra para todos os perfis. Aprovações e equipe aparecem para quem tem cargo
+// de gestão; o painel, para o RH.
 function grupoAusencia(user, mod) {
   return {
     group: true,
@@ -72,6 +73,30 @@ function grupoAusencia(user, mod) {
         : []),
       ...(isAusenciaRh(user)
         ? [{ label: 'Painel RH', Icon: LayoutDashboard, href: `${mod.rota}/painel` }]
+        : []),
+    ],
+  };
+}
+
+// Folga de Campo: o aviso de que a pessoa vai ficar ausente da obra. Módulo
+// próprio, sem saldo nem período — não confundir com a Ausência Programada
+// acima. Em piloto: só aparece para quem está em FOLGA_CAMPO liberados.
+function grupoFolgaCampo(user) {
+  return {
+    group: true,
+    key: 'folgaCampo',
+    label: 'Folga de Campo',
+    Icon: HardHat,
+    items: [
+      { label: 'Minha Folga', Icon: CalendarDays, href: ROTA_FOLGA_CAMPO, exato: true },
+      ...(veAprovacoesFolga(user)
+        ? [
+          { label: 'Aprovações', Icon: ClipboardCheck, href: `${ROTA_FOLGA_CAMPO}/aprovacoes` },
+          { label: 'Equipe', Icon: Users, href: `${ROTA_FOLGA_CAMPO}/equipe` },
+        ]
+        : []),
+      ...(isFolgaCampoRh(user)
+        ? [{ label: 'Painel RH', Icon: LayoutDashboard, href: `${ROTA_FOLGA_CAMPO}/painel` }]
         : []),
     ],
   };
@@ -95,6 +120,7 @@ const consultas = (comValores) => ({
 // Rota -> área. Ordem importa: prefixo mais específico primeiro.
 const ROTAS_AREA = [
   ...MODULOS_AUSENCIA.map((m) => [m.rota, m.navKey]),
+  [ROTA_FOLGA_CAMPO, 'folgaCampo'],
   ['/admin/horas-extras', 'horasExtras'],
   [ROTA_FECHAMENTO_PJ, 'fechamentoPj'],
   ['/admin/cadastro', 'colaboradores'],
@@ -131,6 +157,11 @@ const CARTAO_AREA = {
     m.navKey,
     { Icon: ICONE_MODULO[m.navKey], desc: m.descricaoCartao, cta: m.ctaCartao },
   ])),
+  folgaCampo: {
+    Icon: HardHat,
+    desc: 'Aviso de ausência da obra, com aprovação do responsável.',
+    cta: 'Abrir folga de campo',
+  },
 };
 
 /**
@@ -237,9 +268,10 @@ export function navSections({ perfil, user, pendencias = 0, requisicoes = 0, are
   // só a consulta.
   if (soPelaFlagDoOrganograma(user)) secoes.push(consultas(false));
 
-  // A Folga de Campo está em piloto e só aparece para quem foi liberado
-  // (modulosAusenciaDe). O card da Home sai daqui, então some junto.
-  modulosAusenciaDe(user).forEach((m) => secoes.push(grupoAusencia(user, m)));
+  MODULOS_AUSENCIA.forEach((m) => secoes.push(grupoAusencia(user, m)));
+  // A Folga de Campo está em piloto e só aparece para quem foi liberado. O card
+  // da Home sai de navSections, então some junto.
+  if (podeAcessarFolgaCampo(user)) secoes.push(grupoFolgaCampo(user));
   if (isHorasExtrasDp(user)) secoes.push(grupoHorasExtras);
   if (podeAcessarFechamentoPj(user)) secoes.push(grupoFechamentoPj);
   if (area && secoes.some((s) => s.key === area)) return secoes.filter((s) => s.key === area);
