@@ -1,5 +1,5 @@
 // Cache leve para leituras do Supabase: memória + sessionStorage + SWR + dedup.
-// Estratégia descrita em estrategia-carregamento-supabase-sem-delay.md.
+// Serve o dado em cache na hora e revalida em segundo plano; pedidos iguais simultâneos viram um só.
 // Sem dependências. Use cachedQuery() na leitura e invalidateCache() após escrita.
 
 type Entry<T = unknown> = { value: T; expiresAt: number; staleAt: number };

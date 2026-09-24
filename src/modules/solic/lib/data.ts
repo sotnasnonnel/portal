@@ -1,4 +1,4 @@
-// Acessos de leitura cacheados (ver supabaseCache.ts + estrategia-carregamento-supabase-sem-delay.md).
+// Acessos de leitura cacheados (ver supabaseCache.ts).
 // Mantém as MESMAS queries das telas, só que passando por cachedQuery para
 // navegação instantânea. Escritas devem chamar invalidateCache(['surveys:']) etc.
 
