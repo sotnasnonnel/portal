@@ -267,7 +267,7 @@ export default function KanbanMob() {
         <p className="mob-campo-dica">
           {apenasMinhas
             ? 'Nenhuma etapa no seu nome. Veja "Todas" para o que está em aberto.'
-            : 'Nada por aqui ainda. Os processos de pessoas nascem do chamado de Mobilização do Administrativo; os de empresa são abertos em "Abrir processo".'}
+            : 'Nada por aqui ainda. Os processos de pessoas nascem do chamado de Mobilização do Atendimento; os de empresa são abertos em "Abrir processo".'}
         </p>
       )}
     </div>

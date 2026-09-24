@@ -1,6 +1,6 @@
 // ===== Quem aprova uma solicitação do Financeiro =====
 //
-// Mesma dinâmica do módulo Administrativo (decisão de ago/2026), para as duas
+// Mesma dinâmica do módulo Atendimento (decisão de ago/2026), para as duas
 // portas de entrada da empresa não terem regras diferentes para o mesmo gasto:
 //
 //   1. ESCADA DO ORGANOGRAMA — o pedido sobe pela hierarquia da pessoa:

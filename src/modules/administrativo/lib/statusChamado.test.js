@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { proximoStatusAoResponder } from './statusChamado.js';
+import { proximoStatusAoResponder, etapaQueEsperaPorMim } from './statusChamado.js';
 
 const resp = (o) => proximoStatusAoResponder(o);
 
@@ -31,4 +31,28 @@ test('chamado encerrado ou em aprovação não muda por mensagem', () => {
 test('responder de novo no mesmo estado não gera mudança', () => {
   assert.equal(resp({ statusAtual: 'aguardando_solicitante', souSolicitante: false }), null);
   assert.equal(resp({ statusAtual: 'em_atendimento', souSolicitante: true }), null);
+});
+
+test('etapaQueEsperaPorMim: a vez é da menor ordem pendente', () => {
+  const etapas = [
+    { id: 'e1', ordem: 1, status: 'aprovada', aprovador_id: 'tulio' },
+    { id: 'e2', ordem: 2, status: 'pendente', aprovador_id: 'leo' },
+  ];
+  assert.equal(etapaQueEsperaPorMim(etapas, 'leo', 'aguardando_aprovacao')?.id, 'e2');
+  assert.equal(etapaQueEsperaPorMim(etapas, 'tulio', 'aguardando_aprovacao'), null);
+});
+
+// Sem isto, o segundo da cadeia decidiria antes do primeiro.
+test('etapaQueEsperaPorMim: quem vem depois ainda não decide', () => {
+  const etapas = [
+    { id: 'e1', ordem: 1, status: 'pendente', aprovador_id: 'tulio' },
+    { id: 'e2', ordem: 2, status: 'pendente', aprovador_id: 'leo' },
+  ];
+  assert.equal(etapaQueEsperaPorMim(etapas, 'leo', 'aguardando_aprovacao'), null);
+});
+
+test('etapaQueEsperaPorMim: chamado que já saiu da aprovação não pede decisão', () => {
+  const etapas = [{ id: 'e1', ordem: 1, status: 'pendente', aprovador_id: 'leo' }];
+  assert.equal(etapaQueEsperaPorMim(etapas, 'leo', 'aberto'), null);
+  assert.equal(etapaQueEsperaPorMim(etapas, null, 'aguardando_aprovacao'), null);
 });

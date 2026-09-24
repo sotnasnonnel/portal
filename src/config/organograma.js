@@ -2,7 +2,7 @@
 //
 // Duas portas, e a segunda existe porque a primeira era cara demais: até aqui
 // só entrava quem tinha perfil de DP, então liberar a consulta para alguém do
-// Administrativo significava torná-lo RH — e RH leva junto as Requisições DP,
+// Atendimento significava torná-lo RH — e RH leva junto as Requisições DP,
 // o painel de Horas Extras e o Fechamento PJ.
 //
 // A flag `organograma_consulta` (Gerenciar acessos) libera só esta tela. Ela

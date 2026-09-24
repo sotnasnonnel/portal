@@ -88,7 +88,7 @@ const TROCAR_APP = {
   icon: Home,
   titulo: "Troque de app quando quiser",
   texto:
-    'No menu lateral, "Início" leva de volta à tela inicial do Portal PHD, onde ficam os cards de todos os sistemas a que você tem acesso (Gestão de Pessoas, Dados, Gestão de Horas, Administrativo, Financeiro, Programas e Estoque). Clicar na marca da PHD, no topo do menu, faz o mesmo.',
+    'No menu lateral, "Início" leva de volta à tela inicial do Portal PHD, onde ficam os cards de todos os sistemas a que você tem acesso (Gestão de Pessoas, Dados, Gestão de Horas, Atendimento, Financeiro, Programas e Estoque). Clicar na marca da PHD, no topo do menu, faz o mesmo.',
 };
 
 // ============================ Gestão de Pessoas (DP) ============================
@@ -523,7 +523,7 @@ export const FINANCEIRO_GUIA = {
         icon: Workflow,
         titulo: "Fluxos de aprovação (exceções)",
         texto:
-          'A cadeia padrão não é cadastrada: sai do organograma — o superior direto da pessoa e o gerente acima dele — e depois sobe para a faixa de valor (até R$ 5.000 ninguém a mais; de R$ 5.000 a R$ 20.000 entram COO e Gerente Financeiro; acima disso soma o CEO). É a mesma regra do Administrativo. Em Administração → "Fluxos de Aprovação" você cadastra EXCEÇÃO: o que for salvo ali entra no lugar da escada do organograma daquela pessoa. Ninguém fica bloqueado por falta de cadastro.',
+          'A cadeia padrão não é cadastrada: sai do organograma — o superior direto da pessoa e o gerente acima dele — e depois sobe para a faixa de valor (até R$ 5.000 ninguém a mais; de R$ 5.000 a R$ 20.000 entram COO e Gerente Financeiro; acima disso soma o CEO). É a mesma regra do Atendimento. Em Administração → "Fluxos de Aprovação" você cadastra EXCEÇÃO: o que for salvo ali entra no lugar da escada do organograma daquela pessoa. Ninguém fica bloqueado por falta de cadastro.',
       },
       {
         icon: ClipboardCheck,
@@ -550,7 +550,7 @@ export const FINANCEIRO_GUIA = {
   },
 };
 
-// ============================ Administrativo ============================
+// ============================ Atendimento ============================
 // Abrir e acompanhar chamado é igual para todo mundo — esses passos são a base
 // dos três papéis. O que muda é o que vem antes deles.
 const ADM_USAR_STEPS = [
@@ -582,21 +582,21 @@ const ADM_USAR_STEPS = [
     icon: ClipboardCheck,
     titulo: 'Aprovações: quando aparecem para você',
     texto:
-      'Alguns serviços exigem liberação antes de virar tarefa do Administrativo, e quem libera é o superior direto de quem abriu. Se alguém da sua equipe abrir um desses, o chamado aparece em "Aprovações" com o pedido inteiro à vista. Aprovar solta o chamado e inicia o prazo; reprovar exige que você escreva o motivo.',
+      'Alguns serviços exigem liberação antes de virar tarefa do Atendimento, e quem libera é o superior direto de quem abriu. Se alguém da sua equipe abrir um desses, o chamado aparece em "Aprovações" com o pedido inteiro à vista. Aprovar solta o chamado e inicia o prazo; reprovar exige que você escreva o motivo.',
   },
 ];
 
 export const ADMINISTRATIVO_GUIA = {
-  appName: "Administrativo",
+  appName: "Atendimento",
   fallbackRole: "user",
   roleLabels: { admin: "Administrador do Adm", atendente: "Atendente", user: "Solicitante" },
   contentByRole: {
     user: [
       {
         icon: Headset,
-        titulo: "Bem-vindo ao Administrativo",
+        titulo: "Bem-vindo ao Atendimento",
         texto:
-          "Aqui você abre chamados para o setor Administrativo: mobilização de profissional, compras, frota, viagem e hospedagem, TI, manutenção e saúde e segurança. Toda demanda para o Adm passa por chamado — é o que garante prazo, responsável e histórico do pedido.",
+          "Aqui você abre chamados para o Atendimento: mobilização de profissional, compras, frota, viagem e hospedagem, TI, manutenção e saúde e segurança. Toda demanda para o Atendimento passa por chamado — é o que garante prazo, responsável e histórico do pedido.",
       },
       ...ADM_USAR_STEPS,
       NOTIFICACOES,
@@ -605,7 +605,7 @@ export const ADMINISTRATIVO_GUIA = {
     atendente: [
       {
         icon: Headset,
-        titulo: "Seu papel: atendente do Administrativo",
+        titulo: "Seu papel: atendente do Atendimento",
         texto:
           "Você faz parte do time do Adm, então os chamados dos serviços em que você é o responsável caem no seu nome — o solicitante vê o seu nome assim que salva o pedido. A tela de fila de atendimento, com as respostas ao solicitante e o fechamento do chamado, ainda está em construção; por enquanto você já aparece como técnico dos chamados abertos.",
       },
@@ -616,7 +616,7 @@ export const ADMINISTRATIVO_GUIA = {
     admin: [
       {
         icon: ShieldCheck,
-        titulo: "Seu papel: administrador do Administrativo",
+        titulo: "Seu papel: administrador do módulo",
         texto:
           "Além de abrir chamados como todo mundo, você configura como o módulo se comporta. É o único papel que enxerga a seção Administração no menu lateral.",
       },
@@ -740,7 +740,7 @@ export const PROGRAMAS_GUIA = {
 
 // ============================ Estoque ============================
 // Dois papéis: quem só CONSULTA (todo mundo) e quem OPERA o almoxarifado
-// (o time do Administrativo, por administrativo_role).
+// (o time do Atendimento, por administrativo_role).
 //
 // O guia carrega mais peso aqui que nos outros módulos porque o vocabulário é
 // novo: "variação" não é sinônimo de item, e o saldo não se digita.
@@ -761,9 +761,9 @@ const ESTOQUE_VARIACAO = {
 
 const ESTOQUE_PEDIR = {
   icon: Headset,
-  titulo: "Pedir EPI ou uniforme continua no Administrativo",
+  titulo: "Pedir EPI ou uniforme continua no Atendimento",
   texto:
-    'O pedido é feito como sempre, em Administrativo → Saúde e segurança. A diferença é que agora dá para escolher o item do catálogo, com a quantidade — e o saldo aparece ao lado. Falta de estoque NÃO impede o pedido: se o item está zerado ou nem existe no catálogo, peça do mesmo jeito (há um campo de texto livre para isso). É o pedido que avisa o Administrativo de que precisa comprar.',
+    'O pedido é feito como sempre, em Atendimento → Saúde e segurança. A diferença é que agora dá para escolher o item do catálogo, com a quantidade — e o saldo aparece ao lado. Falta de estoque NÃO impede o pedido: se o item está zerado ou nem existe no catálogo, peça do mesmo jeito (há um campo de texto livre para isso). É o pedido que avisa o Atendimento de que precisa comprar.',
 };
 
 const ESTOQUE_USADO = {
@@ -777,7 +777,7 @@ const ESTOQUE_NOTIFICACAO = {
   icon: Bell,
   titulo: "O sino avisa quando um item acaba",
   texto:
-    "Quando uma saída deixa um item zerado ou abaixo do mínimo, o time do Administrativo recebe um aviso no sino da barra do topo, com link direto para a lista do que precisa repor. Não é preciso ficar olhando o painel.",
+    "Quando uma saída deixa um item zerado ou abaixo do mínimo, o time do Atendimento recebe um aviso no sino da barra do topo, com link direto para a lista do que precisa repor. Não é preciso ficar olhando o painel.",
 };
 
 export const ESTOQUE_GUIA = {
@@ -794,7 +794,7 @@ export const ESTOQUE_GUIA = {
         icon: Boxes,
         titulo: "Bem-vindo ao Estoque",
         texto:
-          "Aqui fica o almoxarifado de EPIs e uniformes da PHD, no lugar das planilhas. Você pode consultar o que existe e quanto tem; quem movimenta o material é o time do Administrativo.",
+          "Aqui fica o almoxarifado de EPIs e uniformes da PHD, no lugar das planilhas. Você pode consultar o que existe e quanto tem; quem movimenta o material é o time do Atendimento.",
       },
       ESTOQUE_CONSULTAR,
       ESTOQUE_VARIACAO,
@@ -840,7 +840,7 @@ export const ESTOQUE_GUIA = {
         icon: Headset,
         titulo: "Dar baixa direto pelo chamado",
         texto:
-          'Ao fechar um chamado de EPI ou uniforme no Administrativo, aparece o card "Baixa no estoque" com o que foi pedido, o que já foi entregue e o saldo de cada item. Ajuste as quantidades e feche: o chamado fecha e o estoque desconta juntos. Se não houver o que baixar (item comprado direto, pedido negado), marque "Fechar sem movimentar o estoque".',
+          'Ao fechar um chamado de EPI ou uniforme no Atendimento, aparece o card "Baixa no estoque" com o que foi pedido, o que já foi entregue e o saldo de cada item. Ajuste as quantidades e feche: o chamado fecha e o estoque desconta juntos. Se não houver o que baixar (item comprado direto, pedido negado), marque "Fechar sem movimentar o estoque".',
       },
       {
         icon: Search,
@@ -900,7 +900,7 @@ export const ESTOQUE_GUIA = {
 };
 
 // ============================ Gestão de Mobilização ============================
-// O papel vem do Administrativo: quem controla a mobilização é o mesmo time que
+// O papel vem do Atendimento: quem controla a mobilização é o mesmo time que
 // atende o chamado que a dispara.
 const MOB_QUADRO = {
   icon: LayoutDashboard,
@@ -955,7 +955,7 @@ export const MOBILIZACAO_GUIA = {
         icon: Workflow,
         titulo: "Seu papel: controle de mobilização",
         texto:
-          "Você enxerga todos os processos, assume e distribui etapas, abre mobilização de empresa e acompanha os indicadores. As mobilizações e desmobilizações de pessoas chegam sozinhas, pelo chamado do Administrativo.",
+          "Você enxerga todos os processos, assume e distribui etapas, abre mobilização de empresa e acompanha os indicadores. As mobilizações e desmobilizações de pessoas chegam sozinhas, pelo chamado do Atendimento.",
       },
       MOB_QUADRO,
       MOB_PRAZO,
@@ -964,7 +964,7 @@ export const MOBILIZACAO_GUIA = {
         icon: Headset,
         titulo: "O chamado do Adm é o gatilho",
         texto:
-          'Quando alguém abre um chamado de Mobilização no Administrativo, o processo nasce aqui automaticamente com todos os passos do fluxo certo — "Nova mobilização" e "Movimentação" viram mobilização de pessoa, "Desmobilização" vira o fluxo de desmobilização. Se o chamado tinha aprovação, o processo só nasce depois dela; se o chamado for reprovado ou cancelado, o processo é cancelado junto.',
+          'Quando alguém abre um chamado de Mobilização no Atendimento, o processo nasce aqui automaticamente com todos os passos do fluxo certo — "Nova mobilização" e "Movimentação" viram mobilização de pessoa, "Desmobilização" vira o fluxo de desmobilização. Se o chamado tinha aprovação, o processo só nasce depois dela; se o chamado for reprovado ou cancelado, o processo é cancelado junto.',
       },
       {
         icon: Building2,
@@ -982,7 +982,7 @@ export const MOBILIZACAO_GUIA = {
         icon: Check,
         titulo: "Torre de controle",
         texto:
-          'A "Torre de controle" junta, num quadro só, os chamados do Administrativo e as etapas de mobilização. É a visão de quem toca os dois: o que está aberto, com quem, e o que já venceu.',
+          'A "Torre de controle" junta, num quadro só, os chamados do Atendimento e as etapas de mobilização. É a visão de quem toca os dois: o que está aberto, com quem, e o que já venceu.',
       },
       NOTIFICACOES,
       TROCAR_APP,
@@ -1028,7 +1028,7 @@ export const TORRE_GUIA = {
         icon: LayoutDashboard,
         titulo: "Bem-vindo à Torre de Controle",
         texto:
-          "Aqui ficam, num quadro só, os chamados do Administrativo e as etapas de mobilização. É a tela da reunião de torre: o Administrativo apresenta e cada responsável confere o que é seu.",
+          "Aqui ficam, num quadro só, os chamados do Atendimento e as etapas de mobilização. É a tela da reunião de torre: o Atendimento apresenta e cada responsável confere o que é seu.",
       },
       {
         icon: Users,
@@ -1052,7 +1052,7 @@ export const TORRE_GUIA = {
         icon: ShieldCheck,
         titulo: "Só leitura, de propósito",
         texto:
-          "Nada aqui pode ser alterado. Quem precisa mexer num chamado usa o Administrativo, e quem responde por uma etapa a atualiza no módulo de Mobilização. A torre existe para acompanhar, não para operar — assim ninguém muda um processo no meio da apresentação.",
+          "Nada aqui pode ser alterado. Quem precisa mexer num chamado usa o Atendimento, e quem responde por uma etapa a atualiza no módulo de Mobilização. A torre existe para acompanhar, não para operar — assim ninguém muda um processo no meio da apresentação.",
       },
       {
         icon: Search,

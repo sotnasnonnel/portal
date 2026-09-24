@@ -22,7 +22,7 @@ export default function AppShell() {
         </main>
       </div>
       {/* Guia do módulo: abre pelo "?" da barra superior. O papel vem do
-          Administrativo — quem controla a mobilização é o mesmo time que
+          Atendimento — quem controla a mobilização é o mesmo time que
           atende o chamado que a dispara. */}
       <GuiaModal {...MOBILIZACAO_GUIA} role={modules?.administrativo} userName={userName} />
     </div>

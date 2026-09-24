@@ -25,7 +25,7 @@ const SOLIC_ROLES = [
   ["user", "Usuário"],
   ["admin", "Admin"],
 ];
-// Financeiro: mesma lógica do Administrativo e do Programas — o módulo é aberto
+// Financeiro: mesma lógica do Atendimento e do Programas — o módulo é aberto
 // a todos (qualquer um pede cartão), então aqui só se define quem é do TIME do
 // Financeiro, que executa e configura os fluxos. "Solicitante" é a ausência de
 // papel; não existe mais "sem acesso" para escolher, porque marcar isso não
@@ -34,14 +34,14 @@ const FIN_ROLES = [
   ["", "Solicitante"],
   ["admin", "Admin"],
 ];
-// Administrativo: o módulo é aberto a todos (qualquer um abre chamado), então
+// Atendimento: o módulo é aberto a todos (qualquer um abre chamado), então
 // aqui só se define quem é do TIME do Adm — "Solicitante" é a ausência de papel.
 const ADM_ROLES = [
   ["", "Solicitante"],
   ["atendente", "Atendente"],
   ["admin", "Admin"],
 ];
-// Programas: mesma lógica do Administrativo — o módulo é aberto a todos
+// Programas: mesma lógica do Atendimento — o módulo é aberto a todos
 // (qualquer um registra ideia e indica oportunidade), então aqui só se define
 // quem AVALIA a Alavanca. "Participante" é a ausência de papel.
 const PROGRAMAS_ROLES = [
@@ -313,7 +313,7 @@ export default function PortalAdmin() {
                 <th>Reembolso</th>
                 <th>Dados</th>
                 <th>Financeiro</th>
-                <th>Administrativo</th>
+                <th>Atendimento</th>
                 <th>Programas</th>
               </tr>
             </thead>

@@ -239,7 +239,7 @@ export default function ConfigAdm() {
                     <label className="adm-check">
                       <input type="checkbox" checked={rascunho.exige_aprovacao}
                         onChange={(e) => mexer({ exige_aprovacao: e.target.checked })} />
-                      Exige aprovação antes de virar tarefa do Administrativo
+                      Exige aprovação antes de virar tarefa do Atendimento
                     </label>
                   </div>
 

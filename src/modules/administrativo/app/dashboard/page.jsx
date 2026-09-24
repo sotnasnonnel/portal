@@ -3,7 +3,7 @@ import { BarChart3, Loader2, AlertCircle, Info } from 'lucide-react';
 import ListaAtrasados from '../components/ListaAtrasados';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { listarParaIndicadores } from '../../lib/chamados';
-import { resumoIndicadores } from '../../lib/indicadores';
+import { resumoIndicadores, filtrarPorArea, AREAS_INDICADORES } from '../../lib/indicadores';
 import { STATUS_LABEL } from '../../lib/statusChamado';
 
 const pct = (n) => (n === null ? '—' : `${n}%`);
@@ -14,6 +14,7 @@ export default function DashboardAdm() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
   const [verAtrasados, setVerAtrasados] = useState(false);
+  const [area, setArea] = useState('todos');
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -30,14 +31,16 @@ export default function DashboardAdm() {
   useEffect(() => { carregar(); }, [carregar]);
 
   const agora = Date.now();
-  const r = resumoIndicadores(chamados, agora);
+  // O filtro entra ANTES do resumo: assim todo número da tela — cartões, SLA,
+  // atrasados e as duas tabelas — fala da mesma área, sem conta paralela.
+  const r = resumoIndicadores(filtrarPorArea(chamados, area), agora);
   const souDoTime = modules?.administrativo === 'admin' || modules?.administrativo === 'atendente';
   const maiorClasse = Math.max(1, ...r.abertosPorClasse.map((c) => c.total));
 
   return (
     <div className="adm-page adm-page-wide">
       <h1 className="adm-title"><BarChart3 size={24} /> Indicadores</h1>
-      <p className="adm-sub">Como está a operação do Administrativo agora.</p>
+      <p className="adm-sub">Como está a operação do Atendimento agora.</p>
 
       {erro && <div className="adm-aviso tom-erro"><AlertCircle size={16} /> {erro}</div>}
 
@@ -47,14 +50,35 @@ export default function DashboardAdm() {
         <div className="adm-aviso tom-info">
           <Info size={16} />
           <span>Estes números são só dos <strong>seus</strong> chamados. A visão da empresa
-            inteira é do time do Administrativo.</span>
+            inteira é do time do Atendimento.</span>
         </div>
       )}
+
+      <div className="adm-radios" style={{ margin: '14px 0 4px' }}>
+        {AREAS_INDICADORES.map((a) => (
+          <button
+            key={a.chave}
+            type="button"
+            className={`adm-chip ${area === a.chave ? 'is-on' : ''}`}
+            aria-pressed={area === a.chave}
+            onClick={() => setArea(a.chave)}
+          >
+            {a.label}
+          </button>
+        ))}
+        <span className="adm-campo-dica" style={{ marginLeft: 8 }}>
+          TI são os sete serviços de Manutenção &amp; Instalação TI; ADM é o restante.
+        </span>
+      </div>
 
       {carregando ? (
         <div className="adm-vazio"><Loader2 size={20} className="adm-spin" /> Carregando…</div>
       ) : r.total === 0 ? (
-        <div className="adm-vazio">Nenhum chamado para medir ainda.</div>
+        <div className="adm-vazio">
+          {area === 'todos'
+            ? 'Nenhum chamado para medir ainda.'
+            : 'Nenhum chamado desta área para medir ainda.'}
+        </div>
       ) : (
         <>
           {/* Números são números: um cartão lê melhor que um gráfico de uma barra. */}

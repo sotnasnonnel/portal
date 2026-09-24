@@ -21,7 +21,7 @@
  * toda perfil 'gestor'". A diretoria se distingue por `formato = 'Diretoria'`,
  * que é dado de contrato, não de acesso.
  *
- * O time do Administrativo entra junto: é quem apresenta a reunião.
+ * O time do Atendimento entra junto: é quem apresenta a reunião.
  */
 export const PERFIS_TORRE = ['coordenador', 'gestor', 'admin'];
 

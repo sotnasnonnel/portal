@@ -123,7 +123,7 @@ export default function SaidaEstoque() {
       <div className="est-page">
         <div className="est-aviso tom-info">
           <AlertCircle size={16} />
-          Só o time do Administrativo movimenta o estoque. Você pode{' '}
+          Só o time do Atendimento movimenta o estoque. Você pode{' '}
           <Link to="/estoque/posicao">consultar a posição</Link>.
         </div>
       </div>
@@ -149,7 +149,7 @@ export default function SaidaEstoque() {
         <div className="est-card">
           <h2 className="est-card-tit"><Ticket size={13} /> Chamado a quitar</h2>
           <div className="est-campo">
-            <label htmlFor="s-chamado">Esta entrega atende a um chamado do Administrativo?</label>
+            <label htmlFor="s-chamado">Esta entrega atende a um chamado do Atendimento?</label>
             <select id="s-chamado" className="est-select" value={chamadoId}
               onChange={(ev) => escolherChamado(ev.target.value)} disabled={ocupado}>
               <option value="">Não — saída avulsa</option>

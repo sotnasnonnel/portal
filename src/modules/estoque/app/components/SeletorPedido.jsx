@@ -7,11 +7,11 @@ import '../../estoque.css';
 
 /**
  * Escolha de itens do catálogo COM QUANTIDADE, para quem está PEDINDO — usado
- * no formulário de EPI e uniforme do Administrativo.
+ * no formulário de EPI e uniforme do Atendimento.
  *
  * Diferença essencial para o carrinho da tela de saída: aqui o saldo é
  * informativo, nunca bloqueia. Pedir um item em falta é justamente o que faz o
- * Administrativo saber que precisa comprar; travar o pedido no saldo esconderia
+ * Atendimento saber que precisa comprar; travar o pedido no saldo esconderia
  * a demanda.
  *
  * O valor é o array `itens` que vai para chamados_adm.campos, com os dados

@@ -5,7 +5,7 @@ import './SolucoesModal.css';
 import './ProgramasModal.css';
 
 /**
- * Escolha da área do Administrativo, aberta pelo card "Administrativo" da Home.
+ * Escolha da área do Atendimento, aberta pelo card "Atendimento" da Home.
  *
  * Chamados, Estoque e Mobilização eram três cards soltos na Home, como se
  * fossem três assuntos sem relação — e são o mesmo time. Reunidos aqui, a Home
@@ -51,7 +51,7 @@ export default function AdministrativoModal({ areas, onClose }) {
             <Headset size={20} />
           </span>
           <div className="solmodal-head-txt">
-            <h2 id="admmodal-titulo">Administrativo</h2>
+            <h2 id="admmodal-titulo">Atendimento</h2>
             <p>Chamados, almoxarifado e mobilização. Escolha por onde quer começar.</p>
           </div>
           <button type="button" className="solmodal-close" onClick={onClose} aria-label="Fechar">

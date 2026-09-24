@@ -12,7 +12,7 @@ import {
  * quebra aqui, e não em silêncio na tela. Sem ele, um chamado com status
  * desconhecido simplesmente sumiria do quadro.
  */
-test('todo status do Administrativo tem tradução', () => {
+test('todo status do Atendimento tem tradução', () => {
   const orfaos = Object.keys(STATUS_ADM).filter((s) => !statusUnificado('adm', s));
   assert.deepEqual(orfaos, []);
 });

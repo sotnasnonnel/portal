@@ -3,7 +3,7 @@ import { notificarPrograma } from '../../../services/notificarPrograma';
 
 /**
  * Acesso a dados do Campo de Ideias. Mesmo formato do lib/chamados.js do
- * Administrativo: as telas não falam com o supabase direto, e todo erro vira
+ * Atendimento: as telas não falam com o supabase direto, e todo erro vira
  * mensagem em português antes de subir.
  */
 

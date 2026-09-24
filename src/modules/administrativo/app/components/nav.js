@@ -3,7 +3,7 @@ import {
   BarChart3, Headset, Radar,
 } from 'lucide-react';
 
-// Navegação da sidebar do Administrativo, na divisão padrão do portal (mesma do
+// Navegação da sidebar do Atendimento, na divisão padrão do portal (mesma do
 // Financeiro): grupos colapsáveis para o dia a dia + seção simples de
 // Administração. Fica fora do Sidebar.jsx para não quebrar o fast refresh
 // (um arquivo de componente só deve exportar componentes).

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 /**
  * Estado que sobrevive à troca de tela — guardado no sessionStorage.
  *
- * Nasceu dos filtros do Administrativo: o time filtra a Fila, abre um chamado
+ * Nasceu dos filtros do Atendimento: o time filtra a Fila, abre um chamado
  * para avaliar, volta, e o filtro tinha sumido — refeito a cada chamado.
  *
  * SESSION e não local, de propósito. O filtro dura enquanto a aba estiver

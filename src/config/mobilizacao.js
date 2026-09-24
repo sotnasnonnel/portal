@@ -29,7 +29,7 @@ export const MOBILIZACAO_EM_BREVE = true;
  *
  * Só e-mail CORPORATIVO: o login é OAuth Microsoft, endereço pessoal não
  * autentica. Quando abrir, esta lista deixa de importar e valem as regras
- * normais — que são as do Administrativo (ver ehTimeMobilizacao).
+ * normais — que são as do Atendimento (ver ehTimeMobilizacao).
  */
 export const MOBILIZACAO_LIBERADOS = [
   'marcus.guimaraes@phdengenharia.eng.br',
@@ -62,7 +62,7 @@ export const podeAcessarMobilizacao = (user) => !MOBILIZACAO_EM_BREVE
  * Quem é do time — vê o quadro inteiro, assume etapa de qualquer processo e
  * abre processo novo.
  *
- * Reusa o papel do Administrativo DE PROPÓSITO, sem coluna nova em
+ * Reusa o papel do Atendimento DE PROPÓSITO, sem coluna nova em
  * colaboradores: quem controla a mobilização é o mesmo pessoal que atende o
  * chamado que a dispara. Duas listas de "quem é do time" divergiriam na
  * primeira contratação.
@@ -127,7 +127,7 @@ export const STATUS_PROCESSO = {
  * segundo caso sem amarrar numa pessoa que sai de férias.
  */
 export const PAPEIS_RESPONSAVEL = {
-  adm: 'Administrativo',
+  adm: 'Atendimento',
   dp: 'Departamento Pessoal',
   sesmt: 'SESMT',
   ti: 'TI',

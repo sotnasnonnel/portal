@@ -322,7 +322,7 @@ export default function NovoChamadoAdm() {
             <p>
               {sucesso.atendenteNome
                 ? <>Sua solicitação foi cadastrada e atribuída ao técnico <strong>{sucesso.atendenteNome}</strong>.</>
-                : 'Sua solicitação foi cadastrada. O time do Administrativo vai definir o responsável.'}
+                : 'Sua solicitação foi cadastrada. O time do Atendimento vai definir o responsável.'}
             </p>
           )}
           {/* Os adicionais viraram pedidos próprios: dizer quais e com que

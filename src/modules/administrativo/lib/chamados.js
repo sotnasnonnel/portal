@@ -17,7 +17,7 @@ import { getClasse, getServico } from '../../../config/administrativo';
 import { chavesDePessoa } from '../app/novo/formularios/schemas';
 import { notificarChamadoAdm } from '../../../services/notificarChamadoAdm';
 // Baixa de estoque no fechamento. A dependência é de mão única — o
-// Administrativo importa do Estoque, nunca o contrário.
+// Atendimento importa do Estoque, nunca o contrário.
 import { baixarChamado } from '../../estoque/lib/estoque';
 import { movimentosDaBaixa } from './estoqueDoChamado';
 
@@ -91,7 +91,7 @@ export async function listarProjetos() {
  */
 export async function listarTimeAdm() {
   const { data, error } = await supabase.rpc('chamados_adm_time');
-  if (error) throw new Error(`Não foi possível carregar o time do Administrativo: ${error.message}`);
+  if (error) throw new Error(`Não foi possível carregar o time do Atendimento: ${error.message}`);
   return data || [];
 }
 
@@ -187,7 +187,7 @@ export async function buscarFluxos(solicitanteId) {
 export class SemAprovadorError extends Error {
   constructor() {
     super('Este serviço exige aprovação, mas não há aprovador definido para você. '
-      + 'Peça ao Administrativo para cadastrar seu fluxo ou seu gestor no organograma.');
+      + 'Peça ao Atendimento para cadastrar seu fluxo ou seu gestor no organograma.');
     this.name = 'SemAprovadorError';
   }
 }
@@ -203,7 +203,7 @@ export class PapelForaDaCadeiaError extends Error {
   constructor(papeis = []) {
     const nomes = papeis.map((p) => PAPEL_LABEL[p] || p).join(', ');
     super(`Este pedido precisa da aprovação de ${nomes}, mas não há ninguém com essa `
-      + 'função acima de você no organograma. Peça ao Administrativo para ajustar '
+      + 'função acima de você no organograma. Peça ao Atendimento para ajustar '
       + 'o organograma antes de reenviar.');
     this.name = 'PapelForaDaCadeiaError';
   }
@@ -364,7 +364,7 @@ async function traduzirErroInsert(msg, solicitanteId) {
       + 'Avalie-o em Meus chamados para poder abrir um novo.';
   }
   return 'Não foi possível abrir o chamado: seu usuário não tem permissão para '
-    + 'abrir chamados em nome de outra pessoa. Se o erro persistir, avise o Administrativo.';
+    + 'abrir chamados em nome de outra pessoa. Se o erro persistir, avise o Atendimento.';
 }
 
 /**
@@ -446,7 +446,7 @@ export async function criarChamado({
     if (erroEtapas) {
       throw new Error(
         `O chamado #${chamado.numero} foi aberto, mas a cadeia de aprovação não foi criada `
-        + `(${erroEtapas.message}). Avise o time do Administrativo.`,
+        + `(${erroEtapas.message}). Avise o time do Atendimento.`,
       );
     }
   }
@@ -552,7 +552,7 @@ export async function criarMobilizacaoComAdicionais({
     throw new Error(
       `A mobilização foi aberta com o número #${pai.chamado.numero}, mas estes pedidos `
       + `não puderam ser abertos junto: ${falhas.join('; ')}. `
-      + 'Abra-os pelo catálogo ou avise o time do Administrativo.',
+      + 'Abra-os pelo catálogo ou avise o time do Atendimento.',
     );
   }
 

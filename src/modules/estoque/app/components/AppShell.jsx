@@ -24,7 +24,7 @@ export default function AppShell() {
         </main>
       </div>
       {/* Guia do módulo: abre pelo "?" da barra superior. O papel vem do
-          Administrativo — quem atende o chamado de EPI é quem entrega o EPI. */}
+          Atendimento — quem atende o chamado de EPI é quem entrega o EPI. */}
       <GuiaModal {...ESTOQUE_GUIA} role={modules?.administrativo} userName={userName} />
     </div>
   );

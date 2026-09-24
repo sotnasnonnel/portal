@@ -129,7 +129,7 @@ test('grupo com ao menos um da cadeia passa', () => {
   }]), []);
 });
 
-// ---- faixas do Administrativo (decisão da diretoria, ago/2026) ----
+// ---- faixas do Atendimento (decisão da diretoria, ago/2026) ----
 // Até 5 mil só o fluxo da pessoa; de 5 a 20 mil a dupla Morais + Daniela;
 // acima de 20 mil o dono da empresa entra ao final, somando à dupla.
 
@@ -163,7 +163,7 @@ test('R$ 5.000 e R$ 20.000 exatos ficam na faixa de baixo', () => {
 });
 
 // O Financeiro segue o Documento Parte 3 e não pode ser arrastado por esta
-// decisão, que vale só para o chamado do Administrativo.
+// decisão, que vale só para o chamado do Atendimento.
 test('a tabela do Financeiro continua intacta', () => {
   assert.deepEqual(avaliarAlcada({ tabela: 'compras', valor: 3200 }).papeis, ['GERENTE_EXECUTIVO']);
   assert.deepEqual(avaliarAlcada({ tabela: 'compras', valor: 45000 }).papeis, ['CEO']);

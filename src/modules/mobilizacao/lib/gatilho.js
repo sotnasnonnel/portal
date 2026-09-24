@@ -1,10 +1,10 @@
 /**
- * A tradução entre o chamado do Administrativo e o processo de Mobilização.
+ * A tradução entre o chamado do Atendimento e o processo de Mobilização.
  *
  * Quem CRIA o processo é um gatilho no banco
  * (supabase_migration_mobilizacao_gatilho_adm.sql), não a tela: assim vale por
  * qualquer caminho — abertura pela tela, aprovação de alçada, correção manual,
- * reprocessamento — e o Administrativo não precisa importar nada daqui.
+ * reprocessamento — e o Atendimento não precisa importar nada daqui.
  *
  * Este arquivo é o ESPELHO em JS desse mapa, e existe por dois motivos:
  * mostrar na tela do chamado qual fluxo vai nascer, e ser testável — o teste

@@ -1,5 +1,5 @@
 import { supabase } from '../../../services/supabase';
-// Mesmo upload das Requisições DP e do Administrativo: ele carrega o tratamento
+// Mesmo upload das Requisições DP e do Atendimento: ele carrega o tratamento
 // de arquivo "só na nuvem" (OneDrive) e o retry de rede, que custaram caro para
 // acertar. Uma terceira cópia perderia isso calado.
 import { enviarArquivo } from '../../../pages/Gestor/requisicoes/uploadAnexo';

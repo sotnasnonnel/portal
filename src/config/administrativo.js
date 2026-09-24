@@ -9,7 +9,7 @@ import { podeAcessarEstoque } from './estoque.js';
 import { podeAcessarMobilizacao } from './mobilizacao.js';
 
 /**
- * Catálogo do módulo Administrativo — espelha o Milldesk que a empresa usa hoje
+ * Catálogo do módulo Atendimento — espelha o Milldesk que a empresa usa hoje
  * (tela de referência: referencia/exemplo_mildesk.png).
  *
  * VOCABULÁRIO (o Milldesk usa "tipo" para duas coisas diferentes; aqui elas têm
@@ -220,7 +220,7 @@ export const TODOS_SERVICOS = CLASSES_ADM.flatMap((c) =>
 );
 
 /**
- * As três áreas do card "Administrativo" da Home.
+ * As três áreas do card "Atendimento" da Home.
  *
  * Chamados, Estoque e Mobilização eram três cards soltos, lado a lado, como se
  * fossem três assuntos diferentes — e são o mesmo: o time do Adm. Quem atende o

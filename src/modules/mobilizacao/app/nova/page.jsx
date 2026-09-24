@@ -14,7 +14,7 @@ const dataBr = (iso) => (iso ? iso.split('-').reverse().join('/') : '—');
  * Esta tela abre SÓ mobilização de empresa.
  *
  * Os fluxos de PESSOA (mobilização e desmobilização) nascem do chamado do
- * Administrativo, por gatilho no banco. Oferecê-los aqui criaria um segundo
+ * Atendimento, por gatilho no banco. Oferecê-los aqui criaria um segundo
  * caminho para a mesma coisa — e o resultado seria um processo à mão e outro do
  * chamado para a mesma pessoa, sem nada que os ligasse. A mobilização de
  * empresa é a única sem chamado que a dispare, e por isso é a única manual.
@@ -76,8 +76,8 @@ export default function NovaMob() {
         <h1 className="mob-title"><Building2 size={24} /> Mobilizar empresa</h1>
         <div className="mob-aviso tom-info">
           <Info size={16} />
-          Abrir um processo é do time do Administrativo. Se você precisa mobilizar alguém,
-          abra um chamado de Mobilização no Administrativo — o processo nasce sozinho a partir dele.
+          Abrir um processo é do time do Atendimento. Se você precisa mobilizar alguém,
+          abra um chamado de Mobilização no Atendimento — o processo nasce sozinho a partir dele.
         </div>
       </div>
     );
@@ -97,7 +97,7 @@ export default function NovaMob() {
         <Headset size={16} />
         <span>
           <strong>Mobilização e desmobilização de PESSOAS não se abrem aqui.</strong>{' '}
-          Elas nascem sozinhas do chamado de Mobilização do Administrativo, e aparecem no{' '}
+          Elas nascem sozinhas do chamado de Mobilização do Atendimento, e aparecem no{' '}
           <Link to="/mobilizacao/kanban">Quadro</Link> como &quot;A fazer&quot;. Se um chamado foi
           aberto e o processo não apareceu, a{' '}
           <Link to="/mobilizacao/torre">Torre de controle</Link> lista as falhas com um botão de

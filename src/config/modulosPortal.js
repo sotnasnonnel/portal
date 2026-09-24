@@ -23,7 +23,7 @@ export function modulosVisiveis(user, modules) {
   if (modules?.dp) nomes.push('Gestão de Pessoas');
   if (modules?.solic) nomes.push('Dados');
   nomes.push('Gestão de Horas');                       // aberto a todos
-  if (podeAcessarAdm(user)) nomes.push('Administrativo');
+  if (podeAcessarAdm(user)) nomes.push('Atendimento');
   if (podeAcessarProgramas(user)) nomes.push('Programas');
   if (podeAcessarEstoque(user)) nomes.push('Estoque');
   if (podeAcessarMobilizacao(user)) nomes.push('Mobilização');

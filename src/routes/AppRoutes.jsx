@@ -182,7 +182,7 @@ export function ModuleRoute({ module, children }) {
 // Pessoas. Gate só de UI — a RLS (app_private.is_horas_extras_dp) é quem protege
 // os dados. Não dá para usar allowedRoles: um gestor com rh_dp mantém o perfil
 // 'gestor' e mesmo assim é DP das horas extras.
-// Administrativo em construção: só a lista de teste entra. Gate de UI — as
+// Atendimento em construção: só a lista de teste entra. Gate de UI — as
 // tabelas do módulo seguem protegidas pela própria RLS.
 function AdmEmBreveRoute({ children }) {
   const { user } = useAuth();
@@ -199,7 +199,7 @@ function OrganogramaRoute({ children }) {
   return children;
 }
 
-// Programas em construção: mesma trava do Administrativo. Gate de UI — as
+// Programas em construção: mesma trava do Atendimento. Gate de UI — as
 // tabelas do módulo seguem protegidas pela própria RLS.
 function ProgramasEmBreveRoute({ children }) {
   const { user } = useAuth();
@@ -207,7 +207,7 @@ function ProgramasEmBreveRoute({ children }) {
   return children;
 }
 
-// Estoque em construção: mesma trava do Administrativo. Gate de UI — quem
+// Estoque em construção: mesma trava do Atendimento. Gate de UI — quem
 // movimenta é decidido pela RLS (app_private.is_estoque_operador).
 function EstoqueEmBreveRoute({ children }) {
   const { user } = useAuth();
@@ -215,7 +215,7 @@ function EstoqueEmBreveRoute({ children }) {
   return children;
 }
 
-// Mobilização em construção: mesma trava do Administrativo e do Estoque. Gate
+// Mobilização em construção: mesma trava do Atendimento e do Estoque. Gate
 // de UI — quem controla o processo é decidido pela RLS, que reusa o papel do
 // Adm (app_private.is_adm_time).
 // Torre de Controle: consulta para coordenação, gerência e diretoria. O gate
@@ -765,7 +765,7 @@ export default function AppRoutes() {
           <Route path="fluxos" element={<LazyPage><FinanceiroFluxos /></LazyPage>} />
         </Route>
 
-        {/* Administrativo: módulo aberto a todos os logados (como o Controle de
+        {/* Atendimento: módulo aberto a todos os logados (como o Controle de
             Horas), então só ProtectedRoute — sem ModuleRoute. A camada de
             aprovação/atendimento é que terá gate próprio quando existir.
             Enquanto está em construção, a rota inteira (e as filhas junto)

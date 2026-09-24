@@ -1,7 +1,7 @@
 /**
  * Prazo em dias úteis — mudou de casa.
  *
- * A regra não é do Administrativo, é do portal: a Mobilização conta os prazos
+ * A regra não é do Atendimento, é do portal: a Mobilização conta os prazos
  * das etapas dela do mesmo jeito, e duas cópias divergiriam na primeira vez que
  * alguém tratasse feriado só de um lado.
  *

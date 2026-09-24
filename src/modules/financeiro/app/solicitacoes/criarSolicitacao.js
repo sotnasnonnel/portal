@@ -12,7 +12,7 @@ import { notificarAprovadorFin } from '../../../../services/notificarAprovadorFi
  * Cria a solicitação do Financeiro: envelope + etapas (atômico, com delete
  * compensatório se as etapas falharem).
  *
- * A cadeia final tem 3 trechos, nesta ordem (a mesma do módulo Administrativo):
+ * A cadeia final tem 3 trechos, nesta ordem (a mesma do módulo Atendimento):
  *   1. cabeça da cadeia — escada do organograma (superior direto → gerente),
  *      ou a exceção cadastrada em Fluxos quando existir;
  *   2. aprovadores exigidos pela ALÇADA (faixa de valor, TABELA_ADMINISTRATIVO);

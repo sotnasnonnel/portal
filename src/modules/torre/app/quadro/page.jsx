@@ -71,7 +71,7 @@ export default function QuadroTorre() {
     <div className="mob-page mob-page-full mob-page-quadro">
       <h1 className="mob-title"><Radar size={24} /> Quadro</h1>
       <p className="mob-sub">
-        Chamados do Administrativo e etapas de Mobilização lado a lado, do jeito que a reunião de
+        Chamados do Atendimento e etapas de Mobilização lado a lado, do jeito que a reunião de
         torre acompanha.
       </p>
       <p className="tor-nota">
@@ -94,7 +94,7 @@ export default function QuadroTorre() {
           <label htmlFor="tor-q-origem">Origem</label>
           <select id="tor-q-origem" value={f.origem} onChange={trocar('origem')}>
             <option value="">Tudo</option>
-            <option value="adm">Chamados do Administrativo</option>
+            <option value="adm">Chamados do Atendimento</option>
             <option value="mobilizacao">Etapas de Mobilização</option>
           </select>
         </div>

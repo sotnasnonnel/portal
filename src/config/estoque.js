@@ -34,7 +34,7 @@ export const ESTOQUE_LIBERADOS = [
   'marcus.guimaraes@phdengenharia.eng.br',
   'andre.guimaraes@phdengenharia.eng.br',
   'lennon.santos@phdengenharia.eng.br',
-  // Time do Administrativo que vai operar o almoxarifado. Todos já têm
+  // Time do Atendimento que vai operar o almoxarifado. Todos já têm
   // administrativo_role, então entram como OPERADORES (movimentam), não só
   // como consulta — a liberação aqui é só de visibilidade do módulo.
   'jarbas.junior@phdengenharia.eng.br',      // coordenador adm — admin
@@ -48,7 +48,7 @@ export const podeAcessarEstoque = (user) => !ESTOQUE_EM_BREVE
   || ESTOQUE_LIBERADOS.includes((user?.email || '').trim().toLowerCase());
 
 /**
- * Quem MOVIMENTA o estoque. Reusa o papel do Administrativo de propósito: quem
+ * Quem MOVIMENTA o estoque. Reusa o papel do Atendimento de propósito: quem
  * atende o chamado de EPI é quem entrega o EPI. Consultar saldo é liberado para
  * todo logado (a policy de select do catálogo é `using (true)`) — é o "saber se
  * tem ou não" antes de prometer o item.

@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
 
 /**
- * Avisa por e-mail sobre um chamado do Administrativo (Edge Function
+ * Avisa por e-mail sobre um chamado do Atendimento (Edge Function
  * notify-chamado-adm). Só as partes envolvidas recebem — nunca o time inteiro.
  *
  *   'aprovacao'   -> aprovador da vez: há chamado esperando decisão

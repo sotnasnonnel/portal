@@ -18,7 +18,7 @@ const nomesExecutoras = EXECUTORES_FIN.map((e) => e.nome.split(' ')[0]).join(' /
 // Tela de configuração das cadeias de aprovação do Financeiro (só admin do
 // Financeiro).
 //
-// Desde o alinhamento com o módulo Administrativo, a cadeia PADRÃO é deduzida
+// Desde o alinhamento com o módulo Atendimento, a cadeia PADRÃO é deduzida
 // do organograma (superior direto → gerente acima) e não precisa ser cadastrada.
 // O que se cadastra aqui é EXCEÇÃO: quem tem cadeia salva usa a dela, e ela
 // entra no lugar da escada. Depois dela vêm os aprovadores da faixa de valor e,

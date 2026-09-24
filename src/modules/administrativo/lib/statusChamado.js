@@ -54,3 +54,25 @@ export function proximoStatusAoResponder({ statusAtual, souSolicitante, interna 
   const destino = souSolicitante ? 'em_atendimento' : 'aguardando_solicitante';
   return destino === statusAtual ? null : destino;
 }
+
+/**
+ * A etapa que espera a decisão DESTA pessoa, ou null.
+ *
+ * É a menor ordem ainda pendente, e só conta se o aprovador for ela: numa
+ * cadeia, o segundo aprovador não decide antes do primeiro. Mesma régua da fila
+ * em `listarAprovacoesPendentes` — escrita aqui como função pura porque agora
+ * ela também decide o que a TELA DO CHAMADO mostra, e duas contas diferentes
+ * para a mesma pergunta acabariam divergindo.
+ *
+ * Existe porque o aviso do sino leva o aprovador ao chamado, não à fila: quem
+ * chegava por ali via a própria etapa marcada como pendente e nenhum botão para
+ * decidir — foi o que a Perla relatou em 24/09/2026.
+ */
+export function etapaQueEsperaPorMim(etapas = [], meuId, statusDoChamado) {
+  if (!meuId || statusDoChamado !== 'aguardando_aprovacao') return null;
+  const pendentes = etapas
+    .filter((e) => e.status === 'pendente')
+    .sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
+  const vez = pendentes[0];
+  return vez && vez.aprovador_id === meuId ? vez : null;
+}

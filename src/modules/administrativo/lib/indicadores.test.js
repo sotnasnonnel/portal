@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  resumoIndicadores, fechouNoPrazo, estaAtrasado, estaAberto,
+  resumoIndicadores, fechouNoPrazo, estaAtrasado, estaAberto, filtrarPorArea,
 } from './indicadores.js';
 
 const DIA = 24 * 3600 * 1000;
@@ -167,4 +167,25 @@ test('listaAtrasados casa com o número e vem do mais vencido para o menos', () 
   assert.equal(r.atrasados, 2);
   assert.equal(r.listaAtrasados.length, r.atrasados);
   assert.deepEqual(r.listaAtrasados.map((c) => c.id), [2, 1]);
+});
+
+test('filtrarPorArea separa TI do resto, e "todos" não filtra nada', () => {
+  const lista = [
+    { classe: 'ti', servico: 'instalacao-software' },
+    { classe: 'ti', servico: 'verificacoes' },
+    { classe: 'frota', servico: 'abastecimento' },
+    { classe: 'saude-seguranca', servico: 'uniforme' },
+  ];
+  assert.equal(filtrarPorArea(lista, 'ti').length, 2);
+  assert.equal(filtrarPorArea(lista, 'adm').length, 2);
+  assert.equal(filtrarPorArea(lista, 'todos').length, 4);
+  assert.equal(filtrarPorArea(lista).length, 4);
+});
+
+// A régua é a classe: serviço novo dentro de TI entra na conta sem ninguém
+// mexer no código.
+test('filtrarPorArea reconhece serviço novo de TI pela classe', () => {
+  const lista = [{ classe: 'ti', servico: 'servico-que-ainda-nao-existe' }];
+  assert.equal(filtrarPorArea(lista, 'ti').length, 1);
+  assert.equal(filtrarPorArea(lista, 'adm').length, 0);
 });

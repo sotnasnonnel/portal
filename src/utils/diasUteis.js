@@ -12,7 +12,7 @@
  *
  * Duas famílias de função, porque os dois módulos guardam tempo de jeitos
  * diferentes e misturá-los é como se erra fuso horário:
- *   - Date  → o Administrativo, que grava `timestamptz` e precisa da hora.
+ *   - Date  → o Atendimento, que grava `timestamptz` e precisa da hora.
  *   - 'AAAA-MM-DD' → a Mobilização, que grava `date` e não tem hora nenhuma.
  *
  * Lógica pura para poder ser testada.

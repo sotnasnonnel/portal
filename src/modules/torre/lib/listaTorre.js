@@ -5,7 +5,7 @@ import { rotuloFluxoCurto } from '../../../config/mobilizacao.js';
 import { rotulosDeServico, chaveServico } from './matrizChamados.js';
 
 /**
- * A lista única da Torre: etapas de Mobilização E chamados do Administrativo.
+ * A lista única da Torre: etapas de Mobilização E chamados do Atendimento.
  *
  * O Mapa e o Quadro já mostravam os dois; a lista mostrava só mobilização, e
  * quem conferia item a item na reunião tinha de sair da tela para ver o Adm —

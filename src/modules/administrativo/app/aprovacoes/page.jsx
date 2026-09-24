@@ -120,7 +120,7 @@ export default function AprovacoesAdm() {
                   className="adm-textarea adm-textarea-curto"
                   value={justificativas[c.id] || ''}
                   onChange={(e) => setJustificativas((j) => ({ ...j, [c.id]: e.target.value }))}
-                  placeholder="Motivo da reprovação, ou uma observação para o time do Administrativo."
+                  placeholder="Motivo da reprovação, ou uma observação para o time do Atendimento."
                 />
               </div>
 

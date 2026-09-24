@@ -85,7 +85,7 @@ export default function FluxoAprovacao({
             <div className="adm-fluxo-corpo">
               <strong>{atendenteNome}</strong>
               <span className="adm-fluxo-status">
-                Administrativo · {exec.label}
+                Atendimento · {exec.label}
                 {exec.em && ` · ${data(exec.em)}`}
               </span>
             </div>

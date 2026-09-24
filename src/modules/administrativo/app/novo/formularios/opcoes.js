@@ -11,7 +11,7 @@ import { CAMPOS as CAMPOS_CONTRATACAO } from '../../../../../config/formularioCo
 const opcoesContratacao = (id) => CAMPOS_CONTRATACAO.find((c) => c.id === id)?.opcoes || [];
 
 // "2ª tela" está catalogada como software no formulário de Contratação, mas é
-// hardware — no Administrativo ela pertence a Equipamento e acessórios. A troca
+// hardware — no Atendimento ela pertence a Equipamento e acessórios. A troca
 // é feita aqui, sem mexer no catálogo do DP, que é usado por outras telas.
 const SEGUNDA_TELA = '2° tela';
 

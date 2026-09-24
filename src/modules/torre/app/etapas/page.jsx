@@ -18,7 +18,7 @@ const VAZIO = {
 
 /**
  * Etapas da Torre — o passo a passo de TUDO em lista: mobilizações e chamados
- * do Administrativo.
+ * do Atendimento.
  *
  * Os chamados entraram porque o Mapa e o Quadro já mostravam os dois e só a
  * lista não: quem conferia item a item na reunião tinha de trocar de tela,
@@ -66,7 +66,7 @@ export default function EtapasTorre() {
     <div className="mob-page mob-page-wide">
       <h1 className="mob-title"><ListChecks size={24} /> Etapas</h1>
       <p className="mob-sub">
-        O passo a passo em lista — mobilizações e chamados do Administrativo juntos, para
+        O passo a passo em lista — mobilizações e chamados do Atendimento juntos, para
         conferir item a item durante a reunião. O mais atrasado vem primeiro.
       </p>
       <p className="tor-nota">

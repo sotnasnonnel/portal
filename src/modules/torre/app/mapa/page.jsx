@@ -215,7 +215,7 @@ export default function MapaTorre() {
               de pagina no meio da reuniao. */}
           <section className="mob-card mob-matriz-card">
             <h2 className="mob-card-tit">
-              <Headset size={18} /> Chamados do Administrativo
+              <Headset size={18} /> Chamados do Atendimento
               <span className="mob-matriz-cont">{totalChamados}</span>
             </h2>
             <p className="mob-campo-dica">

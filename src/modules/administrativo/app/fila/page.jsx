@@ -92,8 +92,8 @@ export default function FilaAdm() {
       <h1 className="adm-title"><Inbox size={24} /> Fila de atendimento</h1>
       <p className="adm-sub">
         {comEncerrados
-          ? 'Chamados do setor Administrativo, inclusive os já encerrados.'
-          : 'Chamados em aberto do setor Administrativo.'}
+          ? 'Chamados do Atendimento, inclusive os já encerrados.'
+          : 'Chamados em aberto do Atendimento.'}
       </p>
 
       {/* Chamado sem técnico é o que ninguém está olhando — merece destaque. */}

@@ -1,5 +1,5 @@
 /**
- * Torre de controle: chamados do Administrativo e etapas de Mobilização num
+ * Torre de controle: chamados do Atendimento e etapas de Mobilização num
  * quadro só.
  *
  * É o mesmo pessoal que toca os dois, e hoje precisa abrir duas telas para
@@ -21,7 +21,7 @@ export const COLUNAS_TORRE = [
 ];
 
 /**
- * Status do Administrativo → vocabulário da torre.
+ * Status do Atendimento → vocabulário da torre.
  *
  * "Aguardando aprovação" e "aguardando solicitante" caem juntos em
  * `aguardando`: dos dois lados a bola está com outra pessoa, e é isso que quem

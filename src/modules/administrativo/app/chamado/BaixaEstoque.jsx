@@ -6,7 +6,7 @@ import { CONDICOES } from '../../../../config/estoque';
 import '../../../estoque/estoque.css';
 
 /**
- * Baixa de estoque dentro do card "Fechar chamado" do Administrativo.
+ * Baixa de estoque dentro do card "Fechar chamado" do Atendimento.
  *
  * Só aparece em EPI e uniforme (ver chamadoUsaEstoque em lib/estoqueDoChamado.js);
  * para os outros ~24 serviços o card de fechamento continua exatamente como

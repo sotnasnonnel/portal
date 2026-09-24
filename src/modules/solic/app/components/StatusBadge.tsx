@@ -10,7 +10,7 @@ type SurveyStatus =
 
 // Tons de status compartilhados com o resto do portal (src/styles/ui.css).
 // Antes o badge daqui era pintado com a cor da MARCA e ganhava borda, enquanto
-// Administrativo/Financeiro/Programas usam pastel sem borda — era uma das
+// Atendimento/Financeiro/Programas usam pastel sem borda — era uma das
 // coisas que faziam o Dados parecer outro sistema.
 const tom = (nome: string, label: string) => ({
   label,

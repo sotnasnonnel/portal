@@ -11,6 +11,12 @@ arquivo guarda o que não é óbvio ao ler o código.
 - "Solicitações" também nomeia uma seção do Financeiro e as requisições do DP
   (`solicitacoes_rh`). Nenhuma delas é o módulo Dados.
 - "Controle de Horas" virou **"Gestão de Horas"** (`src/modules/horas`).
+- O módulo **"Atendimento"** (antes "Administrativo") é `administrativo` no código:
+  pasta `src/modules/administrativo`, rotas `/administrativo/*`, tabelas
+  `chamados_adm_*`, papel `administrativo_role`. Em texto novo para o usuário,
+  escreva "Atendimento" — menos quando a frase fala do SETOR administrativo da
+  empresa (categorias de despesa, setores de vaga, aviso de privacidade), que
+  continua "Administrativo".
 - Parte de `solic` é TypeScript (`.ts`/`.tsx`). O ESLint só cobre `.js`/`.jsx`.
 
 ## Acesso e perfis

@@ -1,7 +1,7 @@
 // Ponte entre o chamado do Adm e o estoque: o que foi PEDIDO, o que JÁ FOI
 // entregue e o que ainda falta. Sem React e sem Supabase (roda sob `node --test`).
 //
-// Dependência de mão única: o Administrativo importa do Estoque, nunca o
+// Dependência de mão única: o Atendimento importa do Estoque, nunca o
 // contrário. As duas libs usadas aqui são puras.
 
 import { montarMovimentos, validarCarrinho } from '../../estoque/lib/carrinho.js';

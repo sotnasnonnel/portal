@@ -3,7 +3,7 @@ import {
 } from 'lucide-react';
 
 // Navegação da sidebar da Mobilização, na divisão padrão do portal (mesma do
-// Administrativo): grupos colapsáveis para o dia a dia + seção simples de
+// Atendimento): grupos colapsáveis para o dia a dia + seção simples de
 // Administração. Fica fora do Sidebar.jsx para não quebrar o fast refresh
 // (um arquivo de componente só deve exportar componentes).
 //

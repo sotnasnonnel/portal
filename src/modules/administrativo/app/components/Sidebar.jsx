@@ -4,7 +4,7 @@ import ModuleSidebar from '../../../../components/Layout/ModuleSidebar';
 import { podeVerTorre } from '../../../../config/torre';
 import { navSections } from './nav';
 
-// Sidebar do Administrativo — estrutura no componente compartilhado
+// Sidebar do Atendimento — estrutura no componente compartilhado
 // ModuleSidebar (mesmo padrão de grupos do Financeiro).
 // aberto/onFechar controlam o drawer no mobile; ver useDrawerMobile.js.
 export default function Sidebar({ aberto = false, onFechar }) {
@@ -13,13 +13,13 @@ export default function Sidebar({ aberto = false, onFechar }) {
   return (
     <ModuleSidebar
       moduloKey="administrativo"
-      titulo="Administrativo"
+      titulo="Atendimento"
       Icon={Headset}
       secoes={navSections({
         isAdmin: modules?.administrativo === 'admin',
         podeTorre: podeVerTorre(user, modules),
       })}
-      papelLabel="Administrativo"
+      papelLabel="Atendimento"
       aberto={aberto}
       onFechar={onFechar}
     />

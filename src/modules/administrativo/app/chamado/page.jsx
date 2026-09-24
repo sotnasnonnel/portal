@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft, Loader2, AlertCircle, Send, Paperclip, FileText, Lock, UserCheck,
-  CheckCircle2, RotateCcw, Star, CircleDot, Users, X, Ban, Workflow,
+  CheckCircle2, RotateCcw, Star, CircleDot, Users, X, Ban, Workflow, ClipboardCheck, Check,
 } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { getClasse, getServico, podeReatribuirAdm } from '../../../../config/administrativo';
@@ -13,20 +13,20 @@ import {
 import {
   buscarChamado, listarInteracoes, listarEventos, listarEtapas, responder, marcarLidas,
   assumirChamado, fecharChamado, fecharChamadoComBaixa, reabrirChamado, avaliarChamado, urlDoAnexo,
-  listarTimeAdm, definirResponsavel, cancelarChamado,
+  listarTimeAdm, definirResponsavel, cancelarChamado, decidirChamado,
 } from '../../lib/chamados';
 import FluxoAprovacao from './FluxoAprovacao';
 import BaixaEstoque from './BaixaEstoque';
 import { montarLinhaDoTempo, textoDoEvento } from '../../lib/linhaDoTempo';
 import { formatarTamanho } from '../../lib/arquivo';
-import { ehEncerrado } from '../../lib/statusChamado';
+import { ehEncerrado, etapaQueEsperaPorMim } from '../../lib/statusChamado';
 import { prazoAdiado } from '../../lib/prazo';
 import {
   chamadoDeEstoque, chamadoUsaEstoque, categoriaDoChamado, montarLinhasDeBaixa, validarLinhasDeBaixa,
   linhasComQuantidade,
 } from '../../lib/estoqueDoChamado';
 // O processo de mobilização que este chamado abriu. Só LEITURA, e a
-// dependência é de mão única, como a do Estoque: o Administrativo importa do
+// dependência é de mão única, como a do Estoque: o Atendimento importa do
 // módulo mais novo, nunca o contrário.
 import { processoDoChamado } from '../../../mobilizacao/lib/mobilizacao';
 // Consulta e catálogo vêm do módulo de Estoque — dependência de mão única.
@@ -71,6 +71,7 @@ export default function ChamadoAdm() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
   const [ocupado, setOcupado] = useState('');
+  const [justificativa, setJustificativa] = useState('');
 
   // Troca de responsável: só coordenação usa, então o time só é buscado
   // quando o painel abre — quem nunca clica não paga a consulta.
@@ -207,6 +208,11 @@ export default function ChamadoAdm() {
     })();
     return () => { cancelado = true; };
   }, [chamado, souAdm, user?.id]);
+
+  // A etapa que espera a decisão de quem está olhando (regra em lib/statusChamado).
+  const minhaEtapa = chamado
+    ? etapaQueEsperaPorMim(etapas, user?.id, chamado.status)
+    : null;
 
   const acao = async (nome, fn) => {
     setOcupado(nome);
@@ -599,7 +605,7 @@ export default function ChamadoAdm() {
             <span className="adm-campo-dica">
               {timeAdm.length
                 ? 'A troca fica registrada no histórico do chamado.'
-                : 'Carregando o time do Administrativo…'}
+                : 'Carregando o time do Atendimento…'}
             </span>
           </div>
         )}
@@ -671,6 +677,42 @@ export default function ChamadoAdm() {
               ))}>
               {ocupado === 'fechar' ? <Loader2 size={16} className="adm-spin" /> : <CheckCircle2 size={16} />}
               {vaiBaixar ? 'Fechar e baixar estoque' : 'Fechar'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* A decisão mora AQUI, e não só na fila de Aprovações: o aviso do sino
+          leva o aprovador ao chamado, e quem chegava por este caminho via a
+          própria etapa pendente sem nenhum botão para decidir. */}
+      {minhaEtapa && (
+        <div className="adm-card">
+          <h2 className="adm-card-tit"><ClipboardCheck size={18} /> Sua aprovação</h2>
+          <p className="adm-campo-dica">
+            Este chamado está esperando a sua decisão. Reprovar exige o motivo, que vai para quem
+            abriu.
+          </p>
+          <textarea
+            className="adm-textarea adm-textarea-curto"
+            placeholder="Observação (obrigatória para reprovar)"
+            value={justificativa}
+            onChange={(e) => setJustificativa(e.target.value)}
+          />
+          <div className="adm-acoes" style={{ marginTop: 10 }}>
+            <button type="button" className="adm-btn adm-btn-primary" disabled={!!ocupado}
+              onClick={() => acao('aprovar', () => decidirChamado({
+                chamadoId: chamado.id, etapaId: minhaEtapa.id, aprovar: true, justificativa,
+              }))}>
+              {ocupado === 'aprovar' ? <Loader2 size={16} className="adm-spin" /> : <Check size={16} />} Aprovar
+            </button>
+            <button type="button" className="adm-btn adm-btn-recusa" disabled={!!ocupado}
+              onClick={() => {
+                if (!justificativa.trim()) { setErro('Explique o motivo para reprovar.'); return; }
+                acao('reprovar', () => decidirChamado({
+                  chamadoId: chamado.id, etapaId: minhaEtapa.id, aprovar: false, justificativa,
+                }));
+              }}>
+              {ocupado === 'reprovar' ? <Loader2 size={16} className="adm-spin" /> : <X size={16} />} Reprovar
             </button>
           </div>
         </div>

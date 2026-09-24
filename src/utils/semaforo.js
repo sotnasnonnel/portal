@@ -2,7 +2,7 @@
  * Semáforo de prazo — "vencido / perto / ok / sem-prazo".
  *
  * Vive aqui, e não dentro de um módulo, porque a definição de "está apertado"
- * é do portal: se o quadro do Administrativo pintar de amarelo a 24h do
+ * é do portal: se o quadro do Atendimento pintar de amarelo a 24h do
  * vencimento e o da Mobilização a 48h, os dois indicadores passam a discordar
  * sobre a mesma pergunta — e isso é bug de indicador, não estilo.
  *

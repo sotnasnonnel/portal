@@ -1,7 +1,7 @@
 import { ehEncerrado } from './statusChamado.js';
 
 /**
- * Indicadores do Administrativo.
+ * Indicadores do Atendimento.
  *
  * Lógica pura — sem Supabase, sem React — para poder ser testada. A tela só
  * desenha o que sai daqui.
@@ -135,4 +135,28 @@ function agruparPorServico(chamados) {
   }
   return [...mapa.values()].sort((a, b) => (b.total - a.total)
     || a.nome.localeCompare(b.nome, 'pt-BR'));
+}
+
+/**
+ * As três visões do painel: tudo, só o que é do time do Adm e só o que é de TI.
+ *
+ * TI é a CLASSE 'ti' do catálogo ("Manutenção & Instalação TI", sete serviços);
+ * ADM é todo o resto. Pedido do André em 23/09/2026 — os dois times dividem a
+ * mesma fila e o número junto não dizia de quem era o atraso.
+ *
+ * A régua é a classe, e não uma lista de slugs de serviço: serviço novo dentro
+ * de TI entra na conta sozinho, sem ninguém lembrar de atualizar daqui.
+ */
+export const CLASSE_TI = 'ti';
+
+export const AREAS_INDICADORES = [
+  { chave: 'todos', label: 'Total' },
+  { chave: 'adm', label: 'ADM' },
+  { chave: 'ti', label: 'TI' },
+];
+
+export function filtrarPorArea(chamados = [], area = 'todos') {
+  if (area === 'ti') return chamados.filter((c) => c.classe === CLASSE_TI);
+  if (area === 'adm') return chamados.filter((c) => c.classe !== CLASSE_TI);
+  return chamados;
 }

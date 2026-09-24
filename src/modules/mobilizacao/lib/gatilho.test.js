@@ -10,7 +10,7 @@ test('cada movimento do Adm cai num fluxo', () => {
 });
 
 /**
- * O teste que realmente importa: um movimento novo no Administrativo passaria
+ * O teste que realmente importa: um movimento novo no Atendimento passaria
  * calado, porque o gatilho no banco registra a falha e segue (para nunca
  * impedir a abertura de um chamado). Aqui ele quebra o build.
  *
@@ -20,7 +20,7 @@ test('cada movimento do Adm cai num fluxo', () => {
 test('nenhum movimento do Adm fica sem fluxo mapeado', () => {
   const orfaos = MOVIMENTOS.filter((m) => !fluxoDoMovimento(m));
   assert.deepEqual(orfaos, [],
-    'movimento novo no Administrativo precisa de fluxo aqui E em mob_fluxo_do_movimento (SQL)');
+    'movimento novo no Atendimento precisa de fluxo aqui E em mob_fluxo_do_movimento (SQL)');
 });
 
 test('movimento desconhecido devolve null, e não um chute', () => {

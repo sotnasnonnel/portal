@@ -53,7 +53,7 @@ test('eDesmobilizacao distingue o ramo', () => {
   assert.equal(eDesmobilizacao({ movimento: 'Nova mobilização' }), false);
 });
 
-// A cadeia de exigencias tem DOIS donos: `projeto` veio do Administrativo e
+// A cadeia de exigencias tem DOIS donos: `projeto` veio do Atendimento e
 // `cliente` veio do modulo de Mobilizacao, que nasce deste chamado. O teste
 // cobre a ordem inteira de proposito — foi ela que conflitou no merge, e uma
 // ordem errada faz a tela cobrar o campo errado.

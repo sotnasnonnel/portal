@@ -1,5 +1,5 @@
 /**
- * Quem aprova um chamado do Administrativo.
+ * Quem aprova um chamado do Atendimento.
  *
  * Duas dinâmicas, as mesmas da Gestão de Pessoas:
  *

@@ -274,7 +274,7 @@ export function AuthProvider({ children }) {
     // superiores da árvore (garantido pela RLS). O super-admin também tem passe
     // livre no banco.
     horas: user ? horasRoleFromPerfil(user.perfil, user.horasRole) : null,
-    // Financeiro: aberto a todos os logados (como o Administrativo e o
+    // Financeiro: aberto a todos os logados (como o Atendimento e o
     // Programas). Era restrito a quem tinha CARGO de diretor, gerente ou
     // coordenador, e a restrição não se sustentava: pedir cartão é demanda de
     // quem executa, e quem ficava de fora acabava pedindo pelo gestor — sem
@@ -283,7 +283,7 @@ export function AuthProvider({ children }) {
     // de ninguém. 'admin' = time do Financeiro (executa/configura fluxos), via
     // financeiro_role (Gerenciar acessos), e continua restrito.
     financeiro: user ? (user.financeiroRole || 'user') : null,
-    // Administrativo: aberto a todos os logados (como a Gestão de Horas) —
+    // Atendimento: aberto a todos os logados (como a Gestão de Horas) —
     // qualquer um abre chamado. 'atendente'/'admin' são o time do Adm, que
     // enxerga a fila; vêm de administrativo_role (Gerenciar acessos).
     administrativo: user ? (user.administrativoRole || 'user') : null,

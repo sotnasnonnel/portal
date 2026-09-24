@@ -85,7 +85,7 @@ export default function AjudaPrazos() {
                   <dt>Quando o relógio começa</dt>
                   <dd>
                     Só depois que a aprovação sai. O tempo que o pedido passa esperando
-                    decisão não conta contra o time do Administrativo — por isso o prazo
+                    decisão não conta contra o time do Atendimento — por isso o prazo
                     aparece em branco enquanto o chamado está em aprovação.
                   </dd>
                 </div>
@@ -99,7 +99,7 @@ export default function AjudaPrazos() {
                 <div>
                   <dt>Cada serviço tem o seu</dt>
                   <dd>
-                    O prazo é definido por serviço pelo time do Administrativo, não é
+                    O prazo é definido por serviço pelo time do Atendimento, não é
                     igual para todos. A lista abaixo mostra os que já estão definidos.
                   </dd>
                 </div>

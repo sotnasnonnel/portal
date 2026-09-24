@@ -3,13 +3,13 @@ import { Search, Loader2, Boxes, ChevronDown } from 'lucide-react';
 import { listarPosicao } from '../../lib/estoque';
 import { filtrarPosicao, detalheVariante } from '../../lib/catalogo';
 import { SITUACOES } from '../../../../config/estoque';
-// O CSS do módulo vem junto: este componente é usado DENTRO do Administrativo,
+// O CSS do módulo vem junto: este componente é usado DENTRO do Atendimento,
 // que não carrega o estoque.css. Tudo está escopado em .estRoot, então importar
 // aqui não vaza estilo para o módulo hospedeiro.
 import '../../estoque.css';
 
 /**
- * Consulta de saldo embutível — feita para o card do chamado do Administrativo,
+ * Consulta de saldo embutível — feita para o card do chamado do Atendimento,
  * onde o atendente precisa saber se TEM o item antes de prometer a entrega, sem
  * trocar de módulo.
  *

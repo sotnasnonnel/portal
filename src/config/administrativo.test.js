@@ -7,7 +7,7 @@ import { ESTOQUE_LIBERADOS } from './estoque.js';
 import { MOBILIZACAO_LIBERADOS } from './mobilizacao.js';
 
 /**
- * O card "Administrativo" da Home reúne três módulos com liberações DIFERENTES
+ * O card "Atendimento" da Home reúne três módulos com liberações DIFERENTES
  * (Chamados é aberto; Estoque e Mobilização seguem em lançamento restrito).
  *
  * O risco que estes testes cobrem é o de sempre nesse tipo de agrupamento:

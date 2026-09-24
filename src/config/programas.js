@@ -18,7 +18,7 @@ import { Boxes, Lightbulb, Rocket, Wrench } from 'lucide-react';
  */
 
 /**
- * Trava de lançamento, mesma mecânica do Administrativo (ADM_EM_BREVE).
+ * Trava de lançamento, mesma mecânica do Atendimento (ADM_EM_BREVE).
  * Enquanto `true`, o módulo aparece como "Em breve" para a empresa: o card da
  * Home fica travado e a rota /programas devolve para lá.
  *

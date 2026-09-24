@@ -95,7 +95,7 @@ export default function CatalogoMob() {
       <div className="mob-page">
         <h1 className="mob-title"><Settings2 size={24} /> Catálogo e SLAs</h1>
         <div className="mob-aviso tom-info">
-          <Info size={16} /> Só o administrador do Administrativo configura o catálogo de etapas.
+          <Info size={16} /> Só o administrador do Atendimento configura o catálogo de etapas.
         </div>
       </div>
     );

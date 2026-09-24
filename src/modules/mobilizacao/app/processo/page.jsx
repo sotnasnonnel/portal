@@ -175,7 +175,7 @@ export default function ProcessoMob() {
             <Headset size={13} style={{ verticalAlign: '-2px' }} />{' '}
             Aberto pelo{' '}
             <Link to={`/administrativo/chamado/${processo.origem_chamado_id}`}>
-              chamado do Administrativo
+              chamado do Atendimento
             </Link>.
           </p>
         )}

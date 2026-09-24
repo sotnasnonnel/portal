@@ -25,7 +25,7 @@ const VISUAL = {
 const MODULO_LABEL = {
   financeiro: 'Financeiro',
   reembolso: 'Reembolso',
-  administrativo: 'Administrativo',
+  administrativo: 'Atendimento',
   dp: 'Gestão de Pessoas',
   horas: 'Gestão de Horas',
   programas: 'Programas',

@@ -375,7 +375,7 @@ export default function FluxosAdm() {
                     <span className="adm-fx-avatar"><Headset size={15} /></span>
                     <span className="adm-fx-corpo">
                       <small>Atendimento</small>
-                      <strong>Time do Administrativo</strong>
+                      <strong>Time do Atendimento</strong>
                     </span>
                   </div>
                 </div>

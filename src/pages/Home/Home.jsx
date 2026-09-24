@@ -113,7 +113,7 @@ export default function Home() {
         : { to: areasAdm[0]?.href || '/administrativo/novo' }),
       icon: Headset,
       tone: 'terracotta',
-      title: 'Administrativo',
+      title: 'Atendimento',
       desc: 'Chamados, almoxarifado e mobilização',
       locked: areasAdm.length === 0,
     },

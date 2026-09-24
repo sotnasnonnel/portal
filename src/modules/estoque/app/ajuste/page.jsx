@@ -78,7 +78,7 @@ export default function AjusteEstoque() {
       <div className="est-page">
         <div className="est-aviso tom-info">
           <AlertCircle size={16} />
-          Só o time do Administrativo movimenta o estoque. Você pode{' '}
+          Só o time do Atendimento movimenta o estoque. Você pode{' '}
           <Link to="/estoque/posicao">consultar a posição</Link>.
         </div>
       </div>
