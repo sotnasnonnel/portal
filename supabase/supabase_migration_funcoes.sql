@@ -19,6 +19,6 @@ create policy anon_all_funcoes on public.funcoes for all to anon, authenticated 
 alter table public.solicitacoes_rh add column if not exists funcao_proposta text;
 alter table public.solicitacoes_rh add column if not exists cargo_proposto text;
 
--- Seed das 132 funções únicas da planilha: ver scripts/seed_funcoes.sql
--- (gerado por scripts/gerar_seed_funcoes.cjs a partir de scripts/funcoes_extraidas.json;
+-- Seed das 132 funções únicas da planilha: ver supabase/supabase_seed_funcoes.sql
+-- (gerado uma única vez a partir de FUNÇÃO.xlsx; os scripts geradores foram removidos na limpeza de 2026-09;
 --  a planilha tem 135 linhas, 3 nomes duplicados mantêm a primeira ocorrência).

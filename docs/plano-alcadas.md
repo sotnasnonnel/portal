@@ -16,7 +16,7 @@ diretoria vira deploy e cada faixa nova vira `if` espalhado pelos formulários.
 | **Pessoa** (banco) | `supabase_migration_alcadas.sql` → RPC `alcadas_resolver_papeis` | Traduz papel → colaborador, subindo a cadeia `superior_id`. |
 | **Ponte** | `src/services/alcadas.js` | Chama a RPC, monta as etapas, grava a trilha de auditoria. |
 
-Testes: `src/config/alcadas.test.js` — 35 casos cobrindo todas as faixas,
+Testes: `src/config/alcadas.test.js` — 51 testes cobrindo todas as faixas,
 limites, acúmulo de modificadores e a Trava Headcount.
 
 ---
@@ -153,7 +153,7 @@ cair numa conta de teste. Atribuir `FINANCEIRO` explicitamente resolve.
 ## 8. Estado
 
 ### Pronto
-- Motor de regras + **49 testes** (faixas, modificadores, Hunter≠Farmer, liderança, Trava Headcount)
+- Motor de regras + **51 testes** (faixas, modificadores, Hunter≠Farmer, liderança, Trava Headcount)
 - Migração aplicada em produção (`alcadas` + `alcadas_hardening`), validada antes
   em transação com rollback e conferida contra os dados reais
 - **Financeiro** (Cartão Virtual + Aumento de Limite): classificação obrigatória,
@@ -179,7 +179,7 @@ Conferido empiricamente simulando a sessão de um colaborador comum (role
   `alcadas_papeis_leitura_minima`.
 
 ### Falta
-1. **`alcadas_obrigatoria.sql`** — só depois do front subir em produção
+1. **`alcadas_obrigatoria.sql`**: só depois do front subir em produção (conferido em 2026-09-23: ainda NÃO aplicada; a constraint `solic_fin_classificacao_check` não existe no banco)
 2. **Substituir o acúmulo provisório**: Nery está como JURIDICO e CONSELHO
 3. **Atribuir FINANCEIRO/RH explicitamente** para tirar contas de teste do caminho
 4. **Tela de Alçadas** (admin): papéis, SLA, consulta da trilha

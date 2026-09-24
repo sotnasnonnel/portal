@@ -31,7 +31,7 @@
 -- então liberar para `anon` é liberar para quem tiver a chave. É a mesma
 -- exposição que a tela já tem hoje para `organograma_alocacao` (a policy antiga
 -- `public ALL USING(true)`, registrada como dívida em
--- docs/superpowers/specs/2026-07-01-consulta-organograma-design.md).
+-- docs/arquivo/superpowers/specs/2026-07-01-consulta-organograma-design.md).
 -- Se o organograma não puder ser público, o caminho é outro: servir esses dados
 -- por uma função no projeto do portal, onde a pessoa está autenticada.
 -- ============================================================================

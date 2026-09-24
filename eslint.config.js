@@ -8,7 +8,7 @@ export default defineConfig([
   globalIgnores(['dist']),
   {
     // Arquivos de build/scripts rodam em Node, não no browser.
-    files: ['vite.config.js', 'seed.js', 'generate_mocks.js', 'update.cjs', 'scripts/**/*.{js,cjs}'],
+    files: ['vite.config.js', 'server/**/*.{js,mjs}'],
     languageOptions: {
       globals: globals.node,
     },

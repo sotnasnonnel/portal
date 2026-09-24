@@ -67,7 +67,7 @@ de programas legais (1) → envio dos programas (10) → postagem (5) → aprova
   cliente: o quadro grava só o status ao soltar o cartão, e o encadeamento tem que valer
   por qualquer caminho — carga da planilha, correção manual, uma tela nova amanhã.
 - **Quadro de ETAPAS, com arrastar.** É a primeira exceção consciente à decisão de
-  `plano-kanban-e-acompanhamento.md` (o quadro do Adm é só leitura): lá o status muda por
+  `arquivo/plano-kanban-e-acompanhamento.md` (o quadro do Adm é só leitura): lá o status muda por
   responder mensagem, aqui não há mensagem e o passo é a unidade de trabalho.
 - **Tudo em dias úteis** — não é escolha, é o enunciado: *"Cada passo tem um SLA. Precisa
   ter um configurações de dias úteis previstos (como no ADM)"*. A planilha era

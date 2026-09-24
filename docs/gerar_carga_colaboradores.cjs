@@ -1,6 +1,6 @@
 /* Gera o SQL de carga de colaboradores a partir de docs/colab.xlsx.
    Saída: docs/carga_colaboradores.sql (aplicado no banco compartilhado).
-   Regras detalhadas no spec docs/superpowers/specs/2026-06-19-formato-superior-colaboradores-design.md */
+   Regras detalhadas no spec docs/arquivo/superpowers/specs/2026-06-19-formato-superior-colaboradores-design.md */
 const XLSX = require('xlsx');
 const fs = require('fs');
 const path = require('path');

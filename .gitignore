@@ -41,3 +41,9 @@ supabase/.temp/
 # Carga do Fechamento PJ: tem CPF e dados bancários (gerada por docs/gerar_carga_fechamento_pj.cjs)
 supabase/supabase_import_fechamento_pj.sql
 /pj_fechamento.html
+
+# Lock de sessão do Claude Code
+.claude/scheduled_tasks.lock
+
+# Planilha de colaboradores: tem CPF e data de nascimento (entrada de docs/gerar_carga_colaboradores.cjs)
+docs/colab.xlsx

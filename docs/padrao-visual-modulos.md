@@ -3,15 +3,46 @@
 Fonte da verdade dos tokens: **`src/styles/ui.css`** (carregado em `main.jsx`
 depois de `theme.css` e `index.css`, portanto vale sobre os dois).
 
-Vale para: **Gestão de Pessoas** (`src/pages/**` + `src/components/**`),
-**PMO — Gestão de Horas** (`src/modules/horas`), **Administrativo**
-(`src/modules/administrativo`), **Financeiro** (`src/modules/financeiro`) e
-**Programas** (`src/modules/programas`).
+Vale para: **Gestão de Pessoas** (`src/pages/**` + `src/components/**`,
+incluindo Fechamento PJ em `src/modules/fechamentoPj`), **Gestão de Horas**
+(`src/modules/horas`), **Dados** (`src/modules/solic`, antigo PMO),
+**Administrativo** (`src/modules/administrativo`), **Estoque**
+(`src/modules/estoque`), **Mobilização** (`src/modules/mobilizacao`),
+**Torre de Controle** (`src/modules/torre`), **Financeiro**
+(`src/modules/financeiro`) e **Programas** (`src/modules/programas`).
+Reembolso ainda não (ver §9).
 
 > Regra de ouro: **nenhum CSS/JSX declara `font-size`, altura de controle,
 > padding de célula ou largura de sidebar em valor solto.** Sempre um token.
 
 ---
+
+## 0. Marca
+
+Cores da PHD, em `src/styles/theme.css` (`--terracotta*`, `--blue*`, `--green*`).
+É a única paleta de marca do repositório; os antigos `paleta.txt` foram removidos.
+
+| Token               | Valor    | Nome              |
+| ------------------- | -------- | ----------------- |
+| `--terracotta`      | #c35e1e  | laranja PHD (primária) |
+| `--terracotta-red`  | #b85236  | laranja avermelhado |
+| `--blue`            | #26405d  | azul marinho      |
+| `--green`           | #00a49a  | verde petróleo    |
+
+O antigo "branco gelo" #f2f2f2 foi aposentado. O fundo agora é `--neutral-bg` (§1).
+
+**Acento por módulo** (`--mod-accent`, declarado na raiz do módulo):
+
+| Módulo            | Raiz            | Acento   |
+| ----------------- | --------------- | -------- |
+| Dados (solic)     | `.solicRoot`    | #c35e1e  |
+| Gestão de Horas   | `.horasRoot`    | #c44a28  |
+| Programas         | `.pgRoot`       | #b4522a  |
+| Administrativo    | `.admRoot`      | #26405d  |
+| Financeiro        | `.finRoot`      | #0f766e  |
+| Estoque           | `.estRoot`      | #6d28d9  |
+| Mobilização       | `.mobRoot`      | #4338ca  |
+| Torre de Controle | `.mobRoot.torRoot` | #334155 |
 
 ## 1. Neutros
 
@@ -28,7 +59,7 @@ Uma rampa só no portal inteiro (`--neutral-*` em `ui.css`), consumida por
 | `--neutral-muted`         | #64748b  | texto de apoio           |
 
 Antes havia duas: a slate dos módulos novos e um cinza quente
-(#f2f2f2/#1b2735/#6b7280) no portal e no PMO — lado a lado, uma parecia mais
+(#f2f2f2/#1b2735/#6b7280) no portal e no antigo PMO (hoje Dados) — lado a lado, uma parecia mais
 fria que a outra.
 
 ## 2. Tipografia
@@ -84,7 +115,7 @@ Cobre `.form-input`/`.form-select`/`.btn*` (GP + Financeiro),
 ## 6. Sidebar (uma só para todos os módulos)
 
 Componente único: **`src/components/Layout/ModuleSidebar.jsx`** + `ModuleSidebar.css`.
-Usado por Gestão de Horas, Administrativo, Financeiro, Programas e PMO. A
+Usado por todos os módulos com sidebar própria: Gestão de Horas, Dados, Administrativo, Estoque, Mobilização, Torre de Controle, Financeiro e Programas. A
 divisão é a do Financeiro:
 
 - **Grupo colapsável** (`group: true`): cabeçalho com ícone + rótulo + seta,
@@ -105,7 +136,7 @@ longo, recolher no desktop) ficam no componente.
 
 O **acento** vem da raiz do módulo, que define `--mod-accent`,
 `--mod-accent-soft` e `--mod-accent-ink` (`.horasRoot`, `.admRoot`, `.finRoot`,
-`.pgRoot`, `.solicRoot`). Nunca declare esses tokens dentro do `.modSb`: a
+`.pgRoot`, `.solicRoot`, `.estRoot`, `.mobRoot`, `.torRoot`; tabela em §0). Nunca declare esses tokens dentro do `.modSb`: a
 declaração local venceria o valor herdado e pintaria todos os módulos igual.
 
 Gestão de Pessoas usa o mesmo componente: `components/Layout/Sidebar.jsx` só
@@ -113,7 +144,7 @@ resolve perfil e contadores e passa o `nav.js` de lá. Os extras que eram só
 dela viraram parte do padrão — `badge` por item (somado no cabeçalho quando o
 grupo está fechado) e `locked` em item ou grupo (cadeado, "Em breve").
 
-## 7. Shell (idêntico nos cinco módulos)
+## 7. Shell (idêntico em todos os módulos)
 
 | Token                        | Valor              |
 | ---------------------------- | ------------------ |
@@ -140,7 +171,7 @@ Item de menu da sidebar: `padding: 9px 12px`, raio `--ctl-radius-sm`, texto
 trocar os `font-size` soltos pelos tokens acima e apontar os tokens locais para
 os do `ui.css`.
 
-O PMO (`src/modules/solic`) já está no padrão: tipografia, pesos (era tudo 800),
+Dados (`src/modules/solic`) já está no padrão: tipografia, pesos (era tudo 800),
 controles, tabelas, cartões, shell e sidebar.
 
 ## 10. Como alterar
