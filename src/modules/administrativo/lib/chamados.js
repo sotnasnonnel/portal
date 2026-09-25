@@ -441,12 +441,30 @@ export async function criarChamado({
         aprovador_id: aprovadorId,
       })),
     );
-    // O chamado já existe; falhar aqui deixaria um chamado sem quem aprovar,
-    // então avisamos em vez de fingir sucesso.
+    // O chamado já existe e não há transação entre as duas gravações: falhar
+    // aqui deixava um chamado "aguardando aprovação" SEM ninguém para aprovar —
+    // estado sem saída, que ninguém aprova e ninguém fecha. Aconteceu uma vez
+    // (chamado #41, 31/08/2026) e só apareceu 25 dias depois, quando o Adm
+    // tentou fechá-lo.
+    //
+    // Por isso a compensação: o chamado volta para 'aberto', com o prazo
+    // normal, e segue para o atendimento sem a aprovação. É melhor do que a
+    // alternativa — um pedido que fica parado para sempre —, e o aviso diz o
+    // que aconteceu, para quem recebeu poder cobrar a liberação por fora.
     if (erroEtapas) {
+      await supabase
+        .from('chamados_adm')
+        .update({
+          status: 'aberto',
+          exige_aprovacao: false,
+          analise_em: new Date().toISOString(),
+          sla_vence_em: venceEmISO(new Date(), cfg.sla_dias_uteis),
+        })
+        .eq('id', chamado.id);
       throw new Error(
         `O chamado #${chamado.numero} foi aberto, mas a cadeia de aprovação não foi criada `
-        + `(${erroEtapas.message}). Avise o time do Atendimento.`,
+        + `(${erroEtapas.message}). Ele seguiu direto para o atendimento, sem aprovação — `
+        + 'avise o time do Atendimento.',
       );
     }
   }
@@ -592,6 +610,42 @@ export async function listarMeusChamados(solicitanteId, { fechados = false } = {
   return (data || []).map((c) => ({
     ...c, atendenteNome: nomes.get(c.atendente_id) || '', naoLidas: naoLidas[c.id] || 0,
   }));
+}
+
+/**
+ * Libera para atendimento um chamado que ficou preso sem cadeia de aprovação.
+ *
+ * A saída de emergência do estado impossível descrito em `abrirChamado`: se a
+ * compensação de lá também falhar (o navegador fechou no meio, por exemplo), o
+ * chamado fica travado e só o banco resolveria. Com isto, o time do Atendimento
+ * resolve pela própria tela.
+ *
+ * Não decide nada em nome de ninguém: só vale quando NÃO HÁ etapa alguma, e é
+ * por isso que a condição vai também no `.eq('status', ...)` — se a cadeia
+ * existir, o caminho é aprovar, não liberar.
+ */
+export async function liberarSemAprovacao(chamadoId) {
+  const { data: chamado } = await supabase
+    .from('chamados_adm')
+    .select('classe, servico, numero')
+    .eq('id', chamadoId)
+    .maybeSingle();
+  const cfg = chamado ? await buscarConfigServico(chamado.classe, chamado.servico) : null;
+
+  const { data, error } = await supabase
+    .from('chamados_adm')
+    .update({
+      status: 'aberto',
+      exige_aprovacao: false,
+      analise_em: new Date().toISOString(),
+      sla_vence_em: venceEmISO(new Date(), cfg?.sla_dias_uteis),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', chamadoId)
+    .eq('status', 'aguardando_aprovacao')
+    .select('id');
+  if (error) throw new Error(`Não foi possível liberar o chamado: ${error.message}`);
+  if (!data?.length) throw new Error('O chamado não pôde ser liberado — recarregue a tela.');
 }
 
 /**

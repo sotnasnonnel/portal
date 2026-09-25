@@ -13,7 +13,7 @@ import {
 import {
   buscarChamado, listarInteracoes, listarEventos, listarEtapas, responder, marcarLidas,
   assumirChamado, fecharChamado, fecharChamadoComBaixa, reabrirChamado, avaliarChamado, urlDoAnexo,
-  listarTimeAdm, definirResponsavel, cancelarChamado, decidirChamado,
+  listarTimeAdm, definirResponsavel, cancelarChamado, decidirChamado, liberarSemAprovacao,
 } from '../../lib/chamados';
 import FluxoAprovacao from './FluxoAprovacao';
 import BaixaEstoque from './BaixaEstoque';
@@ -677,6 +677,28 @@ export default function ChamadoAdm() {
               ))}>
               {ocupado === 'fechar' ? <Loader2 size={16} className="adm-spin" /> : <CheckCircle2 size={16} />}
               {vaiBaixar ? 'Fechar e baixar estoque' : 'Fechar'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Estado impossível: esperando aprovação sem ninguém para aprovar. Nasce
+          de uma abertura que gravou o chamado e não a cadeia. O aviso é para o
+          time do Atendimento porque é ele quem fica com o pedido parado na mão
+          — o solicitante não teria o que fazer com a informação. */}
+      {souAdm && chamado.status === 'aguardando_aprovacao' && !etapas.length && (
+        <div className="adm-card">
+          <h2 className="adm-card-tit"><AlertCircle size={18} /> Sem cadeia de aprovação</h2>
+          <p className="adm-campo-dica">
+            Este chamado está esperando aprovação, mas nenhum aprovador foi registrado na
+            abertura — então ninguém consegue aprová-lo. Liberar manda o chamado direto para o
+            atendimento, com o prazo começando agora.
+          </p>
+          <div className="adm-acoes">
+            <button type="button" className="adm-btn adm-btn-primary" disabled={!!ocupado}
+              onClick={() => acao('liberar', () => liberarSemAprovacao(chamado.id))}>
+              {ocupado === 'liberar' ? <Loader2 size={16} className="adm-spin" /> : <Check size={16} />}
+              {' '}Liberar para atendimento
             </button>
           </div>
         </div>
