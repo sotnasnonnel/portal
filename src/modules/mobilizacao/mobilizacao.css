@@ -636,11 +636,19 @@ button.mob-conta:hover { filter: brightness(0.96); }
 button.mob-conta:focus-visible { outline: 2px solid var(--m-primary); outline-offset: 2px; }
 
 /* A linha do passo que foi clicado, dentro do popup do processo: sem ela, quem
-   clicou numa bolinha no meio de vinte passos perde de vista qual era. */
+   clicou numa bolinha no meio de vinte passos perde de vista qual era.
+
+   COR CHEIA, sem barra. A versão anterior punha um `inset` em cada célula, e
+   como a tabela não tem bordas verticais o resultado eram cinco tracinhos
+   soltos no meio da linha — parecia sujeira, não destaque (relato de
+   25/09/2026). O fundo é o tom de linha do módulo, mais presente que o `soft`,
+   que sumia em tela clara. */
 .mob-tabela tr.is-destaque > td {
-  background: var(--m-primary-soft);
-  box-shadow: inset 3px 0 0 var(--m-primary);
+  background: var(--m-primary-line);
+  color: var(--m-ink);
 }
+/* O hover da tabela não pode apagar o destaque ao passar o mouse por ele. */
+.mob-tabela tbody tr.is-destaque:hover > td { background: var(--m-primary-line); }
 
 /* ---------------------------------------------------------------------------
    Comentários e anexos da ETAPA.
