@@ -13,6 +13,7 @@ import FinanceiroShell from '../modules/financeiro/app/components/AppShell';
 import AdministrativoShell from '../modules/administrativo/app/components/AppShell';
 import { podeAcessarAdm } from '../config/administrativo';
 import { podeConsultarOrganograma } from '../config/organograma';
+import { podeAjustarValores } from '../config/valores';
 import ProgramasShell from '../modules/programas/app/components/AppShell';
 import { podeAcessarProgramas } from '../config/programas';
 import EstoqueShell from '../modules/estoque/app/components/AppShell';
@@ -197,6 +198,15 @@ function AdmEmBreveRoute({ children }) {
 function OrganogramaRoute({ children }) {
   const { user } = useAuth();
   if (!podeConsultarOrganograma(user)) return <Navigate to="/home" replace />;
+  return children;
+}
+
+// Ajustes de Valores: gestor/admin do DP OU a flag avulsa (config/valores.js).
+// O gate de tela é o menos importante aqui — quem barra de verdade é a policy
+// de escrita de precos_itens, que segue a mesma regra.
+function ValoresRoute({ children }) {
+  const { user } = useAuth();
+  if (!podeAjustarValores(user)) return <Navigate to="/home" replace />;
   return children;
 }
 
@@ -642,13 +652,13 @@ export default function AppRoutes() {
           <Route
             path="/valores"
             element={
-              <ModuleRoute module="dp">
-                <ProtectedRoute allowedRoles={['gestor', 'admin']}>
+              <ProtectedRoute>
+                <ValoresRoute>
                   <LazyPage>
                     <AjustesValores />
                   </LazyPage>
-                </ProtectedRoute>
-              </ModuleRoute>
+                </ValoresRoute>
+              </ProtectedRoute>
             }
           />
 

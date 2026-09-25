@@ -6,6 +6,7 @@ import { supabase } from "../../services/supabase";
 import { isSuperAdmin } from "../../config/superAdmin";
 import { horasRoleFromPerfil, perfilEfetivoDp, HORAS_PAPEL_LABEL } from "../../config/horasPapel";
 import { PERFIS_COM_ORGANOGRAMA } from "../../config/organograma";
+import { PERFIS_COM_VALORES } from "../../config/valores";
 import "./PortalAdmin.css";
 
 const DP_ROLES = [
@@ -74,7 +75,7 @@ export default function PortalAdmin() {
     setLoading(true);
     setErr("");
     const [colab, reemb, solic] = await Promise.all([
-      supabase.from("colaboradores").select("id, nome, email, perfil, rh_dp, organograma_consulta, horas_role, financeiro_role, administrativo_role, programas_role, auth_id, ativo").order("nome"),
+      supabase.from("colaboradores").select("id, nome, email, perfil, rh_dp, organograma_consulta, valores_ajuste, horas_role, financeiro_role, administrativo_role, programas_role, auth_id, ativo").order("nome"),
       supabase.from("reembolso_profiles").select("id, email, role"),
       supabase.from("solic_profiles").select("id, email, role"),
     ]);
@@ -100,6 +101,8 @@ export default function PortalAdmin() {
         // Capacidade avulsa (nao e papel): abre so a Consulta do Organograma
         // para quem nao tem perfil de DP. Ver config/organograma.js.
         orgConsulta: c.organograma_consulta === true,
+        // Idem, para a tela de Ajustes de Valores.
+        valoresAjuste: c.valores_ajuste === true,
         // 'usuario' e NULL são a mesma coisa (sem elevação) — o select mostra
         // ambos como "Pela hierarquia".
         horasRole: c.horas_role && c.horas_role !== "usuario" ? c.horas_role : "",
@@ -141,6 +144,9 @@ export default function PortalAdmin() {
       // so faz diferenca para os outros (o select fica marcado e desativado).
       res = await supabase.from("colaboradores").update({ organograma_consulta: value }).eq("id", row.colabId);
       patch = { orgConsulta: value };
+    } else if (app === "valores") {
+      res = await supabase.from("colaboradores").update({ valores_ajuste: value }).eq("id", row.colabId);
+      patch = { valoresAjuste: value };
     } else if (app === "reembolso") {
       res = await supabase.from("reembolso_profiles").update({ role: value }).eq("id", row.reembId);
       patch = { reembRole: value };
@@ -215,6 +221,30 @@ export default function PortalAdmin() {
           onChange={(e) => changeRole(row, "organograma", e.target.checked)}
         />
         Consulta do Organograma
+      </label>
+    );
+  }
+
+  function ValoresCheck({ row }) {
+    const key = `${row.email}:valores`;
+    const saving = savingKey === key;
+    const peloPerfil = PERFIS_COM_VALORES.includes(perfilEfetivoDp(row.dpRole, row.dpRh));
+    return (
+      <label
+        className="pa-efetivo pa-check"
+        title={
+          peloPerfil
+            ? "Este perfil ja edita os Ajustes de Valores."
+            : "Abre so a tela Ajustes de Valores, sem nenhuma outra do DP."
+        }
+      >
+        <input
+          type="checkbox"
+          checked={peloPerfil || row.valoresAjuste}
+          disabled={peloPerfil || saving}
+          onChange={(e) => changeRole(row, "valores", e.target.checked)}
+        />
+        Ajustes de Valores
       </label>
     );
   }
@@ -344,6 +374,10 @@ export default function PortalAdmin() {
                         de fora do DP exigia torna-lo RH — que leva junto
                         Requisicoes DP, Horas Extras e Fechamento PJ. */}
                     <OrganogramaCheck row={row} />
+                    {/* Ajustes de Valores: a outra tela de Consultas que se
+                        libera sozinha. Sem ela, editar preço exigia virar
+                        gestor do DP. */}
+                    <ValoresCheck row={row} />
                   </td>
                   <td>
                     <RoleSelect row={row} app="horas" value={row.horasRole} options={HORAS_ROLES} hasAccess />

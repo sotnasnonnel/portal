@@ -6,11 +6,10 @@ import CurrencyInput from '../../../components/CurrencyInput';
 import { CATALOGOS, chavePreco } from '../../../config/precosItens';
 import { parseCurrency, numeroParaMascara } from '../../../utils/currencyMask';
 import { carregarPrecosMap, salvarPreco } from '../../../services/precosItens';
+import { podeAjustarValores } from '../../../config/valores';
 import '../../../components/UI/Components.css';
 import '../Gestor.css';
 import './AjustesValores.css';
-
-const PODE = ['gestor', 'admin'];
 
 export default function AjustesValores() {
   const { user } = useAuth();
@@ -21,7 +20,8 @@ export default function AjustesValores() {
   const [salvandoKey, setSalvandoKey] = useState(null);
   const [salvoKey, setSalvoKey] = useState(null);
 
-  const podeEditar = useMemo(() => PODE.includes(user?.perfil), [user]);
+  // Mesma regra da rota e da RLS: perfil do DP ou a flag avulsa.
+  const podeEditar = useMemo(() => podeAjustarValores(user), [user]);
 
   useEffect(() => {
     let vivo = true;

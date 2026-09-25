@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, ClipboardCheck, Users, CalendarClock, UserPlus, List, CalendarDays,
-  FileText, Network, Coins, PlusCircle, Workflow, Clock, ShieldAlert, ScrollText, Search,
+  FileText, Network, Coins, PlusCircle, Workflow, Clock, ShieldAlert, ScrollText,
   Receipt, Briefcase, Building2, FileBarChart, History, Settings, CalendarRange, HardHat,
 } from 'lucide-react';
 import { isHorasExtrasDp } from '../../config/horasExtras';
@@ -11,7 +11,8 @@ import {
   ROTA_FOLGA_CAMPO, isFolgaCampoRh, podeAcessarFolgaCampo,
   veAprovacoes as veAprovacoesFolga,
 } from '../../config/folgaCampo';
-import { soPelaFlagDoOrganograma } from '../../config/organograma';
+import { podeConsultarOrganograma } from '../../config/organograma';
+import { podeAjustarValores } from '../../config/valores';
 
 // Navegação da sidebar de Gestão de Pessoas, na mesma divisão dos outros
 // módulos (padrão do Financeiro): grupos colapsáveis + seções simples.
@@ -102,14 +103,25 @@ function grupoFolgaCampo(user) {
   };
 }
 
-const consultas = (comValores) => ({
-  label: 'Consultas',
-  key: 'consultas',
-  items: [
-    { label: 'Organograma', Icon: Network, href: '/organograma' },
-    ...(comValores ? [{ label: 'Ajustes de Valores', Icon: Coins, href: '/valores' }] : []),
-  ],
-});
+/**
+ * Consultas: montado pelo que a PESSOA pode, e não pelo perfil dela.
+ *
+ * As duas telas do grupo têm permissão própria, que vale tanto pelo perfil do
+ * DP quanto por flag avulsa (config/organograma.js e config/valores.js) — um
+ * atendente do Atendimento pode ter o Organograma, os Ajustes de Valores, os
+ * dois ou nenhum. Montar por permissão evita a lista de casos que existia aqui
+ * e faz o grupo sumir sozinho para quem não tem nenhuma das duas.
+ */
+const consultas = (user) => {
+  const items = [];
+  if (podeConsultarOrganograma(user)) {
+    items.push({ label: 'Organograma', Icon: Network, href: '/organograma' });
+  }
+  if (podeAjustarValores(user)) {
+    items.push({ label: 'Ajustes de Valores', Icon: Coins, href: '/valores' });
+  }
+  return items.length ? { label: 'Consultas', key: 'consultas', items } : null;
+};
 
 // ---------------------------------------------------------------------------
 // Áreas — a Home abre a escolha em popup (GestaoPessoasModal) e, dentro do
@@ -207,7 +219,6 @@ export function navSections({ perfil, user, pendencias = 0, requisicoes = 0, are
           { label: 'Fluxos de Aprovação', Icon: Workflow, href: '/admin/fluxos' },
         ],
       },
-      consultas(true),
     );
   } else if (perfil === 'gestor' || perfil === 'coordenador') {
     secoes.push(
@@ -238,7 +249,6 @@ export function navSections({ perfil, user, pendencias = 0, requisicoes = 0, are
           { label: 'Acompanhar', Icon: ClipboardCheck, href: '/gestor/solicitacoes/acompanhar', badge: requisicoes },
         ],
       },
-      consultas(perfil === 'gestor'),
     );
   } else if (perfil === 'rh') {
     secoes.push(
@@ -252,7 +262,6 @@ export function navSections({ perfil, user, pendencias = 0, requisicoes = 0, are
           { label: 'Requisições', Icon: ClipboardCheck, href: '/gestor/solicitacoes/acompanhar', badge: requisicoes },
         ],
       },
-      { label: 'Consultas', key: 'consultas', items: [{ label: 'Organograma', Icon: Search, href: '/organograma' }] },
     );
   } else {
     secoes.push({
@@ -262,11 +271,12 @@ export function navSections({ perfil, user, pendencias = 0, requisicoes = 0, are
     });
   }
 
-  // Consulta do Organograma liberada por flag, para quem não é do DP: entra
-  // como grupo próprio porque o perfil dessa pessoa não tem seção "Consultas"
-  // nenhuma (ver config/organograma.js). Sem Ajustes de Valores — a flag abre
-  // só a consulta.
-  if (soPelaFlagDoOrganograma(user)) secoes.push(consultas(false));
+  // O grupo entra para todo mundo que tenha ao menos uma das duas telas — por
+  // perfil ou por flag. `perfil` vem separado no argumento e o `user` pode ser o
+  // do login; juntar os dois evita que um chamador que só passe `perfil` perca
+  // as permissões, e vice-versa.
+  const grupoConsultas = consultas({ ...(user || {}), perfil: perfil ?? user?.perfil });
+  if (grupoConsultas) secoes.push(grupoConsultas);
 
   MODULOS_AUSENCIA.forEach((m) => secoes.push(grupoAusencia(user, m)));
   // A Folga de Campo está em piloto e só aparece para quem foi liberado. O card

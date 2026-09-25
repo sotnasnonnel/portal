@@ -163,6 +163,9 @@ export function AuthProvider({ children }) {
         // Capacidade avulsa, como admReatribui: abre SÓ a Consulta do
         // Organograma para quem não tem perfil de DP (ver config/organograma.js).
         organogramaConsulta: colab.organograma_consulta === true,
+        // Idem para a tela de Ajustes de Valores — só que esta abre ESCRITA, e
+        // a mesma regra está na RLS de precos_itens (ver config/valores.js).
+        valoresAjuste: colab.valores_ajuste === true,
         authId: authUser.id,
       });
       setReembolsoProfile(reemRes.data ?? null);
