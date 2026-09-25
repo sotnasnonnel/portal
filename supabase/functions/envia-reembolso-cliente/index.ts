@@ -1,8 +1,9 @@
 // Anexa ao pedido o PDF do reembolso aprovado que será COBRADO DO CLIENTE.
 //
 // Pedido da Alinne: todo reembolso marcado como "reembolsável pelo cliente"
-// precisa ter o PDF no sistema para a cobrança. Não vai por e-mail: fica
-// anexado e o Financeiro baixa pelo detalhe do pedido.
+// precisa ter o PDF no sistema para a cobrança. Fica anexado ao pedido (o
+// Financeiro baixa pelo detalhe) e vai por e-mail para ela. O PDF já traz as
+// notas fiscais dentro, inclusive as que foram anexadas em PDF.
 //
 // Quem gera o PDF é o NAVEGADOR de quem aprova (o mesmo gerador do botão
 // "Gerar PDF"), e ele sobe o arquivo no bucket 'reembolso-pdf-cliente'. Esta
@@ -13,6 +14,8 @@
 // aprovado, reembolsável e for reembolso (a mesma regra do gatilho do banco).
 //
 // Body: { id, path, reenviar? }
+// Destinatários: secret REEMBOLSO_CLIENTE_EMAILS (separados por vírgula), para
+// trocar férias/substituição sem deploy. Sem o secret, vai para a Alinne.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const CORS = {
@@ -22,6 +25,46 @@ const CORS = {
 };
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...CORS, "Content-Type": "application/json" } });
+}
+
+const DESTINATARIO_PADRAO = "alinne.oliveira@phdengenharia.eng.br";
+
+const BRL = (v: unknown) => Number(v ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+// Texto do banco entra em HTML: nome e obra são digitados pelo usuário.
+const esc = (v: unknown) =>
+  String(v ?? "")
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+const dataBr = (d: unknown) => {
+  if (!d) return null;
+  const p = String(d).slice(0, 10).split("-");
+  return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : String(d);
+};
+
+// Limite do sendMail do Graph: anexos até ~3 MB na mesma requisição. O base64
+// incha o arquivo em 4/3, então o teto aqui é sobre o tamanho BRUTO, com folga.
+// Acima disso o PDF vai por link — melhor um e-mail com link que um e-mail que
+// o Graph recusa inteiro.
+const LIMITE_ANEXO_BYTES = 2_200_000;
+const VALIDADE_LINK_SEG = 7 * 24 * 3600;
+
+function paraBase64(bytes: Uint8Array): string {
+  // Em blocos: String.fromCharCode(...arrayGrande) estoura a pilha.
+  let bin = "";
+  const BLOCO = 0x8000;
+  for (let i = 0; i < bytes.length; i += BLOCO) bin += String.fromCharCode(...bytes.subarray(i, i + BLOCO));
+  return btoa(bin);
+}
+
+async function graphToken(tenant: string, clientId: string, secret: string): Promise<string> {
+  const res = await fetch(`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ client_id: clientId, client_secret: secret, scope: "https://graph.microsoft.com/.default", grant_type: "client_credentials" }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(`token ${res.status}: ${data.error_description ?? JSON.stringify(data)}`);
+  return data.access_token as string;
 }
 
 Deno.serve(async (req) => {
@@ -95,25 +138,115 @@ Deno.serve(async (req) => {
     }
 
     // ---- o PDF tem de estar de fato no bucket ----
-    const pasta = path.slice(0, path.indexOf("/"));
     const nomePdf = path.slice(path.indexOf("/") + 1);
-    const { data: lista, error: lsErr } = await supabase.storage
-      .from("reembolso-pdf-cliente").list(pasta, { search: nomePdf });
-    if (lsErr || !(lista ?? []).some((f) => f.name === nomePdf)) {
-      await registrar(id, { status: "falhou", ultimo_erro: `PDF não encontrado no sistema${lsErr ? `: ${lsErr.message}` : "."}` });
+    const { data: pdfBlob, error: dlErr } = await supabase.storage.from("reembolso-pdf-cliente").download(path);
+    if (dlErr || !pdfBlob) {
+      await registrar(id, { status: "falhou", ultimo_erro: `PDF não encontrado no sistema${dlErr ? `: ${dlErr.message}` : "."}` });
       return json({ sent: false, motivo: "O PDF gerado não foi encontrado no sistema." });
     }
+    const bytes = new Uint8Array(await pdfBlob.arrayBuffer());
 
-    // Sem e-mail: o PDF fica anexado ao pedido e o Financeiro baixa pelo
-    // detalhe. 'enviado' no registro significa "anexado".
+    // Daqui em diante o PDF já está anexado ao pedido: mesmo que o e-mail
+    // falhe, o registro guarda o caminho para o Financeiro baixar.
+    const falhouEmail = async (erro: string) => {
+      await registrar(id, { status: "falhou", ultimo_erro: `PDF anexado, mas o e-mail não saiu: ${erro}`, pdf_path: path });
+      return json({ sent: false, motivo: `O PDF foi anexado, mas o e-mail não saiu: ${erro}` });
+    };
+
+    const destinatarios = (Deno.env.get("REEMBOLSO_CLIENTE_EMAILS") || DESTINATARIO_PADRAO)
+      .split(/[,;]/).map((e) => e.trim()).filter((e) => e.includes("@"));
+
+    const tenant = Deno.env.get("GRAPH_TENANT_ID");
+    const clientId = Deno.env.get("GRAPH_CLIENT_ID");
+    const secret = Deno.env.get("GRAPH_CLIENT_SECRET");
+    const sender = Deno.env.get("GRAPH_SENDER") ?? "sistema@phdengenharia.eng.br";
+    if (!tenant || !clientId || !secret) return await falhouEmail("envio de e-mail não configurado (GRAPH_*).");
+
+    const anexos: unknown[] = [];
+    let link = "";
+    if (bytes.length <= LIMITE_ANEXO_BYTES) {
+      anexos.push({
+        "@odata.type": "#microsoft.graph.fileAttachment",
+        name: nomePdf,
+        contentType: "application/pdf",
+        contentBytes: paraBase64(bytes),
+      });
+    } else {
+      const { data: s } = await supabase.storage.from("reembolso-pdf-cliente").createSignedUrl(path, VALIDADE_LINK_SEG);
+      link = s?.signedUrl ?? "";
+    }
+
+    const base = (Deno.env.get("PORTAL_URL") ?? "https://portal.phdengenharia.tech").replace(/\/+$/, "");
+    const pago = r.approved_amount != null ? Number(r.approved_amount) : Number(r.total ?? 0);
+    const linha = (rot: string, val: unknown) =>
+      val ? `<tr><td style="color:#6b7280;padding:2px 14px 2px 0">${rot}</td><td style="color:#1b2735">${val}</td></tr>` : "";
+    const subject = `Reembolso ${r.code ?? ""} aprovado — cobrar do cliente${r.client_obra ? ` (${r.client_obra})` : ""}`
+      .replace(/\s+/g, " ");
+
+    const html = `
+  <div style="background:#f2f2f2;padding:24px 0;font-family:Inter,Segoe UI,Arial,sans-serif">
+    <table role="presentation" align="center" width="520" cellpadding="0" cellspacing="0" style="width:520px;max-width:92%;background:#ffffff;border-radius:14px;overflow:hidden;box-shadow:0 6px 24px rgba(15,23,42,.08)">
+      <tr><td bgcolor="#26405d" style="background:#26405d;padding:18px 22px">
+        <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+          <td bgcolor="#c35e1e" style="background:#c35e1e;color:#fff;font-weight:800;font-size:13px;border-radius:8px;padding:7px 9px">R$</td>
+          <td style="padding-left:10px;color:#fff;font-size:18px;font-weight:800;letter-spacing:.3px">PHD <span style="color:#e8814a">Reembolso</span></td>
+        </tr></table>
+      </td></tr>
+      <tr><td style="padding:26px 26px 8px;color:#1b2735;font-size:15px;line-height:1.55">
+        <p style="margin:0 0 16px">O reembolso <strong>${esc(r.code)}</strong> foi aprovado e está marcado como
+          <strong>reembolsável pelo cliente</strong>. O PDF, com as notas fiscais, segue ${anexos.length ? "em anexo" : "no link abaixo"}.</p>
+        <table role="presentation" cellpadding="0" cellspacing="0" style="font-size:14px;margin-bottom:18px">
+          ${linha("Colaborador", esc(r.requester_name))}
+          ${linha("Cliente / Obra", esc(r.client_obra))}
+          ${linha("Valor aprovado", `<strong>${BRL(pago)}</strong>`)}
+          ${linha("Aprovado em", dataBr(r.decided_at))}
+          ${linha("Aprovado por", esc(r.decided_by_name))}
+          ${linha("Data de pagamento", dataBr(r.payment_date))}
+        </table>
+        ${link ? `<p style="margin:0 0 8px;font-size:13px;color:#8a6300;background:#fff3d6;border-radius:10px;padding:10px 12px">
+          O PDF passou do limite de anexo e segue por link, válido por 7 dias:<br>
+          <a href="${link}" style="color:#26405d">${esc(nomePdf)}</a></p>` : ""}
+      </td></tr>
+      <tr><td style="padding:0 26px 28px"><a href="${base}/#/reembolsos/${r.id}" style="background:#c35e1e;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 22px;border-radius:10px;display:inline-block">Ver no Portal PHD</a></td></tr>
+      <tr><td style="padding:14px 26px;border-top:1px solid #e3e3e3;color:#6b7280;font-size:12px">PHD Reembolso · envio automático para cobrança ao cliente — não responda.</td></tr>
+    </table>
+  </div>`;
+
+    let token = "";
+    try {
+      token = await graphToken(tenant, clientId, secret);
+    } catch (e) {
+      console.error("[envia-reembolso-cliente] graph token:", e);
+      return await falhouEmail("não foi possível autenticar no servidor de e-mail.");
+    }
+    const sendRes = await fetch(`https://graph.microsoft.com/v1.0/users/${encodeURIComponent(sender)}/sendMail`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: {
+          subject,
+          body: { contentType: "HTML", content: html },
+          toRecipients: destinatarios.map((address) => ({ emailAddress: { address } })),
+          attachments: anexos,
+        },
+        saveToSentItems: true,
+      }),
+    });
+    if (sendRes.status !== 202) {
+      const t = await sendRes.text();
+      console.error("[envia-reembolso-cliente] graph sendMail:", sendRes.status, t);
+      return await falhouEmail(`servidor de e-mail recusou (${sendRes.status}).`);
+    }
+
+    // 'enviado' no registro: anexado ao pedido E e-mail entregue ao Graph.
     await registrar(id, {
       status: "enviado",
-      ultimo_erro: null,
+      ultimo_erro: link ? "PDF acima do limite de anexo: foi por link, válido por 7 dias." : null,
       enviado_em: new Date().toISOString(),
-      enviado_para: null,
+      enviado_para: destinatarios.join(", "),
       pdf_path: path,
     });
-    return json({ sent: true, path });
+    return json({ sent: true, path, to: destinatarios });
   } catch (e) {
     console.error("[envia-reembolso-cliente] erro inesperado:", e);
     if (id) await registrar(id, { status: "falhou", ultimo_erro: `Erro inesperado: ${(e as Error)?.message ?? String(e)}` }).catch(() => {});

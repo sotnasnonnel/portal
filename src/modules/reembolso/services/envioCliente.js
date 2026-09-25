@@ -1,5 +1,5 @@
-// PDF anexado automaticamente quando o reembolso é cobrado do cliente. Não vai
-// por e-mail: fica no bucket e o Financeiro baixa pelo detalhe do pedido.
+// PDF anexado automaticamente quando o reembolso é cobrado do cliente. Fica no
+// bucket (o Financeiro baixa pelo detalhe do pedido) e a função manda por e-mail.
 //
 // Por que o PDF sai do NAVEGADOR e não do servidor: o gerador (reembolsoPdf.js)
 // já existe aqui e carrega o padrão de nome de arquivo exigido pelo cliente.
@@ -67,7 +67,7 @@ export async function lerEnvioCliente(id) {
   try {
     const { data, error } = await supabase
       .from(TABELA)
-      .select("status, tentativas, ultimo_erro, enviado_em, pdf_path, atualizado_em")
+      .select("status, tentativas, ultimo_erro, enviado_em, enviado_para, pdf_path, atualizado_em")
       .eq("reimbursement_id", id)
       .maybeSingle();
     if (error) return null;
@@ -96,6 +96,29 @@ export async function listarEnviosPendentes() {
   } catch {
     return [];
   }
+}
+
+/**
+ * Gera de novo, e manda por e-mail, o PDF de TODOS os pedidos que estão no
+ * registro — anexados, pendentes ou com falha. Existe para quando o gerador
+ * muda (ex.: as notas em PDF passaram a entrar no documento) e os PDFs já
+ * anexados ficaram na versão antiga. Um por vez: cada um gera o PDF no
+ * navegador e sobe o arquivo, e em paralelo isso travaria a aba.
+ *
+ * `aoAvancar(feitos, total)` alimenta o progresso na tela.
+ */
+export async function regerarTodosOsPdfs(aoAvancar) {
+  const { data, error } = await supabase.from(TABELA).select("reimbursement_id");
+  if (error) throw new Error(error.message);
+  const ids = (data ?? []).map((e) => e.reimbursement_id);
+  const falhas = [];
+  for (const [i, id] of ids.entries()) {
+    aoAvancar?.(i, ids.length);
+    const r = await enviarPdfAoCliente(id, { reenviar: true });
+    if (!r.ok) falhas.push({ id, motivo: r.motivo });
+  }
+  aoAvancar?.(ids.length, ids.length);
+  return { total: ids.length, falhas };
 }
 
 /** Baixa o PDF anexado (bucket privado: URL assinada de curta duração). */

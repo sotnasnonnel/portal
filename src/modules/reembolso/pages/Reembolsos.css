@@ -131,6 +131,88 @@
   color: var(--ink);
 }
 
+/* Listas suspensas de Cliente / Obra e Solicitante + período da data do pedido. */
+.filters-busca {
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.busca-campo,
+.busca-data input {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 8px);
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.busca-campo {
+  cursor: pointer;
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.busca-campo:focus-visible,
+.busca-data input:focus-visible {
+  outline: none;
+  border-color: var(--terracotta);
+  box-shadow: var(--focus-ring);
+}
+
+.busca-data {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.filters-busca .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* A busca quebra linha no celular em vez de rolar de lado como os chips. */
+@media (max-width: 768px) {
+  .reembolso-root .filters-busca {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+  .busca-campo {
+    flex-basis: 100%;
+  }
+}
+
+/* Cabeçalho que ordena: parece o texto do th, com a seta ao lado. */
+.th-ordena {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.th-ordena:hover,
+.th-ordena.is-active {
+  color: var(--terracotta);
+}
+
+.th-ordena:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: 4px;
+}
+
 .chip {
   padding: 6px 12px;
   border-radius: 999px;

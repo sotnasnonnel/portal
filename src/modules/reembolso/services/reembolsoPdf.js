@@ -5,6 +5,7 @@
 
 import { jsPDF } from "jspdf";
 import { autoTable } from "jspdf-autotable";
+import { PDFDocument } from "pdf-lib";
 import { formatBillable, formatCurrency, formatDate } from "../lib/format.js";
 import { computePaymentDate } from "../lib/reimbursementPolicy.js";
 import { STATUS_LABEL } from "./reimbursements.js";
@@ -176,10 +177,11 @@ async function montarReembolsoPdf(r) {
     margin: { left: margin, right: margin },
   });
 
-  // Uma pagina por nota anexada. Nota em PDF nao vira pagina de imagem: o
-  // jsPDF nao embute outro PDF, entao a pagina fica com a legenda e o aviso de
-  // que o arquivo original esta no sistema — melhor do que uma pagina em
-  // branco ou um erro tecnico no meio do documento.
+  // Uma pagina por nota anexada. O jsPDF nao embute outro PDF, entao nota em
+  // PDF fica guardada aqui e as paginas dela entram depois, pelo pdf-lib, no
+  // ponto em que apareceriam (juntarNotasPdf). Nota em PDF que nao abre
+  // (corrompida, protegida) ganha a pagina de aviso de antes.
+  const notasPdf = [];
   for (const img of r.nf_images ?? []) {
     let dataUrl;
     try {
@@ -189,9 +191,6 @@ async function montarReembolsoPdf(r) {
     }
     if (!dataUrl) continue;
 
-    doc.addPage();
-    doc.setFontSize(11);
-    doc.setTextColor(38, 64, 93);
     const legenda = [
       img.nf_number ? `NF ${img.nf_number}` : "NF s/ número",
       img.local || "",
@@ -199,18 +198,31 @@ async function montarReembolsoPdf(r) {
     ]
       .filter(Boolean)
       .join("  •  ");
-    doc.text(legenda, margin, 40);
 
     if (mimeFromDataUrl(dataUrl) === "application/pdf") {
+      const nota = await abrirPdf(dataUrl);
+      if (nota) {
+        notasPdf.push({ depoisDaPagina: doc.getNumberOfPages(), nota });
+        continue;
+      }
+      doc.addPage();
+      doc.setFontSize(11);
+      doc.setTextColor(38, 64, 93);
+      doc.text(legenda, margin, 40);
       doc.setFontSize(10);
       doc.setTextColor(90, 90, 90);
       doc.text(
-        "Nota anexada em PDF — o arquivo original está no pedido, no sistema.",
+        "Nota anexada em PDF que não pôde ser incluída — o arquivo original está no pedido, no sistema.",
         margin,
         70
       );
       continue;
     }
+
+    doc.addPage();
+    doc.setFontSize(11);
+    doc.setTextColor(38, 64, 93);
+    doc.text(legenda, margin, 40);
 
     try {
       const props = doc.getImageProperties(dataUrl);
@@ -227,17 +239,47 @@ async function montarReembolsoPdf(r) {
     }
   }
 
-  return doc;
+  return juntarNotasPdf(doc, notasPdf);
+}
+
+async function abrirPdf(dataUrl) {
+  try {
+    const bytes = await (await fetch(dataUrl)).arrayBuffer();
+    const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true });
+    return pdf.getPageCount() > 0 ? pdf : null;
+  } catch {
+    return null;
+  }
+}
+
+// Devolve os bytes do PDF final: o que o jsPDF montou, com as paginas de cada
+// nota em PDF inseridas logo apos a pagina em que ela entrou na fila.
+async function juntarNotasPdf(doc, notasPdf) {
+  const base = doc.output("arraybuffer");
+  if (!notasPdf.length) return new Uint8Array(base);
+
+  const final = await PDFDocument.load(base);
+  // Do fim para o comeco: inserir mais adiante nao desloca os pontos anteriores.
+  for (const { depoisDaPagina, nota } of [...notasPdf].reverse()) {
+    const paginas = await final.copyPages(nota, nota.getPageIndices());
+    paginas.forEach((pg, i) => final.insertPage(depoisDaPagina + i, pg));
+  }
+  return final.save();
 }
 
 /** Botao "Gerar PDF": baixa o arquivo, como sempre fez. */
 export async function generateReembolsoPdf(r) {
-  const doc = await montarReembolsoPdf(r);
-  doc.save(buildReembolsoFileName(r));
+  const bytes = await montarReembolsoPdf(r);
+  const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = buildReembolsoFileName(r);
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 /** Envio ao Financeiro: o mesmo PDF, como arquivo, com o nome no padrao do cliente. */
 export async function gerarReembolsoPdfBlob(r) {
-  const doc = await montarReembolsoPdf(r);
-  return { blob: doc.output("blob"), fileName: buildReembolsoFileName(r) };
+  const bytes = await montarReembolsoPdf(r);
+  return { blob: new Blob([bytes], { type: "application/pdf" }), fileName: buildReembolsoFileName(r) };
 }

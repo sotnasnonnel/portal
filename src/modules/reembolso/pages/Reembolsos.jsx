@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertCircle, CalendarCheck, Clock, FileSpreadsheet, FileText, Loader2, Plus, RefreshCw } from "lucide-react";
+import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, CalendarCheck, Clock, FileSpreadsheet, FileText, Loader2, Plus, RefreshCw, X } from "lucide-react";
 import { listReimbursements, paidAmount, STATUS, STATUS_LABEL } from "../services/reimbursements.js";
 import { formatBillable, formatCurrency, formatDate, relativeDays } from "../lib/format.js";
 import { kindMeta } from "../lib/kind.js";
+import { filtrarLista, opcoesDaLista, ordenarLista, proximaOrdem } from "../lib/listaFiltros.js";
 import { useAuth } from "../context/AuthContext.jsx";
-import { useToast } from "../context/FeedbackContext.jsx";
+import { useConfirm, useToast } from "../context/FeedbackContext.jsx";
 import { baixarPlanilhaReembolsos } from "../services/reembolsoPlanilha.js";
 import StatusBadge from "../components/StatusBadge.jsx";
 import EnviosPendentesAviso from "../components/EnviosPendentesAviso.jsx";
+import { regerarTodosOsPdfs } from "../services/envioCliente.js";
 import "./Reembolsos.css";
 
 const FILTERS = [
@@ -36,6 +38,8 @@ const BILLABLE_FILTERS = [
   { value: "nao", label: "Custo da empresa" },
   { value: "sem", label: "Não informado" },
 ];
+
+const BUSCA_VAZIA = { obra: "", solicitante: "", de: "", ate: "" };
 
 function matchBillable(row, filter) {
   if (!filter) return true;
@@ -81,7 +85,9 @@ export default function Reembolsos({ kind = "reembolso" }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [baixando, setBaixando] = useState(false);
+  const [regerando, setRegerando] = useState(null); // null = parado; { feitos, total } = em andamento
   const showToast = useToast();
+  const confirm = useConfirm();
   // null = ainda não escolhido: cada papel cai na sua fila de trabalho —
   // gestor em "Aguardando Aprovação", admin em "Aprovados" (a pagar/gerar PDF),
   // solicitante em "Todos". "" é uma escolha explícita do usuário.
@@ -93,6 +99,13 @@ export default function Reembolsos({ kind = "reembolso" }) {
   const roleDefault = isGestor ? STATUS.EM_ANALISE : isAdmin ? STATUS.APROVADO : "";
   const activeFilter = statusFilter ?? roleDefault;
   const activeBillable = isAdmin ? billableFilter : "";
+  const [busca, setBusca] = useState(BUSCA_VAZIA);
+  const [ordem, setOrdem] = useState(null);
+  const temBusca = Object.values(busca).some(Boolean);
+  const mudarBusca = (campo) => (e) => setBusca((b) => ({ ...b, [campo]: e.target.value }));
+  // Opções das listas suspensas: de todos os pedidos carregados, e não só do
+  // filtro de status, para a opção escolhida não sumir ao trocar de status.
+  const opcoes = useMemo(() => opcoesDaLista(rows), [rows]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -121,9 +134,40 @@ export default function Reembolsos({ kind = "reembolso" }) {
   }, [rows, activeFilter]);
 
   const filtered = useMemo(
-    () => byStatus.filter((r) => matchBillable(r, activeBillable)),
-    [byStatus, activeBillable]
+    () =>
+      ordenarLista(
+        filtrarLista(
+          byStatus.filter((r) => matchBillable(r, activeBillable)),
+          busca
+        ),
+        ordem
+      ),
+    [byStatus, activeBillable, busca, ordem]
   );
+
+  // Para quando o gerador do PDF muda e os já anexados ficam na versão antiga.
+  const regerarPdfs = async () => {
+    const ok = await confirm({
+      title: "Regerar PDFs do cliente",
+      message:
+        "Gera de novo o PDF de todos os reembolsos cobrados do cliente (com as notas fiscais dentro) " +
+        "e manda cada um por e-mail para o Financeiro. Deixe esta aba aberta até terminar. Continuar?",
+      confirmLabel: "Regerar e enviar",
+      cancelLabel: "Voltar",
+    });
+    if (!ok) return;
+    setRegerando({ feitos: 0, total: 0 });
+    try {
+      const { total, falhas } = await regerarTodosOsPdfs((feitos, t) => setRegerando({ feitos, total: t }));
+      if (!falhas.length) showToast(`${total} PDF(s) gerados e enviados.`, "success");
+      else showToast(`${total - falhas.length} de ${total} enviados. ${falhas.length} falharam — veja o aviso acima da lista.`, "error");
+    } catch (err) {
+      showToast(`Não foi possível regerar os PDFs: ${err.message}`, "error");
+    } finally {
+      setRegerando(null);
+      load();
+    }
+  };
 
   // A planilha sai com o que está na tela: status e recorte do cliente valem.
   const baixarPlanilha = async () => {
@@ -213,6 +257,17 @@ export default function Reembolsos({ kind = "reembolso" }) {
             >
               {baixando ? <Loader2 size={16} className="spin" /> : <FileSpreadsheet size={16} />}
               {baixando ? "Gerando…" : "Baixar Excel"}
+            </button>
+          )}
+          {isAdmin && !isAdiantamento && (
+            <button
+              className="btn btn-ghost"
+              onClick={regerarPdfs}
+              disabled={regerando !== null}
+              title="Gera de novo o PDF de cobrança de todos os reembolsos cobrados do cliente e manda por e-mail"
+            >
+              {regerando ? <Loader2 size={16} className="spin" /> : <FileText size={16} />}
+              {regerando ? `Gerando ${regerando.feitos} de ${regerando.total}…` : "Regerar PDFs do cliente"}
             </button>
           )}
           {canCreate && (
@@ -308,6 +363,44 @@ export default function Reembolsos({ kind = "reembolso" }) {
           </div>
         )}
 
+        <div className="filters filters-busca">
+          <select
+            className="busca-campo"
+            aria-label="Filtrar por cliente ou obra"
+            value={busca.obra}
+            onChange={mudarBusca("obra")}
+          >
+            <option value="">Cliente / Obra: todos</option>
+            {opcoes.obras.map((o) => (
+              <option key={o} value={o}>{o}</option>
+            ))}
+          </select>
+          <select
+            className="busca-campo"
+            aria-label="Filtrar por solicitante"
+            value={busca.solicitante}
+            onChange={mudarBusca("solicitante")}
+          >
+            <option value="">Solicitante: todos</option>
+            {opcoes.solicitantes.map((o) => (
+              <option key={o} value={o}>{o}</option>
+            ))}
+          </select>
+          <label className="busca-data">
+            <span>De</span>
+            <input type="date" value={busca.de} max={busca.ate || undefined} onChange={mudarBusca("de")} />
+          </label>
+          <label className="busca-data">
+            <span>Até</span>
+            <input type="date" value={busca.ate} min={busca.de || undefined} onChange={mudarBusca("ate")} />
+          </label>
+          {temBusca && (
+            <button type="button" className="chip" onClick={() => setBusca(BUSCA_VAZIA)}>
+              <X size={12} /> Limpar
+            </button>
+          )}
+        </div>
+
         {loading ? (
           <div className="list-empty" role="status" aria-live="polite">
             <Loader2 size={28} className="spin" aria-hidden="true" />
@@ -319,6 +412,7 @@ export default function Reembolsos({ kind = "reembolso" }) {
             canCreate={canCreate}
             activeFilter={activeFilter}
             activeBillable={activeBillable}
+            temBusca={temBusca}
             meta={meta}
             onCreate={() => navigate(`${meta.base}/novo`)}
           />
@@ -326,10 +420,10 @@ export default function Reembolsos({ kind = "reembolso" }) {
           <table className="table table-responsive">
             <thead>
               <tr>
-                <th>Solicitante</th>
-                <th>Cliente / Obra</th>
+                <ThOrdena coluna="solicitante" ordem={ordem} setOrdem={setOrdem}>Solicitante</ThOrdena>
+                <ThOrdena coluna="obra" ordem={ordem} setOrdem={setOrdem}>Cliente / Obra</ThOrdena>
                 <th title="Reembolsável pelo cliente?">Cliente reembolsa</th>
-                <th>Data</th>
+                <ThOrdena coluna="data" ordem={ordem} setOrdem={setOrdem}>Data</ThOrdena>
                 <th className="num">Total</th>
                 <th>Status</th>
                 {isAdiantamento && <th>Prestação de contas</th>}
@@ -407,9 +501,18 @@ export default function Reembolsos({ kind = "reembolso" }) {
   );
 }
 
-function EmptyState({ role, canCreate, activeFilter, activeBillable, meta, onCreate }) {
+function EmptyState({ role, canCreate, activeFilter, activeBillable, temBusca, meta, onCreate }) {
   const filtered = activeFilter !== "";
   const s = meta.singular;
+
+  if (temBusca) {
+    return (
+      <div className="list-empty">
+        <FileText size={32} />
+        <p>{`Nenhum ${s} encontrado com essa busca.`}</p>
+      </div>
+    );
+  }
 
   // O recorte por cliente é o mais provável de zerar a lista (é o segundo
   // filtro), e responder "tudo em dia!" a ele mentiria: não está vazio porque o
@@ -461,6 +564,24 @@ function EmptyState({ role, canCreate, activeFilter, activeBillable, meta, onCre
         </button>
       )}
     </div>
+  );
+}
+
+// Cabeçalho que ordena ao clicar: crescente, decrescente, volta à ordem original.
+function ThOrdena({ coluna, ordem, setOrdem, children }) {
+  const ativa = ordem?.coluna === coluna;
+  const Icone = !ativa ? ArrowUpDown : ordem.direcao === "asc" ? ArrowUp : ArrowDown;
+  return (
+    <th aria-sort={ativa ? (ordem.direcao === "asc" ? "ascending" : "descending") : "none"}>
+      <button
+        type="button"
+        className={`th-ordena${ativa ? " is-active" : ""}`}
+        onClick={() => setOrdem((o) => proximaOrdem(o, coluna))}
+      >
+        {children}
+        <Icone size={12} aria-hidden="true" />
+      </button>
+    </th>
   );
 }
 

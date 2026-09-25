@@ -11,8 +11,8 @@ const dataHora = (iso) => (iso
 
 /**
  * PDF para cobrança do cliente, no detalhe de um reembolso cobrado do cliente.
- * Só o admin vê (a RLS do registro também só libera a ele). O PDF não vai por
- * e-mail: fica anexado aqui e o Financeiro baixa quando for cobrar.
+ * Só o admin vê (a RLS do registro também só libera a ele). O PDF fica anexado
+ * aqui e também vai por e-mail para o Financeiro.
  *
  * Existe porque o PDF sai do navegador de quem aprova: se a aba fechou no meio,
  * o pedido fica "pendente" e é AQUI que o Financeiro descobre e gera de novo.
@@ -36,7 +36,8 @@ export default function EnvioClientePainel({ reembolsoId }) {
   if (!envio) return null;
 
   const situacao = SITUACAO_ENVIO[envio.status] || { label: envio.status, tom: "alerta" };
-  const anexado = envio.status === "enviado" && !!envio.pdf_path;
+  // Com o e-mail falhando o PDF já pode estar anexado: dá para baixar mesmo assim.
+  const anexado = !!envio.pdf_path;
 
   async function gerar() {
     if (gerando) return;
@@ -46,7 +47,7 @@ export default function EnvioClientePainel({ reembolsoId }) {
     const r = await enviarPdfAoCliente(reembolsoId, { reenviar: true });
     setEnvio(await lerEnvioCliente(reembolsoId));
     setGerando(false);
-    showToast(r.ok ? "PDF anexado ao pedido." : `O PDF não foi anexado: ${r.motivo}`, r.ok ? "success" : "error");
+    showToast(r.ok ? "PDF anexado e enviado por e-mail." : r.motivo, r.ok ? "success" : "error");
   }
 
   async function baixar() {
@@ -65,7 +66,12 @@ export default function EnvioClientePainel({ reembolsoId }) {
       <FileText size={16} aria-hidden="true" />
       <div className="envio-cliente-txt">
         <strong>PDF para cobrança do cliente: {situacao.label}</strong>
-        {envio.status === "enviado" && <span>Gerado em {dataHora(envio.enviado_em)}</span>}
+        {envio.status === "enviado" && (
+          <span>
+            Enviado em {dataHora(envio.enviado_em)}
+            {envio.enviado_para ? ` para ${envio.enviado_para}` : ""}
+          </span>
+        )}
         {envio.status === "pendente" && (
           <span>O PDF ainda não foi gerado. Se passou algum tempo desde a aprovação, gere agora.</span>
         )}
@@ -82,7 +88,7 @@ export default function EnvioClientePainel({ reembolsoId }) {
         )}
         <button type="button" className="btn btn-ghost btn-sm" onClick={gerar} disabled={gerando}>
           {gerando ? <Loader2 size={14} className="spin" /> : <RefreshCw size={14} />}
-          {anexado ? "Gerar de novo" : "Gerar agora"}
+          {anexado ? "Gerar e enviar de novo" : "Gerar agora"}
         </button>
       </div>
     </div>

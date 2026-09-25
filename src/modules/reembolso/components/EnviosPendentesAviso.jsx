@@ -35,8 +35,8 @@ export default function EnviosPendentesAviso({ rows = [] }) {
       <div className="envio-cliente-txt">
         <strong>
           {pendentes.length === 1
-            ? "1 reembolso cobrado do cliente ainda sem PDF anexado"
-            : `${pendentes.length} reembolsos cobrados do cliente ainda sem PDF anexado`}
+            ? "1 reembolso cobrado do cliente ainda sem PDF enviado"
+            : `${pendentes.length} reembolsos cobrados do cliente ainda sem PDF enviado`}
           {falharam ? ` (${falharam} com falha)` : ""}
         </strong>
         <span>
