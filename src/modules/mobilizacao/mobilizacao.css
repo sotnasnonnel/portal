@@ -187,6 +187,18 @@
 .mob-pill.tom-finalizado { background: #ecfdf5; color: var(--m-green); }
 .mob-pill.tom-cancelado { background: var(--m-gray-100); color: var(--m-muted); }
 
+/* Situação da PESSOA (tela "Quem está mobilizado"), que não é a do processo:
+   verde = está na obra, azul = a caminho, âmbar = saindo, cinza = saiu. */
+.mob-pill.tom-sit-mobilizado { background: #ecfdf5; color: var(--m-green); }
+.mob-pill.tom-sit-em_mobilizacao { background: #eff6ff; color: #1d4ed8; }
+.mob-pill.tom-sit-em_desmobilizacao { background: #fffbeb; color: var(--m-amber); }
+.mob-pill.tom-sit-desmobilizado { background: var(--m-gray-100); color: var(--m-muted); }
+
+/* Os cartões do topo dessa tela filtram ao clicar. */
+button.mob-ind-tile { cursor: pointer; font-family: inherit; text-align: left; }
+button.mob-ind-tile:hover { border-color: var(--m-primary-line); }
+button.mob-ind-tile:focus-visible { outline: 2px solid var(--m-primary); outline-offset: 2px; }
+
 /* progresso "4 de 11" */
 .mob-prog { display: flex; align-items: center; gap: 8px; min-width: 120px; }
 .mob-prog-barra { flex: 1; height: 6px; border-radius: 999px; background: var(--m-gray-100); overflow: hidden; }
