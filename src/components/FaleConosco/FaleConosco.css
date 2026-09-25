@@ -256,3 +256,124 @@
   gap: 8px;
   margin-top: 4px;
 }
+
+/* Anexos da mensagem: botão + dica de colar o print, a lista do que já foi
+   escolhido e o aviso de conteúdo sensível. */
+.fc-anexos {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.fc-anexos-barra {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.fc-btn-sm {
+  min-height: var(--ctl-h-sm, 32px);
+  padding: 0 12px;
+  font-size: var(--font-size-sm, 0.8125rem);
+}
+
+.fc-btn-ghost:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.fc-anexos-dica {
+  font-size: var(--font-size-xs, 0.75rem);
+  color: var(--muted, #6b7280);
+}
+
+.fc-anexos-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fc-anexo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.fc-anexo-thumb {
+  width: 44px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  object-fit: cover;
+  background: var(--neutral-bg, #f8fafc);
+}
+
+.fc-anexo-pdf {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-soft, #4b5563);
+}
+
+.fc-anexo-nome {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--font-size-sm, 0.8125rem);
+  color: var(--ink, #111827);
+}
+
+.fc-anexo-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted, #6b7280);
+  cursor: pointer;
+}
+
+.fc-anexo-x:hover {
+  background: var(--status-reprovado-bg, #fee2e2);
+  color: var(--status-reprovado-fg, #b91c1c);
+}
+
+.fc-anexo-x:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring, 0 0 0 3px rgba(194, 65, 12, 0.35));
+}
+
+/* Aviso de conteúdo sensível: tom de atenção, não de erro — é orientação que
+   vale antes de qualquer anexo, não uma recusa. */
+.fc-aviso-sensivel {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--tone-andamento-bg, #fff3d6);
+  color: var(--tone-andamento-fg, #8a6300);
+  font-size: var(--font-size-xs, 0.75rem);
+  line-height: 1.45;
+}
+
+.fc-aviso-sensivel svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}

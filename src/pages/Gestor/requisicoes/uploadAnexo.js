@@ -46,8 +46,11 @@ const lerParaMemoria = async (file) => {
 /**
  * Sobe um arquivo e devolve { path, nome }. Lança Error com mensagem pronta
  * para exibir ao usuário.
+ *
+ * `pasta` (opcional) vai na frente do caminho — para buckets cuja policy
+ * confere o dono pela primeira pasta (ex.: fale-conosco-anexos).
  */
-export async function enviarArquivo(bucket, file) {
+export async function enviarArquivo(bucket, file, pasta = '') {
   if (!file.type) {
     throw new Error(
       `Não foi possível identificar o tipo do arquivo "${file.name}". `
@@ -55,7 +58,7 @@ export async function enviarArquivo(bucket, file) {
     );
   }
   const blob = await lerParaMemoria(file);
-  const path = `${crypto.randomUUID()}/${sanitizarNome(file.name)}`;
+  const path = `${pasta ? `${pasta}/` : ''}${crypto.randomUUID()}/${sanitizarNome(file.name)}`;
 
   let ultimo = null;
   for (let i = 0; i < TENTATIVAS; i += 1) {

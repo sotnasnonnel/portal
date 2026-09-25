@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Loader2, RefreshCw, Send, AlertTriangle, CheckCircle2, Search, Inbox } from 'lucide-react';
+import { ArrowLeft, Loader2, RefreshCw, Send, AlertTriangle, CheckCircle2, Search, Inbox, FileText } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../services/supabase';
 import { notificarFaleConoscoRespondido } from '../../services/notificarFaleConosco';
+import { ehImagem, urlsAnexosFaleConosco } from '../../services/faleConoscoAnexos';
 import {
   SLA_HORAS,
   TIPOS_FALE_CONOSCO,
@@ -22,7 +23,7 @@ import './FaleConosco.css';
 // É também para onde a notificação leva, dos dois lados.
 
 const SELECT = `
-  id, tipo, modulo, rota, mensagem, status, resposta, respondido_em, prazo_em, created_at,
+  id, tipo, modulo, rota, mensagem, anexos, status, resposta, respondido_em, prazo_em, created_at,
   autor:colaboradores!autor_id (nome, email),
   respondente:colaboradores!respondido_por (nome)
 `;
@@ -41,6 +42,7 @@ export default function FaleConoscoCaixa() {
   const [busca, setBusca] = useState('');
   const [rascunho, setRascunho] = useState({});   // id -> texto da resposta
   const [salvando, setSalvando] = useState(null);
+  const [urls, setUrls] = useState({});           // path do anexo -> URL assinada
 
   // Sem setState antes do await: o primeiro efeito da tela chama esta função, e
   // mexer no estado de forma síncrona dentro do efeito dispara uma cascata de
@@ -57,6 +59,10 @@ export default function FaleConoscoCaixa() {
     setErro(error?.message ?? '');
     setItens(data ?? []);
     setLoading(false);
+    // Bucket privado: uma leva de URLs assinadas para todos os anexos da lista,
+    // em vez de uma chamada por clique.
+    const paths = (data ?? []).flatMap((i) => (i.anexos ?? []).map((a) => a.path));
+    setUrls(await urlsAnexosFaleConosco(paths));
   }, []);
 
   useEffect(() => {
@@ -253,6 +259,30 @@ export default function FaleConoscoCaixa() {
                 </div>
 
                 <p className="fcx-msg">{item.mensagem}</p>
+
+                {item.anexos?.length ? (
+                  <ul className="fcx-anexos">
+                    {item.anexos.map((a) => {
+                      const url = urls[a.path];
+                      const conteudo = ehImagem(a.nome) && url ? (
+                        <img src={url} alt={a.nome} className="fcx-anexo-img" loading="lazy" />
+                      ) : (
+                        <span className="fcx-anexo-arq">
+                          <FileText size={14} aria-hidden="true" /> {a.nome}
+                        </span>
+                      );
+                      return (
+                        <li key={a.path}>
+                          {url ? (
+                            <a href={url} target="_blank" rel="noreferrer" title={`Abrir ${a.nome}`}>
+                              {conteudo}
+                            </a>
+                          ) : conteudo}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : null}
 
                 {item.resposta ? (
                   <div className="fcx-resposta">

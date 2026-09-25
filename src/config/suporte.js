@@ -62,5 +62,16 @@ export function prazoRelativo(prazoIso) {
   return ms >= 0 ? `em ${texto}` : `há ${texto}`;
 }
 
+// Anexos da mensagem. Espelha o bucket e a constraint da migração
+// supabase_migration_fale_conosco_anexos.sql (tipos, 10 MB, até 3): validar
+// aqui evita que o erro chegue como a recusa crua do Storage.
+export const ANEXOS_FC = {
+  bucket: 'fale-conosco-anexos',
+  max: 3,
+  maxMb: 10,
+  tipos: ['image/png', 'image/jpeg', 'image/webp', 'application/pdf'],
+  accept: 'image/png,image/jpeg,image/webp,application/pdf',
+};
+
 /** Evento que abre o modal a partir do botão da barra superior. */
 export const FALE_CONOSCO_OPEN_EVENT = 'abrir_fale_conosco';
