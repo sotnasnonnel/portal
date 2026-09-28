@@ -97,6 +97,17 @@ export function dataIso(br) {
   return `${m[3]}-${m[2]}-${m[1]}`;
 }
 
+const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+  'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+
+// 'AAAA-MM-DD' -> '02 de janeiro de 2026' (forma usada nos instrumentos).
+export function dataExtenso(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso ?? ''));
+  if (!m) return '—';
+  const mes = MESES[Number(m[2]) - 1];
+  return mes ? `${m[3]} de ${mes} de ${m[1]}` : '—';
+}
+
 export function dataHoraBr(ts) {
   if (!ts) return '—';
   const d = new Date(ts);
@@ -129,6 +140,82 @@ export function idade(isoNascimento, hoje = new Date()) {
   if (mes < Number(m[2]) || (mes === Number(m[2]) && hoje.getDate() < Number(m[3]))) anos -= 1;
   return anos >= 0 ? anos : null;
 }
+
+// ---------------------------------------------------------------------------
+// Extenso (distrato e demais instrumentos: "R$ 16.560,05 (dezesseis mil...)")
+// ---------------------------------------------------------------------------
+
+const UNIDADES = ['zero', 'um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove', 'dez',
+  'onze', 'doze', 'treze', 'quatorze', 'quinze', 'dezesseis', 'dezessete', 'dezoito', 'dezenove'];
+const DEZENAS = ['', '', 'vinte', 'trinta', 'quarenta', 'cinquenta', 'sessenta', 'setenta', 'oitenta', 'noventa'];
+const CENTENAS = ['', 'cento', 'duzentos', 'trezentos', 'quatrocentos', 'quinhentos', 'seiscentos',
+  'setecentos', 'oitocentos', 'novecentos'];
+const ESCALAS = [['', ''], ['mil', 'mil'], ['milhão', 'milhões'], ['bilhão', 'bilhões']];
+
+// 1..999 por extenso ("cento e vinte e três").
+function trioExtenso(n) {
+  if (n === 100) return 'cem';
+  const partes = [];
+  const c = Math.floor(n / 100);
+  const r = n % 100;
+  if (c) partes.push(CENTENAS[c]);
+  if (r < 20) {
+    if (r) partes.push(UNIDADES[r]);
+  } else {
+    const u = r % 10;
+    partes.push(DEZENAS[Math.floor(r / 10)] + (u ? ` e ${UNIDADES[u]}` : ''));
+  }
+  return partes.join(' e ');
+}
+
+// Inteiro por extenso. Grupos de três: o último entra com " e " quando é menor
+// que cem ou centena redonda ("mil e quinhentos"), senão com vírgula
+// ("dezesseis mil, quinhentos e sessenta").
+export function numeroExtenso(valor) {
+  let n = Math.trunc(Math.abs(Number(valor) || 0));
+  if (n === 0) return 'zero';
+  const grupos = [];
+  while (n > 0) {
+    grupos.unshift(n % 1000);
+    n = Math.floor(n / 1000);
+  }
+  if (grupos.length > ESCALAS.length) return String(Math.trunc(Number(valor) || 0));
+
+  const ditos = [];
+  grupos.forEach((g, i) => {
+    if (!g) return;
+    const escala = ESCALAS[grupos.length - 1 - i];
+    const nome = g === 1 ? escala[0] : escala[1];
+    // "mil" e não "um mil"; já "um milhão" leva o "um".
+    const texto = nome === 'mil' && g === 1 ? 'mil' : [trioExtenso(g), nome].filter(Boolean).join(' ');
+    ditos.push(texto);
+  });
+
+  if (ditos.length === 1) return ditos[0];
+  const ultimo = [...grupos].reverse().find(Boolean);
+  const separador = ultimo < 100 || ultimo % 100 === 0 ? ' e ' : ', ';
+  return ditos.slice(0, -1).join(', ') + separador + ditos[ditos.length - 1];
+}
+
+// Reais por extenso: 16560.05 -> 'dezesseis mil, quinhentos e sessenta reais e cinco centavos'.
+export function valorExtenso(valor) {
+  const centavosTotais = Math.round(Math.abs(Number(valor) || 0) * 100);
+  const reais = Math.floor(centavosTotais / 100);
+  const centavos = centavosTotais % 100;
+  const partes = [];
+  if (reais) partes.push(`${numeroExtenso(reais)} ${reais === 1 ? 'real' : 'reais'}`);
+  if (centavos) partes.push(`${numeroExtenso(centavos)} ${centavos === 1 ? 'centavo' : 'centavos'}`);
+  return partes.length ? partes.join(' e ') : 'zero reais';
+}
+
+// 'R$ 16.560,05 (dezesseis mil, quinhentos e sessenta reais e cinco centavos)'.
+export const valorComExtenso = (v) => `${fmtBRL(v)} (${valorExtenso(v)})`;
+
+// '7 (sete)' — como os prazos aparecem redigidos no instrumento.
+export const numeroComExtenso = (n, casas = 0) => {
+  const i = Math.trunc(Number(n) || 0);
+  return `${String(i).padStart(casas, '0')} (${numeroExtenso(i)})`;
+};
 
 // ---------------------------------------------------------------------------
 // Documentos
