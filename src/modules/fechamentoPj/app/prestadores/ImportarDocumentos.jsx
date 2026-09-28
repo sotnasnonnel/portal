@@ -3,7 +3,7 @@ import { FolderArchive, Check, AlertTriangle, RefreshCw, Plus, Trash2, Undo2 } f
 import { useFechamentoPj } from '../components/contexto';
 import { Modal, Aviso } from '../components/ui';
 import { lerPastaDoPrestador } from '../../lib/pastaDocumentos';
-import { diferencas } from '../../lib/documentos';
+import { diferencas, PARENTESCOS, situacaoDoDependente } from '../../lib/documentos';
 import { normalizar, dataBr, fmtBRL, mascararCpf, mascararCnpj, cpfValido, digitos } from '../../lib/formato';
 import { salvarPrestador, registrarImportacao, auditar } from '../../lib/dados';
 import { Contador, Etapas, Progresso } from './pecas';
@@ -11,24 +11,11 @@ import TableScroll from '../../../../components/UI/TableScroll';
 
 const MASCARA = { cpf: mascararCpf, cnpj: mascararCnpj };
 
-const PARENTESCOS = ['Cônjuge', 'Filho', 'Filha', 'Filho(a)', 'Enteado(a)', 'Pai', 'Mãe', 'Outro'];
-
 const BADGE_DEPENDENTE = {
   'Dados localizados': 'aprovada',
   'Preenchido na conferência': 'aprovada',
   Descartado: 'reprovada',
 };
-
-// O que falta para o dependente entrar no cadastro sem pendência.
-const LACUNAS = [['cpf', 'CPF'], ['nascimento', 'nascimento'], ['sexo', 'sexo'], ['parentesco', 'parentesco']];
-
-function situacaoDoDependente(d) {
-  if (d.descartado) return 'Descartado';
-  if (d.cpf && !cpfValido(d.cpf)) return 'CPF inválido';
-  const faltando = LACUNAS.filter(([campo]) => !d[campo]).map(([, rotulo]) => rotulo);
-  if (!faltando.length) return d.lido ? 'Dados localizados' : 'Preenchido na conferência';
-  return `Falta ${faltando.join(', ')}`;
-}
 
 function valorLegivel(campo, valor) {
   if (valor === null || valor === undefined || valor === '') return '—';

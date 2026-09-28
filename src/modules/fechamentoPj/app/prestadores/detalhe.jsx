@@ -19,6 +19,7 @@ import { EMPRESAS, ROTA_FOLHA, ROTA_PRESTADORES } from './comum';
 import RateioEditor from './RateioEditor';
 import Encerramento, { CancelarEncerramento } from './Encerramento';
 import Distrato from './Distrato';
+import Dependentes from './Dependentes';
 import ImportarOrganograma from './ImportarOrganograma';
 import ImportarDocumentos from './ImportarDocumentos';
 import ConferenciaBradesco from './ConferenciaBradesco';
@@ -549,10 +550,7 @@ function CartaoBeneficio({ titulo, icone, beneficio }) {
   );
 }
 
-const PENDENTE = /INAT|NAO LOCALIZADO|NÃO LOCALIZADO|DIVERG|PEND/i;
-
 function Beneficios({ prestador, onBradesco }) {
-  const dependentes = Array.isArray(prestador.dependentes) ? prestador.dependentes : [];
   return (
     <div className="pjp-painel">
       <div className="pj-toolbar">
@@ -565,27 +563,7 @@ function Beneficios({ prestador, onBradesco }) {
         <CartaoBeneficio titulo="Plano médico" icone={<Stethoscope size={18} />} beneficio={prestador.beneficios?.medico} />
         <CartaoBeneficio titulo="Plano odontológico" icone={<Smile size={18} />} beneficio={prestador.beneficios?.odonto} />
       </div>
-      <div className="pj-secao-titulo">Dependentes cadastrados ({dependentes.length})</div>
-      {dependentes.length ? (
-        <TableScroll>
-          <table className="data-table">
-            <thead><tr><th>Nome</th><th>CPF</th><th>Nascimento</th><th>Parentesco</th><th>Situação</th><th>Fonte</th><th>Benefício</th></tr></thead>
-            <tbody>
-              {dependentes.map((d, i) => (
-                <tr key={`${d.nome}-${i}`}>
-                  <td>{d.nome}</td>
-                  <td className="pjp-nowrap">{d.cpf ? mascararCpf(d.cpf) : '—'}</td>
-                  <td className="pjp-nowrap">{dataBr(d.nascimento)}</td>
-                  <td>{d.parentesco || '—'}</td>
-                  <td>{d.situacao ? <span className={`badge ${PENDENTE.test(d.situacao) ? 'pj-neutro' : 'aprovada'}`}>{d.situacao}</span> : '—'}</td>
-                  <td>{d.fonte || '—'}</td>
-                  <td>{d.beneficio || '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </TableScroll>
-      ) : <Vazio>Nenhum dependente cadastrado.</Vazio>}
+      <Dependentes prestador={prestador} />
     </div>
   );
 }

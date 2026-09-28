@@ -2,7 +2,7 @@
 // extrai os dados de dentro do texto dos PDFs. Nada aqui toca no navegador —
 // quem entrega o texto é lib/pdfTexto.js, e o ZIP é aberto por lib/zip.js.
 
-import { dataIso, digitos } from './formato.js';
+import { cpfValido, dataIso, digitos } from './formato.js';
 
 // ── Classificação ────────────────────────────────────────────────────────────
 
@@ -383,6 +383,28 @@ export function analisarPasta(arquivos, nomeArquivo) {
     avisos,
     podeConfirmar,
   };
+}
+
+// ── Dependentes ──────────────────────────────────────────────────────────────
+
+export const PARENTESCOS = ['Cônjuge', 'Filho', 'Filha', 'Filho(a)', 'Enteado(a)', 'Pai', 'Mãe', 'Outro'];
+
+export const BENEFICIOS_DEPENDENTE = ['Plano Médico', 'Plano Odontológico'];
+
+// O que falta para o dependente entrar no cadastro sem pendência.
+const LACUNAS = [['cpf', 'CPF'], ['nascimento', 'nascimento'], ['sexo', 'sexo'], ['parentesco', 'parentesco']];
+
+/**
+ * Situação do dependente a partir do que está preenchido. `lido` e `descartado`
+ * só existem na tela de importação; no cadastro já salvo, dependente completo
+ * conta como preenchido na conferência.
+ */
+export function situacaoDoDependente(d) {
+  if (d.descartado) return 'Descartado';
+  if (d.cpf && !cpfValido(d.cpf)) return 'CPF inválido';
+  const faltando = LACUNAS.filter(([campo]) => !d[campo]).map(([, rotulo]) => rotulo);
+  if (!faltando.length) return d.lido ? 'Dados localizados' : 'Preenchido na conferência';
+  return `Falta ${faltando.join(', ')}`;
 }
 
 /** Diferenças entre o que foi lido e o cadastro atual, para a tela de conferência. */

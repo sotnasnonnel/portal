@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   classificar, dataPorExtenso, lerCartaoCnpj, lerCpf, lerContrato, lerComprovanteEndereco,
-  lerCertidaoNascimento, nomeDaPasta, analisarPasta, diferencas,
+  lerCertidaoNascimento, nomeDaPasta, analisarPasta, diferencas, situacaoDoDependente,
 } from './documentos.js';
 
 // Trechos reais das pastas que o RH manda, encurtados no que não é lido.
@@ -184,4 +184,19 @@ test('diferenças comparam o lido com o cadastro atual', () => {
   assert.equal(d.length, 2);
   assert.deepEqual(d.map((x) => x.campo).sort(), ['municipio', 'valor_mensal']);
   assert.equal(diferencas(perfil, null).length, 0);
+});
+
+// A situação do dependente é a mesma regra na importação e na correção manual
+// da aba Benefícios: nunca é digitada, sai do que está preenchido.
+test('situação do dependente: completo, com lacuna e com CPF errado', () => {
+  const completo = { cpf: '16584283666', nascimento: '2010-03-28', sexo: 'Feminino', parentesco: 'Filha' };
+  assert.equal(situacaoDoDependente(completo), 'Preenchido na conferência');
+  assert.equal(situacaoDoDependente({ ...completo, lido: true }), 'Dados localizados');
+  assert.equal(situacaoDoDependente({ ...completo, descartado: true }), 'Descartado');
+  assert.equal(situacaoDoDependente({ ...completo, cpf: '11111111111' }), 'CPF inválido');
+});
+
+test('situação lista as lacunas na ordem dos campos', () => {
+  assert.equal(situacaoDoDependente({}), 'Falta CPF, nascimento, sexo, parentesco');
+  assert.equal(situacaoDoDependente({ cpf: '16584283666', sexo: 'Feminino' }), 'Falta nascimento, parentesco');
 });
