@@ -1,4 +1,6 @@
-import { GraduationCap, Activity, CreditCard, Handshake, BookOpen, Radar, Gauge } from 'lucide-react';
+import {
+  GraduationCap, Activity, CreditCard, Handshake, BookOpen, Radar, Gauge, Megaphone,
+} from 'lucide-react';
 
 /**
  * Item em destaque do popup "Soluções Integradas": aparece sozinho no topo,
@@ -56,6 +58,16 @@ export const SOLUCOES_INTEGRADAS = [
     desc: '',
     url: 'https://minepulse.phdengenharia.tech',
     icon: Gauge,
+  },
+  {
+    // Canal de denúncia (Denouncefy). Fica aqui, e não num card próprio da
+    // Home, porque é uma ferramenta externa como as outras — e porque quem
+    // precisa dele procura pelo nome, não por um botão em destaque na tela
+    // inicial, que exporia a intenção de quem estivesse olhando a tela.
+    nome: 'Canal de Denúncia',
+    desc: 'Relatos confidenciais, inclusive anônimos',
+    url: 'https://app.denouncefy.com/portal/relatosphdengenharia',
+    icon: Megaphone,
   },
   {
     nome: 'Biblioteca',
