@@ -117,7 +117,7 @@ export async function desativarEtapaCatalogo(id) {
 const CAMPOS_PROCESSO = `
   id, numero, fluxo, titulo, status, profissional_id, profissional_nome,
   empresa_phd, cliente_phd, cliente_final, local_obra, cod_ct, cod_phd,
-  coo_phd, ger_phd, contrato, data_base, observacoes,
+  coo_phd, ger_phd, contrato, data_base, observacoes, campos,
   solicitante_id, responsavel_id, origem, origem_chamado_id,
   prazo_em, etapas_total, etapas_concluidas, criado_em, concluido_em
 `;

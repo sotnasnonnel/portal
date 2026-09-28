@@ -56,17 +56,21 @@ export const CAMPOS_DO_CHAMADO = {
   cliente: 'cliente_phd',
   cliente_final: 'cliente_final',
   empresa_phd: 'empresa_phd',
-  data_inicio_cliente: 'data_base',
 };
 
 /**
- * A data-base sai de campos DIFERENTES conforme o movimento: mobilizacao usa
- * a data de inicio no cliente, desmobilizacao usa a data em que a pessoa sai.
- * Sem esse desvio, o processo de desmobilizacao nascia sem prazo em passo
- * nenhum — o formulario simplesmente nao tem "data de inicio".
+ * As datas do chamado que NAO sao data-base.
+ *
+ * Ate 28/09/2026 a data de inicio no cliente virava a data-base do processo, e
+ * com ela todos os prazos nasciam deslocados para o futuro — o Jarbas viu isso
+ * como "4d de folga" numa etapa de SLA 0, feita no dia. Data-base, neste
+ * modelo, e de onde partem as etapas RAIZ, e isso e a ABERTURA (e o que a carga
+ * da planilha usou, e o que o comentario da coluna sempre disse).
+ *
+ * As duas datas continuam viajando, agora como informacao de operacao: quando a
+ * pessoa entra na obra, e quando sai. Elas aparecem no resumo do processo.
  */
-export const dataBaseDoChamado = (campos = {}) =>
-  campos.data_desmobilizacao || campos.data_inicio_cliente || '';
+export const DATAS_DO_CHAMADO = ['data_inicio_cliente', 'data_desmobilizacao'];
 
 /** Traduz `chamados_adm.campos` para o `p_dados` de mobilizacao_abrir. */
 export function dadosDoChamado(campos = {}) {
@@ -79,7 +83,11 @@ export function dadosDoChamado(campos = {}) {
   // catálogo consulta para decidir quais etapas nascem.
   if (campos.movimento) dados.movimento = campos.movimento;
 
-  const base = dataBaseDoChamado(campos);
-  if (base) dados.data_base = base;
+  // Quem define a data-base e o banco, no momento em que cria o processo
+  // (app_private.mob_dados_do_chamado): e o dia da abertura, que num chamado
+  // com alcada e o dia da aprovacao.
+  for (const chave of DATAS_DO_CHAMADO) {
+    if (campos[chave]) dados[chave] = campos[chave];
+  }
   return dados;
 }

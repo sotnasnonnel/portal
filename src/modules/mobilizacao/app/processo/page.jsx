@@ -161,6 +161,16 @@ export default function ProcessoMob() {
           <Campo rot="Gerente PHD" val={processo.ger_phd} />
           <Campo rot="Responsável" val={processo.responsavelNome} />
           <Campo rot="Aberto em" val={dataHora(processo.criado_em)} />
+          {/* As duas datas que a pessoa digitou no chamado. Elas NÃO são a
+              data-base (isso é a abertura): são o alvo da operação — quando a
+              pessoa entra na obra, quando sai. Ficavam invisíveis desde que
+              deixaram de mandar no prazo. */}
+          {processo.campos?.data_inicio_cliente && (
+            <Campo rot="Início no cliente" val={dataBr(processo.campos.data_inicio_cliente)} />
+          )}
+          {processo.campos?.data_desmobilizacao && (
+            <Campo rot="Saída da obra" val={dataBr(processo.campos.data_desmobilizacao)} />
+          )}
         </div>
 
         <div className="mob-prog" style={{ marginTop: 8 }}>
@@ -180,9 +190,11 @@ export default function ProcessoMob() {
           </p>
         )}
 
-        {/* A data-base é de onde partem as etapas raiz. Desmobilização nasce
-            sem ela (o chamado não tem data de início), e sem data-base o
-            processo inteiro fica sem prazo — daí o destaque. */}
+        {/* A data-base é de onde partem as etapas raiz, e por padrão é o dia em
+            que o processo nasceu (num chamado com alçada, o dia da aprovação).
+            Fica editável porque o marco real às vezes é outro — contrato
+            assinado antes, obra que atrasou —, e mudá-la reprojeta o que ainda
+            não aconteceu. */}
         {souTime && !encerrado && (
           <div className="mob-campo" style={{ maxWidth: 260, marginTop: 12 }}>
             <label htmlFor="mob-data-base">
@@ -196,7 +208,8 @@ export default function ProcessoMob() {
               onChange={(ev) => acao('data_base', () => definirDataBase(processo.id, ev.target.value))}
             />
             <span className="mob-campo-dica">
-              Mudar aqui reprojeta os prazos das etapas que ainda não aconteceram.
+              De onde partem os prazos. Nasce com a data de abertura do processo; mudar aqui
+              reprojeta as etapas que ainda não aconteceram.
             </span>
           </div>
         )}

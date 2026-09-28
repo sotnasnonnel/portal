@@ -48,7 +48,10 @@ test('traduz os campos do chamado para o processo', () => {
   assert.equal(dados.profissional_nome, 'GUILHERME DE ASSIS BRAGA');
   assert.equal(dados.cod_ct, 'IMCS-CT08');
   assert.equal(dados.ger_phd, 'PAULO PAIVA');
-  assert.equal(dados.data_base, '2026-09-01', 'a data de início vira a data-base do processo');
+  // A data de início no cliente NÃO é mais a data-base (quem a define é o
+  // banco, no dia da abertura) — ela viaja como informação do processo.
+  assert.equal(dados.data_base, undefined, 'a data-base não sai mais do formulário');
+  assert.equal(dados.data_inicio_cliente, '2026-09-01');
   assert.equal(dados.movimento, 'Nova mobilização', 'o movimento viaja para a condição do catálogo');
 });
 
