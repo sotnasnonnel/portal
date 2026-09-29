@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  resumoIndicadores, fechouNoPrazo, estaAtrasado, estaAberto, filtrarPorArea,
+  resumoIndicadores, fechouNoPrazo, estaAtrasado, estaAberto, filtrarPorArea, diasDeAtendimento,
 } from './indicadores.js';
 
 const DIA = 24 * 3600 * 1000;
@@ -142,7 +142,11 @@ test('por serviço soma abertos e encerrados na mesma linha', () => {
     ch({ servicoLabel: 'Uber', status: 'reprovado' }),
     ch({ servicoLabel: 'EPI' }),
   ], AGORA);
-  assert.deepEqual(r.porServico[0], { nome: 'Uber', abertos: 1, encerrados: 1, total: 2 });
+  // tempoMedio/medidos entraram com o pedido de tempo médio por tipo: nenhum
+  // destes foi FECHADO (um está aberto, o outro reprovado), então não há média.
+  assert.deepEqual(r.porServico[0], {
+    nome: 'Uber', abertos: 1, encerrados: 1, total: 2, tempoMedio: null, medidos: 0,
+  });
 });
 
 test('lista vazia não quebra nem inventa número', () => {
@@ -188,4 +192,45 @@ test('filtrarPorArea reconhece serviço novo de TI pela classe', () => {
   const lista = [{ classe: 'ti', servico: 'servico-que-ainda-nao-existe' }];
   assert.equal(filtrarPorArea(lista, 'ti').length, 1);
   assert.equal(filtrarPorArea(lista, 'adm').length, 0);
+});
+
+const fechado = (extra = {}) => ({
+  status: 'fechado', classe: 'ti', servico: 'instalacao-software',
+  criado_em: '2026-09-01T09:00:00Z', fechado_em: '2026-09-04T09:00:00Z', ...extra,
+});
+
+test('diasDeAtendimento conta da entrada na fila até o fechamento', () => {
+  assert.equal(diasDeAtendimento(fechado()), 3);
+});
+
+// Com alçada, o relógio do time começa na liberação: o tempo parado na mesa do
+// gerente não é tempo de atendimento.
+test('diasDeAtendimento parte da análise quando houve aprovação', () => {
+  assert.equal(diasDeAtendimento(fechado({ analise_em: '2026-09-03T09:00:00Z' })), 1);
+});
+
+test('só chamado fechado tem tempo de atendimento', () => {
+  assert.equal(diasDeAtendimento(fechado({ status: 'aberto', fechado_em: null })), null);
+  assert.equal(diasDeAtendimento(fechado({ status: 'reprovado' })), null);
+  assert.equal(diasDeAtendimento(null), null);
+});
+
+test('porServico traz o tempo médio e quantos entraram na conta', () => {
+  const r = resumoIndicadores([
+    fechado({ servicoLabel: 'Instalação de software' }),
+    fechado({ servicoLabel: 'Instalação de software', fechado_em: '2026-09-06T09:00:00Z' }),
+    { status: 'aberto', servicoLabel: 'Instalação de software', criado_em: '2026-09-01T09:00:00Z' },
+  ], AGORA);
+  const linha = r.porServico.find((s) => s.nome === 'Instalação de software');
+  assert.equal(linha.total, 3);
+  assert.equal(linha.tempoMedio, 4);   // (3 + 5) / 2
+  assert.equal(linha.medidos, 2);
+});
+
+test('serviço sem nenhum fechado não inventa média', () => {
+  const r = resumoIndicadores([
+    { status: 'aberto', servicoLabel: 'Verificações', criado_em: '2026-09-01T09:00:00Z' },
+  ], AGORA);
+  assert.equal(r.porServico[0].tempoMedio, null);
+  assert.equal(r.porServico[0].medidos, 0);
 });

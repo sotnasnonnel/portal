@@ -3,6 +3,10 @@ import { BarChart3, Loader2, AlertCircle, Info } from 'lucide-react';
 import ListaAtrasados from '../components/ListaAtrasados';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { listarParaIndicadores } from '../../lib/chamados';
+// Dependência de mão única, como no detalhe do chamado: o Atendimento lê da
+// Mobilização, e a Mobilização não conhece o Atendimento.
+import { listarProcessos } from '../../../mobilizacao/lib/mobilizacao';
+import { tempoMedioDias } from '../../../mobilizacao/lib/tempoProcesso';
 import { resumoIndicadores, filtrarPorArea, AREAS_INDICADORES } from '../../lib/indicadores';
 import { STATUS_LABEL } from '../../lib/statusChamado';
 
@@ -11,6 +15,7 @@ const pct = (n) => (n === null ? '—' : `${n}%`);
 export default function DashboardAdm() {
   const { modules } = useAuth();
   const [chamados, setChamados] = useState([]);
+  const [processos, setProcessos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
   const [verAtrasados, setVerAtrasados] = useState(false);
@@ -28,12 +33,28 @@ export default function DashboardAdm() {
     }
   }, []);
 
+  // Os processos de mobilização vêm à parte e em silêncio: são um cartão a mais
+  // no painel, e uma falha ao lê-los não pode derrubar o resto dos indicadores.
+  // Inclui os encerrados de propósito — a média só se calcula com o que acabou.
+  useEffect(() => {
+    let vivo = true;
+    listarProcessos({ apenasAbertos: false })
+      .then((lista) => { if (vivo) setProcessos(lista); })
+      .catch(() => { if (vivo) setProcessos([]); });
+    return () => { vivo = false; };
+  }, []);
+
   useEffect(() => { carregar(); }, [carregar]);
 
   const agora = Date.now();
   // O filtro entra ANTES do resumo: assim todo número da tela — cartões, SLA,
   // atrasados e as duas tabelas — fala da mesma área, sem conta paralela.
   const r = resumoIndicadores(filtrarPorArea(chamados, area), agora);
+  // Mobilização é trabalho do time do Adm; no recorte de TI estes dois cartões
+  // não têm o que dizer, e some em vez de mostrar "—".
+  const mostraMobilizacao = area !== 'ti';
+  const tempoPessoas = tempoMedioDias(processos.filter((p) => p.fluxo === 'mobilizacao_pessoa'));
+  const tempoEmpresas = tempoMedioDias(processos.filter((p) => p.fluxo === 'mobilizacao_empresa'));
   const souDoTime = modules?.administrativo === 'admin' || modules?.administrativo === 'atendente';
   const maiorClasse = Math.max(1, ...r.abertosPorClasse.map((c) => c.total));
 
@@ -130,6 +151,37 @@ export default function DashboardAdm() {
             )}
           </div>
 
+          {/* Tempo médio de mobilização — pedido do André em 29/09/2026. Conta
+              da abertura do processo até a última etapa feita, e só entra
+              processo concluído: incluir os que ainda correm baixaria a média
+              com quem começou ontem. */}
+          {mostraMobilizacao && (
+            <div className="adm-ind-tiles">
+              <div className="adm-card adm-ind-tile">
+                <span className="adm-ind-rot">Mobilização de pessoas</span>
+                <strong className="adm-ind-num">
+                  {tempoPessoas.media === null ? '—' : `${tempoPessoas.media} d`}
+                </strong>
+                <span className="adm-ind-pe">
+                  {tempoPessoas.total
+                    ? `tempo médio, em ${tempoPessoas.total} processo(s) concluído(s)`
+                    : 'nenhum processo concluído ainda'}
+                </span>
+              </div>
+              <div className="adm-card adm-ind-tile">
+                <span className="adm-ind-rot">Mobilização de empresa</span>
+                <strong className="adm-ind-num">
+                  {tempoEmpresas.media === null ? '—' : `${tempoEmpresas.media} d`}
+                </strong>
+                <span className="adm-ind-pe">
+                  {tempoEmpresas.total
+                    ? `tempo médio, em ${tempoEmpresas.total} processo(s) concluído(s)`
+                    : 'nenhum processo concluído ainda'}
+                </span>
+              </div>
+            </div>
+          )}
+
           <div className="adm-card">
             <h2 className="adm-card-tit">Chamados em aberto por tipo</h2>
             <p className="adm-campo-dica">Do maior volume para o menor — é onde a fila está.</p>
@@ -187,7 +239,10 @@ export default function DashboardAdm() {
             <div className="adm-tabela-scroll">
               <table className="adm-tabela">
                 <thead>
-                  <tr><th>Serviço</th><th>Em aberto</th><th>Fechados</th><th>Total</th></tr>
+                  <tr>
+                    <th>Serviço</th><th>Em aberto</th><th>Fechados</th><th>Total</th>
+                    <th>Tempo médio</th>
+                  </tr>
                 </thead>
                 <tbody>
                   {r.porServico.map((s) => (
@@ -196,6 +251,11 @@ export default function DashboardAdm() {
                       <td className="num">{s.abertos}</td>
                       <td className="num">{s.encerrados}</td>
                       <td className="num">{s.total}</td>
+                      {/* Média só dos fechados; o title diz de quantos saiu,
+                          para ninguém tomar a média de um caso por tendência. */}
+                      <td className="num" title={s.medidos ? `${s.medidos} chamado(s) fechado(s)` : ''}>
+                        {s.tempoMedio === null ? '—' : `${s.tempoMedio} d`}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

@@ -210,12 +210,12 @@ export function navSections({ perfil, user, pendencias = 0, requisicoes = 0, are
         ],
       },
       {
-        label: 'Requisições DP',
+        label: 'Requisições',
         group: true,
         key: 'requisicoes',
         Icon: FileText,
         items: [
-          { label: 'Requisições DP', Icon: FileText, href: '/admin/solicitacoes', badge: requisicoes },
+          { label: 'Requisições', Icon: FileText, href: '/admin/solicitacoes', badge: requisicoes },
           { label: 'Fluxos de Aprovação', Icon: Workflow, href: '/admin/fluxos' },
         ],
       },
@@ -240,7 +240,7 @@ export function navSections({ perfil, user, pendencias = 0, requisicoes = 0, are
           { label: 'Minha Ausência', Icon: CalendarDays, href: '/gestor/minha-ausencia' },
         ] },
       {
-        label: 'Requisições DP',
+        label: 'Requisições',
         group: true,
         key: 'requisicoes',
         Icon: FileText,
@@ -253,7 +253,7 @@ export function navSections({ perfil, user, pendencias = 0, requisicoes = 0, are
   } else if (perfil === 'rh') {
     secoes.push(
       {
-        label: 'Requisições DP',
+        label: 'Requisições',
         group: true,
         key: 'requisicoes',
         Icon: FileText,

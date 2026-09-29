@@ -26,6 +26,10 @@ export const MOD_AUSENCIA = {
   evento: 'ausencias_programadas_atualizadas',
   navKey: 'ausenciaProgramada',
   arquivo: 'ausencia_programada',
+  // Só aqui o RH tira gente do controle (pedido do Maicon, 29/09/2026). A Folga
+  // de Campo não tem a flag nem as RPCs — e não faz sentido ter: lá o registro
+  // nasce do próprio pedido, não de uma lista gerada para todo mundo.
+  controlePessoas: true,
 
   nome: 'Ausência Programada',
   nomeMinusculo: 'ausência programada',

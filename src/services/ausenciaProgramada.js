@@ -139,6 +139,32 @@ function montar(mod) {
     avisar();
   }
 
+  // RH: quem está fora do controle — a lista que permite devolver alguém.
+  async function listarForaDoControle() {
+    if (!mod.controlePessoas) return [];
+    const { data, error } = await supabase.rpc(fn('fora_listar'));
+    checar(error);
+    return data || [];
+  }
+
+  // O que a pessoa já tem no controle, para a tela avisar ANTES de removê-la.
+  async function resumoDoColaborador(colaboradorId) {
+    const { data, error } = await supabase.rpc(fn('resumo_do_colaborador'), { p_colaborador: colaboradorId });
+    checar(error);
+    return (data || [])[0] || { periodos: 0, pedidos: 0, saldo: 0 };
+  }
+
+  // RH: tira do controle (dentro = false) ou devolve (dentro = true). Não apaga
+  // nada — só decide quem aparece nas listas e quem ganha período automático.
+  async function definirControle(colaboradorId, dentro) {
+    const { error } = await supabase.rpc(fn('definir_controle'), {
+      p_colaborador: colaboradorId,
+      p_dentro: dentro,
+    });
+    checar(error);
+    avisar();
+  }
+
   // RH: cadastra um período à mão (colaborador sem histórico).
   async function criarPeriodo(campos) {
     const { error } = await supabase
@@ -162,5 +188,8 @@ function montar(mod) {
     cancelar,
     atualizarPeriodo,
     criarPeriodo,
+    listarForaDoControle,
+    resumoDoColaborador,
+    definirControle,
   };
 }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Users, LayoutDashboard, AlertTriangle, CalendarDays, Download, Pencil, UserPlus, RefreshCw, Wallet,
+  UserMinus, Undo2,
 } from 'lucide-react';
 import {
   csv, diaISO, diasAteLimite, fmtDataBr, rotuloPeriodo, situacaoPeriodo, statusExibido, statusLabel,
@@ -31,6 +32,8 @@ export default function VisaoGeralAusencia({ mod = MOD_AUSENCIA, escopo = 'equip
   const [periodos, setPeriodos] = useState([]);
   const [pedidos, setPedidos] = useState([]);
   const [semPeriodo, setSemPeriodo] = useState([]);
+  const [foraDoControle, setForaDoControle] = useState([]);
+  const [removendo, setRemovendo] = useState(null); // { colaborador, resumo }
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState('');
   const [okMsg, setOkMsg] = useState('');
@@ -43,14 +46,16 @@ export default function VisaoGeralAusencia({ mod = MOD_AUSENCIA, escopo = 'equip
   const carregar = useCallback(async () => {
     setErro('');
     try {
-      const [ps, ss, sp] = await Promise.all([
+      const [ps, ss, sp, fora] = await Promise.all([
         api.listarPeriodos(escopo),
         api.listarSolicitacoes(escopo),
         ehRh ? api.listarSemPeriodo() : Promise.resolve([]),
+        ehRh ? api.listarForaDoControle() : Promise.resolve([]),
       ]);
       setPeriodos(ps);
       setPedidos(ss);
       setSemPeriodo(sp);
+      setForaDoControle(fora);
     } catch (e) {
       setErro(e?.message || 'Falha ao carregar.');
     } finally {
@@ -153,6 +158,41 @@ export default function VisaoGeralAusencia({ mod = MOD_AUSENCIA, escopo = 'equip
     }
   }
 
+  // Pergunta ao banco o que a pessoa tem ANTES de abrir a confirmação: remover
+  // quem já usa o controle é permitido, mas nunca às cegas.
+  async function pedirRemocao(colaborador) {
+    setErro('');
+    try {
+      setRemovendo({ colaborador, resumo: await api.resumoDoColaborador(colaborador.id) });
+    } catch (e) {
+      setErro(e?.message || 'Falha ao consultar o colaborador.');
+    }
+  }
+
+  async function confirmarRemocao() {
+    const alvo = removendo?.colaborador;
+    setRemovendo(null);
+    if (!alvo) return;
+    try {
+      await api.definirControle(alvo.id, false);
+      setOkMsg(`${alvo.nome} saiu do controle de ${mod.nomeMinusculo}.`);
+      await carregar();
+    } catch (e) {
+      setErro(e?.message || 'Falha ao remover do controle.');
+    }
+  }
+
+  async function devolver(colaborador) {
+    setErro('');
+    try {
+      await api.definirControle(colaborador.id, true);
+      setOkMsg(`${colaborador.nome} voltou para o controle.`);
+      await carregar();
+    } catch (e) {
+      setErro(e?.message || 'Falha ao devolver ao controle.');
+    }
+  }
+
   const titulo = ehRh ? mod.tituloPainel : mod.tituloEquipe;
   const Icone = ehRh ? LayoutDashboard : Users;
 
@@ -204,6 +244,71 @@ export default function VisaoGeralAusencia({ mod = MOD_AUSENCIA, escopo = 'equip
           onClick={() => { setAba('pedidos'); setFiltro('pendente'); }} />
       </div>
 
+      {/* Quem saiu do controle fica listado: sem isto, remover seria porta sem
+          volta — a pessoa sumiria de todas as telas do RH. */}
+      {ehRh && mod.controlePessoas && foraDoControle.length > 0 && (
+        <div className="table-container ap-secao">
+          <div className="table-header">
+            <div className="table-header-title">Fora do controle ({foraDoControle.length})</div>
+          </div>
+          <Alerta tipo="info">
+            Estas pessoas não entram no controle de {mod.nomeMinusculo}: não aparecem nos saldos e
+            não ganham período novo. O que já havia continua guardado.
+          </Alerta>
+          <TableScroll>
+            <table className="data-table">
+              <thead>
+                <tr><th>Colaborador</th><th>Modalidade</th><th>Admissão</th><th>Ações</th></tr>
+              </thead>
+              <tbody>
+                {foraDoControle.map((c) => (
+                  <tr key={c.id}>
+                    <td>{c.nome}<div className="ap-sub">{c.funcao || '—'}</div></td>
+                    <td>{c.formato || '—'}</td>
+                    <td>{fmtDataBr(c.data_admissao)}</td>
+                    <td>
+                      <button className="btn btn-outline btn-sm" onClick={() => devolver(c)}>
+                        <Undo2 size={16} /> Devolver ao controle
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TableScroll>
+        </div>
+      )}
+
+      {/* A confirmação diz o que a pessoa tem HOJE no controle: um pedido
+          aprovado esquecido é o tipo de coisa que só aparece depois. */}
+      {removendo && (
+        <div className="modal-overlay" role="presentation" onClick={() => setRemovendo(null)}>
+          <div className="modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <span className="modal-title">Remover do controle</span>
+            </div>
+            <div className="modal-body">
+              <p>
+                <strong>{removendo.colaborador.nome}</strong> deixa de aparecer no controle de
+                {' '}{mod.nomeMinusculo} e não recebe mais período automático.
+              </p>
+              {(removendo.resumo.periodos > 0 || removendo.resumo.pedidos > 0) && (
+                <Alerta tipo="erro">
+                  Esta pessoa já usa o controle: {removendo.resumo.periodos} período(s),
+                  {' '}{removendo.resumo.pedidos} pedido(s) em aberto ou aprovados e
+                  {' '}{removendo.resumo.saldo} dia(s) de saldo. Nada disso é apagado, mas some das
+                  suas listas.
+                </Alerta>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-outline" onClick={() => setRemovendo(null)}>Cancelar</button>
+              <button className="btn btn-primary" onClick={confirmarRemocao}>Remover do controle</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {ehRh && semPeriodo.length > 0 && (
         <div className="table-container ap-secao">
           <div className="table-header">
@@ -228,6 +333,14 @@ export default function VisaoGeralAusencia({ mod = MOD_AUSENCIA, escopo = 'equip
                       <button className="btn btn-outline btn-sm" onClick={() => setEditando({ colaborador: c })}>
                         <UserPlus size={16} /> Cadastrar período
                       </button>
+                      {/* A outra saída para esta lista: quem não deve estar no
+                          controle sai dela, em vez de ficar para sempre como
+                          pendência de cadastro. */}
+                      {mod.controlePessoas && (
+                        <button className="btn btn-outline btn-sm" onClick={() => pedirRemocao(c)}>
+                          <UserMinus size={16} /> Remover do controle
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -326,6 +439,14 @@ export default function VisaoGeralAusencia({ mod = MOD_AUSENCIA, escopo = 'equip
                         <button className="btn-icon" title="Corrigir período" onClick={() => setEditando({ periodo: p })}>
                           <Pencil size={16} />
                         </button>
+                        {/* Tirar do controle também aqui: é nesta tabela que o
+                            RH vê quem não deveria estar na lista. */}
+                        {mod.controlePessoas && (
+                          <button className="btn-icon" title="Remover do controle"
+                            onClick={() => pedirRemocao({ id: p.colaborador_id, nome: p.colaborador_nome })}>
+                            <UserMinus size={16} />
+                          </button>
+                        )}
                       </td>
                     )}
                   </tr>

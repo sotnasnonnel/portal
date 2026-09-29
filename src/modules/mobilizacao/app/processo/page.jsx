@@ -16,6 +16,7 @@ import {
 import ComentariosEtapa from '../components/ComentariosEtapa';
 import { podeMover, podeEditar, progresso } from '../../lib/painelEtapas';
 import { rotuloStatus, ehEncerrada } from '../../lib/statusEtapa';
+import { tempoTotalTexto, estaConcluido } from '../../lib/tempoProcesso';
 
 const dataBr = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : '—');
 const dataHora = (iso) => (iso
@@ -161,6 +162,13 @@ export default function ProcessoMob() {
           <Campo rot="Gerente PHD" val={processo.ger_phd} />
           <Campo rot="Responsável" val={processo.responsavelNome} />
           <Campo rot="Aberto em" val={dataHora(processo.criado_em)} />
+          {/* Tempo total: da data-base até a última etapa feita, ou até hoje
+              enquanto o processo corre. É o número que o time usa para cobrar
+              prazo — por isso fica no resumo, e não escondido no passo a passo. */}
+          <Campo
+            rot={estaConcluido(processo) ? 'Tempo total' : 'Tempo até agora'}
+            val={tempoTotalTexto(processo)}
+          />
           {/* As duas datas que a pessoa digitou no chamado. Elas NÃO são a
               data-base (isso é a abertura): são o alvo da operação — quando a
               pessoa entra na obra, quando sai. Ficavam invisíveis desde que

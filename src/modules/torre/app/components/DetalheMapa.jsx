@@ -4,6 +4,7 @@ import { lerComentariosEtapas, lerUltimasMensagens } from '../../lib/dados';
 import { rotuloFluxo, STATUS_PROCESSO } from '../../../../config/mobilizacao';
 import { corDaCelula, ROTULO_COR } from '../../../mobilizacao/lib/matriz';
 import { rotuloStatus } from '../../../mobilizacao/lib/statusEtapa';
+import { tempoTotalTexto, estaConcluido } from '../../../mobilizacao/lib/tempoProcesso';
 import { STATUS_LABEL as STATUS_CHAMADO } from '../../../administrativo/lib/statusChamado';
 import { semaforoPrazo } from '../../../../utils/semaforo';
 
@@ -109,6 +110,12 @@ function CorpoProcesso({ processo, etapas = [], destaque }) {
         <Campo rot="Cód. CT" val={processo.cod_ct} />
         <Campo rot="Responsável" val={processo.responsavelNome} />
         <Campo rot="Prazo do processo" val={dataBr(processo.prazo_em)} />
+        {/* O mesmo tempo total que a tela do processo mostra — na reunião de
+            torre, "há quantos dias isso está aberto?" é a primeira pergunta. */}
+        <Campo
+          rot={estaConcluido(processo) ? 'Tempo total' : 'Tempo até agora'}
+          val={tempoTotalTexto(processo)}
+        />
       </div>
 
       {!etapas.length ? (

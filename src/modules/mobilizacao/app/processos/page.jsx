@@ -10,6 +10,7 @@ import {
 import { semaforoPrazo } from '../../../../utils/semaforo';
 import { listarProcessos } from '../../lib/mobilizacao';
 import { progresso, filtrarProcessos, processoAtrasado } from '../../lib/painelEtapas';
+import { tempoTotalTexto } from '../../lib/tempoProcesso';
 
 const dataBr = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : '—');
 
@@ -115,6 +116,7 @@ export default function ProcessosMob() {
                 <th>Fluxo</th>
                 <th>Cliente / obra</th>
                 <th>Progresso</th>
+                <th>Tempo</th>
                 <th>Responsável</th>
                 <th>Prazo</th>
                 <th>Situação</th>
@@ -139,6 +141,8 @@ export default function ProcessosMob() {
                         <span className="mob-prog-txt">{pr.feitas}/{pr.total}</span>
                       </div>
                     </td>
+                    {/* Dias corridos desde o começo — em andamento, conta até hoje. */}
+                    <td className="num">{tempoTotalTexto(p)}</td>
                     <td>{p.responsavelNome || <span className="mob-cartao-sem-dono">sem responsável</span>}</td>
                     <td className="num">
                       {p.prazo_em

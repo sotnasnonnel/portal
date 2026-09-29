@@ -122,19 +122,56 @@ export function resumoIndicadores(chamados = [], agora = Date.now()) {
   };
 }
 
-/** Serviço a serviço: quanto entrou, quanto saiu e quanto ainda está em pé. */
+/**
+ * Quanto tempo o chamado levou para ser atendido, em dias corridos.
+ *
+ * Do momento em que ele entrou na fila até o fechamento. "Entrou na fila" é a
+ * liberação da alçada quando há aprovação, e a abertura quando não há: o tempo
+ * que o pedido passou esperando o gerente não é tempo de atendimento do time.
+ * É a mesma régua do SLA.
+ *
+ * Só chamado FECHADO entra. Reprovado e cancelado nunca foram atendidos, e
+ * contá-los como rápidos melhoraria o indicador por não ter feito nada.
+ */
+export function diasDeAtendimento(c) {
+  if (c?.status !== 'fechado' || !c?.fechado_em) return null;
+  const inicio = t(c.analise_em || c.criado_em);
+  const fim = t(c.fechado_em);
+  if (!inicio || !fim || fim < inicio) return null;
+  return (fim - inicio) / 86400000;
+}
+
+const media1 = (nums) => (nums.length
+  ? Math.round((nums.reduce((a, b) => a + b, 0) / nums.length) * 10) / 10
+  : null);
+
+/**
+ * Serviço a serviço: quanto entrou, quanto saiu, quanto ainda está em pé e
+ * quanto tempo levou em média. O tempo médio foi pedido pelo André em
+ * 29/09/2026, para ADM e para TI — como o painel inteiro já respeita o filtro
+ * de área, a mesma coluna atende aos dois.
+ */
 function agruparPorServico(chamados) {
   const mapa = new Map();
   for (const c of chamados) {
     const nome = c.servicoLabel || `${c.classe}/${c.servico}`;
-    if (!mapa.has(nome)) mapa.set(nome, { nome, abertos: 0, encerrados: 0, total: 0 });
+    if (!mapa.has(nome)) mapa.set(nome, { nome, abertos: 0, encerrados: 0, total: 0, tempos: [] });
     const linha = mapa.get(nome);
     linha.total += 1;
     if (estaAberto(c)) linha.abertos += 1;
     if (estaEncerrado(c)) linha.encerrados += 1;
+    const dias = diasDeAtendimento(c);
+    if (dias !== null) linha.tempos.push(dias);
   }
-  return [...mapa.values()].sort((a, b) => (b.total - a.total)
-    || a.nome.localeCompare(b.nome, 'pt-BR'));
+  return [...mapa.values()]
+    .map(({ tempos, ...linha }) => ({
+      ...linha,
+      // `medidos` vai junto: uma média de um chamado só não é média, e a tela
+      // precisa poder dizer isso.
+      tempoMedio: media1(tempos),
+      medidos: tempos.length,
+    }))
+    .sort((a, b) => (b.total - a.total) || a.nome.localeCompare(b.nome, 'pt-BR'));
 }
 
 /**

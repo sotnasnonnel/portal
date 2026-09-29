@@ -119,7 +119,7 @@ const CAMPOS_PROCESSO = `
   empresa_phd, cliente_phd, cliente_final, local_obra, cod_ct, cod_phd,
   coo_phd, ger_phd, contrato, data_base, observacoes, campos,
   solicitante_id, responsavel_id, origem, origem_chamado_id,
-  prazo_em, etapas_total, etapas_concluidas, criado_em, concluido_em
+  prazo_em, etapas_total, etapas_concluidas, criado_em, concluido_em, concluido_real
 `;
 
 /**
