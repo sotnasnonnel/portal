@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft, Loader2, AlertCircle, Send, Paperclip, FileText, Lock, UserCheck,
   CheckCircle2, RotateCcw, Star, CircleDot, Users, X, Ban, Workflow, ClipboardCheck, Check,
+  CalendarOff,
 } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { getClasse, getServico, podeReatribuirAdm } from '../../../../config/administrativo';
@@ -21,6 +22,8 @@ import { montarLinhaDoTempo, textoDoEvento } from '../../lib/linhaDoTempo';
 import { formatarTamanho } from '../../lib/arquivo';
 import { ehEncerrado, etapaQueEsperaPorMim } from '../../lib/statusChamado';
 import { prazoAdiado } from '../../lib/prazo';
+import { perguntaParaQuem } from '../../lib/paraQuem';
+import { descreverAusencia, ausenteNoDia, diaLocalIso } from '../../../../utils/ausenciaColaborador';
 import {
   chamadoDeEstoque, chamadoUsaEstoque, categoriaDoChamado, montarLinhasDeBaixa, validarLinhasDeBaixa,
   linhasComQuantidade,
@@ -291,6 +294,17 @@ export default function ChamadoAdm() {
   const vaiBaixar = usaEstoque && !semMovimentar && linhasComQuantidade(linhasBaixa).length > 0;
   const problemaBaixa = usaEstoque && !semMovimentar ? validarLinhasDeBaixa(linhasBaixa) : '';
   const podeReabrir = souSolicitante && chamado.status === 'fechado';
+  // Folga de Campo / Ausência Programada da pessoa do chamado, entre a
+  // abertura e o fechamento. Nos serviços que já perguntam a pessoa (a
+  // mobilização, por exemplo) o nome dela já está nos campos abaixo.
+  const ausencias = chamado.ausencias || [];
+  const nomeColaborador = chamado.colaboradorNome || 'O colaborador';
+  const mostraParaQuem = chamado.colaborador_id && perguntaParaQuem(chamado.classe, chamado.servico);
+  // Quem adiou o prazo: o colaborador, se estava fora quando o chamado entrou
+  // na fila; senão, o responsável (a regra mais antiga).
+  const colaboradorAdiou = ausenteNoDia(
+    ausencias, diaLocalIso(chamado.analise_em || chamado.criado_em),
+  );
   const precisaAvaliar = souSolicitante && chamado.status === 'fechado' && !chamado.avaliacao;
 
   return (
@@ -350,10 +364,23 @@ export default function ChamadoAdm() {
         </div>
       )}
 
+      {ausencias.length > 0 && (
+        <div className="adm-aviso tom-info">
+          <CalendarOff size={16} />
+          <span>
+            <strong>{nomeColaborador}</strong> tem ausência registrada durante este chamado:
+            {' '}{ausencias.map(descreverAusencia).join('; ')}.
+          </span>
+        </div>
+      )}
+
       <div className="adm-card">
         <h2 className="adm-card-tit">Dados do chamado</h2>
         <dl className="adm-aprov-campos">
           <div><dt>Solicitante</dt><dd>{chamado.solicitanteNome || '—'}</dd></div>
+          {mostraParaQuem && (
+            <div><dt>Para</dt><dd>{chamado.colaboradorNome || '—'}</dd></div>
+          )}
           <div><dt>Responsável</dt><dd>{chamado.atendenteNome || 'Sem responsável'}</dd></div>
           <div><dt>Criação</dt><dd>{dataHora(chamado.criado_em)}</dd></div>
           <div><dt>Análise</dt><dd>{dataHora(chamado.analise_em)}</dd></div>
@@ -366,8 +393,8 @@ export default function ChamadoAdm() {
               <dd>
                 {dataHora(chamado.sla_inicio_em)}
                 <span className="adm-campo-dica" style={{ display: 'block', margin: 0 }}>
-                  {chamado.atendenteNome || 'O responsável'} estava ausente na abertura; o prazo
-                  conta a partir da volta.
+                  {colaboradorAdiou ? nomeColaborador : (chamado.atendenteNome || 'O responsável')}
+                  {' '}estava ausente na abertura; o prazo conta a partir da volta.
                 </span>
               </dd>
             </div>

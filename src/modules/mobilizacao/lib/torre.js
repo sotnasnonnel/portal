@@ -123,24 +123,31 @@ export function estaVencido(item, hoje) {
   return String(item.prazo).slice(0, 10) < ref;
 }
 
-export function opcoesDaTorre(itens = []) {
-  const responsaveis = new Map();
-  const contratos = new Set();
-  for (const i of itens) {
-    if (i.responsavel_id) responsaveis.set(i.responsavel_id, i.responsavelNome || 'Sem nome');
-    contratos.add(responsavelDoItem(i));
-  }
-
-  // "(nao identificado)" vai para o FIM, sempre. Ordenado junto com os nomes ele
-  // cairia no meio da lista pelo parentese, e quem procura uma pessoa tropecaria
-  // nele antes de achar quem procura.
+/**
+ * Opções do filtro "Responsável pelo contrato". Usada pelo Quadro, pelo Mapa e
+ * pelas Etapas da Torre — os três leem `responsavel_contrato` resolvido pelo
+ * mesmo de-para no banco.
+ *
+ * "(nao identificado)" vai para o FIM, sempre. Ordenado junto com os nomes ele
+ * cairia no meio da lista pelo parentese, e quem procura uma pessoa tropecaria
+ * nele antes de achar quem procura.
+ */
+export function responsaveisDeContrato(itens = []) {
+  const contratos = new Set(itens.map(responsavelDoItem));
   const nomes = [...contratos].filter((c) => c !== SEM_RESPONSAVEL)
     .sort((a, b) => a.localeCompare(b, 'pt-BR'));
   if (contratos.has(SEM_RESPONSAVEL)) nomes.push(SEM_RESPONSAVEL);
+  return nomes;
+}
 
+export function opcoesDaTorre(itens = []) {
+  const responsaveis = new Map();
+  for (const i of itens) {
+    if (i.responsavel_id) responsaveis.set(i.responsavel_id, i.responsavelNome || 'Sem nome');
+  }
   return {
     responsaveis: [...responsaveis].map(([value, label]) => ({ value, label }))
       .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR')),
-    responsaveisContrato: nomes,
+    responsaveisContrato: responsaveisDeContrato(itens),
   };
 }

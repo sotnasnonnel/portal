@@ -10,6 +10,7 @@ import { montarMatrizChamados } from '../../lib/matrizChamados';
 import MatrizChamados, { LegendaChamados } from '../components/MatrizChamados';
 import DetalheMapa from '../components/DetalheMapa';
 import { rotuloFluxo } from '../../../../config/mobilizacao';
+import { responsavelDoItem, responsaveisDeContrato } from '../../../mobilizacao/lib/torre';
 
 const semAcento = (s) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
@@ -38,6 +39,8 @@ export default function MapaTorre() {
 
   const [busca, setBusca] = useState('');
   const [fFluxo, setFFluxo] = useState('');
+  // Mesmo filtro do Quadro: o nome que o de-para resolve no banco.
+  const [fContrato, setFContrato] = useState('');
   const [soMeus, setSoMeus] = useState(false);
   const [soAtrasados, setSoAtrasados] = useState(false);
 
@@ -74,6 +77,7 @@ export default function MapaTorre() {
 
     const processos = dados.processos.filter((p) => {
       if (fFluxo && p.fluxo !== fFluxo) return false;
+      if (fContrato && responsavelDoItem(p) !== fContrato) return false;
       if (soMeus && p.responsavel_id !== user?.id && !meusProcessos.has(p.id)) return false;
       if (termo) {
         const alvo = [p.titulo, p.profissional_nome, p.cliente_phd, p.local_obra, p.cod_ct,
@@ -91,15 +95,16 @@ export default function MapaTorre() {
     return montada
       .map((b) => ({ ...b, linhas: b.linhas.filter((l) => l.vencidas > 0) }))
       .filter((b) => b.linhas.length);
-  }, [dados, catalogo, busca, fFluxo, soMeus, soAtrasados, user?.id]);
+  }, [dados, catalogo, busca, fFluxo, fContrato, soMeus, soAtrasados, user?.id]);
 
-  // A matriz de chamados responde a BUSCA e ao "so os meus" (por atendente). Os
-  // outros dois filtros sao de mobilizacao — fluxo nao existe em chamado, e
+  // A matriz de chamados responde a BUSCA, ao responsavel pelo contrato e ao
+  // "so os meus" (por atendente). Os outros dois filtros sao de mobilizacao — fluxo nao existe em chamado, e
   // "so os travados" ja e o que a cor da celula diz.
   const linhasChamados = useMemo(() => {
     const termo = semAcento(busca).trim();
     const visiveis = chamados.filter((c) => {
       if (soMeus && c.atendente_id !== user?.id) return false;
+      if (fContrato && responsavelDoItem(c) !== fContrato) return false;
       if (termo && !semAcento(`${c.assunto || ''} ${c.numero || ''}`).includes(termo)) return false;
       return true;
     });
@@ -107,7 +112,14 @@ export default function MapaTorre() {
     // tem de olhar o mesmo relogio.
     const agora = Date.now();
     return { linhas: montarMatrizChamados(visiveis, { agora }), agora };
-  }, [chamados, busca, soMeus, user?.id]);
+  }, [chamados, busca, fContrato, soMeus, user?.id]);
+
+  // As opções saem das duas origens: um nome que só tem chamado também é
+  // escolha válida.
+  const opcoesContrato = useMemo(
+    () => responsaveisDeContrato([...dados.processos, ...chamados]),
+    [dados.processos, chamados],
+  );
 
   // Etapas de um processo, na ordem — a lista que o popup desenha inteira.
   const etapasDoProcesso = (processoId) => dados.etapas
@@ -131,7 +143,7 @@ export default function MapaTorre() {
     agora: linhasChamados.agora,
   });
 
-  const filtrando = !!busca || !!fFluxo || soMeus || soAtrasados;
+  const filtrando = !!busca || !!fFluxo || !!fContrato || soMeus || soAtrasados;
   const totalLinhas = blocos.reduce((s, b) => s + b.linhas.length, 0);
   const travadas = blocos.reduce((s, b) => s + b.linhas.filter((l) => l.vencidas > 0).length, 0);
   const concluindo = blocos.reduce((s, b) => s + b.linhas.filter((l) => !linhaEmAndamento(l)).length, 0);
@@ -163,6 +175,14 @@ export default function MapaTorre() {
           </select>
         </div>
 
+        <div className="mob-filtro" style={{ minWidth: 220 }}>
+          <label htmlFor="tor-m-resp-contrato">Responsável pelo contrato</label>
+          <select id="tor-m-resp-contrato" value={fContrato} onChange={(e) => setFContrato(e.target.value)}>
+            <option value="">Todos</option>
+            {opcoesContrato.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+
         <button type="button"
           className={`mob-btn mob-btn-sm mob-filtro-limpa ${soMeus ? 'mob-btn-primary' : 'mob-btn-ghost'}`}
           onClick={() => setSoMeus((v) => !v)}>
@@ -177,7 +197,9 @@ export default function MapaTorre() {
 
         {filtrando && (
           <button type="button" className="mob-btn mob-btn-ghost mob-btn-sm mob-filtro-limpa"
-            onClick={() => { setBusca(''); setFFluxo(''); setSoMeus(false); setSoAtrasados(false); }}>
+            onClick={() => {
+              setBusca(''); setFFluxo(''); setFContrato(''); setSoMeus(false); setSoAtrasados(false);
+            }}>
             <X size={15} /> Limpar
           </button>
         )}

@@ -127,6 +127,16 @@ function montar(mod) {
     avisar();
   }
 
+  // RH: corrige os dias de um lançamento aprovado (o "tirado" que não foi
+  // tirado). Zerar não passa por aqui: é cancelar, que já exige motivo.
+  async function corrigirDias(id, dias, motivo) {
+    const { error } = await supabase.rpc(fn('corrigir_dias'), {
+      p_id: id, p_dias: dias, p_motivo: motivo,
+    });
+    checar(error);
+    avisar();
+  }
+
   // RH: corrige um período (direito, ajuste com motivo, janela, observação).
   async function atualizarPeriodo(id, campos) {
     const { data, error } = await supabase
@@ -210,6 +220,7 @@ function montar(mod) {
     excluirRascunho,
     decidir,
     cancelar,
+    corrigirDias,
     atualizarPeriodo,
     criarPeriodo,
     listarForaDoControle,

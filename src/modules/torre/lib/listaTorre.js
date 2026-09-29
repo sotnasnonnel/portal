@@ -3,6 +3,7 @@ import { STATUS_LABEL as STATUS_ADM } from '../../administrativo/lib/statusChama
 import { STATUS_LABEL as STATUS_MOB } from '../../mobilizacao/lib/statusEtapa.js';
 import { rotuloFluxoCurto } from '../../../config/mobilizacao.js';
 import { rotulosDeServico, chaveServico } from './matrizChamados.js';
+import { responsavelDoItem, responsaveisDeContrato } from '../../mobilizacao/lib/torre.js';
 
 /**
  * A lista única da Torre: etapas de Mobilização E chamados do Atendimento.
@@ -57,6 +58,7 @@ function linhaDaEtapa(e) {
     grupoChave: e.fluxo,
     responsavel_id: e.responsavel_id || null,
     responsavelNome: e.responsavelNome || '',
+    responsavel_contrato: e.responsavel_contrato || null,
     status: e.status,
     statusLabel: STATUS_MOB[e.status] || e.status,
     prazo: soData(e.data_prevista),
@@ -81,6 +83,7 @@ function linhaDoChamado(c, rotulos, hoje) {
     grupoChave: 'adm',
     responsavel_id: c.atendente_id || null,
     responsavelNome: c.atendenteNome || '',
+    responsavel_contrato: c.responsavel_contrato || null,
     status: c.status,
     statusLabel: STATUS_ADM[c.status] || c.status,
     prazo: soData(c.sla_vence_em),
@@ -147,6 +150,8 @@ export function filtrarLista(linhas = [], f = {}) {
     if (f.status && `${l.origem}:${l.status}` !== f.status) return false;
     if (f.responsavelId === 'sem' && l.responsavel_id) return false;
     if (f.responsavelId && f.responsavelId !== 'sem' && l.responsavel_id !== f.responsavelId) return false;
+    // Mesmo filtro do Quadro: o nome que o de-para resolve no banco.
+    if (f.responsavelContrato && responsavelDoItem(l) !== f.responsavelContrato) return false;
     if (f.atrasadas && !estaAtrasada(l)) return false;
     // Sem pedir situação nem encerradas, a lista é o que FALTA. São ~1300
     // etapas contra ~50 em aberto: mostrar tudo por padrão afogaria a reunião
@@ -182,6 +187,7 @@ export function opcoesDaLista(linhas = []) {
     grupos: ordenar(grupos),
     situacoes: ordenar(situacoes),
     temSemResponsavel,
+    responsaveisContrato: responsaveisDeContrato(linhas),
   };
 }
 

@@ -174,6 +174,17 @@ export async function buscarProcesso(id) {
 }
 
 /** Muda a data-base. O gatilho reprojeta as etapas que ainda não aconteceram. */
+/**
+ * Folga de Campo e Ausência Programada do profissional entre a abertura e a
+ * conclusão do processo. Silenciosa: é informação de apoio, e falhar aqui não
+ * pode derrubar a tela do processo.
+ */
+export async function listarAusenciasDoProcesso(processoId) {
+  const { data, error } = await supabase.rpc('mobilizacao_ausencias', { p_processo: processoId });
+  if (error) return [];
+  return data || [];
+}
+
 export async function definirDataBase(processoId, dataBase) {
   const { data, error } = await supabase
     .from('mobilizacao_processos')

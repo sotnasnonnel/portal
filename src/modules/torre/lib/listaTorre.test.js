@@ -175,3 +175,19 @@ test('escolher uma situação encerrada mostra o que ela pede', () => {
   });
   assert.equal(filtrarLista(linhas, { status: 'mobilizacao:concluida' }).length, 1);
 });
+
+test('filtra pelo responsável pelo contrato, com "(nao identificado)" para quem não tem', () => {
+  const linhas = montarLista({
+    etapas: [
+      { id: 'e1', titulo: 'ASO', status: 'pendente', responsavel_contrato: 'LUCAS' },
+      { id: 'e2', titulo: 'Exames', status: 'pendente' },
+    ],
+    chamados: [{ id: 'c1', numero: 1, classe: 'x', servico: 'y', status: 'aberto', responsavel_contrato: 'ANA' }],
+    classes: [],
+  });
+  const so = (nome) => filtrarLista(linhas, { responsavelContrato: nome }).map((l) => l.chave);
+  assert.deepEqual(so('LUCAS'), ['mob:e1']);
+  assert.deepEqual(so('ANA'), ['adm:c1']);
+  assert.deepEqual(so('(nao identificado)'), ['mob:e2']);
+  assert.deepEqual(opcoesDaLista(linhas).responsaveisContrato, ['ANA', 'LUCAS', '(nao identificado)']);
+});

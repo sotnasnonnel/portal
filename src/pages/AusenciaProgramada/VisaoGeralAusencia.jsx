@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Users, LayoutDashboard, AlertTriangle, CalendarDays, Download, Pencil, UserPlus, RefreshCw, Wallet,
-  UserMinus, Undo2,
+  UserMinus, Undo2, ChevronDown, ChevronRight,
 } from 'lucide-react';
 import {
   csv, diaISO, diasAteLimite, fmtDataBr, rotuloPeriodo, situacaoPeriodo, statusExibido, statusLabel,
@@ -10,7 +10,7 @@ import {
 import { MOD_AUSENCIA } from '../../config/modulosAusencia';
 import { servicoAusencia } from '../../services/ausenciaProgramada';
 import {
-  Alerta, ModalPeriodo, SituacaoPeriodo, StatCard, StatusBadge,
+  Alerta, ModalPeriodo, ModalTirados, SituacaoPeriodo, StatCard, StatusBadge,
 } from './componentes';
 import { useRecarregarAoMudar } from './useRecarregarAoMudar';
 import TableScroll from '../../components/UI/TableScroll';
@@ -33,6 +33,9 @@ export default function VisaoGeralAusencia({ mod = MOD_AUSENCIA, escopo = 'equip
   const [pedidos, setPedidos] = useState([]);
   const [semPeriodo, setSemPeriodo] = useState([]);
   const [foraDoControle, setForaDoControle] = useState([]);
+  // Recolhida por padrão: é um arquivo, consultado raramente, e aberta ela
+  // empurrava os saldos (a razão da tela) para baixo de 23 linhas.
+  const [verForaDoControle, setVerForaDoControle] = useState(false);
   const [pessoas, setPessoas] = useState([]);
   const [removendo, setRemovendo] = useState(null); // { colaborador, resumo }
   const [loading, setLoading] = useState(true);
@@ -42,6 +45,7 @@ export default function VisaoGeralAusencia({ mod = MOD_AUSENCIA, escopo = 'equip
   const [filtro, setFiltro] = useState('atuais');
   const [busca, setBusca] = useState('');
   const [editando, setEditando] = useState(null); // { periodo } | { colaborador }
+  const [corrigindoTirados, setCorrigindoTirados] = useState(null); // periodo
   const [gerando, setGerando] = useState(false);
 
   const carregar = useCallback(async () => {
@@ -253,8 +257,14 @@ export default function VisaoGeralAusencia({ mod = MOD_AUSENCIA, escopo = 'equip
       {ehRh && mod.controlePessoas && foraDoControle.length > 0 && (
         <div className="table-container ap-secao">
           <div className="table-header">
-            <div className="table-header-title">Fora do controle ({foraDoControle.length})</div>
+            <button type="button" className="btn btn-ghost btn-sm table-header-title"
+              aria-expanded={verForaDoControle}
+              onClick={() => setVerForaDoControle((v) => !v)}>
+              {verForaDoControle ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+              Fora do controle ({foraDoControle.length})
+            </button>
           </div>
+          {verForaDoControle && (<>
           <Alerta tipo="info">
             Estas pessoas não entram no controle de {mod.nomeMinusculo}: não aparecem nos saldos e
             não ganham período novo. O que já havia continua guardado.
@@ -280,6 +290,7 @@ export default function VisaoGeralAusencia({ mod = MOD_AUSENCIA, escopo = 'equip
               </tbody>
             </table>
           </TableScroll>
+          </>)}
         </div>
       )}
 
@@ -430,7 +441,16 @@ export default function VisaoGeralAusencia({ mod = MOD_AUSENCIA, escopo = 'equip
                         </div>
                       )}
                     </td>
-                    <td className="ap-num">{p.dias_tirados}</td>
+                    <td className="ap-num">
+                      {/* O RH corrige o tirado que não foi tirado (lançamento
+                          da planilha errado, ausência que não aconteceu). */}
+                      {ehRh && p.dias_tirados > 0 ? (
+                        <button type="button" className="btn btn-ghost btn-sm" title="Corrigir dias tirados"
+                          onClick={() => setCorrigindoTirados(p)}>
+                          {p.dias_tirados} <Pencil size={13} />
+                        </button>
+                      ) : p.dias_tirados}
+                    </td>
                     <td className="ap-num">{p.dias_agendados}</td>
                     <td className="ap-num">{p.dias_pendentes}</td>
                     <td className="ap-num"><strong>{p.saldo}</strong></td>
@@ -501,6 +521,27 @@ export default function VisaoGeralAusencia({ mod = MOD_AUSENCIA, escopo = 'equip
           )}
         </TableScroll>
       </div>
+
+      {corrigindoTirados && (
+        <ModalTirados
+          periodo={corrigindoTirados}
+          // Mesma regra do banco para "tirado": aprovado e já terminado.
+          lancamentos={pedidos
+            .filter((s) => s.periodo_id === corrigindoTirados.id
+              && s.status === 'aprovada' && s.data_fim < hoje)
+            .sort((a, b) => a.data_inicio.localeCompare(b.data_inicio))}
+          onClose={() => setCorrigindoTirados(null)}
+          onSalvar={async (alteracoes, motivo) => {
+            for (const { lancamento, dias } of alteracoes) {
+              if (dias === 0) await api.cancelar(lancamento.id, { motivo });
+              else await api.corrigirDias(lancamento.id, dias, motivo);
+            }
+            setCorrigindoTirados(null);
+            setOkMsg('Dias tirados corrigidos.');
+            await carregar();
+          }}
+        />
+      )}
 
       {editando && (
         <ModalPeriodo

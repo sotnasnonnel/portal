@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Loader2, AlertCircle, Check, User, Ban, Headset, CalendarDays, MinusCircle, RotateCcw,
+  CalendarOff,
 } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import {
@@ -11,8 +12,9 @@ import { semaforoDias } from '../../../../utils/semaforo';
 import {
   buscarProcesso, listarEtapasDoProcesso, listarEventos, listarTime,
   moverEtapa, assumirEtapa, definirResponsavelEtapa, definirDataReal,
-  definirDataBase, cancelarProcesso, listarComentariosDasEtapas,
+  definirDataBase, cancelarProcesso, listarComentariosDasEtapas, listarAusenciasDoProcesso,
 } from '../../lib/mobilizacao';
+import { descreverAusencia } from '../../../../utils/ausenciaColaborador';
 import ComentariosEtapa from '../components/ComentariosEtapa';
 import { podeMover, podeEditar, progresso } from '../../lib/painelEtapas';
 import { rotuloStatus, ehEncerrada } from '../../lib/statusEtapa';
@@ -44,6 +46,8 @@ export default function ProcessoMob() {
   // etapaId -> comentários. Uma consulta para o processo inteiro, não uma por
   // etapa: a tela abre com até vinte passos.
   const [comentarios, setComentarios] = useState(new Map());
+  // Folga de Campo / Ausência Programada do profissional durante o processo.
+  const [ausencias, setAusencias] = useState([]);
   const [time, setTime] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
@@ -54,12 +58,14 @@ export default function ProcessoMob() {
     setCarregando(true);
     setErro('');
     try {
-      const [p, e, h] = await Promise.all([
+      const [p, e, h, a] = await Promise.all([
         buscarProcesso(id), listarEtapasDoProcesso(id), listarEventos(id),
+        listarAusenciasDoProcesso(id),
       ]);
       setProcesso(p);
       setEtapas(e);
       setEventos(h);
+      setAusencias(a);
       // Depois das etapas, porque depende dos ids delas. Falhar aqui não pode
       // derrubar o processo inteiro: comentário é acréscimo, o passo a passo é
       // o que a tela existe para mostrar.
@@ -136,6 +142,18 @@ export default function ProcessoMob() {
       </p>
 
       {erro && <div className="mob-aviso tom-erro"><AlertCircle size={16} /> {erro}</div>}
+
+      {/* Pedido do próprio time: saber, no processo, que o profissional esteve
+          (ou vai estar) fora — é o que explica etapa parada nesses dias. */}
+      {ausencias.length > 0 && (
+        <div className="mob-aviso tom-alerta">
+          <CalendarOff size={16} />
+          <span>
+            <strong>{processo.profissional_nome || 'O profissional'}</strong> tem ausência
+            registrada durante este processo: {ausencias.map(descreverAusencia).join('; ')}.
+          </span>
+        </div>
+      )}
 
       {/* Catálogo vazio não é erro: é o estado real enquanto o fluxo não foi
           cadastrado. Mas precisa aparecer, senão o processo fica mudo. */}

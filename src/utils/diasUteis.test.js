@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   ehDiaUtil, proximoDiaUtil, venceEmDiasUteis,
-  deIso, paraIso, diasUteisApos, diasEntre,
+  deIso, paraIso, diasUteisApos, diasEntre, diasUteisEntre,
 } from './diasUteis.js';
 
 // Datas locais para o teste não depender de fuso.
@@ -108,4 +108,14 @@ test('diasEntre conta dias corridos, com sinal', () => {
 test('diasEntre não escorrega em virada de mês e de ano', () => {
   assert.equal(diasEntre('2026-03-01', '2026-02-28'), 1);
   assert.equal(diasEntre('2027-01-01', '2026-12-31'), 1);
+});
+
+// 25/09/2026 é sexta. Conta as duas pontas: é como o time conta de cabeça.
+test('dias úteis entre duas datas contam as duas pontas e pulam o fim de semana', () => {
+  assert.equal(diasUteisEntre('2026-09-25', '2026-09-29'), 3);
+  assert.equal(diasUteisEntre('2026-09-17', '2026-09-29'), 9);
+  assert.equal(diasUteisEntre('2026-09-29', '2026-09-29'), 1);
+  assert.equal(diasUteisEntre('2026-09-26', '2026-09-27'), 0, 'só fim de semana');
+  assert.equal(diasUteisEntre('2026-09-29', '2026-09-25'), 0, 'fim antes do início');
+  assert.equal(diasUteisEntre('', '2026-09-25'), null);
 });

@@ -72,6 +72,10 @@ export default function FormMobilizacao({
           placeholder="Busque pelo nome…"
           ariaLabel={desmob ? 'Profissional a desmobilizar' : 'Profissional a mobilizar'}
         />
+        <span className="adm-campo-dica">
+          Se ele estiver de Folga de Campo ou em Ausência Programada, o chamado mostra o período
+          e o prazo começa a contar na volta dele.
+        </span>
       </div>
 
       {/* Desmobilização pede só quem sai e o que devolve — o resto (obra, CC,

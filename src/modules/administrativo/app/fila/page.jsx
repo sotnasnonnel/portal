@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Inbox, Loader2, AlertCircle, UserX, Clock } from 'lucide-react';
+import { Inbox, Loader2, AlertCircle, UserX, Clock, CalendarOff } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { listarFila } from '../../lib/chamados';
 import {
@@ -10,6 +10,7 @@ import {
   filtrarFila, opcoesDaFila, precisaEncerrados, STATUS_TODOS, restaurarFiltro,
 } from '../../lib/painel';
 import { useEstadoPersistido } from '../../../../hooks/useEstadoPersistido';
+import { descreverAusencia } from '../../../../utils/ausenciaColaborador';
 
 const FILTRO_VAZIO = {
   assunto: '', status: '', solicitanteId: '', atendenteId: '', atrasado: '', criadoDe: '', criadoAte: '',
@@ -232,6 +233,15 @@ export default function FilaAdm() {
                     {c.naoLidas > 0 && (
                       <span className="adm-nao-lidas" title={`${c.naoLidas} mensagem(ns) não lida(s)`}>
                         {c.naoLidas}
+                      </span>
+                    )}
+                    {/* A pessoa do chamado tem folga ou ausência no período:
+                        o detalhe diz as datas, aqui é só o sinal. */}
+                    {c.ausencias?.length > 0 && (
+                      <span className="adm-ausente"
+                        title={c.ausencias.map(descreverAusencia).join('; ')}
+                        aria-label="Colaborador com ausência no período">
+                        <CalendarOff size={14} />
                       </span>
                     )}
                     </td>

@@ -16,6 +16,10 @@ import CampoExtra from './CampoExtra';
 import { formDoServico } from './formularios';
 import { usaDescricao, usaAnexo } from './formularios/schemas';
 import { formatarTamanho } from '../../lib/arquivo';
+import {
+  PARA_MIM, PARA_OUTRA, perguntaParaQuem, colaboradorDoChamado, validarParaQuem,
+} from '../../lib/paraQuem';
+import SearchSelect from '../../../../components/UI/SearchSelect';
 
 // O seletor "Tipo" do Milldesk (incidente/materiais/informação/serviço) saiu da
 // tela: ninguém escolhia outra coisa, já que todo item do catálogo é serviço.
@@ -60,6 +64,11 @@ export default function NovoChamadoAdm() {
   // os demais começam com os campos extras cadastrados, que são chave/valor.
   const form = formDoServico(classe, servico);
   const [extras, setExtras] = useState(() => (form ? form.estadoInicial() : {}));
+  // Para quem é o chamado. A pessoa é confrontada com a Folga de Campo e a
+  // Ausência Programada: se estiver fora, o SLA só começa na volta dela.
+  const [paraQuem, setParaQuem] = useState(PARA_MIM);
+  const [outraPessoaId, setOutraPessoaId] = useState('');
+  const temParaQuem = perguntaParaQuem(classe, servico);
 
   // Trocar de serviço limpa o formulário (reset durante o render, padrão
   // recomendado pelo React em vez de setState dentro de useEffect).
@@ -73,18 +82,21 @@ export default function NovoChamadoAdm() {
     setSucesso(null);
     setExtras(form ? form.estadoInicial() : {});
     setConfig(null);
+    setParaQuem(PARA_MIM);
+    setOutraPessoaId('');
   }
 
-  // Lista de pessoas para os seletores com busca. Só os formulários que pedem
-  // (mobilização/desmobilização) pagam essa consulta.
+  // Lista de pessoas para os seletores com busca. Só paga essa consulta o
+  // formulário que pede pessoa, ou quem marcou que o chamado é para outra.
+  const precisaPessoas = !!form?.precisaPessoas || (temParaQuem && paraQuem === PARA_OUTRA);
   useEffect(() => {
-    if (!form?.precisaPessoas) return undefined;
+    if (!precisaPessoas) return undefined;
     let cancelado = false;
     listarPessoas()
       .then((lista) => { if (!cancelado) setPessoas(lista); })
       .catch((e) => { if (!cancelado) setErro(e.message); });
     return () => { cancelado = true; };
-  }, [form?.precisaPessoas]);
+  }, [precisaPessoas]);
 
   // Projetos do portal (os mesmos do módulo Horas) para o formulário que
   // precisa dizer ONDE a pessoa vai trabalhar. Leitura livre, mas só o
@@ -236,11 +248,15 @@ export default function NovoChamadoAdm() {
     // As duas validações: a do formulário do serviço e a dos campos cadastrados.
     // Antes só uma delas rodava, então campo extra obrigatório num serviço com
     // formulário próprio passava batido.
-    const erroExtra = (form ? form.validar(extras) : '')
+    const erroExtra = validarParaQuem({ classe, servico, paraQuem, outraPessoaId })
+      || (form ? form.validar(extras) : '')
       || validarCamposExtras(definicao, extras);
     if (erroExtra) return falhar(erroExtra);
     setErro('');
     setEnviando(true);
+    const colaboradorId = colaboradorDoChamado({
+      classe, servico, campos: extras, paraQuem, outraPessoaId, solicitanteId: user.id,
+    });
     try {
       // Mobilização tem caminho próprio: além do pedido dela, abre um chamado
       // para cada adicional escolhido, no serviço que já cuida daquilo.
@@ -252,6 +268,7 @@ export default function NovoChamadoAdm() {
           campos: extras,
           solicitanteId: user.id,
           config,
+          colaboradorId,
         });
         setSucesso({
           numero: r.chamado.numero,
@@ -276,6 +293,7 @@ export default function NovoChamadoAdm() {
         arquivos: temAnexo ? anexos : [],
         solicitanteId: user.id,
         config,
+        colaboradorId,
       });
       setSucesso({
         numero: chamado.numero,
@@ -383,6 +401,34 @@ export default function NovoChamadoAdm() {
                 <Lock size={15} aria-hidden="true" />
               </div>
               <span className="adm-campo-dica">Definido pelo serviço escolhido.</span>
+            </div>
+          )}
+
+          {temParaQuem && (
+            <div className="adm-campo">
+              <label>Para quem é este chamado?<span className="req">*</span></label>
+              <div className="adm-radios">
+                {[[PARA_MIM, 'Para mim'], [PARA_OUTRA, 'Para outra pessoa']].map(([v, rotulo]) => (
+                  <button key={v} type="button"
+                    className={`adm-chip ${paraQuem === v ? 'is-on' : ''}`}
+                    onClick={() => setParaQuem(v)} aria-pressed={paraQuem === v}>
+                    {rotulo}
+                  </button>
+                ))}
+              </div>
+              {paraQuem === PARA_OUTRA && (
+                <SearchSelect
+                  value={outraPessoaId}
+                  onChange={setOutraPessoaId}
+                  options={pessoas.map((p) => ({ value: p.id, label: p.nome }))}
+                  placeholder="Busque pelo nome…"
+                  ariaLabel="Pessoa para quem é o chamado"
+                />
+              )}
+              <span className="adm-campo-dica">
+                Se essa pessoa estiver de Folga de Campo ou em Ausência Programada, o prazo
+                começa a contar na volta dela.
+              </span>
             </div>
           )}
 

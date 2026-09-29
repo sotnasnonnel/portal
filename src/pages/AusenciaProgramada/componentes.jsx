@@ -273,6 +273,112 @@ export function ModalPedido({ mod, periodos, minhas, rascunho = null, aprovador,
  * `pessoas` vazio some com essa parte: a Folga de Campo usa o mesmo modal e não
  * tem essa edição.
  */
+/**
+ * RH corrige os dias TIRADOS de um período.
+ *
+ * "Tirados" não é um número gravado: é a soma dos lançamentos aprovados que já
+ * terminaram. Por isso a correção é feita em cada lançamento — as datas dele
+ * dizem quando a pessoa esteve fora, e isso vale para outras telas também.
+ * 0 cancela o lançamento; um número menor encurta a partir do mesmo início.
+ */
+export function ModalTirados({ periodo, lancamentos, onClose, onSalvar }) {
+  const [dias, setDias] = useState(() => Object.fromEntries(
+    lancamentos.map((l) => [l.id, String(l.dias)]),
+  ));
+  const [motivo, setMotivo] = useState('');
+  const [erro, setErro] = useState('');
+  const [salvando, setSalvando] = useState(false);
+
+  const valido = (l) => {
+    const n = Number(dias[l.id]);
+    return dias[l.id] !== '' && Number.isInteger(n) && n >= 0;
+  };
+  const alteracoes = lancamentos
+    .filter((l) => valido(l) && Number(dias[l.id]) !== l.dias)
+    .map((l) => ({ lancamento: l, dias: Number(dias[l.id]) }));
+  const total = lancamentos.reduce((s, l) => s + (valido(l) ? Number(dias[l.id]) : l.dias), 0);
+
+  async function salvar() {
+    const invalido = lancamentos.find((l) => !valido(l));
+    if (invalido) return setErro(`Dias inválidos no lançamento #${invalido.numero}.`);
+    if (!alteracoes.length) return setErro('Nenhum lançamento foi alterado.');
+    if (!motivo.trim()) return setErro('Informe o motivo da correção.');
+    setErro('');
+    setSalvando(true);
+    try {
+      await onSalvar(alteracoes, motivo.trim());
+    } catch (e) {
+      setErro(e?.message || 'Falha ao corrigir.');
+      setSalvando(false);
+    }
+  }
+
+  const ficaComo = (l) => {
+    if (!valido(l)) return '—';
+    const n = Number(dias[l.id]);
+    if (n === 0) return 'Cancelado';
+    if (n === l.dias) return 'Sem mudança';
+    return `${fmtDataBr(l.data_inicio)} a ${fmtDataBr(fimPorDias(l.data_inicio, n))}`;
+  };
+
+  return (
+    <Modal
+      titulo="Corrigir dias tirados"
+      onClose={onClose}
+      bloqueado={salvando}
+      rodape={(
+        <>
+          <button className="btn btn-outline" onClick={onClose} disabled={salvando}>Voltar</button>
+          <button className="btn btn-primary" onClick={salvar} disabled={salvando}>
+            {salvando ? 'Salvando...' : 'Salvar'}
+          </button>
+        </>
+      )}
+    >
+      <p className="ap-modal-sub">
+        {periodo.colaborador_nome} · período {rotuloPeriodo(periodo)} · tirados hoje {periodo.dias_tirados} dia(s)
+      </p>
+      <Alerta tipo="info">
+        Informe quantos dias a pessoa de fato tirou em cada lançamento. <strong>0</strong> cancela o
+        lançamento; um número menor encurta a ausência a partir do mesmo início. Os dias voltam
+        para o saldo.
+      </Alerta>
+
+      <table className="data-table">
+        <thead>
+          <tr><th>Lançamento</th><th>Datas</th><th className="ap-num">Dias tirados</th><th>Fica</th></tr>
+        </thead>
+        <tbody>
+          {lancamentos.map((l) => (
+            <tr key={l.id}>
+              <td>
+                #{l.numero}
+                <div className="ap-sub">{l.origem === 'importacao' ? 'Importado da planilha' : 'Pedido no portal'}</div>
+              </td>
+              <td>{fmtDataBr(l.data_inicio)} a {fmtDataBr(l.data_fim)}</td>
+              <td className="ap-num">
+                <input className="form-input" type="number" min={0} step={1} style={{ maxWidth: 90 }}
+                  aria-label={`Dias tirados no lançamento ${l.numero}`}
+                  value={dias[l.id]} onChange={(e) => setDias((d) => ({ ...d, [l.id]: e.target.value }))} />
+              </td>
+              <td>{ficaComo(l)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="ap-sub">Total tirado depois da correção: <strong>{total}</strong> dia(s).</p>
+
+      <div className="form-group">
+        <label className="form-label">Motivo da correção</label>
+        <input className="form-input" value={motivo} onChange={(e) => setMotivo(e.target.value)}
+          placeholder="Ex.: lançamento da planilha, a pessoa não chegou a sair" />
+      </div>
+
+      {erro && <Alerta tipo="erro">{erro}</Alerta>}
+    </Modal>
+  );
+}
+
 export function ModalPeriodo({
   periodo = null, colaborador = null, pessoas = [], onClose, onSalvar, onSalvarCadastro,
 }) {

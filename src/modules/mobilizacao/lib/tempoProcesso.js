@@ -13,23 +13,15 @@
  * processo como concluído, e nos 107 processos importados isso é o dia da
  * carga — pela régua errada a média dava 114 dias onde o real são 17.
  *
- * DIAS CORRIDOS, e não úteis: o pedido é "tempo total de mobilização", que é
- * quanto a pessoa esperou. Prazo de etapa continua em dias úteis, que é outra
- * pergunta — quanto tempo o time teve para trabalhar.
+ * DIAS ÚTEIS, contando o dia de abertura e o dia final. Era em dias corridos
+ * até 29/09/2026, quando a Edijane apontou a divergência: o #140, aberto na
+ * sexta 25/09, aparecia com 4 dias na terça 29/09, e o time conta 3 (sexta,
+ * segunda e terça). É a mesma régua dos prazos das etapas.
  *
  * Lógica pura, testável com `node --test`.
  */
 
-const DIA = 86400000;
-
-/** 'AAAA-MM-DD' (ou Date/ISO) → Date local ao meio-dia, longe de borda de fuso. */
-function dia(valor) {
-  if (!valor) return null;
-  const iso = String(valor).slice(0, 10);
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
-  if (!m) return null;
-  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12, 0, 0);
-}
+import { diasUteisEntre, hojeIso } from '../../../utils/diasUteis.js';
 
 /**
  * Dias de duração do processo, ou null quando não dá para saber.
@@ -38,17 +30,12 @@ function dia(valor) {
  * aqui não há informação nenhuma.
  */
 export function tempoTotalDias(processo, hoje = new Date()) {
-  const inicio = dia(processo?.data_base);
-  if (!inicio) return null;
-
-  const fim = processo?.concluido_real
-    ? dia(processo.concluido_real)
-    : new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate(), 12, 0, 0);
-  if (!fim) return null;
-
+  if (!processo?.data_base) return null;
+  const inicio = String(processo.data_base).slice(0, 10);
+  const fim = processo.concluido_real ? String(processo.concluido_real).slice(0, 10) : hojeIso(hoje);
   // Processo importado pode ter a última etapa marcada ANTES da data-base
-  // (planilha preenchida a mão). Negativo não é duração: vira zero.
-  return Math.max(0, Math.round((fim.getTime() - inicio.getTime()) / DIA));
+  // (planilha preenchida a mão): a contagem dá 0, não um número negativo.
+  return diasUteisEntre(inicio, fim);
 }
 
 /** O processo já acabou? É o que separa "levou" de "está levando". */

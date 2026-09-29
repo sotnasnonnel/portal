@@ -379,7 +379,7 @@ async function traduzirErroInsert(msg, solicitanteId) {
  */
 export async function criarChamado({
   classe, servico, assunto, natureza, descricao, campos = {}, arquivos = [], solicitanteId,
-  config = null, origemChamadoId = null,
+  config = null, origemChamadoId = null, colaboradorId = null,
 }) {
   // O formulário já carregou a config para desenhar os campos extras; reusar
   // evita uma segunda ida ao banco no momento do envio.
@@ -426,6 +426,9 @@ export async function criarChamado({
       // Só vai no insert quando existe: chamado avulso não tem origem, e mandar
       // a coluna com null em todo insert acoplaria o fluxo comum a esta feature.
       ...(origemChamadoId ? { origem_chamado_id: origemChamadoId } : {}),
+      // Para quem é o chamado (ver paraQuem.js). O gatilho do SLA lê esta
+      // coluna no insert: se a pessoa estiver ausente, o prazo vai para a volta.
+      ...(colaboradorId ? { colaborador_id: colaboradorId } : {}),
     })
     .select('id, numero, status, atendente_id')
     .single();
@@ -513,7 +516,7 @@ export async function criarChamado({
  * @returns {{chamado, atendenteNome, filhos: Array<{numero, classe, servico}>}}
  */
 export async function criarMobilizacaoComAdicionais({
-  assunto, natureza, descricao, campos = {}, solicitanteId, config = null,
+  assunto, natureza, descricao, campos = {}, solicitanteId, config = null, colaboradorId = null,
 }) {
   const filhos = desdobrarMobilizacao(campos);
 
@@ -542,6 +545,7 @@ export async function criarMobilizacaoComAdicionais({
     arquivos: [],          // mobilização não tem anexo
     solicitanteId,
     config,
+    colaboradorId,
   });
 
   const criados = [];
@@ -559,6 +563,9 @@ export async function criarMobilizacaoComAdicionais({
         solicitanteId,
         config: filho.config,
         origemChamadoId: pai.chamado.id,
+        // Os adicionais são do mesmo profissional: a folga dele também adia
+        // o notebook e o EPI, não só a mobilização.
+        colaboradorId,
       });
       criados.push({ numero: chamado.numero, classe: filho.classe, servico: filho.servico });
     } catch (e) {
@@ -794,7 +801,7 @@ export async function buscarChamado(id) {
     .filter(Boolean);
 
   const ids = [...new Set(
-    [data.solicitante_id, data.atendente_id, ...idsDePessoa].filter(Boolean),
+    [data.solicitante_id, data.atendente_id, data.colaborador_id, ...idsDePessoa].filter(Boolean),
   )];
   const nomes = new Map();
   if (ids.length) {
@@ -803,15 +810,34 @@ export async function buscarChamado(id) {
   }
   const { data: avaliacao } = await supabase
     .from('chamados_adm_avaliacoes').select('*').eq('chamado_id', id).maybeSingle();
+  const ausencias = await buscarAusenciasDosChamados([id]);
 
   return {
     ...data,
     solicitanteNome: nomes.get(data.solicitante_id) || '',
     atendenteNome: nomes.get(data.atendente_id) || '',
+    colaboradorNome: nomes.get(data.colaborador_id) || '',
+    ausencias: ausencias[id] || [],
     // id -> nome, para a tela trocar o UUID pelo nome de quem foi escolhido.
     nomesDosCampos: Object.fromEntries(nomes),
     avaliacao: avaliacao || null,
   };
+}
+
+/**
+ * Folga de Campo e Ausência Programada do colaborador de cada chamado, entre a
+ * abertura e o fechamento: { [chamadoId]: [{ tipo, data_inicio, data_fim }] }.
+ *
+ * Silenciosa de propósito: é informação de apoio, e uma falha aqui não pode
+ * derrubar a fila nem o detalhe do chamado.
+ */
+export async function buscarAusenciasDosChamados(chamadoIds) {
+  if (!chamadoIds?.length) return {};
+  const { data, error } = await supabase.rpc('chamados_adm_ausencias', { p_chamados: chamadoIds });
+  if (error) return {};
+  const porChamado = {};
+  (data || []).forEach(({ chamado_id: id, ...a }) => { (porChamado[id] ||= []).push(a); });
+  return porChamado;
 }
 
 /**
@@ -863,14 +889,17 @@ export async function listarFila(colaboradorId, { apenasMeus = false, incluirEnc
     const { data: pessoas } = await supabase.rpc('nomes_colaboradores', { p_ids: ids });
     (pessoas || []).forEach((p) => nomes.set(p.id, p.nome));
   }
-  const naoLidas = await contarNaoLidasPorChamado(
-    (data || []).map((c) => c.id), { meuId: colaboradorId, souSolicitante: false },
-  );
+  const chamadoIds = (data || []).map((c) => c.id);
+  const [naoLidas, ausencias] = await Promise.all([
+    contarNaoLidasPorChamado(chamadoIds, { meuId: colaboradorId, souSolicitante: false }),
+    buscarAusenciasDosChamados(chamadoIds),
+  ]);
   return (data || []).map((c) => ({
     ...c,
     solicitanteNome: nomes.get(c.solicitante_id) || '',
     atendenteNome: nomes.get(c.atendente_id) || '',
     naoLidas: naoLidas[c.id] || 0,
+    ausencias: ausencias[c.id] || [],
   }));
 }
 

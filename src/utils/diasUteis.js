@@ -111,5 +111,24 @@ export function diasEntre(isoA, isoB) {
   return Math.round((a.getTime() - b.getTime()) / 86400000);
 }
 
+/**
+ * Quantos dias ÚTEIS há de `isoInicio` a `isoFim`, contando as DUAS pontas.
+ *
+ * É a conta que o time da Mobilização faz de cabeça: aberto na sexta 25/09 e
+ * olhado na terça 29/09 são 3 dias (sexta, segunda e terça). Fim antes do
+ * início dá 0. Datas inválidas dão null.
+ */
+export function diasUteisEntre(isoInicio, isoFim) {
+  const d = deIso(isoInicio);
+  const fim = deIso(isoFim);
+  if (!d || !fim) return null;
+  let n = 0;
+  while (d.getTime() <= fim.getTime()) {
+    if (ehDiaUtil(d)) n += 1;
+    d.setDate(d.getDate() + 1);
+  }
+  return n;
+}
+
 /** Hoje como 'AAAA-MM-DD', no fuso de quem está olhando. */
 export const hojeIso = (agora = new Date()) => paraIso(agora);

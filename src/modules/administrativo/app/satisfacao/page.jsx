@@ -8,6 +8,7 @@ import {
   resumoSatisfacao, faixaDaMedia, posicaoNaEscala, comentarios,
   MINIMO_CONFIAVEL, NOTA_MIN, NOTA_MAX, NOTA_BAIXA_ATE,
 } from '../../lib/satisfacao';
+import { filtrarPorArea, AREAS_INDICADORES } from '../../lib/indicadores';
 
 const umaCasa = (n) => (n === null ? '—' : n.toFixed(1).replace('.', ','));
 const dataCurta = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR') : '—');
@@ -21,6 +22,8 @@ export default function SatisfacaoAdm() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
   const [soBaixas, setSoBaixas] = useState(false);
+  // Total / ADM / TI — o mesmo recorte e a mesma regra dos Indicadores.
+  const [area, setArea] = useState('todos');
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -36,16 +39,17 @@ export default function SatisfacaoAdm() {
 
   useEffect(() => { carregar(); }, [carregar]);
 
+  const daArea = useMemo(() => filtrarPorArea(avaliacoes, area), [avaliacoes, area]);
   const observacoes = useMemo(
-    () => comentarios(avaliacoes, { apenasBaixas: soBaixas }),
-    [avaliacoes, soBaixas]
+    () => comentarios(daArea, { apenasBaixas: soBaixas }),
+    [daArea, soBaixas]
   );
-  const quantasBaixas = useMemo(() => comentarios(avaliacoes, { apenasBaixas: true }).length, [avaliacoes]);
+  const quantasBaixas = useMemo(() => comentarios(daArea, { apenasBaixas: true }).length, [daArea]);
 
   // Gate de UI — a RLS é quem realmente restringe os dados.
   if (modules?.administrativo !== 'admin') return <Navigate to="/administrativo/novo" replace />;
 
-  const { total, media, distribuicao, porServico } = resumoSatisfacao(avaliacoes);
+  const { total, media, distribuicao, porServico } = resumoSatisfacao(daArea);
   const maiorNaDistribuicao = Math.max(1, ...distribuicao.map((d) => d.total));
 
   return (
@@ -55,12 +59,30 @@ export default function SatisfacaoAdm() {
 
       {erro && <div className="adm-aviso tom-erro"><AlertCircle size={16} /> {erro}</div>}
 
+      <div className="adm-radios" style={{ margin: '14px 0 4px' }}>
+        {AREAS_INDICADORES.map((a) => (
+          <button
+            key={a.chave}
+            type="button"
+            className={`adm-chip ${area === a.chave ? 'is-on' : ''}`}
+            aria-pressed={area === a.chave}
+            onClick={() => setArea(a.chave)}
+          >
+            {a.label}
+          </button>
+        ))}
+        <span className="adm-campo-dica" style={{ marginLeft: 8 }}>
+          TI são os sete serviços de Manutenção &amp; Instalação TI; ADM é o restante.
+        </span>
+      </div>
+
       {carregando ? (
         <div className="adm-vazio"><Loader2 size={20} className="adm-spin" /> Carregando…</div>
       ) : total === 0 ? (
         <div className="adm-vazio">
-          Nenhuma avaliação registrada ainda. Elas aparecem aqui conforme os chamados
-          são concluídos e avaliados.
+          {avaliacoes.length === 0
+            ? 'Nenhuma avaliação registrada ainda. Elas aparecem aqui conforme os chamados são concluídos e avaliados.'
+            : 'Nenhuma avaliação desta área ainda.'}
         </div>
       ) : (
         <>

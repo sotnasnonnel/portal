@@ -523,6 +523,11 @@
   border-radius: 999px; background: var(--a-primary); color: #fff;
   font-size: var(--font-size-2xs); font-weight: 700; vertical-align: middle;
 }
+/* Colaborador do chamado com folga/ausência no período (as datas vão no title). */
+.adm-ausente {
+  display: inline-flex; align-items: center; margin-left: 8px;
+  color: #b45309; vertical-align: middle; cursor: help;
+}
 /* Prazo estourado precisa saltar na fila, não só constar. */
 .adm-tabela td.is-vencido { color: #b91c1c; font-weight: 700; }
 

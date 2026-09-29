@@ -12,7 +12,7 @@ import {
 const dataBr = (iso) => (iso ? iso.split('-').reverse().join('/') : '—');
 
 const VAZIO = {
-  busca: '', origem: '', grupo: '', status: '', responsavelId: '',
+  busca: '', origem: '', grupo: '', status: '', responsavelId: '', responsavelContrato: '',
   atrasadas: false, incluirEncerradas: false,
 };
 
@@ -83,6 +83,14 @@ export default function EtapasTorre() {
             {user?.id && <option value={user.id}>Eu</option>}
             {opcoes.temSemResponsavel && <option value="sem">Sem responsável</option>}
             {opcoes.responsaveis.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+          </select>
+        </div>
+
+        <div className="mob-filtro" style={{ minWidth: 220 }}>
+          <label htmlFor="tor-e-resp-contrato">Responsável pelo contrato</label>
+          <select id="tor-e-resp-contrato" value={f.responsavelContrato} onChange={trocar('responsavelContrato')}>
+            <option value="">Todos</option>
+            {opcoes.responsaveisContrato.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
 
