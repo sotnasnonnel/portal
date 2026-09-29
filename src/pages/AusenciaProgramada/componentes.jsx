@@ -5,6 +5,11 @@ import {
   rotuloPeriodo, situacaoPeriodo, statusLabel, validarPedido, diaISO,
 } from '../../config/ausenciaProgramada';
 
+// Mesma lista da tela de Cadastro (AdminCadastro/AdminListagem). Repetida e não
+// importada porque aquelas telas são do módulo de colaboradores; quando isso
+// virar config compartilhada, os três pontos passam a ler do mesmo lugar.
+const FORMATO_OPCOES = ['CLT', 'PJ', 'Sócio Cotista', 'Diretoria'];
+
 // `icone` chega como elemento pronto (<CalendarDays size={22} />): o projeto não
 // usa eslint-plugin-react, e um componente recebido por prop seria acusado de
 // variável não usada.
@@ -260,8 +265,26 @@ export function ModalPedido({ mod, periodos, minhas, rascunho = null, aprovador,
 }
 
 // RH: corrige um período ou cadastra um novo (`periodo` null + `colaborador`).
-export function ModalPeriodo({ periodo = null, colaborador = null, onClose, onSalvar }) {
+/**
+ * Corrigir/cadastrar período — e, junto, os dois campos do CADASTRO que o RH
+ * mais precisa corrigir enquanto confere saldo: modalidade e gestor (pedido do
+ * Maicon, 29/09/2026).
+ *
+ * `pessoas` vazio some com essa parte: a Folga de Campo usa o mesmo modal e não
+ * tem essa edição.
+ */
+export function ModalPeriodo({
+  periodo = null, colaborador = null, pessoas = [], onClose, onSalvar, onSalvarCadastro,
+}) {
   const novo = !periodo;
+  const alvoId = periodo?.colaborador_id || colaborador?.id || null;
+  const pessoa = pessoas.find((p) => p.id === alvoId) || null;
+  // Só o que foi MEXIDO fica no estado; o resto se lê da pessoa. Guardar uma
+  // cópia do cadastro exigiria um efeito para recarregá-la quando a lista de
+  // pessoas chegasse — e o campo ficaria em branco até lá.
+  const [cad, setCad] = useState({});
+  const formatoAtual = cad.formato ?? (pessoa?.formato || '');
+  const superiorAtual = cad.superior ?? (pessoa?.superior_id || '');
   const [f, setF] = useState(() => ({
     inicio_periodo: periodo?.inicio_periodo || colaborador?.data_admissao || '',
     fim_periodo: periodo?.fim_periodo || '',
@@ -298,6 +321,17 @@ export function ModalPeriodo({ periodo = null, colaborador = null, onClose, onSa
     setErro('');
     setSalvando(true);
     try {
+      // O cadastro vai primeiro: se ele falhar (um ciclo no organograma, por
+      // exemplo), o período não fica salvo pela metade.
+      if (onSalvarCadastro && pessoa && (
+        formatoAtual !== (pessoa.formato || '') || superiorAtual !== (pessoa.superior_id || '')
+      )) {
+        await onSalvarCadastro(pessoa.id, {
+          formato: formatoAtual || null,
+          superiorId: superiorAtual || null,
+          limparSuperior: !superiorAtual && !!pessoa.superior_id,
+        });
+      }
       await onSalvar({
         ...(novo ? { colaborador_id: colaborador.id } : {}),
         inicio_periodo: f.inicio_periodo,
@@ -376,6 +410,37 @@ export function ModalPeriodo({ periodo = null, colaborador = null, onClose, onSa
         <label className="form-label">Observação (opcional)</label>
         <textarea className="form-input" rows={2} value={f.observacao} onChange={set('observacao')} />
       </div>
+
+      {/* Cadastro do colaborador — separado do período de propósito: o que se
+          edita aqui NÃO é do controle de ausência, vale para o portal inteiro. */}
+      {onSalvarCadastro && pessoa && (
+        <>
+          <p className="ap-modal-sub" style={{ marginTop: 'var(--space-md)' }}>Cadastro do colaborador</p>
+          <div className="ap-form-linha">
+            <div className="form-group">
+              <label className="form-label">Modalidade</label>
+              <select className="form-select" value={formatoAtual}
+                onChange={(e) => setCad((c) => ({ ...c, formato: e.target.value }))}>
+                <option value="">Sem modalidade</option>
+                {FORMATO_OPCOES.map((o) => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Gestor</label>
+              <select className="form-select" value={superiorAtual}
+                onChange={(e) => setCad((c) => ({ ...c, superior: e.target.value }))}>
+                <option value="">Sem gestor</option>
+                {pessoas.filter((x) => x.id !== pessoa.id)
+                  .map((x) => <option key={x.id} value={x.id}>{x.nome}</option>)}
+              </select>
+            </div>
+          </div>
+          <Alerta tipo="info">
+            Modalidade e gestor são do cadastro, não deste controle: o gestor vale para o portal
+            inteiro — aprovação de chamados, requisições e visibilidade de horas.
+          </Alerta>
+        </>
+      )}
 
       {erro && <Alerta tipo="erro">{erro}</Alerta>}
     </Modal>

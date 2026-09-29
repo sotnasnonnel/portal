@@ -165,6 +165,30 @@ function montar(mod) {
     avisar();
   }
 
+  // RH: as pessoas ativas, para o seletor de gestor. A RLS de colaboradores só
+  // mostra a própria linha e a subárvore, então sem a RPC o seletor viria vazio.
+  async function listarPessoas() {
+    if (!mod.controlePessoas) return [];
+    const { data, error } = await supabase.rpc(fn('pessoas_listar'));
+    checar(error);
+    return data || [];
+  }
+
+  // RH: modalidade e gestor do colaborador, editados pelo painel. São campos do
+  // CADASTRO, não do controle de ausência — o que muda aqui é só o caminho até
+  // eles. O gestor vale para o portal inteiro (alçada, horas, requisições), e a
+  // RPC barra o ciclo no organograma.
+  async function editarCadastro(colaboradorId, { formato = null, superiorId = null, limparSuperior = false }) {
+    const { error } = await supabase.rpc(fn('editar_cadastro'), {
+      p_colaborador: colaboradorId,
+      p_formato: formato,
+      p_superior: superiorId,
+      p_limpar_superior: limparSuperior,
+    });
+    checar(error);
+    avisar();
+  }
+
   // RH: cadastra um período à mão (colaborador sem histórico).
   async function criarPeriodo(campos) {
     const { error } = await supabase
@@ -191,5 +215,7 @@ function montar(mod) {
     listarForaDoControle,
     resumoDoColaborador,
     definirControle,
+    listarPessoas,
+    editarCadastro,
   };
 }

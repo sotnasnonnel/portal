@@ -33,6 +33,7 @@ export default function VisaoGeralAusencia({ mod = MOD_AUSENCIA, escopo = 'equip
   const [pedidos, setPedidos] = useState([]);
   const [semPeriodo, setSemPeriodo] = useState([]);
   const [foraDoControle, setForaDoControle] = useState([]);
+  const [pessoas, setPessoas] = useState([]);
   const [removendo, setRemovendo] = useState(null); // { colaborador, resumo }
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState('');
@@ -46,22 +47,25 @@ export default function VisaoGeralAusencia({ mod = MOD_AUSENCIA, escopo = 'equip
   const carregar = useCallback(async () => {
     setErro('');
     try {
-      const [ps, ss, sp, fora] = await Promise.all([
+      const [ps, ss, sp, fora, pes] = await Promise.all([
         api.listarPeriodos(escopo),
         api.listarSolicitacoes(escopo),
         ehRh ? api.listarSemPeriodo() : Promise.resolve([]),
         ehRh ? api.listarForaDoControle() : Promise.resolve([]),
+        // Para o seletor de gestor do modal. Só o RH edita cadastro.
+        ehRh && mod.controlePessoas ? api.listarPessoas() : Promise.resolve([]),
       ]);
       setPeriodos(ps);
       setPedidos(ss);
       setSemPeriodo(sp);
       setForaDoControle(fora);
+      setPessoas(pes);
     } catch (e) {
       setErro(e?.message || 'Falha ao carregar.');
     } finally {
       setLoading(false);
     }
-  }, [api, escopo, ehRh]);
+  }, [api, escopo, ehRh, mod.controlePessoas]);
 
   useEffect(() => { api.gerarAlertas(); carregar(); }, [api, carregar]);
   useRecarregarAoMudar(mod.evento, carregar);
@@ -502,6 +506,10 @@ export default function VisaoGeralAusencia({ mod = MOD_AUSENCIA, escopo = 'equip
         <ModalPeriodo
           periodo={editando.periodo || null}
           colaborador={editando.colaborador || null}
+          pessoas={ehRh && mod.controlePessoas ? pessoas : []}
+          onSalvarCadastro={ehRh && mod.controlePessoas
+            ? (id, campos) => api.editarCadastro(id, campos)
+            : undefined}
           onClose={() => setEditando(null)}
           onSalvar={async (campos) => {
             if (editando.periodo) await api.atualizarPeriodo(editando.periodo.id, campos);
