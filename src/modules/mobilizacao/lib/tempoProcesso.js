@@ -75,5 +75,8 @@ export function tempoMedioDias(processos = [], hoje = new Date()) {
     .filter((d) => d !== null);
   if (!dias.length) return { media: null, total: 0 };
   const soma = dias.reduce((a, b) => a + b, 0);
-  return { media: Math.round((soma / dias.length) * 10) / 10, total: dias.length };
+  // Arredonda para CIMA, a pedido do André (29/09/2026): dia começado é dia
+  // gasto, e "16,7 dias" não é informação que alguém use — a decisão é sempre
+  // sobre dias inteiros.
+  return { media: Math.ceil(soma / dias.length), total: dias.length };
 }

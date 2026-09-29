@@ -234,3 +234,20 @@ test('serviço sem nenhum fechado não inventa média', () => {
   assert.equal(r.porServico[0].tempoMedio, null);
   assert.equal(r.porServico[0].medidos, 0);
 });
+
+test('o tempo médio por serviço arredonda para cima', () => {
+  const r = resumoIndicadores([
+    fechado({ servicoLabel: 'Uber TI' }),                                    // 3 dias
+    fechado({ servicoLabel: 'Uber TI', fechado_em: '2026-09-05T09:00:00Z' }), // 4 dias
+  ], AGORA);
+  // (3 + 4) / 2 = 3,5
+  assert.equal(r.porServico.find((s) => s.nome === 'Uber TI').tempoMedio, 4);
+});
+
+// Chamado resolvido em horas não pode aparecer como "0 d".
+test('menos de um dia conta como um dia', () => {
+  const r = resumoIndicadores([
+    fechado({ servicoLabel: 'Rapidinho', fechado_em: '2026-09-01T13:00:00Z' }),
+  ], AGORA);
+  assert.equal(r.porServico[0].tempoMedio, 1);
+});

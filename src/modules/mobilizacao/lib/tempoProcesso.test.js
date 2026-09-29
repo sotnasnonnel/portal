@@ -53,3 +53,22 @@ test('sem nenhum concluído, a média é nula — nunca zero', () => {
   assert.deepEqual(tempoMedioDias([{ data_base: '2026-09-28' }], HOJE), { media: null, total: 0 });
   assert.deepEqual(tempoMedioDias([], HOJE), { media: null, total: 0 });
 });
+
+// Dia começado é dia gasto: a média vai para cima, nunca para baixo.
+test('a média arredonda para cima', () => {
+  const lista = [
+    { data_base: '2026-09-01', concluido_real: '2026-09-11' }, // 10
+    { data_base: '2026-09-01', concluido_real: '2026-09-12' }, // 11
+    { data_base: '2026-09-01', concluido_real: '2026-09-12' }, // 11
+  ];
+  // (10 + 11 + 11) / 3 = 10,67
+  assert.equal(tempoMedioDias(lista, HOJE).media, 11);
+});
+
+test('média exata não ganha um dia a mais', () => {
+  const lista = [
+    { data_base: '2026-09-01', concluido_real: '2026-09-11' }, // 10
+    { data_base: '2026-09-01', concluido_real: '2026-09-11' }, // 10
+  ];
+  assert.equal(tempoMedioDias(lista, HOJE).media, 10);
+});

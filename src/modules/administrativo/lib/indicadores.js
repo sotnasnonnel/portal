@@ -141,8 +141,11 @@ export function diasDeAtendimento(c) {
   return (fim - inicio) / 86400000;
 }
 
-const media1 = (nums) => (nums.length
-  ? Math.round((nums.reduce((a, b) => a + b, 0) / nums.length) * 10) / 10
+// Média em dias INTEIROS, arredondada para cima (pedido do André, 29/09/2026):
+// um chamado que levou meio dia conta como um dia, e a coluna não vira uma
+// coleção de decimais que ninguém compara.
+const mediaDias = (nums) => (nums.length
+  ? Math.ceil(nums.reduce((a, b) => a + b, 0) / nums.length)
   : null);
 
 /**
@@ -168,7 +171,7 @@ function agruparPorServico(chamados) {
       ...linha,
       // `medidos` vai junto: uma média de um chamado só não é média, e a tela
       // precisa poder dizer isso.
-      tempoMedio: media1(tempos),
+      tempoMedio: mediaDias(tempos),
       medidos: tempos.length,
     }))
     .sort((a, b) => (b.total - a.total) || a.nome.localeCompare(b.nome, 'pt-BR'));
