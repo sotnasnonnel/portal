@@ -225,6 +225,7 @@
 /* Abas */
 .pj-abas {
   display: flex;
+  flex-shrink: 0; /* dentro de um pai flex em coluna, o overflow deixava a barra encolher até sumir */
   gap: 2px;
   border-bottom: 1px solid var(--color-border);
   overflow-x: auto;

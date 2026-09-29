@@ -1,8 +1,10 @@
+import { useEffect, useState } from 'react';
 import { Printer } from 'lucide-react';
 import { useFechamentoPj } from '../components/contexto';
-import { Modal } from '../components/ui';
-import { dataBr, dataExtenso, valorComExtenso, numeroExtenso, round2, mascararCnpj } from '../../lib/formato';
-import { auditar } from '../../lib/dados';
+import { Modal, Aviso, Carregando } from '../components/ui';
+import { dataBr, dataExtenso, valorComExtenso, numeroExtenso, mascararCnpj, fmtBRL } from '../../lib/formato';
+import { auditar, envelopesDoPrestador } from '../../lib/dados';
+import { totaisEventos, EVENTO_BRUTO } from '../../lib/calculo';
 
 const CONTRATANTE = {
   nome: 'PHD ASSESSORIA EM GESTÃO LTDA',
@@ -31,38 +33,88 @@ function percentualExtenso(v) {
   return Number.isInteger(n) ? `${n}% (${numeroExtenso(n)} por cento)` : `${String(n).replace('.', ',')}%`;
 }
 
-const ROMANOS = ['i', 'ii', 'iii', 'iv', 'v'];
+const ROMANOS = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x'];
 
 // Verbas do acerto na ordem em que o instrumento as enumera: '(i) ...; e (ii) ...'.
 function listarVerbas(verbas) {
-  const itens = verbas.map((texto, i) => `(${ROMANOS[i]}) ${texto}`);
+  const itens = verbas.map((texto, i) => `(${ROMANOS[i] || i + 1}) ${texto}`);
   if (itens.length <= 1) return itens.join('');
   return `${itens.slice(0, -1).join('; ')}; e ${itens[itens.length - 1]}`;
 }
 
-/** Termo de encerramento de parceria e quitação, a partir do encerramento gravado. */
+const ehIndenizacao = (e) => /INDENIZ/i.test(e.descricao || '');
+
+// Texto de cada provento do envelope. O 1000 e a indenização têm redação
+// própria no termo; os demais saem com a descrição do evento.
+function textoProvento(e, envelope, encerramento) {
+  const valor = valorComExtenso(e.valor);
+  if (e.codigo === EVENTO_BRUTO) {
+    const dias = envelope.proporcional_motivo ? `, proporcional a ${envelope.dias_ativos ?? '—'}/${envelope.divisor ?? '—'} dias` : '';
+    return `${valor} referente à remuneração dos serviços prestados no período${dias}`;
+  }
+  if (ehIndenizacao(e) && encerramento.indenizacao_percentual) {
+    return `${valor} referente à indenização de ${percentualExtenso(encerramento.indenizacao_percentual)} do valor mensal, `
+      + 'conforme estipulado no Parágrafo Segundo da Cláusula Segunda do Contrato originário';
+  }
+  return `${valor} a título de ${e.descricao}`;
+}
+
+/**
+ * Termo de encerramento de parceria e quitação. Os valores saem do envelope da
+ * competência do encerramento (o mesmo que vai para o pagamento), e não da foto
+ * gravada no registro do encerramento, que não acompanha lançamentos feitos depois.
+ */
 export default function Distrato({ encerramento, prestador, onFechar }) {
   const { notificar } = useFechamentoPj();
-  const proporcional = Number(encerramento.valor_proporcional) || 0;
-  const indenizacao = Number(encerramento.valor_indenizacao) || 0;
-  const descontos = Number(encerramento.descontos) || 0;
-  const liquido = round2(proporcional - descontos + indenizacao);
+  const [carga, setCarga] = useState({ carregando: true, erro: '', envelope: null });
 
-  const verbas = [];
-  if (proporcional > 0) {
-    verbas.push(`${valorComExtenso(proporcional)} referente à remuneração dos serviços prestados no período, `
-      + `proporcional a ${encerramento.dias_ativos ?? '—'}/${encerramento.divisor ?? '—'} dias`);
+  useEffect(() => {
+    let vivo = true;
+    envelopesDoPrestador(prestador.id)
+      .then((lista) => {
+        if (vivo) setCarga({ carregando: false, erro: '', envelope: lista.find((e) => e.competencia === encerramento.competencia) || null });
+      })
+      .catch((e) => { if (vivo) setCarga({ carregando: false, erro: e.message, envelope: null }); });
+    return () => { vivo = false; };
+  }, [prestador.id, encerramento.competencia]);
+
+  const { envelope } = carga;
+  const eventos = (envelope?.eventos || [])
+    .map((e) => ({ ...e, valor: Number(e.valor) || 0 }))
+    .filter((e) => e.valor)
+    .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
+  const proventos = eventos.filter((e) => e.natureza === 'provento');
+  const listaDescontos = eventos.filter((e) => e.natureza === 'desconto');
+  const { descontos, liquido } = totaisEventos(eventos);
+
+  // Sem envelope, sem cálculo ou calculado antes do encerramento (ainda com o
+  // mês cheio), o termo sairia com valor que não é o do pagamento.
+  let bloqueio = '';
+  if (carga.erro) bloqueio = carga.erro;
+  else if (!carga.carregando && !envelope) {
+    bloqueio = 'O prestador não tem envelope nesta competência. Inclua-o na Folha do mês e calcule antes de gerar o distrato.';
+  } else if (envelope && !envelope.calculado_em) {
+    bloqueio = 'O envelope desta competência ainda não foi calculado. Calcule-o na Folha do mês antes de gerar o distrato.';
+  } else if (envelope && encerramento.registrado_em && envelope.calculado_em < encerramento.registrado_em) {
+    bloqueio = 'O envelope foi calculado antes do registro do encerramento. Recalcule-o na Folha do mês antes de gerar o distrato.';
   }
-  if (indenizacao > 0) {
-    verbas.push(`${valorComExtenso(indenizacao)} referente à indenização de `
-      + `${percentualExtenso(encerramento.indenizacao_percentual)} do valor mensal, conforme estipulado no `
-      + 'Parágrafo Segundo da Cláusula Segunda do Contrato originário');
+
+  const alertas = [];
+  const indenizacaoRegistrada = Number(encerramento.valor_indenizacao) || 0;
+  if (envelope && indenizacaoRegistrada > 0 && !proventos.some(ehIndenizacao)) {
+    alertas.push(`O encerramento prevê indenização de ${fmtBRL(indenizacaoRegistrada)}, mas o envelope não tem esse provento. `
+      + 'O distrato sai só com o que está no envelope: lance a indenização no envelope para ela entrar no termo e no pagamento.');
   }
+  if (envelope && liquido < 0) alertas.push('Os descontos do envelope passam dos proventos: o valor total do termo ficou negativo.');
+
+  const verbas = envelope ? proventos.map((e) => textoProvento(e, envelope, encerramento)) : [];
+  const detalheDescontos = listaDescontos.map((e) => `${e.descricao} (${fmtBRL(e.valor)})`).join('; ');
 
   const razaoSocial = ou(prestador.razao_social, '[RAZÃO SOCIAL NÃO INFORMADA]');
   const cnpjContratada = prestador.cnpj ? mascararCnpj(prestador.cnpj) : '[não informado]';
 
   async function imprimir() {
+    if (bloqueio || carga.carregando) return;
     window.print();
     try {
       await auditar('Distrato gerado', `${prestador.nome} • encerramento em ${dataBr(encerramento.data_encerramento)}`,
@@ -77,9 +129,15 @@ export default function Distrato({ encerramento, prestador, onFechar }) {
       rodape={(
         <>
           <button type="button" className="btn btn-ghost" onClick={onFechar}>Fechar</button>
-          <button type="button" className="btn btn-primary" onClick={imprimir}><Printer size={18} /> Gerar PDF / Imprimir</button>
+          <button type="button" className="btn btn-primary" onClick={imprimir} disabled={Boolean(bloqueio) || carga.carregando}>
+            <Printer size={18} /> Gerar PDF / Imprimir
+          </button>
         </>
       )}>
+      {carga.carregando && <Carregando texto="Carregando o envelope…" />}
+      {bloqueio && <Aviso tipo="erro">{bloqueio}</Aviso>}
+      {alertas.map((a) => <Aviso key={a} tipo="alerta">{a}</Aviso>)}
+      {envelope && !bloqueio && (
       <div className="pj-documento pj-imprimir pjp-distrato">
         <h1>TERMO DE ENCERRAMENTO DE PARCERIA E QUITAÇÃO</h1>
 
@@ -133,7 +191,7 @@ export default function Distrato({ encerramento, prestador, onFechar }) {
           de <b>{valorComExtenso(liquido)}</b>, que será pago pela CONTRATANTE à CONTRATADA
           {verbas.length > 0 && <>, composto pelas seguintes verbas: {listarVerbas(verbas)}</>}
           {descontos > 0 && <>, já deduzidos {valorComExtenso(descontos)} a título de descontos compensados no
-            período</>}. O montante total será pago pela CONTRATANTE à CONTRATADA
+            período: {detalheDescontos}</>}. O montante total será pago pela CONTRATANTE à CONTRATADA
           em {dataExtenso(encerramento.data_pagamento)}, mediante o envio da respectiva nota fiscal.
         </p>
         <p>
@@ -208,6 +266,7 @@ export default function Distrato({ encerramento, prestador, onFechar }) {
           </div>
         </div>
       </div>
+      )}
     </Modal>
   );
 }

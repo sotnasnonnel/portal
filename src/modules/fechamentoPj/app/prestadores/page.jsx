@@ -18,12 +18,12 @@ import ConferenciaBradesco from './ConferenciaBradesco';
 import TableScroll from '../../../../components/UI/TableScroll';
 import './prestadores.css';
 
-// A tela é só de quem está ativo: desligado não entra em nenhum filtro. Quem
-// precisa consultar um cadastro encerrado chega pelo link direto do prestador
-// ou pelo histórico de encerramentos.
+// Os cards e os filtros de pendência olham só os ativos. O chip "Desligados"
+// lista os encerrados, que é por onde se chega ao distrato deles.
 const CHIPS = [
   ['ativos', 'Ativos'],
   ['pendencias', 'Pendências'],
+  ['desligados', 'Desligados'],
 ];
 
 const ROTULO_FILTRO = {
@@ -66,6 +66,7 @@ export default function Pagina() {
 
   const stats = useMemo(() => ({
     ativos: linhas.filter((l) => l.ativo).length,
+    desligados: linhas.filter((l) => !l.ativo).length,
     semRateio: linhas.filter((l) => l.semRateio).length,
     semRm: linhas.filter((l) => l.semRm).length,
     semBanco: linhas.filter((l) => l.semBanco).length,
@@ -73,6 +74,7 @@ export default function Pagina() {
   }), [linhas]);
 
   const visiveis = useMemo(() => linhas.filter((l) => {
+    if (filtro === 'desligados') return !l.ativo && casaBusca(l.p, busca);
     if (!l.ativo) return false;
     if (filtro === 'pendencias' && !(l.semRateio || l.semRm || l.semBanco)) return false;
     if (filtro === 'sem_rateio' && !l.semRateio) return false;
@@ -159,7 +161,11 @@ export default function Pagina() {
             <input type="text" value={busca} onChange={(e) => setBusca(e.target.value)}
               placeholder="Código, nome, e-mail, CPF, CNPJ, razão social, função, seção…" aria-label="Buscar prestador" />
           </div>
-          <span className="pjp-registro">{visiveis.length}/{stats.ativos} prestadores ativos</span>
+          <span className="pjp-registro">
+            {filtro === 'desligados'
+              ? `${visiveis.length}/${stats.desligados} prestadores desligados`
+              : `${visiveis.length}/${stats.ativos} prestadores ativos`}
+          </span>
         </div>
 
         {carregando ? <Carregando texto="Carregando prestadores…" /> : (

@@ -62,6 +62,8 @@ export function montarLinhasPagamento({ envelopes, prestadores, fornecedores, ra
         envelopeId: env.id,
         prestadorId: env.prestador_id,
         codigo: cad.codigo || p.codigo,
+        // Situação de hoje, não a congelada: desligado não entra no TXT.
+        ativo: p.situacao !== 'desligado',
         empresa: cad.empresa || p.empresa || '',
         nome: cad.nome || p.nome || '',
         razaoSocial: f?.razao_social || cad.razaoSocial || p.razao_social || '',
@@ -104,6 +106,9 @@ export const prontoParaTxt = (linha) => {
   return Boolean(linha.codigoRm) && a.length > 0 && a.every((x) => ccValido(x.cc));
 };
 
+// O TXT do Financeiro leva só os ativos; o desligado é pago pelo distrato.
+export const entraNoTxt = (linha) => linha.ativo !== false && prontoParaTxt(linha);
+
 export function datasPadrao(competencia, diaEmissao = 28) {
   const p = partesCompetencia(competencia);
   const n = partesCompetencia(proximaCompetencia(competencia));
@@ -128,7 +133,7 @@ export function documentoAutomatico(linha, indice, competencia) {
 const semAcento = (s) => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '');
 
 export const historicoTxt = (linha, competencia) =>
-  `Pagamento de servicos - PJ ${competenciaRotulo(competencia)} - ${semAcento(linha.nome)}`;
+  `Pagamento de servicos - PJ ${competenciaRotulo(competencia)} - ${semAcento(linha.nome).toUpperCase()}`;
 
 export const historicoExcel = (linha) => `Pagamento de serviços - NF ${String(linha.nf || '').trim() || '[PREENCHER]'}`;
 
@@ -153,10 +158,11 @@ const numeroFixo = (valor, casas, tam) => String(Math.round((Number(valor) || 0)
 
 /**
  * Linhas do TXT. L: valor com 4 casas implícitas; U: 2 casas — é o que está no
- * arquivo real exportado do RM que originou o layout.
+ * arquivo real exportado do RM que originou o layout. Conta/caixa, dados
+ * bancários e o histórico no U seguem o TXT que o Financeiro corrigiu em 09/2026.
  */
 export function gerarTxt({ linhas, competencia, rm = RM_PADRAO }) {
-  const prontos = linhas.filter(prontoParaTxt);
+  const prontos = linhas.filter(entraNoTxt);
   const datas = datasPadrao(competencia, rm.diaEmissao);
   const p = partesCompetencia(competencia);
   const token = `${p.mm}${p.mm}${p.aa}`;
@@ -164,6 +170,7 @@ export function gerarTxt({ linhas, competencia, rm = RM_PADRAO }) {
   const saida = [];
 
   prontos.forEach((linha, i) => {
+    const historico = historicoTxt(linha, competencia);
     const fornecedor = String(linha.codigoRm).replace(/\D/g, '').padStart(7, '0').slice(-7);
     let L = base(TAMANHO_L, CONSTANTES_L);
     L = colocar(L, 4, 11, coligada + fornecedor);
@@ -172,16 +179,19 @@ export function gerarTxt({ linhas, competencia, rm = RM_PADRAO }) {
     L = colocar(L, 283, 6, datas.vencimento);
     L = colocar(L, 289, 6, datas.emissao);
     L = colocar(L, 301, 6, datas.baixa);
+    L = colocar(L, 458, 10, rm.contaCaixa);
     L = colocar(L, 468, 18, numeroFixo(linha.liquido, 4, 18), 'direita', '0');
     L = colocar(L, 1566, 6, token);
     L = colocar(L, 1581, 3, rm.serie);
-    L = colocar(L, 1589, 255, historicoTxt(linha, competencia));
+    L = colocar(L, 1589, 255, historico);
+    L = colocar(L, 1914, 4, String(rm.dadosBancarios).padStart(4, '0'), 'direita', '0');
     saida.push(L);
 
     ratearLiquido(linha).forEach((a) => {
       let U = base(TAMANHO_U, CONSTANTES_U);
       U = colocar(U, 1, 16, coligada + a.cc);
       U = colocar(U, 30, 18, numeroFixo(a.valor, 2, 18), 'direita', '0');
+      U = colocar(U, 48, 255, historico);
       U = colocar(U, 303, 12, (`00${rm.natureza}`).slice(-12));
       saida.push(U);
     });
@@ -190,7 +200,8 @@ export function gerarTxt({ linhas, competencia, rm = RM_PADRAO }) {
   return {
     conteudo: saida.length ? `${saida.join('\r\n')}\r\n` : '',
     prontos: prontos.length,
-    pendentes: linhas.length - prontos.length,
+    pendentes: linhas.filter((l) => l.ativo !== false).length - prontos.length,
+    desligados: linhas.filter((l) => l.ativo === false).length,
     total: round2(somar(prontos, 'liquido')),
   };
 }

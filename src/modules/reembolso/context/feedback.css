@@ -123,7 +123,7 @@
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.modal-title { font-size: 17px; }
+.modal-box .modal-title { font-size: 17px; }
 
 .modal-message {
   margin: 0;
@@ -132,7 +132,9 @@
   line-height: 1.5;
 }
 
-.modal-body {
+/* Presos ao .modal-box: sem o prefixo, valiam para todo .modal-body do portal
+   depois que o Reembolso carregava, e o flex espremia as abas do Fechamento PJ. */
+.modal-box .modal-body {
   max-height: 50vh;
   overflow-y: auto;
   display: flex;

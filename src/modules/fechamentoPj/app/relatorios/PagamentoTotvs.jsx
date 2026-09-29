@@ -4,7 +4,7 @@ import { Users, Wallet, CheckCircle2, AlertTriangle, FileCheck2 } from 'lucide-r
 import { useFechamentoPj } from '../components/contexto';
 import { StatCard, Badge, Vazio } from '../components/ui';
 import { salvarDocumentoPagamento, auditar } from '../../lib/dados';
-import { prontoParaTxt, ratearLiquido, ccValido } from '../../lib/totvs';
+import { entraNoTxt, ratearLiquido, ccValido } from '../../lib/totvs';
 import { fmtBRL, fmtNum, somar } from '../../lib/formato';
 import TableScroll from '../../../../components/UI/TableScroll';
 
@@ -25,7 +25,7 @@ export default function PagamentoTotvs({ linhas, competencia, onSalvo }) {
 
   const comStatus = useMemo(() => linhas.map((l) => {
     const rateio = ratearLiquido(l);
-    return { ...l, rateioCalc: rateio, pronto: prontoParaTxt(l) };
+    return { ...l, rateioCalc: rateio, pronto: entraNoTxt(l) };
   }), [linhas]);
 
   const kpis = useMemo(() => ({
@@ -126,7 +126,7 @@ export default function PagamentoTotvs({ linhas, competencia, onSalvo }) {
                   <td className="pj-num">{l.seq}</td>
                   <td>
                     <Link className="pj-link" to={`${RAIZ}/prestadores/${l.prestadorId}`}>{l.nome}</Link>
-                    <div className="pj-sub">{l.empresa}</div>
+                    <div className="pj-sub">{l.empresa}{l.ativo === false && ' • desligado, fora do TXT'}</div>
                   </td>
                   <td>{l.razaoSocial || '—'}</td>
                   <td className="pj-num">{l.cnpj || '—'}</td>

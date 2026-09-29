@@ -47,6 +47,20 @@ test('TXT: posições do layout L/U', () => {
   assert.equal(U.slice(0, 17), 'U00011.040.020102');
   assert.equal(U.slice(30, 48), '000000000001158335', 'valor do U com 2 casas');
   assert.equal(U.slice(303, 315), '002.03.04.13');
+  // Campos do TXT corrigido pelo Financeiro em 09/2026.
+  assert.equal(L.slice(458, 461), '001', 'conta/caixa');
+  assert.equal(L.slice(884, 892), '00020000');
+  assert.equal(L.slice(1566, 1584), '080826000010000@@@');
+  assert.equal(L.slice(1914, 1918), '0002', 'dados bancários');
+  assert.equal(U.slice(48, 150).trimEnd(), 'Pagamento de servicos - PJ 08/2026 - JOSE TESTE');
+});
+
+test('TXT: desligado fica de fora e não conta como pendente', () => {
+  const r = gerarTxt({ linhas: [linha({ nome: 'ATIVO' }), linha({ nome: 'SAIU', ativo: false })], competencia: '2026-09-01' });
+  assert.equal(r.prontos, 1);
+  assert.equal(r.pendentes, 0);
+  assert.equal(r.desligados, 1);
+  assert.doesNotMatch(r.conteudo, /SAIU/);
 });
 
 test('datas padrão viram o ano em dezembro', () => {

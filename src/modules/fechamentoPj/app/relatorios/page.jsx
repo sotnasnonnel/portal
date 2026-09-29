@@ -4,7 +4,7 @@ import { useFechamentoPj } from '../components/contexto';
 import { Cabecalho, SeletorCompetencia, Carregando, Vazio, Aviso, Badge } from '../components/ui';
 import { listarEnvelopes, auditar } from '../../lib/dados';
 import {
-  RM_PADRAO, montarLinhasPagamento, prontoParaTxt, gerarTxt, paraCp1252, dadosConferencia, csvPagamento,
+  RM_PADRAO, montarLinhasPagamento, entraNoTxt, gerarTxt, paraCp1252, dadosConferencia, csvPagamento,
 } from '../../lib/totvs';
 import { gravarXlsx, baixar } from '../../lib/arquivos';
 import { partesCompetencia, competenciaRotulo, fmtBRL } from '../../lib/formato';
@@ -47,7 +47,9 @@ export default function PaginaRelatorios() {
     () => montarLinhasPagamento({ envelopes, prestadores, fornecedores, rateios, centros: centrosMapa }),
     [envelopes, prestadores, fornecedores, rateios, centrosMapa],
   );
-  const prontos = useMemo(() => linhas.filter(prontoParaTxt).length, [linhas]);
+  const prontos = useMemo(() => linhas.filter(entraNoTxt).length, [linhas]);
+  const desligados = useMemo(() => linhas.filter((l) => l.ativo === false).length, [linhas]);
+  const pendentes = linhas.length - desligados - prontos;
 
   const partes = partesCompetencia(competencia);
   const rotulo = competenciaRotulo(competencia);
@@ -147,7 +149,7 @@ export default function PaginaRelatorios() {
               <div className="pj-rel-icone"><Banknote size={20} /></div>
               <h3>Pagamento PJ — TOTVS RM</h3>
               <p>Conferência do pagamento: código RM, rateio, Nº da NF e Nº do documento RM de cada prestador.</p>
-              <div className="pj-rel-meta">{prontos} pronto(s) · {linhas.length - prontos} pendente(s)</div>
+              <div className="pj-rel-meta">{prontos} pronto(s) · {pendentes} pendente(s)</div>
               <a className="btn btn-outline" href="#pagamento-totvs"><ArrowDown size={16} /> Ir para a conferência</a>
             </div>
 
@@ -164,11 +166,15 @@ export default function PaginaRelatorios() {
             <div className="pj-cartao pj-rel-cartao">
               <div className="pj-rel-icone"><FileCode2 size={20} /></div>
               <h3>TXT TOTVS RM</h3>
-              <p>Arquivo de layout fixo (L + U) para importar no RM. Só entram os prontos: código RM e rateio com centro de custo RM válido.</p>
-              <div className="pj-rel-meta">Prontos para TXT: <strong>{prontos}</strong> · Pendências: <strong>{linhas.length - prontos}</strong></div>
+              <p>Arquivo de layout fixo (L + U) para importar no RM. Só entram os ativos prontos: código RM e rateio com centro de custo RM válido. Desligado fica de fora.</p>
+              <div className="pj-rel-meta">
+                Prontos para TXT: <strong>{prontos}</strong> · Pendências: <strong>{pendentes}</strong>
+                {desligados > 0 && <> · Desligados fora do TXT: <strong>{desligados}</strong></>}
+              </div>
               {resultadoTxt && (resultadoTxt.prontos ? (
                 <div className="pj-rel-resultado">
                   Último TXT: {resultadoTxt.prontos} pronto(s) · {resultadoTxt.pendentes} pendente(s) · {fmtBRL(resultadoTxt.total)}
+                  {resultadoTxt.desligados > 0 && ` · ${resultadoTxt.desligados} desligado(s) fora`}
                 </div>
               ) : (
                 <Aviso tipo="alerta">
