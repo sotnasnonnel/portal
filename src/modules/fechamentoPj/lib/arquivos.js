@@ -29,6 +29,25 @@ const FORMATO_PCT = '0.00%';
 const FORMATO_DATA = 'dd/mm/yyyy';
 
 /**
+ * Data -> número de série do Excel (dias desde 30/12/1899), pela HORA DE
+ * PAREDE local: 30/09/2026 00:00 aqui vira exatamente 46295.
+ *
+ * Existe porque o SheetJS 0.18 converte `Date` descontando o fuso HISTÓRICO de
+ * São Paulo em 1899 (-3h06min), e a meia-noite local caía uns segundos antes:
+ * 46294,9997 — o Excel mostrava o DIA ANTERIOR. Era o "data de pagamento um dia
+ * antes" do Reembolso (30/09/2026). Montar o número à mão tira o fuso da conta.
+ */
+export function serialExcel(d) {
+  const utc = Date.UTC(
+    d.getFullYear(), d.getMonth(), d.getDate(),
+    d.getHours(), d.getMinutes(), d.getSeconds(), d.getMilliseconds(),
+  );
+  return (utc - Date.UTC(1899, 11, 30)) / 86400000;
+}
+
+const paraCelula = (v) => (v instanceof Date && !Number.isNaN(v.getTime()) ? serialExcel(v) : v);
+
+/**
  * Grava um .xlsx a partir de abas no formato de lib/totvs.dadosConferencia:
  * { nome, titulo?, cabecalho, linhas, larguras?, moeda?, pct?, data?, moedaCelulas? }
  * Com título, a linha 1 é o título, a 2 fica em branco e o cabeçalho vai na 3.
@@ -38,8 +57,21 @@ export async function gravarXlsx(abas, nomeArquivo) {
   const wb = XLSX.utils.book_new();
   abas.forEach((aba) => {
     const topo = aba.titulo ? [[aba.titulo], []] : [];
-    const ws = XLSX.utils.aoa_to_sheet([...topo, aba.cabecalho, ...aba.linhas], { cellDates: true });
+    // Datas entram como número de série (serialExcel), não como Date. Toda
+    // célula que chegou como Date ganha o formato de data — inclusive fora das
+    // colunas `data` (a aba Parametros_RM mistura datas e números na mesma
+    // coluna), que era o que o SheetJS fazia sozinho com cellDates.
+    const datas = [];
+    const linhas = aba.linhas.map((l, r) => l.map((v, c) => {
+      if (v instanceof Date) datas.push([r, c]);
+      return paraCelula(v);
+    }));
+    const ws = XLSX.utils.aoa_to_sheet([...topo, aba.cabecalho, ...linhas]);
     const inicio = topo.length + 1; // primeira linha de dados (0-based)
+    datas.forEach(([r, c]) => {
+      const cel = ws[XLSX.utils.encode_cell({ r: inicio + r, c })];
+      if (cel?.t === 'n') cel.z = FORMATO_DATA;
+    });
     const formatar = (colunas, z) => (colunas || []).forEach((c) => {
       for (let r = inicio; r < inicio + aba.linhas.length; r += 1) {
         const cel = ws[XLSX.utils.encode_cell({ r, c })];

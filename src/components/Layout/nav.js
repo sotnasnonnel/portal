@@ -2,7 +2,7 @@ import {
   LayoutDashboard, ClipboardCheck, Users, CalendarClock, UserPlus, List, CalendarDays,
   FileText, Network, Coins, PlusCircle, Workflow, Clock, ShieldAlert, ScrollText,
   Receipt, Briefcase, Building2, FileBarChart, History, Settings, CalendarRange, HardHat,
-  CalendarPlus,
+  CalendarPlus, UserSearch,
 } from 'lucide-react';
 import { isHorasExtrasDp } from '../../config/horasExtras';
 import { podeAcessarFechamentoPj, ROTA_FECHAMENTO_PJ } from '../../config/fechamentoPj';
@@ -165,6 +165,7 @@ const ROTAS_AREA = [
   [ROTA_FECHAMENTO_PJ, 'fechamentoPj'],
   ['/admin/cadastro', 'colaboradores'],
   ['/admin/listagem', 'colaboradores'],
+  ['/admin/candidatos', 'colaboradores'],
   ['/admin/solicitacoes', 'requisicoes'],
   ['/admin/fluxos', 'requisicoes'],
   ['/gestor/solicitacoes', 'requisicoes'],
@@ -240,6 +241,9 @@ export function navSections({ perfil, user, pendencias = 0, requisicoes = 0, are
         items: [
           { label: 'Cadastro', Icon: UserPlus, href: '/admin/cadastro' },
           { label: 'Listagem', Icon: List, href: '/admin/listagem' },
+          // Quem está em contratação: aparece nos pedidos do Atendimento antes
+          // de virar funcionário (pedido do André, 30/09/2026).
+          { label: 'Candidatos', Icon: UserSearch, href: '/admin/candidatos' },
         ],
       },
       {

@@ -277,7 +277,7 @@ const ROTULOS_CODIFICADOS = {
   data_inicio_cliente: 'Data de início no cliente', equipamentos: 'Equipamento e acessórios',
   softwares: 'Software', epis: 'EPI', uniforme: 'Uniforme',
   contato_cliente: 'Contato do setor do cliente', devolucao: 'Há devolução',
-  devolucao_descricao: 'O que será devolvido',
+  devolucao_descricao: 'O que será devolvido', treinamentos: 'Treinamentos',
   tipo: 'Tipo', tipo_livre: 'Peças e tamanhos', motivo: 'Motivo',
   localizacao: 'Localização', observacao: 'Observação',
   // Fica aqui como defesa: `itens` é renderizado por um bloco próprio na tela

@@ -92,7 +92,9 @@ export default function NovoChamadoAdm() {
   useEffect(() => {
     if (!precisaPessoas) return undefined;
     let cancelado = false;
-    listarPessoas()
+    // Com candidatos: quem ainda está em contratação também viaja, é mobilizado
+    // e recebe EPI — e antes o pedido saía no nome de outra pessoa.
+    listarPessoas({ comCandidatos: true })
       .then((lista) => { if (!cancelado) setPessoas(lista); })
       .catch((e) => { if (!cancelado) setErro(e.message); });
     return () => { cancelado = true; };
@@ -420,7 +422,7 @@ export default function NovoChamadoAdm() {
                 <SearchSelect
                   value={outraPessoaId}
                   onChange={setOutraPessoaId}
-                  options={pessoas.map((p) => ({ value: p.id, label: p.nome }))}
+                  options={pessoas.map((p) => ({ value: p.id, label: p.rotulo || p.nome }))}
                   placeholder="Busque pelo nome…"
                   ariaLabel="Pessoa para quem é o chamado"
                 />

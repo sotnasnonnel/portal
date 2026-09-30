@@ -29,6 +29,7 @@ export const FLUXO_POR_MOVIMENTO = {
   'Nova mobilização': 'mobilizacao_pessoa',
   'Movimentação de profissional': 'mobilizacao_pessoa',
   Desmobilização: 'desmobilizacao_pessoa',
+  'Inclusão de treinamento': 'inclusao_treinamento',
 };
 
 /** @returns {string|null} null quando o movimento não tem fluxo — nunca um chute. */
@@ -82,6 +83,8 @@ export function dadosDoChamado(campos = {}) {
   // O movimento não vira coluna, mas precisa viajar: é o que a `condicao` do
   // catálogo consulta para decidir quais etapas nascem.
   if (campos.movimento) dados.movimento = campos.movimento;
+  // Inclusão de treinamento: quais treinamentos (texto livre, "RAC 04 e PRO").
+  if (campos.treinamentos) dados.treinamentos = campos.treinamentos;
 
   // Quem define a data-base e o banco, no momento em que cria o processo
   // (app_private.mob_dados_do_chamado): e o dia da abertura, que num chamado

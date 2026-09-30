@@ -7,6 +7,7 @@ test('cada movimento do Adm cai num fluxo', () => {
   assert.equal(fluxoDoMovimento('Nova mobilização'), 'mobilizacao_pessoa');
   assert.equal(fluxoDoMovimento('Movimentação de profissional'), 'mobilizacao_pessoa');
   assert.equal(fluxoDoMovimento('Desmobilização'), 'desmobilizacao_pessoa');
+  assert.equal(fluxoDoMovimento('Inclusão de treinamento'), 'inclusao_treinamento');
 });
 
 /**

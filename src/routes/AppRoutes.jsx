@@ -42,6 +42,7 @@ const CentralAprovacoes = lazyPagina(() => import('../modules/aprovacoes/app/pag
 const PainelHumor = lazyPagina(() => import('../pages/Humor/PainelHumor'));
 const AdminCadastro = lazyPagina(() => import('../pages/Admin/AdminCadastro'));
 const AdminListagem = lazyPagina(() => import('../pages/Admin/AdminListagem'));
+const AdminCandidatos = lazyPagina(() => import('../pages/Admin/AdminCandidatos'));
 const GestorDashboard = lazyPagina(() => import('../pages/Gestor/GestorDashboard'));
 const GestorAprovacoes = lazyPagina(() => import('../pages/Gestor/GestorAprovacoes'));
 const GestorDetalhes = lazyPagina(() => import('../pages/Gestor/GestorDetalhes'));
@@ -438,6 +439,18 @@ export default function AppRoutes() {
                 <ProtectedRoute allowedRoles={['admin']}>
                   <LazyPage>
                     <AdminCadastro />
+                  </LazyPage>
+                </ProtectedRoute>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="/admin/candidatos"
+            element={
+              <ModuleRoute module="dp">
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <LazyPage>
+                    <AdminCandidatos />
                   </LazyPage>
                 </ProtectedRoute>
               </ModuleRoute>

@@ -85,7 +85,7 @@ export default function CampoExtra({ campo, valor, onChange, pessoas = [] }) {
         <SearchSelect
           value={valor ?? ''}
           onChange={(v) => onChange(campo.chave, v)}
-          options={pessoas.map((p) => ({ value: p.id, label: p.nome }))}
+          options={pessoas.map((p) => ({ value: p.id, label: p.rotulo || p.nome }))}
           placeholder="Busque pelo nome…"
           ariaLabel={campo.rotulo}
         />

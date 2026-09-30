@@ -505,7 +505,10 @@ export async function listarParaIndicadores() {
     supabase
       .from('mobilizacao_etapas')
       .select('id, processo_id, codigo, titulo, status, dias_atraso, data_prevista, responsavel_id, processo:mobilizacao_processos!inner(numero, titulo, fluxo, status)'),
-    supabase.from('mobilizacao_processos').select('id, numero, titulo, fluxo, status, prazo_em'),
+    // Datas, nomes e códigos alimentam o resumo mensal (lib/resumoMensal.js).
+    supabase.from('mobilizacao_processos').select(
+      'id, numero, titulo, fluxo, status, prazo_em, data_base, concluido_real, profissional_nome, cliente_phd, cod_ct, empresa_phd',
+    ),
   ]);
   if (etapas.error) throw new Error(`Não foi possível carregar os indicadores: ${etapas.error.message}`);
   if (processos.error) throw new Error(`Não foi possível carregar os indicadores: ${processos.error.message}`);

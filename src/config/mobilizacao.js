@@ -1,4 +1,4 @@
-import { UserPlus, UserMinus, Building2 } from 'lucide-react';
+import { UserPlus, UserMinus, Building2, GraduationCap } from 'lucide-react';
 
 /**
  * Módulo de Gestão de Mobilização.
@@ -107,6 +107,17 @@ export const FLUXOS = [
     descricao: 'Do contrato novo à aprovação dos programas legais.',
     Icon: Building2,
     aba: 'MOB.EMPRESAS',
+  },
+  {
+    // Pedido da Edijane (30/09/2026): treinamento novo para quem JÁ está
+    // mobilizado no contrato (ex.: RAC 04 e PRO). Nasce de chamado no
+    // Atendimento, movimento "Inclusão de treinamento".
+    slug: 'inclusao_treinamento',
+    label: 'Inclusão de treinamento',
+    curto: 'Treinamento',
+    descricao: 'Do agendamento do treinamento ao passaporte liberado.',
+    Icon: GraduationCap,
+    aba: 'INCLUSÃO TREINAMENTO',
   },
 ];
 

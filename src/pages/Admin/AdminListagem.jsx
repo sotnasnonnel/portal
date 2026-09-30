@@ -47,6 +47,9 @@ export default function AdminListagem() {
       const { data, error } = await supabase
         .from('colaboradores')
         .select('*')
+        // Candidatos têm tela própria (AdminCandidatos) e aqui apareceriam como
+        // "Inativos" — é o ativo=false que os tira de todas as outras listas.
+        .eq('candidato', false)
         .order('nome', { ascending: true });
 
       if (!error && data) {

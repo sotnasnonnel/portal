@@ -197,6 +197,9 @@ export default function ProcessoMob() {
           {processo.campos?.data_desmobilizacao && (
             <Campo rot="Saída da obra" val={dataBr(processo.campos.data_desmobilizacao)} />
           )}
+          {processo.campos?.treinamentos && (
+            <Campo rot="Treinamentos" val={processo.campos.treinamentos} />
+          )}
         </div>
 
         <div className="mob-prog" style={{ marginTop: 8 }}>

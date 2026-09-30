@@ -22,8 +22,10 @@ const mobilizacaoCheia = () => ({
   contato_cliente: 'Sicrano',
 });
 
-test('as três situações vivem no mesmo seletor', () => {
-  assert.deepEqual(MOVIMENTOS, ['Nova mobilização', 'Movimentação de profissional', 'Desmobilização']);
+test('as quatro situações vivem no mesmo seletor', () => {
+  assert.deepEqual(MOVIMENTOS, [
+    'Nova mobilização', 'Movimentação de profissional', 'Desmobilização', 'Inclusão de treinamento',
+  ]);
 });
 
 // O motivo de existir aoTrocarMovimento: sem ela, obra e CC preenchidos
@@ -100,4 +102,25 @@ test('desmobilização cobra profissional, data de saída e o que devolve', () =
 test('desmobilização não cobra CC, obra nem data de início', () => {
   const erro = validarMobilizacao({ movimento: 'Desmobilização', profissional_id: 'p1', data_desmobilizacao: '2026-09-30' });
   assert.equal(erro, '');
+});
+
+test('inclusão de treinamento pede quem, cliente, CC e quais treinamentos', () => {
+  const base = {
+    ...inicialMobilizacao(), movimento: 'Inclusão de treinamento',
+    profissional_id: 'p1', cliente: 'VBM', cc: 'VBM-CT01',
+  };
+  assert.equal(validarMobilizacao(base), 'Informe quais treinamentos devem ser incluídos.');
+  assert.equal(validarMobilizacao({ ...base, treinamentos: 'RAC 04 e PRO' }), '', 'sem projeto, obra nem data');
+});
+
+test('trocar para inclusão de treinamento limpa projeto, data e adicionais', () => {
+  const antes = {
+    ...inicialMobilizacao(), projeto: 'X', data_inicio_cliente: '2026-10-01', epis: ['Capacete'], cliente: 'VBM',
+  };
+  const depois = aoTrocarMovimento(antes, 'Inclusão de treinamento');
+  assert.equal(depois.projeto, '');
+  assert.equal(depois.data_inicio_cliente, '');
+  assert.deepEqual(depois.epis, []);
+  assert.equal(depois.cliente, 'VBM', 'o que serve continua');
+  assert.equal(aoTrocarMovimento({ ...depois, treinamentos: 'RAC' }, 'Nova mobilização').treinamentos, '');
 });

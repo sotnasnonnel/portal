@@ -2,7 +2,9 @@ import { useState } from 'react';
 import SearchSelect from '../../../../../components/UI/SearchSelect';
 import Marcador from './Marcador';
 import CampoCentroCusto from '../CampoCentroCusto';
-import { MOVIMENTOS, OUTRO_PROJETO, eDesmobilizacao, aoTrocarMovimento } from './mobilizacao';
+import {
+  MOVIMENTOS, OUTRO_PROJETO, eDesmobilizacao, eInclusaoTreinamento, aoTrocarMovimento,
+} from './mobilizacao';
 import { OPCOES_EQUIPAMENTO, OPCOES_SOFTWARE, OPCOES_EPI } from './opcoes';
 
 export default function FormMobilizacao({
@@ -11,6 +13,9 @@ export default function FormMobilizacao({
   const [aberto, setAberto] = useState('');
   const mexer = (patch) => onChange({ ...valores, ...patch });
   const desmob = eDesmobilizacao(valores);
+  // Inclusão de treinamento: a pessoa já está mobilizada, então projeto, data
+  // de início e adicionais não se aplicam — só quem, onde e quais treinamentos.
+  const treino = eInclusaoTreinamento(valores);
 
   // Escolher o profissional já traz o gestor do organograma — é o mesmo dado
   // que decide quem aprova o chamado, então digitar à mão só criaria divergência.
@@ -23,7 +28,7 @@ export default function FormMobilizacao({
     });
   };
 
-  const opcoesPessoas = pessoas.map((p) => ({ value: p.id, label: p.nome }));
+  const opcoesPessoas = pessoas.map((p) => ({ value: p.id, label: p.rotulo || p.nome }));
   // Cliente junto do nome: várias obras se chamam parecido e o cliente é o que
   // separa uma da outra na hora de escolher.
   const opcoesProjetos = [
@@ -148,6 +153,22 @@ export default function FormMobilizacao({
       <CampoCentroCusto id="mob-cc" valor={valores.cc} opcoes={opcoesCc}
         onChange={(v) => mexer({ cc: v })} />
 
+      {treino && (
+        <div className="adm-campo">
+          <label htmlFor="mob-treinamentos">Treinamentos a incluir<span className="req">*</span></label>
+          <textarea id="mob-treinamentos" className="adm-textarea adm-textarea-curto"
+            value={valores.treinamentos}
+            onChange={(e) => mexer({ treinamentos: e.target.value })}
+            placeholder="Ex.: RAC 04 e PRO" />
+          <span className="adm-campo-dica">
+            O processo acompanha agendamento, realização, novo ASO (quando precisar), postagem no SGC,
+            aprovação do cliente e liberação do passaporte.
+          </span>
+        </div>
+      )}
+
+      {!treino && (
+        <>
       <div className="adm-campo">
         <label>Projeto<span className="req">*</span></label>
         <SearchSelect
@@ -170,12 +191,17 @@ export default function FormMobilizacao({
         </div>
       )}
 
+        </>
+      )}
+
       <div className="adm-campo">
-        <label htmlFor="mob-obra">Local da obra<span className="req">*</span></label>
+        <label htmlFor="mob-obra">Local da obra{!treino && <span className="req">*</span>}</label>
         <input id="mob-obra" className="adm-input" value={valores.local_obra}
           onChange={(e) => mexer({ local_obra: e.target.value })} />
       </div>
 
+      {!treino && (
+        <>
       <div className="adm-campo">
         <label htmlFor="mob-data">Data de início no cliente<span className="req">*</span></label>
         <input id="mob-data" type="date" className="adm-input" value={valores.data_inicio_cliente}
@@ -209,6 +235,8 @@ export default function FormMobilizacao({
             aberto={aberto === 'unif'} onToggle={() => alternar('unif')} />
         </div>
       </div>
+        </>
+      )}
 
       <div className="adm-campo">
         <label htmlFor="mob-contato">Contato do setor do cliente</label>

@@ -781,3 +781,19 @@ button.mob-conta:focus-visible { outline: 2px solid var(--m-primary); outline-of
 }
 .mob-coment-versao-cab { font-size: var(--font-size-2xs); color: var(--m-muted); }
 .mob-coment-versoes .mob-coment-txt { color: var(--m-gray-600); }
+
+/* ---- Resumo mensal de mobilizações (dashboard/ResumoMensal.jsx) ---------- */
+.mob-resumo-cab { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.mob-resumo-mes { display: inline-flex; align-items: center; gap: 8px; font-size: var(--font-size-sm); color: var(--m-muted, #6b7280); }
+.mob-resumo-mes select {
+  height: var(--ctl-h-sm); padding: 0 10px; border: 1px solid var(--m-border); border-radius: 8px;
+  background: #fff; font: inherit; font-size: var(--font-size-sm); color: inherit;
+}
+.mob-resumo-grupos { display: grid; grid-template-columns: 1fr; gap: 18px; margin-top: 10px; }
+.mob-resumo-grupo h3, .mob-resumo-sub { margin: 0 0 6px; font-size: var(--font-size-md); }
+.mob-resumo-sub { margin-top: 20px; }
+.mob-resumo-num { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 8px; font-size: var(--font-size-sm); }
+.mob-resumo-num strong { font-size: var(--font-size-lg); font-variant-numeric: tabular-nums; }
+.mob-resumo-grupo .mob-tabela tfoot td { border-top: 2px solid var(--m-border); font-weight: 600; padding-top: 8px; }
+.mob-tabela tr.is-selecionado td { background: var(--m-primary-soft); }
+.mob-link-btn { border: none; background: none; padding: 0; font: inherit; cursor: pointer; }

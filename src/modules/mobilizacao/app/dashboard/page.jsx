@@ -7,6 +7,7 @@ import {
   resumoIndicadores, faixaPct, formatarPct, etapasVencidas, processosTravados,
 } from '../../lib/indicadoresMob';
 import DetalheIndicador from './DetalheIndicador';
+import ResumoMensal from './ResumoMensal';
 import { rotuloStatus } from '../../lib/statusEtapa';
 
 export default function DashboardMob() {
@@ -102,6 +103,8 @@ export default function DashboardMob() {
           <span className="mob-ind-pe">etapas que ninguém está olhando</span>
         </article>
       </div>
+
+      <ResumoMensal processos={dados.processos} />
 
       <section className="mob-card">
         <h2 className="mob-card-tit">Etapas em aberto por fluxo</h2>

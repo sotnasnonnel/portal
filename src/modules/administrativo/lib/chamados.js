@@ -54,13 +54,21 @@ export async function listarConfigs() {
 }
 
 /**
- * Pessoas para escolher como atendente/aprovador. Vem por RPC porque a policy
+ * Pessoas para escolher nos campos do Atendimento. Vem por RPC porque a policy
  * de colaboradores não deixaria o admin do Adm listar a empresa inteira.
+ *
+ * `comCandidatos`: a RPC também devolve quem está em contratação (tela
+ * Candidatos, pedido do André em 30/09/2026) — mas só a ABERTURA de chamado os
+ * quer. Atendente de serviço e cadeia de aprovação usam o padrão, sem eles:
+ * candidato não atende nem aprova nada. `rotulo` marca o candidato na lista;
+ * `nome` continua limpo, porque é ele que vai gravado no chamado.
  */
-export async function listarPessoas() {
+export async function listarPessoas({ comCandidatos = false } = {}) {
   const { data, error } = await supabase.rpc('chamados_adm_pessoas');
   if (error) throw new Error(`Não foi possível carregar as pessoas: ${error.message}`);
-  return data || [];
+  return (data || [])
+    .filter((p) => comCandidatos || !p.candidato)
+    .map((p) => ({ ...p, rotulo: p.candidato ? `${p.nome} (candidato)` : p.nome }));
 }
 
 /**
