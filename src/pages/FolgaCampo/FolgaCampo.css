@@ -19,6 +19,12 @@
   white-space: nowrap;
 }
 
+/* "Sem passagem" é o que o líder precisa ver primeiro na coluna. */
+.fc-sem-passagem {
+  color: #b45309;
+  font-weight: 600;
+}
+
 .fc-toolbar {
   display: flex;
   gap: var(--space-md);

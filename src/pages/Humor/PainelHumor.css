@@ -1,0 +1,101 @@
+/* Painel do humor (/humor). Página avulsa, como a central de Aprovações. Cores
+   da escala em config/humor.js (validadas); aqui só a estrutura. */
+
+.hum-page { max-width: 980px; margin: 0 auto; padding: 24px 20px 48px; }
+
+.hum-header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.hum-back {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: var(--font-size-sm); color: var(--muted); text-decoration: none;
+}
+.hum-titulos { flex: 1 1 280px; }
+.hum-titulos h1 { margin: 0; font-size: var(--font-size-2xl); color: var(--ink); }
+.hum-titulos p { margin: 2px 0 0; font-size: var(--font-size-sm); color: var(--muted); }
+
+.hum-filtros { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+.hum-grupo { display: inline-flex; gap: 4px; }
+.hum-chip {
+  padding: 5px 12px; border: 1px solid var(--border); border-radius: 999px;
+  background: #fff; color: var(--ink-soft); font-size: var(--font-size-sm); cursor: pointer;
+}
+.hum-chip.is-on { background: var(--terracotta-soft); border-color: var(--terracotta); color: var(--terracotta-dark); }
+
+.hum-aviso {
+  display: flex; gap: 8px; align-items: center; padding: 10px 12px; margin-bottom: 12px;
+  border-radius: var(--radius-md); background: #fef2f2; color: #b91c1c; font-size: var(--font-size-sm);
+}
+.hum-vazio {
+  display: flex; align-items: center; justify-content: center; gap: 8px; padding: 48px 16px;
+  color: var(--muted); border: 1px dashed var(--border); border-radius: var(--radius-lg);
+}
+.hum-spin { animation: hum-gira 1s linear infinite; }
+@keyframes hum-gira { to { transform: rotate(360deg); } }
+
+.hum-tiles {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-bottom: 16px;
+}
+.hum-tile {
+  display: flex; flex-direction: column; gap: 2px; padding: 14px 16px;
+  background: #fff; border: 1px solid var(--border); border-radius: var(--radius-lg);
+}
+.hum-tile-rot { font-size: var(--font-size-xs); color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+.hum-tile-num { font-size: var(--font-size-3xl); color: var(--ink); font-variant-numeric: tabular-nums; }
+.hum-tile-pe { font-size: var(--font-size-xs); color: var(--muted); }
+
+.hum-card {
+  background: #fff; border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: 16px 18px; margin-bottom: 16px;
+}
+.hum-card h2 { margin: 0 0 10px; font-size: var(--font-size-lg); color: var(--ink); }
+.hum-nota {
+  display: flex; align-items: flex-start; gap: 6px; margin: -4px 0 12px;
+  font-size: var(--font-size-xs); color: var(--muted);
+}
+
+/* Distribuição do período: uma barra 100%, segmentos com 2px de respiro. */
+.hum-dist { display: flex; gap: 2px; height: 22px; border-radius: 4px; overflow: hidden; }
+.hum-dist-seg { min-width: 4px; }
+.hum-legenda {
+  display: flex; flex-wrap: wrap; gap: 6px 16px; list-style: none; margin: 10px 0 0; padding: 0;
+  font-size: var(--font-size-sm); color: var(--ink-soft);
+}
+.hum-legenda li { display: inline-flex; align-items: center; gap: 6px; }
+.hum-legenda i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.hum-legenda strong { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* Barras por dia: finas, ancoradas na base, topo arredondado. */
+.hum-barras {
+  display: flex; align-items: flex-end; gap: 2px; height: 180px;
+  border-bottom: 1px solid var(--border-strong);
+}
+.hum-barra-col { position: relative; flex: 1; height: 100%; display: flex; align-items: flex-end; outline: none; }
+.hum-barra-col:focus-visible .hum-barra { box-shadow: var(--focus-ring); }
+.hum-barra {
+  width: 100%; max-width: 22px; margin: 0 auto; display: flex; flex-direction: column; gap: 2px;
+  border-radius: 4px 4px 0 0; overflow: hidden;
+}
+.hum-barra span { min-height: 2px; }
+.hum-barra.is-oculta {
+  background: repeating-linear-gradient(45deg, #d9d8d2 0 3px, #f2f1ec 3px 6px);
+}
+.hum-eixo { display: flex; justify-content: space-between; margin-top: 4px; font-size: var(--font-size-2xs); color: var(--muted); }
+
+.hum-tip {
+  position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  z-index: 5; display: flex; flex-direction: column; gap: 2px; min-width: 150px;
+  padding: 8px 10px; border-radius: var(--radius-md); background: #fff;
+  border: 1px solid var(--border); box-shadow: var(--shadow-md);
+  font-size: var(--font-size-xs); color: var(--ink-soft); white-space: nowrap; pointer-events: none;
+}
+.hum-tip strong { color: var(--ink); }
+
+.hum-tabela { margin-top: 14px; font-size: var(--font-size-sm); }
+.hum-tabela summary { cursor: pointer; color: var(--blue); }
+.hum-tabela-scroll { overflow-x: auto; margin-top: 8px; }
+.hum-tabela table { width: 100%; border-collapse: collapse; }
+.hum-tabela th, .hum-tabela td {
+  padding: 6px 8px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.hum-tabela th:first-child, .hum-tabela td:first-child { text-align: left; }
+.hum-tabela th { font-size: var(--font-size-xs); color: var(--muted); font-weight: 600; }

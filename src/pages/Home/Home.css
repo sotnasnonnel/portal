@@ -442,3 +442,102 @@
     gap: 0;
   }
 }
+
+/* ---- Humor do dia (HumorDoDia.jsx) ---------------------------------------
+   Logo abaixo da saudação: é a primeira coisa que a pessoa vê, e responder
+   custa um clique. */
+.home-humor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 14px;
+  margin: -24px 0 32px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(38, 64, 93, 0.12);
+}
+.home-humor-pergunta { color: #26405d; font-size: var(--font-size-base); }
+.home-humor-opcoes { display: flex; gap: 4px; }
+.home-humor-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  font-size: var(--font-size-2xl);
+  line-height: 1;
+  cursor: pointer;
+  transition: transform .12s var(--ease, ease), background .12s;
+}
+.home-humor-btn:hover:not(:disabled) { transform: scale(1.12); background: rgba(38, 64, 93, 0.06); }
+.home-humor-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(195, 94, 30, 0.35); }
+.home-humor-btn.is-on { background: rgba(195, 94, 30, 0.12); border-color: rgba(195, 94, 30, 0.45); }
+.home-humor-btn.is-apagado { opacity: .45; }
+.home-humor-nota { color: rgba(38, 64, 93, 0.6); font-size: var(--font-size-xs); }
+.home-humor-nota a { color: #26405d; }
+.home-humor-erro { width: 100%; color: #b91c1c; font-size: var(--font-size-xs); }
+
+/* ---- Aniversariantes e tempo de casa (AniversariantesMes.jsx) ------------
+   Abaixo dos cards: é informação, não atalho — não pode empurrar os módulos. */
+.home-aniv {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 22px;
+  width: 100%;
+  max-width: 980px;
+  margin-top: 28px;
+  padding: 22px 24px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(38, 64, 93, 0.12);
+  text-align: left;
+  box-sizing: border-box;
+}
+.home-aniv-col h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 10px;
+  color: #26405d;
+  font-size: var(--font-size-md);
+}
+.home-aniv-col ul { list-style: none; margin: 0; padding: 0; }
+.home-aniv-col li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(38, 64, 93, 0.08);
+}
+.home-aniv-col li:last-child { border-bottom: none; }
+.home-aniv-col li.is-hoje { background: rgba(195, 94, 30, 0.08); border-radius: 8px; padding: 6px 8px; }
+.home-aniv-dia {
+  min-width: 28px;
+  font-weight: 700;
+  color: #c35e1e;
+  font-variant-numeric: tabular-nums;
+  font-size: var(--font-size-sm);
+}
+.home-aniv-nome { flex: 1; color: #1b2735; font-size: var(--font-size-sm); }
+.home-aniv-nome small {
+  display: block;
+  color: rgba(38, 64, 93, 0.6);
+  font-size: var(--font-size-2xs);
+  text-transform: capitalize;
+}
+.home-aniv-extra { color: rgba(38, 64, 93, 0.7); font-size: var(--font-size-xs); white-space: nowrap; }
+.home-aniv-vazio { margin: 0; color: rgba(38, 64, 93, 0.6); font-size: var(--font-size-sm); }
+.home-aniv-mais {
+  margin-top: 8px;
+  border: none;
+  background: none;
+  padding: 0;
+  color: #26405d;
+  font-size: var(--font-size-xs);
+  text-decoration: underline;
+  cursor: pointer;
+}

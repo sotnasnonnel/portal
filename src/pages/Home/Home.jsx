@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, BarChart3, Clock, CreditCard, Headset, Sparkles, ShieldCheck, LogOut, ArrowRight, Lock, Hourglass, Blocks, MessageSquarePlus, Megaphone, Radar } from 'lucide-react';
+import { Users, BarChart3, Clock, CreditCard, Headset, Sparkles, ShieldCheck, LogOut, ArrowRight, Lock, Hourglass, Blocks, MessageSquarePlus, Megaphone, Radar, ClipboardCheck } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { isSuperAdmin } from '../../config/superAdmin';
 import { areasAdministrativoDe } from '../../config/administrativo';
@@ -16,9 +16,13 @@ import FinanceiroModal from './FinanceiroModal';
 import HorasModal from './HorasModal';
 import AdministrativoModal from './AdministrativoModal';
 import GestaoPessoasModal from './GestaoPessoasModal';
+import HumorDoDia from './HumorDoDia';
+import AniversariantesMes from './AniversariantesMes';
 import { areasGestaoPessoas } from '../../components/Layout/nav';
 import NovidadesModal from '../../components/Novidades/NovidadesModal';
 import SinoNotificacoes from '../../components/Notificacoes/SinoNotificacoes';
+import AtalhoAprovacoes from '../../modules/aprovacoes/AtalhoAprovacoes';
+import { usePendenciasAprovacao } from '../../modules/aprovacoes/usePendencias';
 import AvatarUsuario from '../../components/UI/AvatarUsuario';
 import { nomeCurto } from '../../utils/formatters';
 import './Home.css';
@@ -71,8 +75,20 @@ export default function Home() {
   // em qual deles o que ela precisa mora. Com uma área só liberada o popup
   // teria um botão sozinho, então vai direto, como no card "Financeiro".
   const areasAdm = areasAdministrativoDe(user);
+  const aprovacoesPendentes = usePendenciasAprovacao();
 
   const cards = [
+    {
+      // Central de Aprovações: o que espera a decisão da pessoa em todos os
+      // módulos. Aberta a todos — quem não aprova nada vê a caixa vazia.
+      to: '/aprovacoes',
+      icon: ClipboardCheck,
+      tone: 'terracotta',
+      title: 'Aprovações',
+      desc: aprovacoesPendentes > 0
+        ? `${aprovacoesPendentes} ${aprovacoesPendentes === 1 ? 'item esperando' : 'itens esperando'} a sua decisão`
+        : 'Tudo o que espera a sua decisão, de todos os módulos',
+    },
     {
       acao: () => setGpAberto(true),
       icon: Users,
@@ -191,6 +207,7 @@ export default function Home() {
           </button>
           {/* A central de notificações é uma só; na Home ela fica no mesmo
               formato do botão de Novidades. */}
+          <AtalhoAprovacoes className="home-iconbtn" />
           <SinoNotificacoes />
           <button
             type="button"
@@ -212,6 +229,7 @@ export default function Home() {
       <main className="home-main">
         <h1>{saudacao ? `Olá, ${saudacao}!` : 'Olá!'} 🚀</h1>
         <p className="home-sub">O que você precisa fazer hoje?</p>
+        <HumorDoDia />
 
         <div className="home-cards">
           {cards.map((c) => {
@@ -298,6 +316,8 @@ export default function Home() {
             </button>
           </div>
         </div>
+
+        <AniversariantesMes />
       </main>
 
       <footer className="home-footer">

@@ -2,7 +2,11 @@
 // (Gestão de Pessoas).
 //   evento 'nova'     -> avisa o GESTOR (aprovador) que há um pedido pendente;
 //   evento 'decidida' -> avisa o COLABORADOR do resultado (com o motivo, quando
-//                        reprovado).
+//                        reprovado);
+//   evento 'sem_passagem' (só folga de campo) -> avisa o LÍDER (o aprovador)
+//                        que o profissional pediu folga e ainda não tem
+//                        passagem comprada. Pedido da gerência de operação,
+//                        30/09/2026.
 // Mesmo padrão das outras notificações do portal (Microsoft Graph sendMail com
 // os secrets GRAPH_* já configurados no projeto).
 //
@@ -41,7 +45,9 @@ const MODULOS: Record<string, { tabela: string; nome: string; artigo: string; ro
     rotaAprovacoes: "/ausencia-programada/aprovacoes",
   },
   folgaCampo: {
-    tabela: "folga_campo_solicitacoes",
+    // Era "folga_campo_solicitacoes", o nome da primeira versão do módulo:
+    // a tabela real é folga_campo_registros, e nenhum e-mail de folga saía.
+    tabela: "folga_campo_registros",
     nome: "folga de campo",
     artigo: "A",
     rotaMinha: "/folga-de-campo",
@@ -127,15 +133,16 @@ Deno.serve(async (req) => {
     if (!solicitacao_id) return json({ error: "missing_solicitacao_id" }, 400);
     const mod = MODULOS[modulo];
     if (!mod) return json({ error: "invalid_modulo" }, 400);
-    if (evento !== "nova" && evento !== "decidida") return json({ error: "invalid_evento" }, 400);
+    if (!["nova", "decidida", "sem_passagem"].includes(evento)) return json({ error: "invalid_evento" }, 400);
+    if (evento === "sem_passagem" && modulo !== "folgaCampo") return json({ error: "invalid_evento" }, 400);
 
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
 
     const { data: sol, error: eSol } = await supabase
       .from(mod.tabela)
-      .select(
-        "id, numero, status, colaborador_id, aprovador_id, data_inicio, data_fim, dias, observacao, fora_do_prazo, motivo_reprovacao, decidido_por"
-      )
+      // "*": as duas tabelas têm colunas diferentes (a ausência tem observação
+      // e fora_do_prazo; a folga tem motivo, obra e passagem_comprada).
+      .select("*")
       .eq("id", solicitacao_id)
       .maybeSingle();
     if (eSol) return json({ error: eSol.message }, 500);
@@ -145,6 +152,11 @@ Deno.serve(async (req) => {
     // enviado) não pode gerar "aguarda sua aprovação" por causa de um clique
     // repetido na tela.
     if (evento === "nova" && sol.status !== "pendente") return json({ skipped: "not_pending" });
+    // Só avisa enquanto o aviso ainda serve: pedido de pé e sem passagem.
+    if (evento === "sem_passagem") {
+      if (!["pendente", "aprovada"].includes(sol.status)) return json({ skipped: "not_active" });
+      if (sol.passagem_comprada !== false) return json({ skipped: "has_ticket" });
+    }
     if (evento === "decidida" && !["aprovada", "reprovada"].includes(sol.status)) {
       return json({ skipped: "not_decided" });
     }
@@ -168,7 +180,25 @@ Deno.serve(async (req) => {
     let subject: string;
     let html: string;
 
-    if (evento === "nova") {
+    if (evento === "sem_passagem") {
+      dest = aprovador ? { nome: aprovador.nome, email: aprovador.email } : null;
+      if (!dest?.email) return json({ skipped: "approver_without_email" });
+      subject = `Folga de campo ${numero} de ${colaborador?.nome ?? ""}: ainda sem passagem comprada`.replace(/\s+/g, " ").trim();
+      html = montarHtml({
+        destNome: dest.nome,
+        chamada: `<strong>${escapeHtml(colaborador?.nome ?? "Um profissional da sua equipe")}</strong> pediu folga de campo ${numero} e informou que <strong>ainda não tem passagem comprada</strong>.`,
+        linhas: [
+          ["Período", periodo],
+          ["Dias", sol.dias],
+          ["Obra", sol.obra],
+          ["Motivo", sol.motivo],
+        ],
+        alerta: "<strong>Sem passagem comprada.</strong> Verifique a compra a tempo da data da folga.",
+        botao: "Ver no Portal PHD",
+        url: `${appUrl}/#${mod.rotaAprovacoes}`,
+        logo,
+      });
+    } else if (evento === "nova") {
       dest = aprovador ? { nome: aprovador.nome, email: aprovador.email } : null;
       if (!dest?.email) return json({ skipped: "approver_without_email" });
       subject = `${mod.artigo} ${mod.nome} ${numero} de ${colaborador?.nome ?? ""} aguarda sua aprovação`.replace(/\s+/g, " ").trim();
@@ -179,7 +209,7 @@ Deno.serve(async (req) => {
           ["Colaborador", colaborador?.nome],
           ["Período", periodo],
           ["Dias", sol.dias],
-          ["Observação", sol.observacao],
+          ["Observação", sol.observacao ?? sol.motivo],
         ],
         // O "fora do prazo" é o que muda a decisão: o pedido passa da data
         // limite do período, e aprovar assim custa saldo que vence.

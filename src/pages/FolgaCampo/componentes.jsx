@@ -94,10 +94,11 @@ export function ModalRegistro({ meus, aprovador, onClose, onSalvar }) {
   const [fim, setFim] = useState('');
   const [obra, setObra] = useState('');
   const [motivo, setMotivo] = useState('');
+  const [passagem, setPassagem] = useState(null); // null = ainda não respondeu
   const [erro, setErro] = useState('');
   const [salvando, setSalvando] = useState(false);
 
-  const validacao = validarRegistro({ inicio, fim, motivo, outros: meus, hoje });
+  const validacao = validarRegistro({ inicio, fim, motivo, passagem, outros: meus, hoje });
   const mostrarValidacao = Boolean(inicio && fim);
 
   async function salvar() {
@@ -105,7 +106,7 @@ export function ModalRegistro({ meus, aprovador, onClose, onSalvar }) {
     setErro('');
     setSalvando(true);
     try {
-      await onSalvar({ inicio, fim, motivo: motivo.trim(), obra: obra.trim() });
+      await onSalvar({ inicio, fim, motivo: motivo.trim(), obra: obra.trim(), passagemComprada: passagem });
     } catch (e) {
       setErro(e?.message || 'Falha ao registrar.');
       setSalvando(false);
@@ -162,6 +163,21 @@ export function ModalRegistro({ meus, aprovador, onClose, onSalvar }) {
           onChange={(e) => setMotivo(e.target.value)}
           placeholder="Por que você vai ficar fora" />
         <div className="form-hint">É o que seu responsável lê para decidir.</div>
+      </div>
+
+      <div className="form-group">
+        <label className="form-label">Já possui passagem comprada?</label>
+        <div className="filter-chips" role="radiogroup" aria-label="Já possui passagem comprada?">
+          {[[true, 'Sim'], [false, 'Não']].map(([v, rot]) => (
+            <button key={rot} type="button" role="radio" aria-checked={passagem === v}
+              className={`filter-chip ${passagem === v ? 'active' : ''}`} onClick={() => setPassagem(v)}>
+              {rot}
+            </button>
+          ))}
+        </div>
+        {passagem === false && (
+          <div className="form-hint">Seu responsável vai receber um e-mail avisando que a passagem ainda não foi comprada.</div>
+        )}
       </div>
 
       {mostrarValidacao && (

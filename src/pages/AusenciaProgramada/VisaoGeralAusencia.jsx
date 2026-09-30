@@ -128,12 +128,12 @@ export default function VisaoGeralAusencia({ mod = MOD_AUSENCIA, escopo = 'equip
     if (aba === 'saldos') {
       baixar(`${mod.arquivo}_saldos.csv`, [
         ['Colaborador', 'Funcao', 'Modalidade', 'Gestor', 'Inicio Periodo', 'Fim Periodo', 'Data Inicial',
-          'Data Limite', 'Direito', 'Ajuste', 'Motivo Ajuste', 'Tirados', 'Agendados', 'Pendentes', 'Saldo',
+          'Data Limite', 'Direito', 'Ajuste', 'Motivo Ajuste', 'Adicionais', 'Tirados', 'Agendados', 'Pendentes', 'Saldo',
           'Situacao', 'Dias ate a Data Limite', 'Observacao'],
         ...periodosFiltrados.map((p) => [
           p.colaborador_nome, p.colaborador_funcao, p.colaborador_formato, p.superior_nome,
           fmtDataBr(p.inicio_periodo), fmtDataBr(p.fim_periodo), fmtDataBr(p.data_inicial),
-          fmtDataBr(p.data_limite), p.dias_direito, p.dias_ajuste, p.ajuste_motivo, p.dias_tirados,
+          fmtDataBr(p.data_limite), p.dias_direito, p.dias_ajuste, p.ajuste_motivo, p.dias_adicionais ?? 0, p.dias_tirados,
           p.dias_agendados, p.dias_pendentes, p.saldo, SITUACAO_LABEL[p.situacao], diasAteLimite(p, hoje),
           p.observacao,
         ]),
@@ -408,6 +408,7 @@ export default function VisaoGeralAusencia({ mod = MOD_AUSENCIA, escopo = 'equip
                   <th>Data inicial</th>
                   <th>Data limite</th>
                   <th>Direito</th>
+                  <th title="Dias do Adicional de Ausências, já aprovados">Adicionais</th>
                   <th>Tirados</th>
                   <th>Agendados</th>
                   <th>Pendentes</th>
@@ -440,6 +441,9 @@ export default function VisaoGeralAusencia({ mod = MOD_AUSENCIA, escopo = 'equip
                           ajuste {p.dias_ajuste > 0 ? '+' : ''}{p.dias_ajuste}
                         </div>
                       )}
+                    </td>
+                    <td className="ap-num" title="Dias do Adicional de Ausências, já aprovados">
+                      {p.dias_adicionais ? `+${p.dias_adicionais}` : '—'}
                     </td>
                     <td className="ap-num">
                       {/* O RH corrige o tirado que não foi tirado (lançamento
@@ -476,7 +480,7 @@ export default function VisaoGeralAusencia({ mod = MOD_AUSENCIA, escopo = 'equip
                   </tr>
                 ))}
                 {periodosFiltrados.length === 0 && (
-                  <tr><td colSpan={ehRh ? 11 : 10} className="table-empty">Nenhum período encontrado.</td></tr>
+                  <tr><td colSpan={ehRh ? 12 : 11} className="table-empty">Nenhum período encontrado.</td></tr>
                 )}
               </tbody>
             </table>

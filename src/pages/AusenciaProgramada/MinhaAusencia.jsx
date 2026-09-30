@@ -211,6 +211,7 @@ export default function MinhaAusencia({ mod = MOD_AUSENCIA }) {
                 <th>Data inicial</th>
                 <th>Data limite</th>
                 <th>Direito</th>
+                <th title="Dias adicionais combinados com o seu gestor, já aprovados">Adicionais</th>
                 <th>Tirados</th>
                 <th>Agendados</th>
                 <th>Pendentes</th>
@@ -228,6 +229,7 @@ export default function MinhaAusencia({ mod = MOD_AUSENCIA }) {
                     {p.dias_direito + p.dias_ajuste}
                     {p.dias_ajuste !== 0 && <div className="ap-sub" title={p.ajuste_motivo || ''}>ajuste {p.dias_ajuste > 0 ? '+' : ''}{p.dias_ajuste}</div>}
                   </td>
+                  <td className="ap-num">{p.dias_adicionais ? `+${p.dias_adicionais}` : '—'}</td>
                   <td className="ap-num">{p.dias_tirados}</td>
                   <td className="ap-num">{p.dias_agendados}</td>
                   <td className="ap-num">{p.dias_pendentes}</td>
@@ -236,7 +238,7 @@ export default function MinhaAusencia({ mod = MOD_AUSENCIA }) {
                 </tr>
               ))}
               {periodos.length === 0 && (
-                <tr><td colSpan={9} className="table-empty">Nenhum período cadastrado.</td></tr>
+                <tr><td colSpan={10} className="table-empty">Nenhum período cadastrado.</td></tr>
               )}
             </tbody>
           </table>

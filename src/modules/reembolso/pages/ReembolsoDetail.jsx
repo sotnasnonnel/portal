@@ -10,11 +10,9 @@ import {
   deleteReimbursement,
   getReimbursement,
   markSettlement,
-  notifyApprover,
-  notifyRequesterDecision,
   STATUS,
-  updateReimbursementStatus,
 } from "../services/reimbursements.js";
+import { decidirReembolso } from "../services/decisao.js";
 import { reconcileAdvance } from "../lib/advanceAccountability.js";
 import { formatBillable, formatCurrency, formatDate } from "../lib/format.js";
 import {
@@ -30,7 +28,6 @@ import FoodOverageNotice from "../components/FoodOverageNotice.jsx";
 import ForbiddenItemsNotice from "../components/ForbiddenItemsNotice.jsx";
 import NfAnexoPreview from "../components/NfAnexoPreview.jsx";
 import EnvioClientePainel from "../components/EnvioClientePainel.jsx";
-import { enviarPdfAoCliente } from "../services/envioCliente.js";
 import { deveEnviarAoCliente } from "../lib/envioCliente.js";
 import "./ReembolsoDetail.css";
 
@@ -178,14 +175,15 @@ export default function ReembolsoDetail() {
   async function handleDecision(next, note, approvedAmount = null) {
     if (actionLoading) return;
     setActionLoading(true);
-    const { data: salvo, error } = await updateReimbursementStatus(
-      reembolso.id,
-      next,
-      profile,
+    // Gravação e avisos (2ª alçada, e-mail ao solicitante, PDF ao cliente)
+    // ficam em decidirReembolso — a central de Aprovações usa a mesma função.
+    const { salvo, error, segundaAlcada } = await decidirReembolso({
+      reembolso,
+      aprovar: next === STATUS.APROVADO,
+      actor: profile,
       note,
       approvedAmount,
-      reembolso.kind
-    );
+    });
     setRejecting(false);
     setRejectNote("");
     await load();
@@ -194,23 +192,9 @@ export default function ReembolsoDetail() {
       showToast(`Não foi possível concluir: ${error.message}`, "error");
       return;
     }
-    // Segunda alçada (gatilho reembolso_segunda_alcada): a aprovação deste
-    // gestor não encerra o pedido — ele voltou para análise com o aprovador de
-    // cima. Avisa esse aprovador; o solicitante só recebe a decisão final.
-    if (next === STATUS.APROVADO && salvo?.status === STATUS.EM_ANALISE) {
-      notifyApprover(reembolso.id);
+    if (segundaAlcada) {
       showToast(`Aprovado por você. Agora segue para ${salvo.manager_name || "a próxima aprovação"}.`, "success");
       return;
-    }
-    // Retorno para quem pediu: e-mail com o desfecho (e, no reembolso aprovado,
-    // a data em que o pagamento cai). Não bloqueia o fluxo se falhar.
-    notifyRequesterDecision(reembolso.id);
-    // Reembolso cobrado do cliente: o PDF fica anexado para o Financeiro (pedido da
-    // Alinne). Sem await — a aprovação já foi gravada e não espera o PDF. Se
-    // falhar ou a aba fechar, o banco já marcou o pedido como pendente e o
-    // Financeiro vê e gera de novo pelo painel do detalhe.
-    if (deveEnviarAoCliente({ ...reembolso, status: next })) {
-      enviarPdfAoCliente(reembolso.id);
     }
     const cap = `${meta.singular[0].toUpperCase()}${meta.singular.slice(1)}`;
     showToast(

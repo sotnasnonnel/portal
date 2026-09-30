@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { notificarAusencia } from './notificarAusencia';
 
 // ============================================================================
 // Camada de dados da FOLGA DE CAMPO. Regras puras em src/config/folgaCampo.js;
@@ -30,16 +31,21 @@ export async function fetchMeuAprovador() {
   return (data || [])[0] || null;
 }
 
-export async function registrar({ inicio, fim, motivo, obra = '' }) {
+export async function registrar({ inicio, fim, motivo, obra = '', passagemComprada }) {
   const { data, error } = await supabase.rpc('folga_campo_registrar', {
     p_inicio: inicio,
     p_fim: fim,
     p_motivo: motivo,
     p_obra: obra || null,
+    p_passagem_comprada: passagemComprada,
   });
   checar(error);
   avisar();
-  return (data || [])[0] || null;
+  const r = (data || [])[0] || null;
+  // Sem passagem: o líder (o aprovador) recebe e-mail — pedido da gerência de
+  // operação. Best-effort: a folga já está gravada.
+  if (r?.id && passagemComprada === false) notificarAusencia('folgaCampo', r.id, 'sem_passagem');
+  return r;
 }
 
 export async function decidir(id, { aprovar, motivo = null }) {

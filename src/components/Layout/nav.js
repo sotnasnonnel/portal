@@ -2,6 +2,7 @@ import {
   LayoutDashboard, ClipboardCheck, Users, CalendarClock, UserPlus, List, CalendarDays,
   FileText, Network, Coins, PlusCircle, Workflow, Clock, ShieldAlert, ScrollText,
   Receipt, Briefcase, Building2, FileBarChart, History, Settings, CalendarRange, HardHat,
+  CalendarPlus,
 } from 'lucide-react';
 import { isHorasExtrasDp } from '../../config/horasExtras';
 import { podeAcessarFechamentoPj, ROTA_FECHAMENTO_PJ } from '../../config/fechamentoPj';
@@ -11,6 +12,9 @@ import {
   ROTA_FOLGA_CAMPO, isFolgaCampoRh, podeAcessarFolgaCampo,
   veAprovacoes as veAprovacoesFolga,
 } from '../../config/folgaCampo';
+import {
+  ROTA_ADICIONAL, podeRegistrarAdicional, veAprovacoesAdicional, veAdicionais,
+} from '../../config/adicionalAusencia';
 import { podeConsultarOrganograma } from '../../config/organograma';
 import { podeAjustarValores } from '../../config/valores';
 
@@ -103,6 +107,29 @@ function grupoFolgaCampo(user) {
   };
 }
 
+// Adicional de Ausências: dias a mais combinados com a equipe, por projeto,
+// que somam no saldo da Ausência Programada depois de aprovados. Registrar é de
+// coordenador e gestor; a fila é de quem aprova; o painel, do RH.
+function grupoAdicional(user) {
+  return {
+    group: true,
+    key: 'adicionais',
+    label: 'Adicional de Ausências',
+    Icon: CalendarPlus,
+    items: [
+      ...(podeRegistrarAdicional(user)
+        ? [{ label: 'Registros', Icon: CalendarPlus, href: ROTA_ADICIONAL, exato: true }]
+        : []),
+      ...(veAprovacoesAdicional(user)
+        ? [{ label: 'Aprovações', Icon: ClipboardCheck, href: `${ROTA_ADICIONAL}/aprovacoes` }]
+        : []),
+      ...(isAusenciaRh(user)
+        ? [{ label: 'Painel RH', Icon: LayoutDashboard, href: `${ROTA_ADICIONAL}/painel` }]
+        : []),
+    ],
+  };
+}
+
 /**
  * Consultas: montado pelo que a PESSOA pode, e não pelo perfil dela.
  *
@@ -133,6 +160,7 @@ const consultas = (user) => {
 const ROTAS_AREA = [
   ...MODULOS_AUSENCIA.map((m) => [m.rota, m.navKey]),
   [ROTA_FOLGA_CAMPO, 'folgaCampo'],
+  [ROTA_ADICIONAL, 'adicionais'],
   ['/admin/horas-extras', 'horasExtras'],
   [ROTA_FECHAMENTO_PJ, 'fechamentoPj'],
   ['/admin/cadastro', 'colaboradores'],
@@ -169,6 +197,11 @@ const CARTAO_AREA = {
     m.navKey,
     { Icon: ICONE_MODULO[m.navKey], desc: m.descricaoCartao, cta: m.ctaCartao },
   ])),
+  adicionais: {
+    Icon: CalendarPlus,
+    desc: 'Dias adicionais combinados com a equipe, por projeto, que somam no saldo.',
+    cta: 'Abrir adicionais',
+  },
   folgaCampo: {
     Icon: HardHat,
     desc: 'Aviso de ausência da obra, com aprovação do responsável.',
@@ -282,6 +315,7 @@ export function navSections({ perfil, user, pendencias = 0, requisicoes = 0, are
   // A Folga de Campo está em piloto e só aparece para quem foi liberado. O card
   // da Home sai de navSections, então some junto.
   if (podeAcessarFolgaCampo(user)) secoes.push(grupoFolgaCampo(user));
+  if (veAdicionais(user)) secoes.push(grupoAdicional(user));
   if (isHorasExtrasDp(user)) secoes.push(grupoHorasExtras);
   if (podeAcessarFechamentoPj(user)) secoes.push(grupoFechamentoPj);
   if (area && secoes.some((s) => s.key === area)) return secoes.filter((s) => s.key === area);

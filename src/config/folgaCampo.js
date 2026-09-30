@@ -93,11 +93,16 @@ export function diasCorridos(inicio, fim) {
 // ---- Registro -------------------------------------------------------------
 // Validação da tela. `outros` são os registros do próprio colaborador, para
 // checar sobreposição. Espelha public.folga_campo_registrar.
-export function validarRegistro({ inicio, fim, motivo, outros = [], hoje = diaISO() } = {}) {
+export function validarRegistro({
+  inicio, fim, motivo, passagem, outros = [], hoje = diaISO(),
+} = {}) {
   const erros = [];
   if (!inicio) erros.push('Informe a data de início.');
   if (!fim) erros.push('Informe a data fim.');
   if (!String(motivo || '').trim()) erros.push('Informe o motivo da ausência.');
+  // Pergunta obrigatória (gerência de operação, 30/09/2026): sem passagem, o
+  // líder é avisado por e-mail.
+  if (typeof passagem !== 'boolean') erros.push('Responda se você já possui passagem comprada.');
   if (!inicio || !fim) return { ok: false, erros, dias: 0 };
 
   if (fim < inicio) erros.push('A data fim não pode ser anterior à data de início.');
@@ -111,6 +116,38 @@ export function validarRegistro({ inicio, fim, motivo, outros = [], hoje = diaIS
 
   return { ok: erros.length === 0, erros, dias: diasCorridos(inicio, fim) };
 }
+
+// ---- Antecedência ---------------------------------------------------------
+// "Tempo de antecedência da programação" (gerência de operação, 30/09/2026):
+// data programada da folga − data em que ela foi pedida, em dias corridos.
+// Negativo não acontece pelo portal (a data no passado é barrada), mas o
+// cálculo não esconde se algum dado vier assim.
+export function antecedenciaDias(r) {
+  const pedido = r?.enviado_em || r?.created_at;
+  if (!r?.data_inicio || !pedido) return null;
+  return diffDias(diaISO(new Date(pedido)), r.data_inicio);
+}
+
+/**
+ * Média da antecedência, em dias inteiros (arredondada para baixo: "com 3,6
+ * dias de antecedência" é, na prática, 3 dias). Canceladas ficam de fora — não
+ * viraram programação nenhuma.
+ */
+export function antecedenciaMedia(registros = []) {
+  const dias = registros
+    .filter((r) => r.status !== 'cancelada')
+    .map(antecedenciaDias)
+    .filter((d) => d !== null);
+  if (!dias.length) return { media: null, total: 0 };
+  return { media: Math.floor(dias.reduce((a, b) => a + b, 0) / dias.length), total: dias.length };
+}
+
+/** Texto da resposta sobre a passagem. NULL = registro de antes da pergunta. */
+export const rotuloPassagem = (r) => {
+  if (r?.passagem_comprada === true) return 'Sim';
+  if (r?.passagem_comprada === false) return 'Não';
+  return '—';
+};
 
 // ---- Ações ----------------------------------------------------------------
 // Espelham public.folga_campo_cancelar / folga_campo_decidir.

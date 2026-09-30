@@ -29,12 +29,17 @@ import {
   ROTA_FOLGA_CAMPO, isFolgaCampoRh, podeAcessarFolgaCampo,
   veAprovacoes as veAprovacoesFolga,
 } from '../config/folgaCampo';
+import {
+  ROTA_ADICIONAL, podeRegistrarAdicional, veAprovacoesAdicional,
+} from '../config/adicionalAusencia';
 
 const Login = lazyPagina(() => import('../pages/Login/Login'));
 const Privacidade = lazyPagina(() => import('../pages/Privacidade/Privacidade'));
 const Home = lazyPagina(() => import('../pages/Home/Home'));
 const PortalAdmin = lazyPagina(() => import('../pages/PortalAdmin/PortalAdmin'));
 const FaleConoscoCaixa = lazyPagina(() => import('../pages/FaleConosco/FaleConoscoCaixa'));
+const CentralAprovacoes = lazyPagina(() => import('../modules/aprovacoes/app/page'));
+const PainelHumor = lazyPagina(() => import('../pages/Humor/PainelHumor'));
 const AdminCadastro = lazyPagina(() => import('../pages/Admin/AdminCadastro'));
 const AdminListagem = lazyPagina(() => import('../pages/Admin/AdminListagem'));
 const GestorDashboard = lazyPagina(() => import('../pages/Gestor/GestorDashboard'));
@@ -86,6 +91,7 @@ const VisaoGeralAusencia = lazyPagina(() => import('../pages/AusenciaProgramada/
 const MinhaFolga = lazyPagina(() => import('../pages/FolgaCampo/MinhaFolga'));
 const AprovacoesFolga = lazyPagina(() => import('../pages/FolgaCampo/AprovacoesFolga'));
 const ConsultaFolga = lazyPagina(() => import('../pages/FolgaCampo/ConsultaFolga'));
+const AdicionalAusencias = lazyPagina(() => import('../pages/AdicionalAusencia/AdicionalAusencias'));
 // Fechamento PJ — fechamento mensal dos prestadores PJ, também dentro da Gestão de Pessoas.
 const FechamentoPjShell = lazyPagina(() => import('../modules/fechamentoPj/app/components/FechamentoPjShell'));
 const PjFolha = lazyPagina(() => import('../modules/fechamentoPj/app/folha/page'));
@@ -280,6 +286,19 @@ function FolgaCampoRoute({ gestao = false, rh = false, children }) {
   return children;
 }
 
+// Adicional de Ausências: registrar é de coordenador e gestor; a fila, de quem
+// aprova; o painel, do RH. Gate de UI — as RPCs validam de novo no banco.
+function AdicionalRoute({ escopo, children }) {
+  const { user } = useAuth();
+  const pode = {
+    meus: podeRegistrarAdicional(user),
+    aprovar: veAprovacoesAdicional(user),
+    todos: isAusenciaRh(user),
+  }[escopo];
+  if (!pode) return <Navigate to="/home" replace />;
+  return children;
+}
+
 // As quatro telas dos dois módulos: mesmo componente, descritor diferente
 // (config/modulosAusencia.js). `key` obriga o React a remontar ao trocar de
 // módulo ou de escopo, em vez de reaproveitar o estado da tela anterior.
@@ -348,6 +367,32 @@ export default function AppRoutes() {
             <ProtectedRoute>
               <LazyPage>
                 <Home />
+              </LazyPage>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Central de Aprovações: aberta a todo logado. Cada módulo continua
+            decidindo quem pode aprovar o quê — a central só junta e reusa. */}
+        <Route
+          path="/aprovacoes"
+          element={
+            <ProtectedRoute>
+              <LazyPage>
+                <CentralAprovacoes />
+              </LazyPage>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Humor da equipe/empresa: só números agregados. A tela devolve para a
+            Home quem não é gestão nem RH; a RPC barra de novo no banco. */}
+        <Route
+          path="/humor"
+          element={
+            <ProtectedRoute>
+              <LazyPage>
+                <PainelHumor />
               </LazyPage>
             </ProtectedRoute>
           }
@@ -518,6 +563,18 @@ export default function AppRoutes() {
             path={`${ROTA_FOLGA_CAMPO}/painel`}
             element={<FolgaCampoRoute rh><LazyPage><ConsultaFolga key="todos" escopo="todos" /></LazyPage></FolgaCampoRoute>}
           />
+
+          {/* Adicional de Ausências (config/adicionalAusencia.js). `key` remonta
+              a tela ao trocar de escopo. */}
+          {[['meus', ROTA_ADICIONAL], ['aprovar', `${ROTA_ADICIONAL}/aprovacoes`], ['todos', `${ROTA_ADICIONAL}/painel`]]
+            .map(([escopo, path]) => (
+              <Route key={`adicional-${escopo}`} path={path}
+                element={(
+                  <AdicionalRoute escopo={escopo}>
+                    <LazyPage><AdicionalAusencias key={escopo} escopo={escopo} /></LazyPage>
+                  </AdicionalRoute>
+                )} />
+            ))}
 
           <Route
             path="/gestor"

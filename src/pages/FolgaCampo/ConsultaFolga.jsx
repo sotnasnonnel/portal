@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Users, LayoutDashboard, Download, CalendarDays } from 'lucide-react';
+import { Users, LayoutDashboard, Download, CalendarDays, Timer } from 'lucide-react';
 import {
-  csv, diaISO, fmtDataBr, statusExibido, statusLabel,
+  csv, diaISO, fmtDataBr, statusExibido, statusLabel, antecedenciaDias, antecedenciaMedia, rotuloPassagem,
 } from '../../config/folgaCampo';
 import { listar } from '../../services/folgaCampo';
 import { Alerta, StatusBadge } from './componentes';
@@ -58,16 +58,21 @@ export default function ConsultaFolga({ escopo = 'equipe' }) {
     proximas: lista.filter((r) => r.status === 'aprovada' && r.data_inicio > hoje).length,
     pendentes: lista.filter((r) => r.status === 'pendente').length,
   }), [lista, hoje]);
+  // Sobre o que está filtrado na tela: a gerência compara recortes (só as
+  // próximas, só o histórico, uma obra na busca).
+  const antecedencia = useMemo(() => antecedenciaMedia(filtrada), [filtrada]);
 
   function exportar() {
     const linhas = [
       ['Numero', 'Colaborador', 'Funcao', 'Obra', 'Inicio', 'Fim', 'Dias', 'Motivo', 'Status',
-        'Responsavel', 'Decidido Por', 'Decidido Em', 'Motivo Reprovacao'],
+        'Responsavel', 'Decidido Por', 'Decidido Em', 'Motivo Reprovacao', 'Passagem Comprada',
+        'Pedido Em', 'Antecedencia (dias)'],
       ...filtrada.map((r) => [
         r.numero, r.colaborador_nome, r.colaborador_funcao, r.obra,
         fmtDataBr(r.data_inicio), fmtDataBr(r.data_fim), r.dias, r.motivo, statusLabel(r, hoje),
         r.aprovador_nome, r.decidido_por_nome, r.decidido_em ? fmtDataBr(r.decidido_em) : '',
-        r.motivo_reprovacao,
+        r.motivo_reprovacao, rotuloPassagem(r),
+        r.enviado_em ? fmtDataBr(diaISO(new Date(r.enviado_em))) : '', antecedenciaDias(r) ?? '',
       ]),
     ];
     const blob = new Blob(['﻿' + csv(linhas)], { type: 'text/csv;charset=utf-8' });
@@ -108,7 +113,7 @@ export default function ConsultaFolga({ escopo = 'equipe' }) {
 
       {erro && <Alerta tipo="erro">{erro}</Alerta>}
 
-      <div className="cards-grid cards-grid--3 fc-secao">
+      <div className="cards-grid fc-secao">
         <div className="stat-card accent">
           <div className="stat-card-header"><div className="stat-card-icon"><Users size={22} /></div></div>
           <div className="stat-card-value">{stats.pessoas}</div>
@@ -123,6 +128,17 @@ export default function ConsultaFolga({ escopo = 'equipe' }) {
           <div className="stat-card-header"><div className="stat-card-icon"><CalendarDays size={22} /></div></div>
           <div className="stat-card-value">{stats.proximas}</div>
           <div className="stat-card-label">Aprovadas a acontecer</div>
+        </div>
+        {/* Pedido da gerência de operação: quanto antes a folga é programada.
+            Data da folga − data do pedido, média do que está na tabela. */}
+        <div className="stat-card accent" title={antecedencia.total
+          ? `Média de ${antecedencia.total} registro(s) da tabela abaixo, sem os cancelados.`
+          : 'Sem registros na tabela abaixo.'}>
+          <div className="stat-card-header"><div className="stat-card-icon"><Timer size={22} /></div></div>
+          <div className="stat-card-value">
+            {antecedencia.media === null ? '—' : `${antecedencia.media} ${antecedencia.media === 1 ? 'dia' : 'dias'}`}
+          </div>
+          <div className="stat-card-label">Tempo de antecedência da programação</div>
         </div>
       </div>
 
@@ -158,6 +174,8 @@ export default function ConsultaFolga({ escopo = 'equipe' }) {
                 <th>Dias</th>
                 <th>Obra</th>
                 <th>Motivo</th>
+                <th>Passagem</th>
+                <th title="Data da folga − data do pedido">Antecedência (dias)</th>
                 <th>Status</th>
                 <th>Responsável</th>
               </tr>
@@ -174,6 +192,8 @@ export default function ConsultaFolga({ escopo = 'equipe' }) {
                   <td className="fc-num">{r.dias}</td>
                   <td>{r.obra || '—'}</td>
                   <td className="fc-motivo">{r.motivo}</td>
+                  <td className={r.passagem_comprada === false ? 'fc-sem-passagem' : ''}>{rotuloPassagem(r)}</td>
+                  <td className="fc-num">{antecedenciaDias(r) ?? '—'}</td>
                   <td>
                     <StatusBadge r={r} />
                     {statusExibido(r, hoje) === 'reprovada' && r.motivo_reprovacao && (
@@ -184,7 +204,7 @@ export default function ConsultaFolga({ escopo = 'equipe' }) {
                 </tr>
               ))}
               {filtrada.length === 0 && (
-                <tr><td colSpan={8} className="table-empty">Nenhum registro encontrado.</td></tr>
+                <tr><td colSpan={10} className="table-empty">Nenhum registro encontrado.</td></tr>
               )}
             </tbody>
           </table>

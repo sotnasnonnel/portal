@@ -9,8 +9,8 @@ import {
 } from '../../../../../config/aprovacaoFinanceiro';
 import { categoriaLabel } from '../../../../../config/alcadas';
 import { modalidadeCartaoLabel, PRAZO_CARTAO_FISICO } from '../../../../../config/financeiro';
-import { meusPapeisAlcada, registrarAuditoria } from '../../../../../services/alcadas';
-import { notificarAprovadorFin } from '../../../../../services/notificarAprovadorFin';
+import { meusPapeisAlcada } from '../../../../../services/alcadas';
+import { decidirSolicitacaoFin, auditarFin } from '../decisaoFin';
 import '../../../../../components/UI/Components.css';
 
 const TOM_BADGE = {
@@ -101,53 +101,19 @@ export default function AcompanharFin() {
     ));
   }, [lista, user?.id, isFinAdmin, meusPapeis]);
 
-  // Trilha de auditoria (§6, pilar 4): quem agiu, quando, sobre que valor e
-  // se havia exceção de alçada aplicada.
-  const auditar = (sol, etapa, evento, observacao) => registrarAuditoria({
-    modulo: 'financeiro',
-    solicitacao_id: sol.id,
-    numero: sol.numero,
-    tipo: sol.tipo,
-    evento,
-    ator_id: user?.id || null,
-    ator_nome: user?.nome || null,
-    papel_codigo: etapa?.papel_codigo || null,
-    valor: sol.valor ?? null,
-    alcada_tabela: 'compras',
-    nivel_base: sol.alcada_nivel_base ?? null,
-    nivel_final: sol.alcada_nivel_final ?? null,
-    excecoes: sol.alcada_excecoes || [],
-    observacao: observacao || null,
-  });
+  // Trilha de auditoria (§6, pilar 4). Mesma função usada pela decisão, que
+  // mora em decisaoFin.js para a central de Aprovações gravar igual.
+  const auditar = (sol, etapa, evento, observacao) => auditarFin(sol, etapa, evento, observacao, user);
 
   const confirmarDecisao = async () => {
     if (!decisao) return;
     const { sol, modo } = decisao;
-    const atual = etapaAtualFin(sol.etapas);
-    if (!atual) return;
+    if (!etapaAtualFin(sol.etapas)) return;
     const aprovando = modo === 'aprovar';
-    const ehParecer = atual.tipo_etapa === 'parecer';
-    const agora = new Date().toISOString();
     setAcaoId(sol.id);
     try {
-      const { data, error } = await supabase
-        .from('solicitacoes_financeiro_etapas')
-        .update({ status: aprovando ? 'aprovada' : 'reprovada', justificativa: comentario.trim() || null, decidido_em: agora })
-        .eq('id', atual.id)
-        .eq('status', 'pendente')
-        .select('id');
-      if (error) throw error;
-      if (!data || data.length === 0) {
-        alert('Esta etapa já foi tratada. A lista será atualizada.');
-      } else if (!aprovando) {
-        await supabase.from('solicitacoes_financeiro').update({ status: 'reprovada', updated_at: agora }).eq('id', sol.id);
-        auditar(sol, atual, 'reprovacao', comentario.trim() || `Reprovada na etapa "${atual.papel}"`);
-      } else {
-        auditar(sol, atual, ehParecer ? 'parecer' : 'aprovacao',
-          comentario.trim() || `${ehParecer ? 'Parecer favorável' : 'Aprovada'} na etapa "${atual.papel}"`);
-        // Aprovou: avisa quem passa a ser o responsável da vez.
-        notificarAprovadorFin(sol.id);
-      }
+      const r = await decidirSolicitacaoFin({ sol, user, aprovar: aprovando, comentario });
+      if (r === 'ja_tratada') alert('Esta etapa já foi tratada. A lista será atualizada.');
       setDecisao(null); setComentario('');
       await fetchLista();
     } catch (err) {

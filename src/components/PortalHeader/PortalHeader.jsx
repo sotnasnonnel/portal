@@ -2,6 +2,7 @@ import { Menu, Calendar, HelpCircle, MessageSquarePlus } from "lucide-react";
 import { GUIA_OPEN_EVENT } from "../Guia/guides";
 import { FALE_CONOSCO_OPEN_EVENT, SLA_HORAS } from "../../config/suporte";
 import SinoNotificacoes from "../Notificacoes/SinoNotificacoes";
+import AtalhoAprovacoes from "../../modules/aprovacoes/AtalhoAprovacoes";
 import FaleConoscoModal from "../FaleConosco/FaleConoscoModal";
 import { useCaixaFaleConosco } from "../FaleConosco/useCaixaFaleConosco";
 import "./PortalHeader.css";
@@ -47,6 +48,8 @@ export default function PortalHeader({ modulo = '', onMenuToggle, acoes = null }
 
       <div className="portal-header-right">
         {acoes}
+        {/* Central de Aprovações: o sino avisa, o número aqui é o que ainda espera. */}
+        <AtalhoAprovacoes className="portal-header-help" />
         <SinoNotificacoes />
         <button
           type="button"

@@ -14,8 +14,7 @@ import ModalRespostas, { DETALHE, buscarRespostas } from './ModalRespostas';
 import BotaoGerarNovaVaga from './BotaoGerarNovaVaga';
 import AcoesEditarRequisicao from './AcoesEditarRequisicao';
 import RequisicoesRh from './RequisicoesRh';
-import { notificarAprovadorSolic } from '../../../services/notificarAprovadorSolic';
-import { notificarSolicitanteReprovacao } from '../../../services/notificarSolicitanteReprovacao';
+import { decidirRequisicaoRh } from '../../../services/decisaoRequisicaoRh';
 import BotaoPdfRequisicao from '../../../components/BotaoPdfRequisicao';
 import '../../../components/UI/Components.css';
 import '../Gestor.css';
@@ -110,43 +109,20 @@ export default function AcompanharRequisicoes() {
   const confirmarDecisao = async () => {
     if (!decisao) return;
     const { sol, modo } = decisao;
-    const atual = etapaAtual(sol.etapas);
-    if (!atual) return;
-    const coment = comentario.trim();
-    if (modo !== 'aprovar' && !coment) return; // justificativa obrigatória
-    const agora = new Date().toISOString();
-    const statusEtapa = { aprovar: 'aprovada', reprovar: 'reprovada' }[modo];
+    if (!etapaAtual(sol.etapas)) return;
+    if (modo !== 'aprovar' && !comentario.trim()) return; // justificativa obrigatória
     setAcaoId(sol.id);
     try {
-      const { data, error } = await supabase
-        .from('solicitacoes_rh_etapas')
-        .update({ status: statusEtapa, justificativa: coment || null, decidido_em: agora })
-        .eq('id', atual.id)
-        .eq('aprovador_id', user.id)
-        .eq('status', 'pendente')
-        .select('id');
-      if (error) throw error;
-      if (!data || data.length === 0) {
+      // Mesma função da central de Aprovações: grava, avisa e dispara o evento.
+      const r = await decidirRequisicaoRh({
+        sol, userId: user.id, aprovar: modo === 'aprovar', comentario,
+      });
+      if (r === 'ja_tratada') {
         alert('Esta etapa já foi tratada por outra pessoa. A lista será atualizada.');
-        setDecisao(null);
-        setComentario('');
-        await fetchParticipa();
-        return;
-      }
-      if (modo === 'reprovar') {
-        const { error: e2 } = await supabase
-          .from('solicitacoes_rh')
-          .update({ status: 'reprovada', updated_at: agora })
-          .eq('id', sol.id);
-        if (e2) throw e2;
-        notificarSolicitanteReprovacao(sol.id);   // avisa o solicitante (best-effort)
-      } else {
-        notificarAprovadorSolic(sol.id);
       }
       setDecisao(null);
       setComentario('');
       await fetchParticipa();
-      window.dispatchEvent(new Event('solicitacoes_rh_atualizadas'));
     } catch (err) {
       console.error(err);
       const verbo = { aprovar: 'aprovar', reprovar: 'reprovar', devolver: 'devolver' }[modo];

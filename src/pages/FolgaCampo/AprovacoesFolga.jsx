@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ClipboardCheck, Check, X, Ban } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import {
-  fmtDataBr, isFolgaCampoRh, podeCancelar, podeDecidir, statusExibido,
+  fmtDataBr, isFolgaCampoRh, podeCancelar, podeDecidir, statusExibido, antecedenciaDias, rotuloPassagem,
 } from '../../config/folgaCampo';
 import { cancelar, decidir, listar } from '../../services/folgaCampo';
 import { Alerta, ModalMotivo, StatusBadge } from './componentes';
@@ -115,6 +115,8 @@ export default function AprovacoesFolga() {
                 <th>Dias</th>
                 <th>Obra</th>
                 <th>Motivo</th>
+                <th>Passagem</th>
+                <th title="Data da folga − data do pedido">Antecedência (dias)</th>
                 <th>Status</th>
                 <th>Ações</th>
               </tr>
@@ -136,6 +138,8 @@ export default function AprovacoesFolga() {
                     <td className="fc-num">{r.dias}</td>
                     <td>{r.obra || '—'}</td>
                     <td className="fc-motivo">{r.motivo}</td>
+                    <td className={r.passagem_comprada === false ? 'fc-sem-passagem' : ''}>{rotuloPassagem(r)}</td>
+                    <td className="fc-num">{antecedenciaDias(r) ?? '—'}</td>
                     <td>
                       <StatusBadge r={r} />
                       {r.decidido_por_nome && r.status !== 'pendente' && (
@@ -168,7 +172,7 @@ export default function AprovacoesFolga() {
                 );
               })}
               {filtrada.length === 0 && (
-                <tr><td colSpan={8} className="table-empty">Nenhum registro aqui.</td></tr>
+                <tr><td colSpan={10} className="table-empty">Nenhum registro aqui.</td></tr>
               )}
             </tbody>
           </table>
