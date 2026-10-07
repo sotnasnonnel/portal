@@ -1,5 +1,5 @@
 import {
-  GraduationCap, Activity, CreditCard, Handshake, BookOpen, Radar, Gauge, Megaphone,
+  GraduationCap, Activity, CreditCard, BookOpen, Radar, Gauge, Megaphone,
 } from 'lucide-react';
 
 /**
@@ -40,12 +40,6 @@ export const SOLUCOES_INTEGRADAS = [
     desc: 'Cartões corporativos e despesas',
     url: 'https://brasil.clara.com/auth/login',
     icon: CreditCard,
-  },
-  {
-    nome: 'RD Station',
-    desc: 'CRM de vendas',
-    url: 'https://accounts.rdstation.com/',
-    icon: Handshake,
   },
   {
     nome: 'MAS',
