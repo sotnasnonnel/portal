@@ -1,0 +1,63 @@
+/* Destaque do aniversário / tempo de casa, acima da saudação da Home. */
+.home-destaque {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 980px;
+  margin: 0 0 24px;
+  padding: 18px 48px 18px 20px;
+  border-radius: 18px;
+  background: linear-gradient(120deg, var(--terracotta-light), #fff 55%, var(--green-soft));
+  border: 1px solid var(--terracotta-soft);
+  box-shadow: var(--shadow-md);
+  text-align: left;
+  box-sizing: border-box;
+  animation: home-destaque-entra 0.5s ease-out;
+}
+
+.home-destaque-icone {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--terracotta);
+  color: #fff;
+}
+
+.home-destaque-texto { display: flex; flex-direction: column; gap: 4px; }
+.home-destaque-texto strong { color: var(--blue); font-size: var(--font-size-xl); }
+.home-destaque-texto span { color: var(--ink-soft); font-size: var(--font-size-md); }
+
+.home-destaque-fechar {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.home-destaque-fechar:hover { background: rgba(38, 64, 93, 0.08); color: var(--blue); }
+
+@keyframes home-destaque-entra {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-destaque { animation: none; }
+}
+
+@media (max-width: 540px) {
+  .home-destaque { align-items: flex-start; padding: 16px 44px 16px 16px; }
+  .home-destaque-icone { width: 44px; height: 44px; }
+}

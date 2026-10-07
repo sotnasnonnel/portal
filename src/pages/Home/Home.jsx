@@ -18,6 +18,7 @@ import AdministrativoModal from './AdministrativoModal';
 import GestaoPessoasModal from './GestaoPessoasModal';
 import HumorDoDia from './HumorDoDia';
 import AniversariantesMes from './AniversariantesMes';
+import DestaqueDoDia from './DestaqueDoDia';
 import { areasGestaoPessoas } from '../../components/Layout/nav';
 import NovidadesModal from '../../components/Novidades/NovidadesModal';
 import SinoNotificacoes from '../../components/Notificacoes/SinoNotificacoes';
@@ -227,6 +228,7 @@ export default function Home() {
       </header>
 
       <main className="home-main">
+        <DestaqueDoDia />
         <h1>{saudacao ? `Olá, ${saudacao}!` : 'Olá!'} 🚀</h1>
         <p className="home-sub">O que você precisa fazer hoje?</p>
         <HumorDoDia />

@@ -152,6 +152,8 @@ export function AuthProvider({ children }) {
         novidadesVistoId: colab.novidades_visto_id || null,
         funcao: colab.funcao || null,
         dataAdmissao: colab.data_admissao || null,
+        // Só para o destaque de aniversário da própria pessoa na Home.
+        dataNascimento: colab.data_nascimento || null,
         horasGerenciaId: colab.horas_gerencia_id || null,  // gerência p/ ver projetos ao apontar
         horasRole: colab.horas_role || null,               // elevação só-do-Horas (ver horasRoleFromPerfil)
         financeiroRole: colab.financeiro_role || null,     // acesso ao módulo Financeiro
