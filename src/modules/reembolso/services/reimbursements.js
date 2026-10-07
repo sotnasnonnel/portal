@@ -19,6 +19,8 @@ function invalidateReimbursements() {
 }
 
 export const STATUS = {
+  // Só o solicitante vê (RLS): vai juntando os gastos e envia quando quiser.
+  RASCUNHO: "rascunho",
   EM_ANALISE: "em_analise",
   APROVADO: "aprovado",
   REPROVADO: "reprovado",
@@ -32,6 +34,7 @@ export function paidAmount(r) {
 }
 
 export const STATUS_LABEL = {
+  rascunho: "Rascunho",
   em_analise: "Aguardando Aprovação",
   aprovado: "Aprovado",
   reprovado: "Reprovado",
@@ -205,9 +208,10 @@ export async function createReimbursement({ header, items, nfImages }) {
   return getReimbursement(created.id);
 }
 
-// Edita um reembolso e o reenvia para aprovação (usado quando foi reprovado).
-// Substitui os itens, aplica adição/remoção de NFs, e volta o status para
-// 'em_analise' limpando a decisão anterior e incrementando a REV.
+// Edita um reembolso: reenvio do reprovado, rascunho salvo de novo ou
+// rascunho enviado. Substitui os itens, aplica adição/remoção de NFs e grava o
+// status de `header.status` (padrão: em análise), limpando a decisão anterior.
+// O gestor que envia o próprio rascunho manda status aprovado + decided_*.
 export async function updateReimbursement(id, { header, items, nfImages, removedNfImageIds }) {
   // 1. remove NFs marcadas (linha do banco + arquivo no storage)
   if ((removedNfImageIds ?? []).length > 0) {
@@ -284,11 +288,14 @@ export async function updateReimbursement(id, { header, items, nfImages, removed
       manager_name: header.manager_name ?? null,
       pix_key: header.pix_key ?? null,
       notes: header.notes ?? null,
-      status: STATUS.EM_ANALISE,
+      status: header.status ?? STATUS.EM_ANALISE,
       decision_note: null,
-      decided_by_id: null,
-      decided_by_name: null,
-      decided_at: null,
+      decided_by_id: header.decided_by_id ?? null,
+      decided_by_name: header.decided_by_name ?? null,
+      decided_at: header.decided_at ?? null,
+      ...(header.decided_at && header.payment_date === undefined
+        ? { payment_date: computePaymentDate(header.decided_at) }
+        : {}),
       ...(header.rev ? { rev: header.rev } : {}),
       // adiantamento: atualiza a data informada pelo solicitante
       ...(header.payment_date !== undefined ? { payment_date: header.payment_date } : {}),

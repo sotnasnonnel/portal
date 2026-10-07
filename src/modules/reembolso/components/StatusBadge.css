@@ -9,6 +9,12 @@
   white-space: nowrap;
 }
 
+.status-rascunho {
+  background: transparent;
+  color: var(--muted);
+  border: 1px dashed var(--border-strong);
+}
+
 .status-em_analise {
   background: var(--status-analise-bg);
   color: var(--status-analise-fg);

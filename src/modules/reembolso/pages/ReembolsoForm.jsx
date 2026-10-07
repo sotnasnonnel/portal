@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AlertTriangle, ArrowLeft, Camera, FileSpreadsheet, Loader2, Paperclip, Plus, Save, Send, Trash2, Upload, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -63,9 +63,12 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
   const meta = kindMeta(kind);
   const allowNf = meta.allowNf; // adiantamento não tem foto/NF
   const isAdiantamento = meta.kind === "adiantamento";
+  // Rascunho reaberto: o pedido ainda não foi enviado — salva de novo ou envia.
+  const [isDraft, setIsDraft] = useState(false);
   // Gestor que cria o próprio pedido: não escolhe aprovador e já entra aprovado.
+  // Vale também para o rascunho dele, que ainda não passou por aprovação.
   const isGestor = profile?.role === "gestor";
-  const selfApprove = isGestor && !isEdit;
+  const selfApprove = isGestor && (!isEdit || isDraft);
 
   const [requestDate, setRequestDate] = useState(todayIso());
   // adiantamento: data em que o solicitante precisa do valor (vira a data de pagamento)
@@ -146,8 +149,54 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
     };
   }, []);
 
+  // Preenche o formulário com um pedido do banco: ao abrir a edição e depois de
+  // salvar o rascunho (as notas novas passam a ser as já gravadas — senão o
+  // próximo salvamento as enviaria de novo).
+  const preencher = useCallback((data) => {
+    setIsDraft(data.status === STATUS.RASCUNHO);
+    setRequestDate(data.request_date ?? todayIso());
+    setNeededDate(data.payment_date ?? "");
+    setClientObra(data.client_obra ?? "");
+    setBillable(data.billable_to_client == null ? "" : data.billable_to_client ? "sim" : "nao");
+    setPixKey(data.pix_key ?? "");
+    setManagerId(data.manager_id ?? "");
+    setNotes(data.notes ?? "");
+    setCurrentRev(data.rev ?? 1);
+    setRejectionNote(data.status === STATUS.REPROVADO ? data.decision_note ?? "" : "");
+    setRemovedNfImageIds([]);
+    setItems(
+      (data.items ?? []).length > 0
+        ? data.items.map((it, idx) => ({
+            _key: makeKey(),
+            qty: it.qty ?? 1,
+            description: it.description ?? "",
+            item_date: it.item_date ?? todayIso(),
+            value: it.value != null ? String(it.value) : "",
+            nf_number: it.nf_number ?? "",
+            local: it.local ?? "",
+            notes: it.notes ?? "",
+            meal_category: it.meal_category ?? "",
+            nf_ref: null,
+            nf_image_id: it.nf_image_id ?? null,
+            sort_order: idx,
+          }))
+        : [newItem(0)]
+    );
+    setNfImages(
+      (data.nf_images ?? []).map((img) => ({
+        id: img.id,
+        existing: true,
+        url: img.ref?.value ?? null,
+        nf_number: img.nf_number ?? "",
+        local: img.local ?? "",
+        data_nf: img.data_nf ?? "",
+        total: img.total ?? null,
+      }))
+    );
+  }, []);
+
   // Modo edição: carrega o reembolso e pré-preenche. Só o dono pode editar, e
-  // só quando reprovado (é o caso de "ajustar e reenviar").
+  // só quando reprovado ("ajustar e reenviar") ou rascunho.
   useEffect(() => {
     if (!isEdit || !profile?.id) return undefined;
     const m = kindMeta(kind);
@@ -161,55 +210,19 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
         navigate(m.base, { replace: true });
         return;
       }
-      if (data.requester_id !== profile.id || data.status !== STATUS.REPROVADO) {
+      const editavel = data.status === STATUS.REPROVADO || data.status === STATUS.RASCUNHO;
+      if (data.requester_id !== profile.id || !editavel) {
         showToast(`Este ${m.singular} não está disponível para edição.`, "warning");
         navigate(`${m.base}/${id}`, { replace: true });
         return;
       }
-      setRequestDate(data.request_date ?? todayIso());
-      setNeededDate(data.payment_date ?? "");
-      setClientObra(data.client_obra ?? "");
-      setBillable(data.billable_to_client == null ? "" : data.billable_to_client ? "sim" : "nao");
-      setPixKey(data.pix_key ?? "");
-      setManagerId(data.manager_id ?? "");
-      setNotes(data.notes ?? "");
-      setCurrentRev(data.rev ?? 1);
-      setRejectionNote(data.decision_note ?? "");
-      setItems(
-        (data.items ?? []).length > 0
-          ? data.items.map((it, idx) => ({
-              _key: makeKey(),
-              qty: it.qty ?? 1,
-              description: it.description ?? "",
-              item_date: it.item_date ?? todayIso(),
-              value: it.value != null ? String(it.value) : "",
-              nf_number: it.nf_number ?? "",
-              local: it.local ?? "",
-              notes: it.notes ?? "",
-              meal_category: it.meal_category ?? "",
-              nf_ref: null,
-              nf_image_id: it.nf_image_id ?? null,
-              sort_order: idx,
-            }))
-          : [newItem(0)]
-      );
-      setNfImages(
-        (data.nf_images ?? []).map((img) => ({
-          id: img.id,
-          existing: true,
-          url: img.ref?.value ?? null,
-          nf_number: img.nf_number ?? "",
-          local: img.local ?? "",
-          data_nf: img.data_nf ?? "",
-          total: img.total ?? null,
-        }))
-      );
+      preencher(data);
       setLoadingExisting(false);
     })();
     return () => {
       active = false;
     };
-  }, [id, isEdit, kind, profile?.id, navigate, showToast]);
+  }, [id, isEdit, kind, profile?.id, navigate, showToast, preencher]);
 
   function patchItem(key, patch) {
     setItems((prev) => prev.map((it) => (it._key === key ? { ...it, ...patch } : it)));
@@ -383,6 +396,59 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
     event.preventDefault();
   }
 
+  // Rascunho: grava como está, sem as checagens do envio — a ideia é ir
+  // lançando os gastos durante o mês. Só o pedido enviado precisa estar completo.
+  async function handleSaveDraft() {
+    if (submitting) return;
+    setError("");
+    const manager = gestores.find((g) => g.id === managerId);
+    const header = {
+      request_date: requestDate || todayIso(),
+      client_obra: clientObra.trim() || null,
+      billable_to_client: billable === "" ? null : billable === "sim",
+      manager_id: selfApprove ? null : managerId || null,
+      manager_name: selfApprove ? null : manager?.display_name || manager?.full_name || null,
+      pix_key: pixKey.trim() || null,
+      notes: notes.trim() || null,
+      status: STATUS.RASCUNHO,
+      ...(isAdiantamento ? { payment_date: neededDate || null } : {}),
+    };
+    const draftItems = items
+      .filter((it) => it.description?.trim() || Number(it.value) > 0 || it.nf_ref || it.nf_image_id)
+      .map((it, idx) => ({
+        ...it,
+        qty: Number(it.qty || 1),
+        description: it.description?.trim() || "",
+        nf_number: it.nf_number?.trim() || null,
+        local: it.local?.trim() || null,
+        notes: it.notes?.trim() || null,
+        meal_category: it.meal_category?.trim() || null,
+        sort_order: idx,
+      }));
+
+    setSubmitting(true);
+    const { data, error: saveError } = isEdit
+      ? await updateReimbursement(id, { header, items: draftItems, nfImages, removedNfImageIds })
+      : await createReimbursement({
+          header: {
+            ...header,
+            requester_id: profile?.id ?? "anon",
+            requester_name: profile?.display_name || profile?.full_name || "Convidado",
+            kind: meta.kind,
+          },
+          items: draftItems,
+          nfImages,
+        });
+    setSubmitting(false);
+    if (saveError || !data) {
+      setError(saveError?.message || "Não foi possível salvar o rascunho.");
+      return;
+    }
+    showToast("Rascunho salvo. Continue quando quiser e envie para aprovação no fim.", "success");
+    if (isEdit) preencher(data);
+    else navigate(`${meta.base}/${data.id}/editar`, { replace: true });
+  }
+
   async function handleSubmit(event) {
     event?.preventDefault?.();
     if (submitting) return;
@@ -440,6 +506,50 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
     }));
 
     setSubmitting(true);
+
+    // Rascunho enviado: primeiro envio, então a REV não sobe. O gestor manda o
+    // dele já aprovado, como no pedido criado direto (a segunda alçada, se
+    // houver, o banco aplica igual).
+    if (isEdit && isDraft) {
+      const { data, error: submitError } = await updateReimbursement(id, {
+        header: {
+          request_date: requestDate,
+          client_obra: clientObra.trim(),
+          billable_to_client: billableToClient,
+          manager_id: selfApprove ? null : managerId,
+          manager_name: selfApprove ? null : manager?.display_name || manager?.full_name || null,
+          pix_key: pixKey.trim() || null,
+          notes: notes.trim() || null,
+          ...(isAdiantamento ? { payment_date: neededDate || null } : {}),
+          ...(selfApprove
+            ? {
+                status: STATUS.APROVADO,
+                decided_by_id: profile?.id ?? null,
+                decided_by_name: profile?.display_name || profile?.full_name || null,
+                decided_at: new Date().toISOString(),
+              }
+            : { status: STATUS.EM_ANALISE }),
+        },
+        items: mappedItems,
+        nfImages,
+        removedNfImageIds,
+      });
+      setSubmitting(false);
+      if (submitError) {
+        setError(submitError.message || "Não foi possível enviar.");
+        return;
+      }
+      const subiu = selfApprove && data?.status === STATUS.EM_ANALISE && data?.manager_id;
+      if (!selfApprove || subiu) notifyApprover(id);
+      showToast(
+        selfApprove && !subiu
+          ? `${meta.singular[0].toUpperCase()}${meta.singular.slice(1)} aprovado automaticamente.`
+          : "Enviado para aprovação.",
+        "success"
+      );
+      navigate(`${meta.base}/${id}`, { replace: true });
+      return;
+    }
 
     if (isEdit) {
       const { error: submitError } = await updateReimbursement(id, {
@@ -547,11 +657,13 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
           <ArrowLeft size={16} /> Voltar
         </button>
         <div>
-          <h2>{isEdit ? "Editar e reenviar" : meta.novo}</h2>
+          <h2>{isDraft ? `Rascunho de ${meta.singular}` : isEdit ? "Editar e reenviar" : meta.novo}</h2>
           <p className="page-sub">
-            {isEdit
-              ? "Ajuste o que for necessário e reenvie para aprovação."
-              : `Preencha o cabeçalho e adicione os itens do ${meta.singular}.`}
+            {isDraft
+              ? "Continue lançando os gastos. Quando terminar, envie para aprovação."
+              : isEdit
+                ? "Ajuste o que for necessário e reenvie para aprovação."
+                : `Preencha o cabeçalho e adicione os itens do ${meta.singular}. Pode salvar como rascunho e enviar depois.`}
           </p>
         </div>
       </header>
@@ -983,6 +1095,19 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
           >
             Cancelar
           </button>
+          {/* Rascunho só antes do primeiro envio: o reprovado já foi enviado e
+              volta para o gestor pelo "Reenviar". */}
+          {(!isEdit || isDraft) && (
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={handleSaveDraft}
+              disabled={submitting}
+              title="Guarda o que já foi lançado sem enviar. Só você vê o rascunho."
+            >
+              <Save size={16} /> Salvar rascunho
+            </button>
+          )}
           {/* type="button" + onClick: o salvamento tem uma porta só, o clique. */}
           <button
             type="button"
@@ -990,14 +1115,14 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
             onClick={handleSubmit}
             disabled={submitting}
           >
-            {isEdit ? <Send size={16} /> : <Save size={16} />}
-            {isEdit
-              ? submitting
-                ? "Reenviando…"
-                : "Reenviar para aprovação"
-              : submitting
-                ? "Salvando…"
-                : `Salvar ${meta.singular}`}
+            {selfApprove ? <Save size={16} /> : <Send size={16} />}
+            {submitting
+              ? "Salvando…"
+              : selfApprove
+                ? `Salvar ${meta.singular}`
+                : isEdit && !isDraft
+                  ? "Reenviar para aprovação"
+                  : "Enviar para aprovação"}
           </button>
         </div>
       </form>

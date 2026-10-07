@@ -109,13 +109,16 @@ export default function ReembolsoDetail() {
       (profile?.isAdmin || reembolso.requester_id === profile?.id)) ||
     (reembolso.status === STATUS.APROVADO && !!profile?.isAdmin);
 
-  const canDelete = !!profile?.isAdmin;
+  const isDraft = reembolso.status === STATUS.RASCUNHO;
+  // Rascunho é só de quem o fez (nem o admin o vê): o dono exclui o seu.
+  const canDelete = !!profile?.isAdmin || (isDraft && reembolso.requester_id === profile?.id);
   // Admin do reembolso ou do Financeiro: mesma visão (pagamento + PDF das notas).
   const isAdmin = !!profile?.isAdmin;
   const canIssuePdf = isAdmin && reembolso.status === STATUS.APROVADO;
   // Reprovado: o próprio solicitante pode ajustar e reenviar para aprovação.
+  // Rascunho: o dono continua preenchendo e envia quando terminar.
   const canEdit =
-    reembolso.status === STATUS.REPROVADO && reembolso.requester_id === profile?.id;
+    (reembolso.status === STATUS.REPROVADO || isDraft) && reembolso.requester_id === profile?.id;
   const meta = kindMeta(reembolso.kind);
 
   // Excedente de alimentação ou de hospedagem -> permite aprovar com desconto.
@@ -164,7 +167,7 @@ export default function ReembolsoDetail() {
     (isRequester &&
       (img.is_accountability
         ? accStatus === "pendente" || accStatus === "em_analise"
-        : reembolso.status === STATUS.EM_ANALISE || reembolso.status === STATUS.REPROVADO));
+        : reembolso.status === STATUS.EM_ANALISE || reembolso.status === STATUS.REPROVADO || isDraft));
 
   const fecharReprovacao = () => {
     if (actionLoading) return;
@@ -372,7 +375,7 @@ export default function ReembolsoDetail() {
               className="btn btn-primary"
               onClick={() => navigate(`${meta.base}/${reembolso.id}/editar`)}
             >
-              <Pencil size={16} /> Editar e reenviar
+              <Pencil size={16} /> {isDraft ? "Continuar e enviar" : "Editar e reenviar"}
             </button>
           )}
           {canPrestarContas && (

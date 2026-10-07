@@ -15,6 +15,9 @@ import "./Reembolsos.css";
 
 const FILTERS = [
   { value: "", label: "Todos" },
+  // Só aparece para quem tem rascunho (o próprio solicitante: a RLS não
+  // mostra o rascunho a mais ninguém).
+  { value: STATUS.RASCUNHO, label: "Rascunhos", soComItens: true },
   { value: STATUS.EM_ANALISE, label: STATUS_LABEL.em_analise },
   { value: STATUS.APROVADO, label: STATUS_LABEL.aprovado },
   { value: STATUS.REPROVADO, label: STATUS_LABEL.reprovado },
@@ -217,8 +220,10 @@ export default function Reembolsos({ kind = "reembolso" }) {
       rows.reduce(
         (acc, r) => {
           acc.count += 1;
-          // aprovado conta o valor pago (com desconto); demais, o total cheio
-          acc.sum += r.status === STATUS.APROVADO ? paidAmount(r) : Number(r.total || 0);
+          // aprovado conta o valor pago (com desconto); demais, o total cheio.
+          // Rascunho ainda não é pedido: não soma.
+          if (r.status !== STATUS.RASCUNHO)
+            acc.sum += r.status === STATUS.APROVADO ? paidAmount(r) : Number(r.total || 0);
           if (r.status === STATUS.EM_ANALISE) acc.pending += 1;
           if (r.status === STATUS.APROVADO) {
             acc.approved += 1;
@@ -317,7 +322,7 @@ export default function Reembolsos({ kind = "reembolso" }) {
 
       <section className="list-card">
         <div className="filters">
-          {FILTERS.map((f) => (
+          {FILTERS.filter((f) => !f.soComItens || counts[f.value] > 0 || activeFilter === f.value).map((f) => (
             <button
               type="button"
               key={f.value || "all"}
