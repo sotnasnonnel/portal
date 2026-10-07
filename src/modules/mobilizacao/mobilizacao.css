@@ -36,6 +36,9 @@
   font-size: var(--font-size-md);
 }
 .mobRoot * { box-sizing: border-box; }
+/* Pedaço do módulo dentro de outra tela (etapas do processo no chamado do
+   Atendimento): só as variáveis e os componentes, sem o layout de página. */
+.mobRoot.mob-embutido { display: block; min-height: 0; background: none; font-size: inherit; margin-top: 12px; }
 
 .mobCol { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .mobMain {

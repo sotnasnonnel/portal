@@ -32,6 +32,7 @@ import {
 // dependência é de mão única, como a do Estoque: o Atendimento importa do
 // módulo mais novo, nunca o contrário.
 import { processoDoChamado } from '../../../mobilizacao/lib/mobilizacao';
+import EtapasDoProcesso from './EtapasDoProcesso';
 // Consulta e catálogo vêm do módulo de Estoque — dependência de mão única.
 import ConsultaEstoque from '../../../estoque/app/components/ConsultaEstoque';
 import { listarPosicao, listarPessoasEstoque, movimentosDoChamado } from '../../../estoque/lib/estoque';
@@ -652,6 +653,8 @@ export default function ChamadoAdm() {
             {processoMob.etapas_concluidas} de {processoMob.etapas_total} passos concluídos
             {processoMob.prazo_em && `, previsto para ${dataDia(processoMob.prazo_em)}`}.
           </p>
+          {/* As etapas e os comentários do processo, para não escrever nos dois lugares. */}
+          <EtapasDoProcesso processoId={processoMob.id} />
         </div>
       )}
 
