@@ -18,14 +18,16 @@ export function ehSuporte(user) {
 }
 
 // Canal pausado (07/10/2026, decisão do Marcus: foco em outras frentes). O
-// botão continua na barra, com cadeado, para ninguém achar que sumiu. Quem
-// atende segue com ele aberto para responder o que já chegou. Para reabrir,
-// volte para false.
+// botão continua na barra, com cadeado, para ninguém achar que sumiu — e
+// travado para TODOS, inclusive quem atende. A caixa segue em /fale-conosco
+// para responder o que já chegou. Para reabrir, volte para false.
 export const FALE_CONOSCO_TRAVADO = true;
 export const MSG_FALE_CONOSCO_TRAVADO = 'Fale conosco pausado por enquanto';
 
+// Recebe o usuário para a regra poder voltar a abrir exceções sem mexer nas telas.
+// eslint-disable-next-line no-unused-vars
 export function faleConoscoTravado(user) {
-  return FALE_CONOSCO_TRAVADO && !ehSuporte(user);
+  return FALE_CONOSCO_TRAVADO;
 }
 
 // Prazo prometido na tela e gravado no banco (fale_conosco.prazo_em).
