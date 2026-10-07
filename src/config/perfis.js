@@ -22,7 +22,9 @@ export const PERFIL_LABEL = {
 
 // Só o gestor pode ficar sem superior (topo da cadeia). Para os demais é
 // obrigatório. Para o gestor o campo é OPCIONAL (pode ou não ter superior).
-export const precisaSuperior = (perfil) => perfil !== 'gestor';
+// O admin também fica opcional: a conta é de quem administra o portal e
+// não é atribuída pela tela, mas o RH precisa conseguir editar os dados dela.
+export const precisaSuperior = (perfil) => perfil !== 'gestor' && perfil !== 'admin';
 
 /**
  * Descendentes de `raizId` na árvore de superior_id (para impedir ciclos:

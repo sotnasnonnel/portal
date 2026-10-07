@@ -21,8 +21,9 @@ test('PERFIL_LABEL cobre os quatro perfis', () => {
   assert.equal(PERFIL_LABEL.admin, 'Admin');
 });
 
-test('precisaSuperior: só gestor dispensa superior', () => {
+test('precisaSuperior: só gestor e admin dispensam superior', () => {
   assert.equal(precisaSuperior('gestor'), false);
+  assert.equal(precisaSuperior('admin'), false);
   assert.equal(precisaSuperior('coordenador'), true);
   assert.equal(precisaSuperior('usuario'), true);
 });

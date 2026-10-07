@@ -24,6 +24,9 @@ const initialEditForm = {
   ultimoAumento: '',
 };
 
+// Conta técnica do portal (autora de registros automáticos), não é pessoa.
+const EMAIL_CONTA_SISTEMA = 'sistema@phdengenharia.eng.br';
+
 const initialConfirmacao = {
   id: '',
   nome: '',
@@ -53,7 +56,9 @@ export default function AdminListagem() {
         .order('nome', { ascending: true });
 
       if (!error && data) {
-        setColaboradoresData(data.filter((colaborador) => colaborador.perfil !== 'admin'));
+        // Os admins aparecem (o RH precisa ver e editar os dados deles); só a
+        // conta técnica fica de fora.
+        setColaboradoresData(data.filter((colaborador) => colaborador.email?.toLowerCase() !== EMAIL_CONTA_SISTEMA));
       }
       setLoading(false);
     };
@@ -486,17 +491,24 @@ export default function AdminListagem() {
 
                   <div className="form-group">
                     <label className="form-label">Perfil <span className="required">*</span></label>
+                    {/* Admin não se atribui nem se tira por aqui: sem a opção na
+                        lista, o select cairia em "Usuário" e salvar rebaixaria. */}
                     <select
                       className="form-select"
                       name="perfil"
                       value={editForm.perfil}
                       onChange={handleEditChange}
+                      disabled={editForm.perfil === 'admin'}
                       required
                     >
+                      {editForm.perfil === 'admin' && <option value="admin">{PERFIL_LABEL.admin}</option>}
                       {PERFIL_OPCOES.map((o) => (
                         <option key={o.value} value={o.value}>{o.label}</option>
                       ))}
                     </select>
+                    {editForm.perfil === 'admin' && (
+                      <span className="form-hint">O perfil de administrador não muda por esta tela.</span>
+                    )}
                   </div>
 
                   <div className="form-group">
