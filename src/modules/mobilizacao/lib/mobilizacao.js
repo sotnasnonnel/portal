@@ -165,11 +165,20 @@ export async function buscarProcesso(id) {
   if (error) throw new Error(`Não foi possível abrir o processo: ${error.message}`);
   if (!data) throw new Error('Processo não encontrado — ou você não tem acesso a ele.');
 
-  const nomes = await nomesDe([data.responsavel_id, data.solicitante_id]);
+  // Número do chamado de origem: processo e chamado têm numerações próprias
+  // (o processo também conta os que vieram da planilha), então a tela mostra
+  // os dois para a pessoa achar um pelo outro. Sem ele, só some o número.
+  const [nomes, chamado] = await Promise.all([
+    nomesDe([data.responsavel_id, data.solicitante_id]),
+    data.origem_chamado_id
+      ? supabase.from('chamados_adm').select('numero').eq('id', data.origem_chamado_id).maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
   return {
     ...data,
     responsavelNome: nomes.get(data.responsavel_id) || '',
     solicitanteNome: nomes.get(data.solicitante_id) || '',
+    chamadoNumero: chamado?.data?.numero ?? null,
   };
 }
 
