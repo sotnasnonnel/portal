@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { AlertTriangle, ArrowLeft, Camera, Loader2, Paperclip, Plus, Save, Send, Trash2, Upload, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Camera, FileSpreadsheet, Loader2, Paperclip, Plus, Save, Send, Trash2, Upload, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useToast } from "../context/FeedbackContext.jsx";
 import {
@@ -16,6 +16,7 @@ import { extractNfFromDataUrl } from "../services/nfExtraction.js";
 import { compressImageToDataUrl, ANEXO_ACCEPT } from "../lib/image.js";
 import { formatCurrency, todayIso } from "../lib/format.js";
 import { makeKey, newItem, itemsFromExtraction } from "../lib/nfCapture.js";
+import { itensDaPlanilha, colunasDoModelo } from "../lib/planilhaItens.js";
 import {
   evaluatePolicyOverage,
   detectForbiddenItems,
@@ -88,6 +89,7 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
   const [removedNfImageIds, setRemovedNfImageIds] = useState([]);
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
+  const planilhaInputRef = useRef(null);
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState("");
   const [showCamera, setShowCamera] = useState(false);
@@ -215,6 +217,44 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
 
   function addItem() {
     setItems((prev) => [...prev, newItem(prev.length)]);
+  }
+
+  async function importarPlanilha(event) {
+    const file = event.target.files?.[0];
+    event.target.value = ""; // permite reescolher o mesmo arquivo depois
+    if (!file) return;
+    try {
+      const XLSX = await import("xlsx");
+      const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
+      const linhas = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {
+        header: 1, raw: true, defval: "", blankrows: false,
+      });
+      const { itens, ignoradas } = itensDaPlanilha(linhas, { allowNf });
+      if (itens.length === 0) {
+        showToast("Não achei itens na planilha. Use as colunas do modelo: Item e Valor são obrigatórias.", "warning", 7000);
+        return;
+      }
+      setItems((prev) => {
+        // descarta a linha inicial vazia, se for a única
+        const base = prev.length === 1 && !prev[0].description && !prev[0].value ? [] : prev;
+        return [...base, ...itens].map((it, idx) => ({ ...it, sort_order: idx }));
+      });
+      showToast(
+        `${itens.length} item(ns) importado(s)` +
+          (ignoradas ? ` — ${ignoradas} linha(s) sem descrição ou de total ficaram de fora.` : "."),
+        "success"
+      );
+    } catch {
+      showToast("Não consegui abrir a planilha. Envie em .xlsx, .xls ou .csv.", "error");
+    }
+  }
+
+  async function baixarModelo() {
+    const XLSX = await import("xlsx");
+    const ws = XLSX.utils.aoa_to_sheet([colunasDoModelo(allowNf)]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Itens");
+    XLSX.writeFile(wb, `modelo-itens-${meta.kind}.xlsx`);
   }
 
   function removeItem(key) {
@@ -706,9 +746,24 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
                   </button>
                 </>
               )}
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => planilhaInputRef.current?.click()}
+                title="Importar os itens de uma planilha (.xlsx, .xls ou .csv)"
+              >
+                <FileSpreadsheet size={16} /> Importar Excel
+              </button>
               <button type="button" className="btn btn-ghost" onClick={addItem}>
                 <Plus size={16} /> Adicionar item
               </button>
+              <input
+                ref={planilhaInputRef}
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                hidden
+                onChange={importarPlanilha}
+              />
               {allowNf && importing && (
                 <span className="nf-importing">
                   <Loader2 size={14} className="spin" /> Lendo nota…
@@ -738,6 +793,14 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
               )}
             </div>
           </div>
+
+          <p className="items-planilha-hint">
+            Tem os itens numa planilha? Use as colunas do{" "}
+            <button type="button" className="field-link" onClick={baixarModelo}>
+              modelo
+            </button>{" "}
+            e importe com “Importar Excel”.
+          </p>
 
           {allowNf && importError && <div className="nf-import-error">{importError}</div>}
 
@@ -893,9 +956,16 @@ export default function ReembolsoForm({ kind = "reembolso" }) {
             ))}
           </datalist>
 
-          <div className="items-total">
-            <span>Total do {meta.singular}</span>
-            <strong>{formatCurrency(total)}</strong>
+          {/* Repete o "Adicionar item" embaixo: com uma lista longa, o botão do
+              topo obrigava a subir a página a cada linha nova. */}
+          <div className="items-foot">
+            <button type="button" className="btn btn-ghost" onClick={addItem}>
+              <Plus size={16} /> Adicionar item
+            </button>
+            <div className="items-total">
+              <span>Total do {meta.singular}</span>
+              <strong>{formatCurrency(total)}</strong>
+            </div>
           </div>
 
           <FoodOverageNotice items={items} total={total} />

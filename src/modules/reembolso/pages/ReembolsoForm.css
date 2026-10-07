@@ -348,9 +348,28 @@
   cursor: not-allowed;
 }
 
-.items-total {
+.items-planilha-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--font-size-xs);
+}
+
+/* "Adicionar item" de baixo, à esquerda; total à direita. */
+.items-foot {
   margin-top: var(--space-2);
-  align-self: flex-end;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.items-foot .btn-ghost {
+  border: 1px solid var(--border);
+}
+
+.items-total {
+  margin-left: auto;
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -366,8 +385,12 @@
 }
 
 @media (max-width: 720px) {
+  .items-foot {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
   .items-total {
-    align-self: stretch;
+    margin-left: 0;
     justify-content: space-between;
   }
 }

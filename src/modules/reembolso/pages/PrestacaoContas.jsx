@@ -400,7 +400,12 @@ export default function PrestacaoContas() {
           ))}
         </div>
 
-        <div className="items-total"><span>Total comprovado</span><strong>{formatCurrency(comprovado)}</strong></div>
+        <div className="items-foot">
+          <button type="button" className="btn btn-ghost" onClick={addItem}>
+            <Plus size={16} /> Adicionar item
+          </button>
+          <div className="items-total"><span>Total comprovado</span><strong>{formatCurrency(comprovado)}</strong></div>
+        </div>
         <FoodOverageNotice items={items} total={comprovado} />
         <ForbiddenItemsNotice items={items} />
       </section>
