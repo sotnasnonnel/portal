@@ -10,6 +10,7 @@ import {
   TIPOS_FALE_CONOSCO,
   atrasado,
   ehSuporte,
+  FALE_CONOSCO_TRAVADO,
   prazoRelativo,
   tipoFaleConosco,
 } from '../../config/suporte';
@@ -225,7 +226,9 @@ export default function FaleConoscoCaixa() {
               ? 'Tente outro termo, ou volte para "Tudo".'
               : atende
                 ? 'Nada esperando resposta por aqui.'
-                : `Use o botão "Fale conosco" na barra do portal. Respondemos em até ${SLA_HORAS}h.`}
+                : FALE_CONOSCO_TRAVADO
+                  ? 'O Fale conosco está pausado por enquanto.'
+                  : `Use o botão "Fale conosco" na barra do portal. Respondemos em até ${SLA_HORAS}h.`}
           </span>
         </div>
       ) : (

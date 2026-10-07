@@ -11,6 +11,7 @@ import {
   SLA_HORAS,
   TIPOS_FALE_CONOSCO,
   ehSuporte,
+  faleConoscoTravado,
   tipoFaleConosco,
 } from '../../config/suporte';
 import './FaleConosco.css';
@@ -52,6 +53,8 @@ export default function FaleConoscoModal({ modulo = '', caixa = null }) {
 
   useEffect(() => {
     const abrir = () => {
+      // Canal pausado: o botão já vem travado, isto barra qualquer outro gatilho.
+      if (faleConoscoTravado(user)) return;
       setTipo('bug');
       setMensagem('');
       setArquivos([]);
@@ -63,7 +66,7 @@ export default function FaleConoscoModal({ modulo = '', caixa = null }) {
     };
     window.addEventListener(FALE_CONOSCO_OPEN_EVENT, abrir);
     return () => window.removeEventListener(FALE_CONOSCO_OPEN_EVENT, abrir);
-  }, [modulo, disponiveis]);
+  }, [modulo, disponiveis, user]);
 
   const fechar = useCallback(() => setOpen(false), []);
 

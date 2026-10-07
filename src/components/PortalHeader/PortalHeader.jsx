@@ -1,6 +1,7 @@
-import { Menu, Calendar, HelpCircle, MessageSquarePlus } from "lucide-react";
+import { Menu, Calendar, HelpCircle, MessageSquarePlus, Lock } from "lucide-react";
 import { GUIA_OPEN_EVENT } from "../Guia/guides";
-import { FALE_CONOSCO_OPEN_EVENT, SLA_HORAS } from "../../config/suporte";
+import { FALE_CONOSCO_OPEN_EVENT, SLA_HORAS, MSG_FALE_CONOSCO_TRAVADO, faleConoscoTravado } from "../../config/suporte";
+import { useAuth } from "../../contexts/AuthContext";
 import SinoNotificacoes from "../Notificacoes/SinoNotificacoes";
 import AtalhoAprovacoes from "../../modules/aprovacoes/AtalhoAprovacoes";
 import FaleConoscoModal from "../FaleConosco/FaleConoscoModal";
@@ -27,6 +28,8 @@ import "./PortalHeader.css";
 export default function PortalHeader({ modulo = '', onMenuToggle, acoes = null }) {
   // Só quem atende recebe número; para os demais o hook não consulta nada.
   const caixa = useCaixaFaleConosco();
+  const { user } = useAuth();
+  const travado = faleConoscoTravado(user);
   const hoje = new Date().toLocaleDateString("pt-BR", {
     weekday: "long",
     day: "2-digit",
@@ -55,18 +58,24 @@ export default function PortalHeader({ modulo = '', onMenuToggle, acoes = null }
           type="button"
           className="portal-header-help portal-header-fale"
           onClick={() => window.dispatchEvent(new Event(FALE_CONOSCO_OPEN_EVENT))}
+          disabled={travado}
+          style={travado ? { opacity: 0.5, cursor: "not-allowed" } : undefined}
           aria-label={
-            caixa.abertos > 0
+            travado
+              ? MSG_FALE_CONOSCO_TRAVADO
+              : caixa.abertos > 0
               ? `Fale conosco — ${caixa.abertos} esperando resposta`
               : "Fale conosco"
           }
           title={
-            caixa.abertos > 0
+            travado
+              ? MSG_FALE_CONOSCO_TRAVADO
+              : caixa.abertos > 0
               ? `Fale conosco — ${caixa.abertos} esperando resposta${caixa.atrasados > 0 ? `, ${caixa.atrasados} fora do prazo` : ""}`
               : `Fale conosco — bug, melhoria ou elogio (resposta em até ${SLA_HORAS}h)`
           }
         >
-          <MessageSquarePlus size={20} />
+          {travado ? <Lock size={18} /> : <MessageSquarePlus size={20} />}
           {/* O número só existe para quem atende. Vermelho quando algo já
               venceu: numa fila com prazo, "tem 3" e "3 estão atrasados" pedem
               reações diferentes. */}

@@ -7,7 +7,7 @@ import { areasAdministrativoDe } from '../../config/administrativo';
 import { podeAcessarProgramas } from '../../config/programas';
 import { podeVerTorre } from '../../config/torre';
 import { areasFinanceiroDe } from '../../config/financeiro';
-import { FALE_CONOSCO_OPEN_EVENT, SLA_HORAS } from '../../config/suporte';
+import { FALE_CONOSCO_OPEN_EVENT, SLA_HORAS, MSG_FALE_CONOSCO_TRAVADO, faleConoscoTravado } from '../../config/suporte';
 import { NOVIDADES, ULTIMA_NOVIDADE, novidadesNaoVistas } from '../../config/novidades';
 import FaleConoscoModal from '../../components/FaleConosco/FaleConoscoModal';
 import SolucoesModal from './SolucoesModal';
@@ -214,9 +214,13 @@ export default function Home() {
             type="button"
             className="home-fale"
             onClick={() => window.dispatchEvent(new Event(FALE_CONOSCO_OPEN_EVENT))}
-            title={`Fale conosco — bug, melhoria ou elogio (resposta em até ${SLA_HORAS}h)`}
+            disabled={faleConoscoTravado(user)}
+            style={faleConoscoTravado(user) ? { opacity: 0.55, cursor: 'not-allowed' } : undefined}
+            title={faleConoscoTravado(user)
+              ? MSG_FALE_CONOSCO_TRAVADO
+              : `Fale conosco — bug, melhoria ou elogio (resposta em até ${SLA_HORAS}h)`}
           >
-            <MessageSquarePlus size={16} />
+            {faleConoscoTravado(user) ? <Lock size={16} /> : <MessageSquarePlus size={16} />}
             Fale conosco
           </button>
           <AvatarUsuario className="home-avatar" iniciais={iniciais(user?.nome)} title={user?.nome} />

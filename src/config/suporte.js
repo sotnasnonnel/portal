@@ -17,6 +17,17 @@ export function ehSuporte(user) {
   return ATENDENTES_SUPORTE.includes((user?.email || '').toLowerCase());
 }
 
+// Canal pausado (07/10/2026, decisão do Marcus: foco em outras frentes). O
+// botão continua na barra, com cadeado, para ninguém achar que sumiu. Quem
+// atende segue com ele aberto para responder o que já chegou. Para reabrir,
+// volte para false.
+export const FALE_CONOSCO_TRAVADO = true;
+export const MSG_FALE_CONOSCO_TRAVADO = 'Fale conosco pausado por enquanto';
+
+export function faleConoscoTravado(user) {
+  return FALE_CONOSCO_TRAVADO && !ehSuporte(user);
+}
+
 // Prazo prometido na tela e gravado no banco (fale_conosco.prazo_em).
 // 48h CORRIDAS, não úteis: é o que o botão promete, e a promessa tem que ser a
 // mesma dos dois lados.
