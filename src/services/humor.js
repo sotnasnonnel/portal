@@ -27,7 +27,7 @@ export async function resumoHumor({ de, ate, escopo = 'equipe' }) {
   return data || [];
 }
 
-/** { colaborador_id, nome, funcao, tipo: 'aniversario'|'tempo_casa', dia, anos_casa }. */
+/** { colaborador_id, nome, funcao, tipo: 'aniversario'|'tempo_casa', dia, anos_casa, email }. */
 export async function aniversariantesDoMes(mes = null) {
   const { data, error } = await supabase.rpc('aniversariantes_mes', { p_mes: mes });
   checar(error);

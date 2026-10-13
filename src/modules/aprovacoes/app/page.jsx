@@ -1,20 +1,24 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
-  ArrowLeft, Check, X, ExternalLink, Loader2, RefreshCw, AlertTriangle, CheckCircle2, Inbox,
+  ArrowLeft, Check, X, ExternalLink, Loader2, RefreshCw, AlertTriangle, CheckCircle2, Clock, MessageSquare,
 } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import DestinoHEModal from '../../horas/app/components/DestinoHEModal';
 import { listarPendencias, decidirPendencia } from '../lib/fontes';
 import { agruparPorFonte, erroDaDecisao, nomeDaFonte, FONTES } from '../lib/central';
+import { iniciais, nomeProprio } from '../../../utils/pessoas';
 import '../aprovacoes.css';
 
+const diasDesde = (iso) => (iso ? Math.floor((Date.now() - new Date(iso).getTime()) / 86400000) : null);
 const haQuanto = (iso) => {
-  if (!iso) return '';
-  const dias = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
-  if (dias <= 0) return 'hoje';
+  const dias = diasDesde(iso);
+  if (dias === null) return '';
+  if (dias <= 0) return 'chegou hoje';
   return dias === 1 ? 'há 1 dia' : `há ${dias} dias`;
 };
+// A partir daqui o tempo de espera ganha cor: é o que já está atrasando alguém.
+const DIAS_ATRASO = 3;
 
 /**
  * Central de Aprovações: tudo o que espera a decisão do usuário, em todos os
@@ -23,19 +27,27 @@ const haQuanto = (iso) => {
  *
  * Não tem dado próprio: lê de cada módulo e decide pela mesma função da tela
  * dele (lib/fontes.js), então a decisão já vale lá, com os mesmos avisos.
+ *
+ * Aprovar é um clique. O campo de texto só abre quando é preciso: ao reprovar
+ * (o motivo é o que o solicitante vai ler) ou quando a pessoa quer deixar uma
+ * observação. Com a caixa sempre aberta, cada pedido ocupava o dobro da tela.
  */
 export default function CentralAprovacoes() {
   const { user, reembolsoProfile } = useAuth();
   const ctx = useMemo(() => ({ user, reembolsoProfile }), [user, reembolsoProfile]);
+  const [busca] = useSearchParams();
+  const alvo = busca.get('item'); // vindo do "Revisar" da Home
   const [itens, setItens] = useState([]);
   const [falhas, setFalhas] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [filtro, setFiltro] = useState('');
   const [comentarios, setComentarios] = useState({});
+  const [abertos, setAbertos] = useState({}); // chave -> 'reprovar' | 'obs'
   const [erros, setErros] = useState({});
   const [ocupado, setOcupado] = useState('');
   const [aviso, setAviso] = useState('');
   const [destinoHe, setDestinoHe] = useState(null); // item de hora extra aprovando
+  const rolou = useRef(false);
 
   const carregar = useCallback(async () => {
     if (!user?.id) return;
@@ -48,9 +60,26 @@ export default function CentralAprovacoes() {
 
   useEffect(() => { carregar(); }, [carregar]);
 
+  // Chegou pelo "Revisar" da Home: rola até o pedido uma vez, depois da carga.
+  useEffect(() => {
+    if (carregando || !alvo || rolou.current) return;
+    rolou.current = true;
+    document.getElementById(`apv-${alvo}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [carregando, alvo]);
+
   const visiveis = filtro ? itens.filter((i) => i.fonte === filtro) : itens;
   const grupos = agruparPorFonte(visiveis);
   const contagem = (chave) => itens.filter((i) => i.fonte === chave).length;
+  const maisAntigo = Math.max(0, ...itens.map((i) => diasDesde(i.quando) ?? 0));
+
+  const abrir = (chave, modo) => {
+    setAbertos((a) => ({ ...a, [chave]: modo }));
+    setErros((e) => ({ ...e, [chave]: '' }));
+  };
+  const fechar = (chave) => {
+    setAbertos((a) => ({ ...a, [chave]: null }));
+    setErros((e) => ({ ...e, [chave]: '' }));
+  };
 
   async function decidir(item, aprovar, extra = null) {
     const comentario = comentarios[item.chave] || '';
@@ -79,17 +108,31 @@ export default function CentralAprovacoes() {
     }
   }
 
+  const aprovar = (item) => (item.precisaDestino ? setDestinoHe(item) : decidir(item, true));
+
   return (
     <div className="apv-page">
       <header className="apv-header">
-        <Link to="/home" className="apv-back"><ArrowLeft size={18} /> Portal</Link>
-        <div className="apv-titulos">
-          <h1>Aprovações</h1>
-          <p>Tudo o que espera a sua decisão, em todos os módulos. O que você decide aqui já vale no módulo de origem.</p>
+        <Link to="/home" className="apv-back"><ArrowLeft size={16} /> Voltar ao portal</Link>
+        <div className="apv-header-linha">
+          <div className="apv-titulos">
+            <h1>Aprovações</h1>
+            <p>
+              {carregando
+                ? 'Buscando nos módulos…'
+                : itens.length === 0
+                  ? 'Nada esperando a sua decisão.'
+                  : <>
+                    <b>{itens.length} {itens.length === 1 ? 'pedido esperando' : 'pedidos esperando'}</b> a sua decisão
+                    {maisAntigo > 0 && <> · o mais antigo há {maisAntigo} {maisAntigo === 1 ? 'dia' : 'dias'}</>}
+                  </>}
+            </p>
+          </div>
+          <button type="button" className="apv-btn apv-btn-ghost" onClick={carregar} disabled={carregando}>
+            <RefreshCw size={15} className={carregando ? 'apv-spin' : ''} /> Atualizar
+          </button>
         </div>
-        <button type="button" className="apv-btn apv-btn-ghost" onClick={carregar} disabled={carregando}>
-          <RefreshCw size={15} /> Atualizar
-        </button>
+        <p className="apv-nota">O que você decide aqui já vale no módulo de origem, com os mesmos avisos.</p>
       </header>
 
       {aviso && (
@@ -120,9 +163,16 @@ export default function CentralAprovacoes() {
       )}
 
       {carregando ? (
-        <div className="apv-vazio"><Loader2 size={20} className="apv-spin" /> Buscando nos módulos…</div>
+        <div className="apv-carregando" aria-hidden="true">
+          {[0, 1, 2].map((n) => <div key={n} className="apv-esqueleto" />)}
+        </div>
       ) : itens.length === 0 ? (
-        <div className="apv-vazio"><Inbox size={22} /> Nada esperando a sua aprovação.</div>
+        <div className="apv-vazio">
+          <span className="apv-vazio-ic"><Check size={28} /></span>
+          <h2>Tudo em dia</h2>
+          <p>Nenhum pedido esperando a sua aprovação. Quando chegar um, ele aparece aqui.</p>
+          <Link to="/home" className="apv-btn apv-btn-ghost">Voltar ao portal</Link>
+        </div>
       ) : (
         grupos.map((g) => (
           <section key={g.chave} className="apv-grupo">
@@ -130,13 +180,25 @@ export default function CentralAprovacoes() {
             {g.itens.map((item) => {
               const verbos = item.verbos || { aprovar: 'Aprovar', reprovar: 'Reprovar' };
               const esteOcupado = ocupado === item.chave;
+              const modo = abertos[item.chave];
+              const dias = diasDesde(item.quando);
               return (
-                <article key={item.chave} className="apv-item">
+                <article
+                  key={item.chave}
+                  id={`apv-${item.chave}`}
+                  className={`apv-item${alvo === item.chave ? ' is-alvo' : ''}`}
+                >
                   <div className="apv-item-cab">
-                    <div>
+                    <span className="apv-pav">{iniciais(item.pessoa)}</span>
+                    <div className="apv-item-tit">
                       <h3>{item.titulo}</h3>
                       <p className="apv-item-sub">
-                        {item.pessoa && <>{item.pessoa} · </>}{haQuanto(item.quando)}
+                        {item.pessoa && <span>{nomeProprio(item.pessoa)}</span>}
+                        {item.quando && (
+                          <span className={`apv-espera${dias >= DIAS_ATRASO ? ' is-atraso' : ''}`}>
+                            <Clock size={13} aria-hidden="true" /> {haQuanto(item.quando)}
+                          </span>
+                        )}
                       </p>
                     </div>
                     <Link to={item.link} className="apv-abrir">
@@ -152,40 +214,67 @@ export default function CentralAprovacoes() {
                     </dl>
                   )}
 
-                  {item.direto ? (
-                    <>
+                  {!item.direto ? (
+                    <p className="apv-no-modulo">
+                      <AlertTriangle size={14} /> {item.motivoAbrir}
+                    </p>
+                  ) : modo ? (
+                    <div className={`apv-decisao${modo === 'reprovar' ? ' is-reprovar' : ''}`}>
                       <label className="apv-rotulo" htmlFor={`apv-c-${item.chave}`}>
-                        {item.observacaoAoAprovar
-                          ? 'Observação (obrigatória para reprovar)'
-                          : 'Motivo da reprovação'}
+                        {modo === 'reprovar'
+                          ? 'Motivo da reprovação (o solicitante vai ler)'
+                          : 'Observação (fica registrada no pedido, junto da decisão)'}
                       </label>
                       <textarea
                         id={`apv-c-${item.chave}`}
                         className="apv-textarea"
                         rows={2}
+                        autoFocus
                         value={comentarios[item.chave] || ''}
                         onChange={(e) => setComentarios((c) => ({ ...c, [item.chave]: e.target.value }))}
-                        placeholder={item.observacaoAoAprovar
-                          ? 'Fica registrada no pedido, junto da sua decisão.'
-                          : 'Só é usado se você reprovar.'}
                       />
                       {erros[item.chave] && <p className="apv-erro" role="alert">{erros[item.chave]}</p>}
                       <div className="apv-acoes">
+                        {modo === 'reprovar' ? (
+                          <button type="button" className="apv-btn apv-btn-nao-cheio" disabled={esteOcupado}
+                            onClick={() => decidir(item, false)}>
+                            {esteOcupado ? <Loader2 size={15} className="apv-spin" /> : <X size={15} />}
+                            {' '}Confirmar e {verbos.reprovar.toLowerCase()}
+                          </button>
+                        ) : (
+                          <button type="button" className="apv-btn apv-btn-ok" disabled={esteOcupado}
+                            onClick={() => aprovar(item)}>
+                            {esteOcupado ? <Loader2 size={15} className="apv-spin" /> : <Check size={15} />}
+                            {' '}{verbos.aprovar}
+                          </button>
+                        )}
+                        <button type="button" className="apv-btn apv-btn-ghost" disabled={esteOcupado}
+                          onClick={() => fechar(item.chave)}>
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {erros[item.chave] && <p className="apv-erro" role="alert">{erros[item.chave]}</p>}
+                      <div className="apv-acoes">
                         <button type="button" className="apv-btn apv-btn-ok" disabled={esteOcupado}
-                          onClick={() => (item.precisaDestino ? setDestinoHe(item) : decidir(item, true))}>
+                          onClick={() => aprovar(item)}>
                           {esteOcupado ? <Loader2 size={15} className="apv-spin" /> : <Check size={15} />}
                           {' '}{verbos.aprovar}
                         </button>
                         <button type="button" className="apv-btn apv-btn-nao" disabled={esteOcupado}
-                          onClick={() => decidir(item, false)}>
+                          onClick={() => abrir(item.chave, 'reprovar')}>
                           <X size={15} /> {verbos.reprovar}
                         </button>
+                        {item.observacaoAoAprovar && (
+                          <button type="button" className="apv-link" disabled={esteOcupado}
+                            onClick={() => abrir(item.chave, 'obs')}>
+                            <MessageSquare size={14} /> Aprovar com observação
+                          </button>
+                        )}
                       </div>
                     </>
-                  ) : (
-                    <p className="apv-no-modulo">
-                      <AlertTriangle size={14} /> {item.motivoAbrir}
-                    </p>
                   )}
                 </article>
               );

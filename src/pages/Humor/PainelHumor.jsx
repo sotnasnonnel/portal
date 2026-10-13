@@ -7,6 +7,7 @@ import {
 } from '../../config/humor';
 import { diaISO } from '../../config/horasExtras';
 import { resumoHumor } from '../../services/humor';
+import CarinhaHumor from '../../components/UI/CarinhaHumor';
 import './PainelHumor.css';
 
 const PERIODOS = [[7, '7 dias'], [30, '30 dias'], [90, '90 dias']];
@@ -131,8 +132,8 @@ export default function PainelHumor() {
               <ul className="hum-legenda">
                 {r.distribuicao.map((h) => (
                   <li key={h.chave}>
-                    <i style={{ background: h.cor }} aria-hidden="true" />
-                    {h.emoji} {h.rotulo}
+                    <CarinhaHumor valor={h.valor} size={18} />
+                    {h.rotulo}
                     <strong>{Math.round((h.total / r.contados) * 100)}%</strong>
                   </li>
                 ))}
@@ -164,7 +165,7 @@ export default function PainelHumor() {
                       <div className="hum-tip" role="tooltip">
                         <strong>{dataCurta(d)} · {l.total} resposta{l.total === 1 ? '' : 's'}</strong>
                         {aberto
-                          ? HUMORES.map((h) => <span key={h.chave}>{h.emoji} {h.rotulo}: {l[h.chave]}</span>)
+                          ? HUMORES.map((h) => <span key={h.chave} className="hum-tip-linha"><CarinhaHumor valor={h.valor} size={14} /> {h.rotulo}: {l[h.chave]}</span>)
                           : <span>Poucas respostas: distribuição oculta.</span>}
                       </div>
                     )}
