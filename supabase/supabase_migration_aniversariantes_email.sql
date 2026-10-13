@@ -8,6 +8,9 @@
 --
 -- Continua sem a data completa de nascimento: só o DIA.
 --
+-- ATENÇÃO: substituída por supabase_migration_aniversariantes_email_so_hoje.sql,
+-- que limita o e-mail ao aniversariante do dia. Não reaplique esta sozinha.
+--
 -- Sem dependência de deploy: o front só mostra o botão quando o e-mail vem, então
 -- tanto faz aplicar antes ou depois do front novo.
 --
