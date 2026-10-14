@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LayoutGrid, Loader2, AlertCircle, Inbox, Clock, MessageSquare, X } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { getClasse } from '../../../../config/administrativo';
+import { getClasse, ehTimeDp } from '../../../../config/administrativo';
 import { listarQuadro } from '../../lib/chamados';
 import {
   agruparEmColunas, semaforoPrazo, iniciais, filtrarQuadro, opcoesDoQuadro, restaurarFiltro,
@@ -42,7 +42,8 @@ export default function KanbanAdm() {
   const setFCc = mudarFiltro('cc');
   const setFAtrasado = mudarFiltro('atrasado');
 
-  const souAdm = modules?.administrativo === 'admin' || modules?.administrativo === 'atendente';
+  // O DP também é time: atende os chamados de DP, que a RLS esconde do Adm.
+  const souAdm = modules?.administrativo === 'admin' || modules?.administrativo === 'atendente' || ehTimeDp(user);
 
   const carregar = useCallback(async () => {
     if (!user?.id) return;

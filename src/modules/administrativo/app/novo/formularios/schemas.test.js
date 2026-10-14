@@ -18,6 +18,7 @@ const COM_FORMULARIO_CODIFICADO = [
 const SEM_CAMPOS_POR_DECISAO = [
   'frota/outras-demandas',
   'outras-demandas/outras-demandas',
+  'dp/outras-demandas',
 ];
 
 const TIPOS_VALIDOS = new Set([

@@ -6,7 +6,7 @@ import {
   CalendarOff,
 } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { getClasse, getServico, podeReatribuirAdm } from '../../../../config/administrativo';
+import { getClasse, getServico, podeReatribuirAdm, souTimeDaClasse } from '../../../../config/administrativo';
 import { contextoDoChamado } from '../../lib/rotulos';
 import {
   rotuloDoCampo, formatarValorCampo, CAMPOS_OCULTOS, chavesDePessoa,
@@ -106,7 +106,8 @@ export default function ChamadoAdm() {
   const [estCarregando, setEstCarregando] = useState(false);
   const [semMovimentar, setSemMovimentar] = useState(false);
 
-  const souAdm = modules?.administrativo === 'admin' || modules?.administrativo === 'atendente';
+  // "Time" depende do chamado: o de DP é atendido pelo DP, não pelo Adm.
+  const souAdm = chamado ? souTimeDaClasse(chamado.classe, { user, modules }) : false;
 
   const carregar = useCallback(async () => {
     setCarregando(true);

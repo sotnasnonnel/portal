@@ -1,6 +1,6 @@
 import {
   Users, ShoppingCart, Car, Navigation, Mail, Building2, Monitor, Plane, HardHat, MoreHorizontal,
-  Headset, Boxes, Route,
+  Headset, Boxes, Route, IdCard,
 } from 'lucide-react';
 // Os gates de Estoque e Mobilização entram aqui porque o card da Home reúne os
 // três módulos (ver AREAS_ADMINISTRATIVO no fim do arquivo). A dependência é de
@@ -187,6 +187,21 @@ export const CLASSES_ADM = [
     ],
   },
   {
+    // Pedidos ao Departamento Pessoal, que antes chegavam por e-mail. Quem
+    // atende é o DP, não o time do Atendimento — e o chamado é SIGILOSO para
+    // este (plano de saúde, dependentes, ponto): ver CLASSE_DP abaixo.
+    slug: 'dp',
+    label: 'Atendimento DP',
+    icon: IdCard,
+    servicos: [
+      { slug: 'plano-saude', label: 'Plano de saúde e odontológico' },
+      { slug: 'ponto', label: 'Tratativas de ponto' },
+      { slug: 'beneficios', label: 'Solicitação de benefícios' },
+      { slug: 'atualizacao-cadastral', label: 'Atualização cadastral' },
+      { slug: 'outras-demandas', label: 'Outras demandas' },
+    ],
+  },
+  {
     slug: 'outras-demandas',
     label: 'Outras demandas',
     icon: MoreHorizontal,
@@ -195,6 +210,23 @@ export const CLASSES_ADM = [
     ],
   },
 ];
+
+/**
+ * Chamado de DP não é do time do Atendimento. Quem o vê e o trata é o DP —
+ * perfil admin do DP ou a flag rh_dp, a mesma régua de solicitacoes_rh — além
+ * do solicitante e de quem foi posto como responsável. O banco aplica a mesma
+ * regra (app_private.adm_time_da_classe); isto só decide o que a tela oferece.
+ */
+export const CLASSE_DP = 'dp';
+
+export const ehTimeDp = (user) => user?.perfil === 'admin' || user?.rhDp === true;
+
+const ehTimeAdm = (modules) => modules?.administrativo === 'admin' || modules?.administrativo === 'atendente';
+
+/** Se a pessoa atende chamados desta classe (assumir, nota interna, fechar). */
+export const souTimeDaClasse = (classe, { user, modules }) => (
+  classe === CLASSE_DP ? ehTimeDp(user) : ehTimeAdm(modules)
+);
 
 export const getClasse = (classeSlug) => CLASSES_ADM.find((c) => c.slug === classeSlug);
 
@@ -242,7 +274,7 @@ export const AREAS_ADMINISTRATIVO = [
     slug: 'chamados',
     label: 'Chamados',
     icon: Headset,
-    desc: 'Abra e acompanhe chamados de frota, viagem, compras e manutenção.',
+    desc: 'Abra e acompanhe chamados de frota, viagem, compras, manutenção e DP.',
     href: '/administrativo/novo',
     cta: 'Abrir chamados',
     pode: podeAcessarAdm,

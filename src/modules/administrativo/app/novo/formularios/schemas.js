@@ -231,6 +231,44 @@ export const SCHEMAS = {
     { chave: 'incluso_custo', rotulo: 'Incluso no custo', tipo: 'texto_longo', obrigatorio: false },
     observacao(),
   ],
+
+  // ---------------- Atendimento DP ----------------
+  // Versão enxuta, para tirar os pedidos do e-mail já. O DP refina os campos
+  // depois; o detalhe do pedido vai na descrição, e documento vai no anexo.
+  'dp/plano-saude': [
+    {
+      chave: 'tipo', rotulo: 'Tipo', tipo: 'selecao', obrigatorio: true,
+      opcoes: ['Inclusão', 'Exclusão', 'Alteração'],
+    },
+    {
+      chave: 'plano', rotulo: 'Plano', tipo: 'selecao_multipla', obrigatorio: true,
+      opcoes: ['Saúde', 'Odontológico'],
+    },
+    {
+      chave: 'beneficiario', rotulo: 'Beneficiário', tipo: 'selecao', obrigatorio: true,
+      opcoes: ['Titular', 'Dependente'],
+    },
+    { chave: 'dependente', rotulo: 'Nome do dependente', tipo: 'texto', obrigatorio: false },
+  ],
+  'dp/ponto': [
+    {
+      chave: 'tipo', rotulo: 'Tipo', tipo: 'selecao', obrigatorio: true,
+      opcoes: ['Ajuste de marcação', 'Abono', 'Banco de horas', 'Outros'],
+    },
+    { chave: 'data_referencia', rotulo: 'Data de referência', tipo: 'data', obrigatorio: true },
+  ],
+  'dp/beneficios': [
+    {
+      chave: 'beneficio', rotulo: 'Benefício', tipo: 'selecao', obrigatorio: true,
+      opcoes: ['Vale-transporte', 'Vale-refeição / alimentação', 'Auxílio-creche', 'Outros'],
+    },
+  ],
+  'dp/atualizacao-cadastral': [
+    {
+      chave: 'dados', rotulo: 'O que muda', tipo: 'selecao_multipla', obrigatorio: true,
+      opcoes: ['Endereço', 'Dados bancários', 'Contato', 'Estado civil', 'Dependentes', 'Escolaridade', 'Outros'],
+    },
+  ],
 };
 
 export const schemaDoServico = (classe, servico) => SCHEMAS[`${classe}/${servico}`] || null;
@@ -255,6 +293,12 @@ const COM_DESCRICAO = new Set([
   'saude-seguranca/outras-demandas',
   'frota/outras-demandas',
   'outras-demandas/outras-demandas',
+  // DP: os campos só classificam o pedido; o que a pessoa quer vai aqui.
+  'dp/plano-saude',
+  'dp/ponto',
+  'dp/beneficios',
+  'dp/atualizacao-cadastral',
+  'dp/outras-demandas',
 ]);
 
 /**
