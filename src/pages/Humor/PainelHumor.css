@@ -99,3 +99,25 @@
 }
 .hum-tabela th:first-child, .hum-tabela td:first-child { text-align: left; }
 .hum-tabela th { font-size: var(--font-size-xs); color: var(--muted); font-weight: 600; }
+
+/* Respostas por pessoa (só RH). Texto à esquerda e comentário quebrando linha:
+   é leitura, não número. */
+.hum-sem { margin: 0; font-size: var(--font-size-sm); color: var(--muted); }
+.hum-pessoas-filtros { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ctl-gap); margin-bottom: 10px; }
+.hum-busca {
+  flex: 1 1 220px; max-width: 320px; height: var(--ctl-h-sm); padding: 0 var(--ctl-pad-x);
+  border: var(--ctl-border) solid var(--border); border-radius: var(--ctl-radius-sm);
+  background: #fff; color: var(--ink); font-size: var(--font-size-sm);
+}
+.hum-busca:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.hum-pessoas { width: 100%; border-collapse: collapse; font-size: var(--font-size-sm); }
+.hum-pessoas th, .hum-pessoas td {
+  padding: 8px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top;
+}
+.hum-pessoas th { font-size: var(--font-size-xs); color: var(--muted); font-weight: 600; }
+.hum-pessoas strong { color: var(--ink); font-weight: 600; }
+.hum-pessoas-dia { white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--ink-soft); }
+.hum-pessoas-funcao { display: block; font-size: var(--font-size-xs); color: var(--muted); }
+.hum-pessoas-humor { white-space: nowrap; color: var(--ink-soft); }
+.hum-pessoas-humor svg { margin-right: 6px; vertical-align: -4px; }
+.hum-pessoas-coment { min-width: 220px; color: var(--ink-soft); overflow-wrap: anywhere; }

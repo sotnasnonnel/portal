@@ -4,9 +4,10 @@ import { ArrowLeft, Loader2, AlertCircle, Lock } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   HUMORES, MINIMO_ANONIMATO, resumoPeriodo, diaComDistribuicao, veResumoHumor, veResumoEmpresa,
+  veRespostasHumor, filtrarRespostas, humorPorValor,
 } from '../../config/humor';
 import { diaISO } from '../../config/horasExtras';
-import { resumoHumor } from '../../services/humor';
+import { resumoHumor, respostasHumor } from '../../services/humor';
 import CarinhaHumor from '../../components/UI/CarinhaHumor';
 import './PainelHumor.css';
 
@@ -24,32 +25,45 @@ function diasDoPeriodo(n) {
   return out;
 }
 
-// Painel do humor: SÓ números agregados, sem nome (decisão do usuário,
-// 30/09/2026). O banco esconde a distribuição dos dias com menos de
-// MINIMO_ANONIMATO respostas; aqui eles aparecem só com o total.
+// Painel do humor. O gestor vê SÓ números da equipe, e o banco esconde a
+// distribuição dos dias com menos de MINIMO_ANONIMATO respostas. O RH vê
+// também a resposta e o comentário de cada pessoa (desde 02/10/2026) — só as
+// marcadas depois que a tela inicial passou a avisar isso; o banco é quem corta.
 export default function PainelHumor() {
   const { user } = useAuth();
   const podeEmpresa = veResumoEmpresa(user);
   const [escopo, setEscopo] = useState(podeEmpresa ? 'todos' : 'equipe');
   const [periodo, setPeriodo] = useState(30);
   const [linhas, setLinhas] = useState([]);
+  const [respostas, setRespostas] = useState([]);
+  const [busca, setBusca] = useState('');
+  const [soComentario, setSoComentario] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
   const [foco, setFoco] = useState(null); // dia com o tooltip aberto
 
   const dias = useMemo(() => diasDoPeriodo(periodo), [periodo]);
+  // A lista por pessoa é da empresa inteira: em "Minha equipe" ela destoaria
+  // dos números acima.
+  const verPessoas = veRespostasHumor(user) && escopo === 'todos';
 
   const carregar = useCallback(async () => {
     setCarregando(true);
     setErro('');
     try {
-      setLinhas(await resumoHumor({ de: dias[0], ate: dias[dias.length - 1], escopo }));
+      const intervalo = { de: dias[0], ate: dias[dias.length - 1] };
+      const [resumo, pessoas] = await Promise.all([
+        resumoHumor({ ...intervalo, escopo }),
+        verPessoas ? respostasHumor(intervalo) : [],
+      ]);
+      setLinhas(resumo);
+      setRespostas(pessoas);
     } catch (e) {
       setErro(e?.message || 'Não foi possível carregar o resumo.');
     } finally {
       setCarregando(false);
     }
-  }, [dias, escopo]);
+  }, [dias, escopo, verPessoas]);
 
   useEffect(() => { carregar(); }, [carregar]);
 
@@ -58,6 +72,7 @@ export default function PainelHumor() {
   const porDia = new Map(linhas.map((l) => [String(l.dia).slice(0, 10), l]));
   const r = resumoPeriodo(linhas);
   const maxDia = Math.max(1, ...linhas.map((l) => l.total || 0));
+  const pessoasVisiveis = filtrarRespostas(respostas, { busca, soComentario });
 
   return (
     <div className="hum-page">
@@ -65,7 +80,12 @@ export default function PainelHumor() {
         <Link to="/home" className="hum-back"><ArrowLeft size={18} /> Portal</Link>
         <div className="hum-titulos">
           <h1>Humor {escopo === 'todos' ? 'da empresa' : 'da equipe'}</h1>
-          <p>Como as pessoas marcaram o dia na tela inicial. Só números: ninguém vê a resposta de outra pessoa.</p>
+          <p>
+            Como as pessoas marcaram o dia na tela inicial.{' '}
+            {verPessoas
+              ? 'Os números da empresa e, no fim da página, a resposta de cada pessoa.'
+              : 'Aqui só números: a resposta de cada pessoa fica entre ela e o RH.'}
+          </p>
         </div>
       </header>
 
@@ -197,6 +217,66 @@ export default function PainelHumor() {
               </div>
             </details>
           </section>
+
+          {verPessoas && (
+            <section className="hum-card">
+              <h2>Respostas por pessoa</h2>
+              <p className="hum-nota">
+                <Lock size={12} /> Só o RH vê esta lista. Entram as respostas marcadas depois que a tela
+                inicial passou a avisar que o RH vê a resposta; as anteriores continuam só nos números.
+              </p>
+              {respostas.length === 0 ? (
+                <p className="hum-sem">Ainda não há respostas por pessoa neste período.</p>
+              ) : (
+                <>
+                  <div className="hum-pessoas-filtros">
+                    <input
+                      type="search"
+                      className="hum-busca"
+                      value={busca}
+                      onChange={(e) => setBusca(e.target.value)}
+                      placeholder="Buscar por nome"
+                      aria-label="Buscar por nome"
+                    />
+                    <button type="button" className={`hum-chip ${soComentario ? 'is-on' : ''}`}
+                      aria-pressed={soComentario} onClick={() => setSoComentario((v) => !v)}>
+                      Só com comentário
+                    </button>
+                  </div>
+                  {pessoasVisiveis.length === 0 ? (
+                    <p className="hum-sem">Nenhuma resposta com esse filtro.</p>
+                  ) : (
+                    <div className="hum-tabela-scroll">
+                      <table className="hum-pessoas">
+                        <thead>
+                          <tr><th>Dia</th><th>Pessoa</th><th>Humor</th><th>Comentário</th></tr>
+                        </thead>
+                        <tbody>
+                          {pessoasVisiveis.map((p) => {
+                            const h = humorPorValor(p.humor);
+                            return (
+                              <tr key={`${p.dia}-${p.colaborador_id}`}>
+                                <td className="hum-pessoas-dia">{dataCurta(p.dia)}</td>
+                                <td>
+                                  <strong>{p.nome}</strong>
+                                  {p.funcao && <span className="hum-pessoas-funcao">{p.funcao}</span>}
+                                </td>
+                                <td className="hum-pessoas-humor">
+                                  {h && <CarinhaHumor valor={h.valor} size={18} />}
+                                  {h?.rotulo}
+                                </td>
+                                <td className="hum-pessoas-coment">{p.comentario || '—'}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </>
+              )}
+            </section>
+          )}
         </>
       )}
     </div>

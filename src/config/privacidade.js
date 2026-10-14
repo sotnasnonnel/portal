@@ -29,8 +29,8 @@ export const PENDENTE = '[DEFINIR]';
 export const ehPendente = (valor) => typeof valor === 'string' && valor.includes('[DEFINIR');
 
 export const AVISO_PRIVACIDADE = {
-  versao: '1.1',
-  atualizadoEm: '2026-09-23',
+  versao: '1.2',
+  atualizadoEm: '2026-10-02',
 
   controlador: {
     nomeCurto: 'PHD Engenharia',
@@ -76,6 +76,7 @@ export const AVISO_PRIVACIDADE = {
         ['Benefícios e dependentes', 'no cadastro de prestadores de serviço, a contratação de plano médico e odontológico e os dados dos dependentes incluídos (nome, CPF, data de nascimento e grau de parentesco).'],
         ['Dados de outras pessoas que você informa', 'quando o pedido exige, o portal guarda dados de quem não é da empresa: candidatos indicados em processo de contratação (nome, telefone e e-mail), contatos comerciais indicados na Alavanca PHD (nome, cargo, telefone e e-mail) e dependentes de prestadores. Essas pessoas também são titulares protegidos pela LGPD, e os dados delas seguem as mesmas regras deste aviso.'],
         ['Pedidos e atendimentos', 'requisições ao DP, chamados administrativos e de suporte, pedidos de mobilização, retirada de EPI e uniforme, mensagens do Fale Conosco e registros no Campo de Ideias e na Alavanca PHD.'],
+        ['Humor do dia', 'a resposta que você marca na tela inicial ("Como você está hoje?") e o comentário que escolher escrever. Responder é opcional. O RH vê a resposta e o comentário com o seu nome; o seu gestor vê apenas os números da equipe, sem nomes.'],
         ['Arquivos que você anexa', 'documentos e comprovantes enviados nos pedidos — por exemplo, nota fiscal, comprovante de despesa e documentos de requisições ao DP. Ficam guardados na área de armazenamento do Portal PHD e são abertos a partir do próprio pedido.'],
         ['Registros de uso', 'data e hora das ações feitas no portal (envio, aprovação, reprovação, cancelamento e correções), com identificação de quem fez, e as notificações geradas.'],
       ],
@@ -98,6 +99,7 @@ export const AVISO_PRIVACIDADE = {
           ['Organizar o trabalho: aprovações pela cadeia de gestores, alocação em projetos e obras, mobilização de equipes e atendimento de chamados internos.', 'Execução de contrato e legítimo interesse da empresa (art. 7º, V e IX).'],
           ['Controlar acessos e manter a segurança do sistema, com registro das ações realizadas.', 'Legítimo interesse e cumprimento de obrigação legal (art. 7º, IX e II).'],
           ['Programas internos de participação voluntária, como o Campo de Ideias e a Alavanca PHD.', 'Consentimento, manifestado ao se inscrever no programa (art. 7º, I).'],
+          ['Acompanhar o clima da empresa pelo humor do dia, que cada pessoa responde se quiser.', 'Consentimento, manifestado ao responder (art. 7º, I).'],
         ],
       },
       fecho: [

@@ -1,13 +1,18 @@
-// Humor do dia — cada pessoa marca como está; o resumo é SÓ agregado.
+// Humor do dia — cada pessoa marca como está, com comentário opcional.
 //
-// Pedido do Lucas Ferraz (30/09/2026), trazendo o que a Feedz tinha. Decisão do
-// usuário: ninguém vê o humor individual de outra pessoa. O RH vê a empresa e
-// o gestor a equipe, sempre em números, e o banco esconde a distribuição dos
-// dias com menos de MINIMO_ANONIMATO respostas (supabase_migration_humor_aniversariantes.sql).
+// Pedido do Lucas Ferraz (30/09/2026), trazendo o que a Feedz tinha. Nasceu só
+// agregado; em 02/10/2026, a pedido do RH, o RH passou a ver a resposta e o
+// comentário de cada pessoa (supabase_migration_humor_individual.sql). O que
+// segue valendo:
+//   - o gestor vê a equipe SÓ em números, e o banco esconde a distribuição dos
+//     dias com menos de MINIMO_ANONIMATO respostas;
+//   - o que foi respondido antes da mudança continua só nos números: a tela
+//     dizia "Só você vê a sua resposta".
 
 import { isAusenciaRh } from './ausenciaProgramada.js';
 
 export const MINIMO_ANONIMATO = 3;
+export const COMENTARIO_MAX = 500;   // mesmo limite do banco
 
 // Escala divergente: dois vermelhos, um cinza neutro no meio, dois azuis.
 // Validada com o validate_palette da skill de dataviz (vizinhos ΔE ≥ 18, com
@@ -28,6 +33,17 @@ export const humorPorValor = (v) => HUMORES.find((h) => h.valor === Number(v)) |
 export const veResumoHumor = (user) => ['gestor', 'coordenador', 'admin'].includes(user?.perfil)
   || isAusenciaRh(user);
 export const veResumoEmpresa = (user) => isAusenciaRh(user);
+/** Resposta e comentário por pessoa: só o RH. Espelha humor_respostas no banco. */
+export const veRespostasHumor = (user) => isAusenciaRh(user);
+
+const semAcento = (s) => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+/** Filtro da lista por pessoa: nome (sem acento/caixa) e "só com comentário". */
+export function filtrarRespostas(respostas = [], { busca = '', soComentario = false } = {}) {
+  const termo = semAcento(busca).trim();
+  return respostas.filter((r) => (!termo || semAcento(r.nome).includes(termo))
+    && (!soComentario || !!r.comentario));
+}
 
 /** O dia tem distribuição? Dia com poucas respostas vem do banco só com o total. */
 export const diaComDistribuicao = (d) => d?.muito_mal !== null && d?.muito_mal !== undefined;

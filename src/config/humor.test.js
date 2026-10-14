@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { resumoPeriodo, diaComDistribuicao, veResumoHumor, humorPorValor } from './humor.js';
+import {
+  resumoPeriodo, diaComDistribuicao, veResumoHumor, veRespostasHumor, filtrarRespostas, humorPorValor,
+} from './humor.js';
 
 const dia = (total, [a, b, c, d, e]) => ({
   total, muito_mal: a, triste: b, ok: c, feliz: d, muito_feliz: e,
@@ -35,4 +37,23 @@ test('só gestão e RH veem o resumo', () => {
   assert.equal(veResumoHumor({ perfil: 'usuario' }), false);
   assert.equal(veResumoHumor({ perfil: 'usuario', rhDp: true }), true);
   assert.equal(humorPorValor(3).rotulo, 'Ok');
+});
+
+// O gestor vê o resumo, mas a resposta por pessoa é só do RH.
+test('resposta por pessoa é só do RH — gestor fica nos números', () => {
+  assert.equal(veRespostasHumor({ perfil: 'gestor' }), false);
+  assert.equal(veRespostasHumor({ perfil: 'coordenador' }), false);
+  assert.equal(veRespostasHumor({ perfil: 'usuario', rhDp: true }), true);
+  assert.equal(veRespostasHumor({ perfil: 'admin' }), true);
+});
+
+test('filtro da lista por pessoa ignora acento e caixa, e separa quem comentou', () => {
+  const lista = [
+    { nome: 'JOÃO SILVA', comentario: 'dia puxado' },
+    { nome: 'Maria Souza', comentario: null },
+  ];
+  assert.deepEqual(filtrarRespostas(lista, { busca: 'joao' }).map((r) => r.nome), ['JOÃO SILVA']);
+  assert.deepEqual(filtrarRespostas(lista, { soComentario: true }).map((r) => r.nome), ['JOÃO SILVA']);
+  assert.equal(filtrarRespostas(lista, { busca: 'souza', soComentario: true }).length, 0);
+  assert.equal(filtrarRespostas(lista).length, 2);
 });

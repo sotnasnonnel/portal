@@ -1,23 +1,34 @@
 import { supabase } from './supabase';
 
 // Humor do dia e aniversariantes do mês. Tudo por RPC
-// (supabase/supabase_migration_humor_aniversariantes.sql): o humor de outra
-// pessoa nunca sai do banco — só o próprio e o resumo agregado.
+// (supabase/supabase_migration_humor_aniversariantes.sql e
+// supabase_migration_humor_individual.sql): do banco sai o próprio registro, o
+// resumo agregado e, só para o RH, as respostas por pessoa.
 
 function checar(error) {
   if (error) throw new Error(error.message || 'Falha ao falar com o banco.');
 }
 
-export async function registrarHumor(valor) {
-  const { error } = await supabase.rpc('humor_registrar', { p_humor: valor });
+/** Grava o estado inteiro do dia: comentário vazio apaga o que havia. */
+export async function registrarHumor(valor, comentario = '') {
+  const { error } = await supabase.rpc('humor_registrar_identificado', {
+    p_humor: valor, p_comentario: comentario,
+  });
   checar(error);
 }
 
-/** O que eu marquei hoje, ou null. */
+/** O que eu marquei hoje: { humor, comentario }, ou null. */
 export async function meuHumorHoje() {
-  const { data, error } = await supabase.rpc('humor_meu_hoje');
+  const { data, error } = await supabase.rpc('humor_meu_registro_hoje');
   checar(error);
-  return data ?? null;
+  return data?.[0] ?? null;
+}
+
+/** Só RH: { dia, colaborador_id, nome, funcao, humor, comentario }, do mais recente. */
+export async function respostasHumor({ de, ate }) {
+  const { data, error } = await supabase.rpc('humor_respostas', { p_de: de, p_ate: ate });
+  checar(error);
+  return data || [];
 }
 
 /** Linhas por dia: { dia, total, muito_mal, triste, ok, feliz, muito_feliz }. */

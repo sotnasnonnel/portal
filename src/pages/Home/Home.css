@@ -659,8 +659,37 @@
 .home-humor-nota a { color: var(--blue); font-weight: 600; }
 .home-humor-erro { color: #b91c1c; font-size: var(--font-size-xs); }
 
+/* Comentário opcional, embaixo da pílula depois de responder. */
+.home-humor-coment { display: flex; gap: 6px; width: 100%; min-width: 260px; max-width: 420px; }
+.home-humor-input {
+  flex: 1;
+  min-width: 0;
+  height: var(--ctl-h-sm);
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--ink-soft);
+  font-size: var(--font-size-sm);
+}
+.home-humor-input:focus-visible { outline: none; border-color: var(--terracotta-soft); box-shadow: 0 0 0 3px rgba(195, 94, 30, 0.35); }
+.home-humor-salvar {
+  height: var(--ctl-h-sm);
+  padding: 0 14px;
+  border: 1px solid var(--blue);
+  border-radius: 999px;
+  background: var(--blue);
+  color: #fff;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+.home-humor-salvar:disabled { background: transparent; border-color: var(--border); color: var(--muted); cursor: default; }
+.home-humor-salvar:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(195, 94, 30, 0.35); }
+
 @media (max-width: 640px) {
   .home-humor-wrap { width: 100%; align-items: stretch; }
+  .home-humor-coment { min-width: 0; max-width: none; }
   .home-humor { flex-wrap: wrap; border-radius: 12px; padding: 8px 10px; min-width: 0; }
   .home-humor-opcoes { width: 100%; justify-content: space-between; }
 }
