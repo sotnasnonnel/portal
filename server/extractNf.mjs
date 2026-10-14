@@ -50,6 +50,30 @@ Regras:
 - Se um campo nao existir na imagem, use null (ou lista vazia para itens).
 - Nao invente dados.`;
 
+// Esquema da resposta: com ele o Gemini e obrigado a devolver JSON valido.
+// So o prompt nao bastava — num recibo da 99 o modelo comecou a quebrar a
+// corrida em partes e devolveu o JSON pela metade (reporte de 04/10/2026).
+export const RESPONSE_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    numero_nota: { type: "STRING", nullable: true },
+    local: { type: "STRING", nullable: true },
+    categoria: { type: "STRING", enum: EXTRACTION_CATEGORIAS },
+    data_nf: { type: "STRING", nullable: true },
+    itens: {
+      type: "ARRAY",
+      items: {
+        type: "OBJECT",
+        properties: { descricao: { type: "STRING" }, valor: { type: "NUMBER" } },
+        required: ["descricao", "valor"],
+      },
+    },
+    valor_total: { type: "NUMBER", nullable: true },
+    observacoes: { type: "STRING", nullable: true },
+  },
+  required: ["numero_nota", "local", "categoria", "data_nf", "itens", "valor_total", "observacoes"],
+};
+
 function safeParseJson(content) {
   // Remove cercas markdown se o modelo devolver ```json ... ```
   const cleaned = content
@@ -90,21 +114,55 @@ export async function extractNf({
         ],
       },
     ],
-    generationConfig: { responseMimeType: "application/json", temperature: 0 },
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: RESPONSE_SCHEMA,
+      temperature: 0,
+    },
   };
 
   const url = `${baseUrl}/models/${model}:generateContent`;
   const payload = JSON.stringify(body);
 
-  // Retry com backoff: 429/500/503 do Gemini sao tipicamente transitorios (sobrecarga).
-  let res;
+  // Duas tentativas inteiras: se mesmo com o esquema a resposta vier quebrada,
+  // uma segunda chamada costuma vir certa.
+  let parsed;
+  let json;
+  let content = "";
+  for (let rodada = 1; rodada <= 2; rodada++) {
+    json = await chamarGemini(url, apiKey, payload);
+    const candidate = json.candidates?.[0];
+    content = (candidate?.content?.parts ?? []).map((p) => p.text ?? "").join("");
+
+    if (!content) {
+      const reason =
+        candidate?.finishReason || json.promptFeedback?.blockReason || "sem conteudo";
+      throw new Error(`Gemini nao retornou texto (${reason}).`);
+    }
+
+    try {
+      parsed = safeParseJson(content);
+      break;
+    } catch {
+      if (rodada === 2) {
+        throw new Error(`Resposta nao era JSON valido: ${content.slice(0, 200)}`);
+      }
+    }
+  }
+
+  parsed._usage = json.usageMetadata?.totalTokenCount ?? null;
+  return parsed;
+}
+
+// Retry com backoff: 429/500/503 do Gemini sao tipicamente transitorios (sobrecarga).
+async function chamarGemini(url, apiKey, payload) {
   for (let attempt = 1; attempt <= 3; attempt++) {
-    res = await fetch(url, {
+    const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: payload,
     });
-    if (res.ok) break;
+    if (res.ok) return res.json();
     if ([429, 500, 503].includes(res.status) && attempt < 3) {
       await new Promise((r) => setTimeout(r, attempt * 1000));
       continue;
@@ -112,24 +170,4 @@ export async function extractNf({
     const txt = await res.text().catch(() => "");
     throw new Error(`Gemini HTTP ${res.status}: ${txt.slice(0, 300)}`);
   }
-
-  const json = await res.json();
-  const candidate = json.candidates?.[0];
-  const content = (candidate?.content?.parts ?? []).map((p) => p.text ?? "").join("");
-
-  if (!content) {
-    const reason =
-      candidate?.finishReason || json.promptFeedback?.blockReason || "sem conteudo";
-    throw new Error(`Gemini nao retornou texto (${reason}).`);
-  }
-
-  let parsed;
-  try {
-    parsed = safeParseJson(content);
-  } catch {
-    throw new Error(`Resposta nao era JSON valido: ${content.slice(0, 200)}`);
-  }
-
-  parsed._usage = json.usageMetadata?.totalTokenCount ?? null;
-  return parsed;
 }
