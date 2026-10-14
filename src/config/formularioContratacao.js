@@ -6,6 +6,9 @@
 export const MOTIVOS_AJUDA_CUSTO = [
   'Alimentação',
   'Alojamento',
+  // Pedido da Ana Claudia (05/10/2026). Coluna própria:
+  // supabase_migration_contratacao_ajuda_transporte.sql.
+  'Transporte',
   'Complemento de Salário | Retirada',
 ];
 
@@ -44,29 +47,30 @@ export const CAMPOS = [
   // da requisição de Ajuda de Custo.
   { id: 'valor_ajuda_custo_alimentacao', n: 15, label: 'Alimentação — Valor da ajuda de custo (R$)', tipo: 'number', obrigatorio: true, mostrar: temMotivo('Alimentação') },
   { id: 'valor_ajuda_custo_alojamento', n: 16, label: 'Alojamento — Valor da ajuda de custo (R$)', tipo: 'number', obrigatorio: true, mostrar: temMotivo('Alojamento') },
-  { id: 'valor_ajuda_custo_complemento', n: 17, label: 'Complemento de Salário | Retirada — Valor da ajuda de custo (R$)', tipo: 'number', obrigatorio: true, mostrar: temMotivo('Complemento de Salário | Retirada') },
+  { id: 'valor_ajuda_custo_transporte', n: 17, label: 'Transporte — Valor da ajuda de custo (R$)', tipo: 'number', obrigatorio: true, mostrar: temMotivo('Transporte') },
+  { id: 'valor_ajuda_custo_complemento', n: 18, label: 'Complemento de Salário | Retirada — Valor da ajuda de custo (R$)', tipo: 'number', obrigatorio: true, mostrar: temMotivo('Complemento de Salário | Retirada') },
   {
-    id: 'formato_contratacao', n: 18, label: 'Formato de Contratação', tipo: 'radio', obrigatorio: true,
+    id: 'formato_contratacao', n: 19, label: 'Formato de Contratação', tipo: 'radio', obrigatorio: true,
     opcoes: ['PHD Assessoria (Sócio Cotista)', 'PHD Engenharia (CLT)', 'PJ (Pessoa Jurídica)', 'PHD Assessoria (CLT)'],
   },
-  { id: 'destinacao_profissional', n: 19, label: 'Destinação do profissional', tipo: 'radio', obrigatorio: true, opcoes: ['Obra', 'Sede'] },
-  { id: 'passagem_deslocamento', n: 20, label: 'Passagem para deslocamento', tipo: 'bool', obrigatorio: true },
-  { id: 'rota_viagem', n: 21, label: 'Rota de viagem para compra da passagem', tipo: 'text', obrigatorio: true, mostrar: (f) => f.passagem_deslocamento === true },
-  { id: 'tipo_vaga', n: 22, label: 'Tipo de vaga', tipo: 'radio', obrigatorio: true, opcoes: ['Nova', 'Substituição'] },
-  { id: 'nome_substituido', n: 23, label: 'Nome do profissional que será substituído', tipo: 'text', obrigatorio: true, mostrar: (f) => f.tipo_vaga === 'Substituição' },
+  { id: 'destinacao_profissional', n: 20, label: 'Destinação do profissional', tipo: 'radio', obrigatorio: true, opcoes: ['Obra', 'Sede'] },
+  { id: 'passagem_deslocamento', n: 21, label: 'Passagem para deslocamento', tipo: 'bool', obrigatorio: true },
+  { id: 'rota_viagem', n: 22, label: 'Rota de viagem para compra da passagem', tipo: 'text', obrigatorio: true, mostrar: (f) => f.passagem_deslocamento === true },
+  { id: 'tipo_vaga', n: 23, label: 'Tipo de vaga', tipo: 'radio', obrigatorio: true, opcoes: ['Nova', 'Substituição'] },
+  { id: 'nome_substituido', n: 24, label: 'Nome do profissional que será substituído', tipo: 'text', obrigatorio: true, mostrar: (f) => f.tipo_vaga === 'Substituição' },
   {
-    id: 'softwares_extras', n: 24, label: 'Softwares Extras Necessários', tipo: 'checkbox', obrigatorio: false,
+    id: 'softwares_extras', n: 25, label: 'Softwares Extras Necessários', tipo: 'checkbox', obrigatorio: false,
     opcoes: ['MS Project', 'Primavera P6', 'Acrobat Reader', 'Navisworks', 'DWG True View', 'Power BI', 'Pacote Office', '2° tela', 'Outra'],
   },
   {
-    id: 'epis', n: 25, label: 'EPIs', tipo: 'checkbox', obrigatorio: false,
+    id: 'epis', n: 26, label: 'EPIs', tipo: 'checkbox', obrigatorio: false,
     opcoes: ['Camisa com faixa refletiva', 'Camisa polo', 'Agasalho', 'Jaleco', 'Botina com metatarso', 'Botina sem metatarso', 'Capacete', 'Protetor Auricular', 'Protetor Solar', 'Outra'],
   },
   {
-    id: 'beneficios', n: 26, label: 'Benefícios', tipo: 'checkbox', obrigatorio: false,
+    id: 'beneficios', n: 27, label: 'Benefícios', tipo: 'checkbox', obrigatorio: false,
     opcoes: ['Vale Alimentação (VA)', 'Vale Transporte (VT)', 'Alojamento', 'Passagem para mobilização', 'Passagem para desmobilização', 'Passagem para viagens periódicas', 'Passagem para folga de campo', 'Hospedagem em hotel', 'Outra'],
   },
-  { id: 'data_disponibilidade', n: 27, label: 'Data de Disponibilidade do Profissional', tipo: 'date', obrigatorio: true },
+  { id: 'data_disponibilidade', n: 28, label: 'Data de Disponibilidade do Profissional', tipo: 'date', obrigatorio: true },
 ];
 
 export const camposVisiveis = (form) => CAMPOS.filter((c) => !c.mostrar || c.mostrar(form));
