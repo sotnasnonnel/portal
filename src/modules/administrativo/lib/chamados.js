@@ -91,6 +91,18 @@ export async function listarProjetos() {
 }
 
 /**
+ * Local e clientes da última mobilização daquele CT, para o formulário se
+ * preencher ao escolher o projeto. null quando o CT nunca teve mobilização.
+ * Falha de rede não pode travar o chamado: devolve null e a pessoa digita.
+ */
+export async function dadosDaUltimaMobilizacao(codCt) {
+  if (!codCt) return null;
+  const { data, error } = await supabase.rpc('mobilizacao_dados_do_ct', { p_cod_ct: codCt });
+  if (error) return null;
+  return data?.[0] ?? null;
+}
+
+/**
  * Time do Adm — os únicos que podem ser responsáveis por um chamado.
  *
  * Separado de `listarPessoas`, que devolve a empresa inteira: aquilo serve

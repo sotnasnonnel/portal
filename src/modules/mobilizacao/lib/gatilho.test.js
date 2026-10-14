@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MOVIMENTOS } from '../../administrativo/app/novo/formularios/mobilizacao.js';
-import { fluxoDoMovimento, dadosDoChamado, CLASSE_GATILHO } from './gatilho.js';
+import { fluxoDoMovimento, dadosDoChamado, codCt, CLASSE_GATILHO } from './gatilho.js';
 
 test('cada movimento do Adm cai num fluxo', () => {
   assert.equal(fluxoDoMovimento('Nova mobilização'), 'mobilizacao_pessoa');
@@ -39,16 +39,21 @@ test('traduz os campos do chamado para o processo', () => {
     movimento: 'Nova mobilização',
     profissional_id: 'uuid-1',
     profissional: 'GUILHERME DE ASSIS BRAGA',
-    gestor: 'PAULO PAIVA',
-    cc: 'IMCS-CT08',
+    gestor: 'JULIO CESAR SILVA',
+    cc: 'Equipe PAULO CEZAR DE PAIVA NETO',
+    projeto: 'IMCS-CT08-PLAN',
     local_obra: 'NOVA LIMA',
     data_inicio_cliente: '2026-09-01',
     contato_cliente: 'fulano@cliente',
   });
 
   assert.equal(dados.profissional_nome, 'GUILHERME DE ASSIS BRAGA');
+  // O CT sai do projeto, não do centro de custo (reporte da Edijane, #200).
+  assert.equal(dados.cod_phd, 'IMCS-CT08-PLAN');
   assert.equal(dados.cod_ct, 'IMCS-CT08');
-  assert.equal(dados.ger_phd, 'PAULO PAIVA');
+  // O gestor do chamado é o coordenador; o gerente o banco acha.
+  assert.equal(dados.coo_phd, 'JULIO CESAR SILVA');
+  assert.equal(dados.ger_phd, undefined);
   // A data de início no cliente NÃO é mais a data-base (quem a define é o
   // banco, no dia da abertura) — ela viaja como informação do processo.
   assert.equal(dados.data_base, undefined, 'a data-base não sai mais do formulário');
@@ -75,4 +80,11 @@ test('campos desconhecidos do chamado são ignorados', () => {
   const dados = dadosDoChamado({ equipamentos: ['Notebook'], softwares: ['AutoCAD'], epis: [] });
   assert.deepEqual(dados, {},
     'os adicionais viram chamados-filhos no Adm; aqui não têm o que fazer');
+});
+
+test('sem projeto, o CC só vira CT quando já é um código de CT', () => {
+  assert.equal(dadosDoChamado({ cc: 'IMCS-CT08' }).cod_ct, 'IMCS-CT08');
+  assert.equal(dadosDoChamado({ cc: 'Equipe FULANO' }).cod_ct, undefined);
+  assert.equal(codCt(' TERE-CT02-MIST '), 'TERE-CT02');
+  assert.equal(codCt('Obra nova sem código'), null);
 });

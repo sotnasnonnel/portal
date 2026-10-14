@@ -15,6 +15,10 @@
  * Lógica pura, testável.
  */
 
+import { codCt } from '../../administrativo/app/novo/formularios/mobilizacao.js';
+
+export { codCt };
+
 /**
  * Movimento do formulário do Adm → fluxo da Mobilização.
  *
@@ -51,8 +55,12 @@ export const CAMPOS_DO_CHAMADO = {
   profissional_id: 'profissional_id',
   profissional: 'profissional_nome',
   local_obra: 'local_obra',
-  cc: 'cod_ct',
-  gestor: 'ger_phd',
+  projeto: 'cod_phd',
+  // O Gestor do chamado é o superior direto do profissional: o COORDENADOR.
+  // O gerente (superior dele) quem acha é o banco, no cadastro de pessoas —
+  // aqui não há como. Até 06/10/2026 o gestor ia para ger_phd e o CC para
+  // cod_ct, e o processo nascia com o coordenador no lugar do gerente.
+  gestor: 'coo_phd',
   contato_cliente: 'contato_cliente',
   cliente: 'cliente_phd',
   cliente_final: 'cliente_final',
@@ -80,6 +88,10 @@ export function dadosDoChamado(campos = {}) {
     const v = campos[de];
     if (v !== undefined && v !== null && v !== '') dados[para] = v;
   }
+  // CT = prefixo do projeto (TERE-CT02-MIST -> TERE-CT02); sem projeto, vale o
+  // CC só quando ele já é um código de CT.
+  const cod_ct = codCt(campos.projeto) || codCt(campos.cc);
+  if (cod_ct) dados.cod_ct = cod_ct;
   // O movimento não vira coluna, mas precisa viajar: é o que a `condicao` do
   // catálogo consulta para decidir quais etapas nascem.
   if (campos.movimento) dados.movimento = campos.movimento;

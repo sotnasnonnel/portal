@@ -20,6 +20,16 @@ export const eInclusaoTreinamento = (v) => v?.movimento === INCLUSAO_TREINAMENTO
 /** Valor do seletor de projeto para "não está na lista" — o nome vai digitado. */
 export const OUTRO_PROJETO = 'outro';
 
+/**
+ * "TERE-CT02-MIST" -> "TERE-CT02"; o que não começa por um CT -> null.
+ * Mesma regra de app_private.mob_dados_do_chamado, que grava o Cód. CT do
+ * processo a partir do projeto.
+ */
+export function codCt(texto) {
+  const m = /^([A-Za-z0-9]+-CT[0-9]+)/.exec(String(texto || '').trim());
+  return m ? m[1].toUpperCase() : null;
+}
+
 /** Desmobilização pede outra coisa: quem sai e o que devolve. */
 export const eDesmobilizacao = (v) => v?.movimento === DESMOBILIZACAO;
 

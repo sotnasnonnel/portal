@@ -3,8 +3,9 @@ import SearchSelect from '../../../../../components/UI/SearchSelect';
 import Marcador from './Marcador';
 import CampoCentroCusto from '../CampoCentroCusto';
 import {
-  MOVIMENTOS, OUTRO_PROJETO, eDesmobilizacao, eInclusaoTreinamento, aoTrocarMovimento,
+  MOVIMENTOS, OUTRO_PROJETO, eDesmobilizacao, eInclusaoTreinamento, aoTrocarMovimento, codCt,
 } from './mobilizacao';
+import { dadosDaUltimaMobilizacao } from '../../../lib/chamados';
 import { OPCOES_EQUIPAMENTO, OPCOES_SOFTWARE, OPCOES_EPI } from './opcoes';
 
 export default function FormMobilizacao({
@@ -39,10 +40,28 @@ export default function FormMobilizacao({
   ];
   const projetoForaDaLista = valores.projeto_id === OUTRO_PROJETO;
 
+  // O local e o cliente vêm da última mobilização do mesmo CT (pedido da
+  // Edijane, 05/10/2026). Só preenche o que está vazio: o que a pessoa já
+  // digitou vale mais que o histórico.
+  const preencherPeloCt = async (base, projeto) => {
+    const d = await dadosDaUltimaMobilizacao(codCt(projeto));
+    if (!d) return;
+    const patch = {};
+    for (const [campo, valor] of [
+      ['local_obra', d.local_obra], ['cliente', d.cliente_phd],
+      ['cliente_final', d.cliente_final], ['empresa_phd', d.empresa_phd],
+    ]) {
+      if (valor && !base[campo]?.trim()) patch[campo] = valor;
+    }
+    if (Object.keys(patch).length) onChange({ ...base, ...patch });
+  };
+
   const escolherProjeto = (id) => {
     if (id === OUTRO_PROJETO) return mexer({ projeto_id: OUTRO_PROJETO, projeto: '' });
     const p = projetos.find((x) => x.id === id);
-    return mexer({ projeto_id: id, projeto: p?.nome || '' });
+    const novo = { ...valores, projeto_id: id, projeto: p?.nome || '' };
+    onChange(novo);
+    return preencherPeloCt(novo, novo.projeto);
   };
   const alternar = (chave) => setAberto((a) => (a === chave ? '' : chave));
 
@@ -187,7 +206,8 @@ export default function FormMobilizacao({
         <div className="adm-campo">
           <label htmlFor="mob-projeto-nome">Nome do projeto<span className="req">*</span></label>
           <input id="mob-projeto-nome" className="adm-input" value={valores.projeto}
-            onChange={(e) => mexer({ projeto: e.target.value })} />
+            onChange={(e) => mexer({ projeto: e.target.value })}
+            onBlur={() => preencherPeloCt(valores, valores.projeto)} />
         </div>
       )}
 
