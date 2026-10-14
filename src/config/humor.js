@@ -13,12 +13,13 @@ export const MINIMO_ANONIMATO = 3;
 // Validada com o validate_palette da skill de dataviz (vizinhos ΔE ≥ 18, com
 // daltonismo inclusive); o cinza é neutro de propósito. O verde e o vermelho de
 // STATUS do portal ficam de fora: humor não é alerta.
+// O desenho de cada nível é a CarinhaHumor (components/UI), com esta cor.
 export const HUMORES = [
-  { valor: 1, chave: 'muito_mal', rotulo: 'Muito mal', emoji: '😞', cor: '#a8201a' },
-  { valor: 2, chave: 'triste', rotulo: 'Triste', emoji: '😕', cor: '#e8605a' },
-  { valor: 3, chave: 'ok', rotulo: 'Ok', emoji: '😐', cor: '#d9d8d2' },
-  { valor: 4, chave: 'feliz', rotulo: 'Feliz', emoji: '🙂', cor: '#5a9be8' },
-  { valor: 5, chave: 'muito_feliz', rotulo: 'Muito feliz', emoji: '😄', cor: '#1a4f9c' },
+  { valor: 1, chave: 'muito_mal', rotulo: 'Muito mal', cor: '#a8201a' },
+  { valor: 2, chave: 'triste', rotulo: 'Triste', cor: '#e8605a' },
+  { valor: 3, chave: 'ok', rotulo: 'Ok', cor: '#d9d8d2' },
+  { valor: 4, chave: 'feliz', rotulo: 'Feliz', cor: '#5a9be8' },
+  { valor: 5, chave: 'muito_feliz', rotulo: 'Muito feliz', cor: '#1a4f9c' },
 ];
 
 export const humorPorValor = (v) => HUMORES.find((h) => h.valor === Number(v)) || null;

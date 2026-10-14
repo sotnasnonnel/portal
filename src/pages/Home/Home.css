@@ -78,94 +78,262 @@
   background: rgba(38, 64, 93, 0.06);
 }
 
-/* ---------- centro ---------- */
+/* ---------- centro ----------
+   Duas colunas: o trabalho à esquerda (saudação, aprovações, módulos) e uma
+   coluna estreita de pessoas à direita. No celular a coluna de pessoas desce
+   para depois dos módulos. */
 
 .home-main {
   flex: 1;
   display: flex;
+  align-items: flex-start;
+  gap: 32px;
+  width: 100%;
+  /* Tela cheia, alinhada à barra do topo (mesmo respiro lateral de 32px):
+     centrado em 1180px sobrava um vazio grande dos dois lados. */
+  padding: 24px 32px 48px;
+  box-sizing: border-box;
+}
+
+.home-col { flex: 1; min-width: 0; }
+
+.home-rail {
+  flex: 0 0 340px;
+  min-width: 0; /* nome comprido corta com reticências, não alarga a coluna */
+  display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 32px 24px 48px;
-  text-align: center;
+  gap: 16px;
+}
+.home-rail:empty { display: none; }
+
+@media (max-width: 900px) {
+  .home-main { flex-direction: column; align-items: stretch; }
+  .home-rail { flex-basis: auto; }
+}
+
+.home-ola {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .home-main h1 {
-  margin: 0 0 8px;
-  color: #26405d;
-  font-size: clamp(28px, 4vw, 40px);
-  font-weight: 700;
+  margin: 0;
+  color: var(--blue);
+  font-size: var(--font-size-4xl);
+  font-weight: 800;
   letter-spacing: -0.02em;
+  line-height: 1.15;
 }
 
 .home-sub {
-  margin: 0 0 40px;
-  color: rgba(38, 64, 93, 0.65);
-  font-size: var(--font-size-lg);
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: var(--font-size-md);
+}
+
+/* ---------- aprovações (AprovacoesHome.jsx) ---------- */
+
+.home-apv {
+  margin-top: 22px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.home-apv header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 18px;
+}
+
+.home-apv h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+}
+
+.home-apv-n {
+  display: grid;
+  place-items: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--terracotta);
+  color: #fff;
+  font-size: var(--font-size-md);
+}
+
+.home-apv header a,
+.home-apv-ok a {
+  color: var(--terracotta-dark);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.home-apv-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+}
+
+.home-apv-txt b {
+  display: block;
+  color: var(--ink);
+  font-size: var(--font-size-md);
+}
+
+.home-apv-txt > span {
+  color: var(--muted);
+  font-size: var(--font-size-sm);
+}
+
+.home-apv-tag {
+  margin-left: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--blue-soft);
+  color: var(--blue);
+  font-size: var(--font-size-2xs);
+  font-weight: 600;
+  vertical-align: 1px;
+}
+
+.home-apv-btn {
+  display: inline-flex;
+  align-items: center;
+  height: var(--ctl-h-sm);
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: #fff;
+  color: var(--blue);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+.home-apv-btn:hover { background: var(--terracotta-light); border-color: var(--terracotta); color: var(--terracotta-dark); }
+
+@media (max-width: 520px) {
+  .home-apv-item { grid-template-columns: auto minmax(0, 1fr); }
+  .home-apv-btn { grid-column: 2; justify-self: start; }
+}
+
+.home-apv-ok {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 22px;
+  padding: 12px 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--ink-soft);
+  font-size: var(--font-size-md);
+}
+.home-apv-ok b { color: var(--ink); }
+.home-apv-ok a { margin-left: auto; white-space: nowrap; }
+.home-apv-ok-ic {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--green-soft);
+  color: var(--green-dark);
+}
+
+/* ---------- módulos ---------- */
+
+.home-mods-tit {
+  margin: 30px 0 12px;
+  color: var(--blue);
+  font-size: var(--font-size-2xl);
+  font-weight: 800;
+  letter-spacing: -0.01em;
 }
 
 .home-cards {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 22px;
-  width: 100%;
-  max-width: 980px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
 }
 
+/* Link ou botão (o que abre popup): o mesmo cartão. */
 .home-card {
-  flex: 0 1 290px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  text-align: left;
-  padding: 26px 24px 22px;
+  gap: 6px;
+  width: 100%;
+  padding: 20px 18px 16px;
   border-radius: 18px;
-  background: #ffffff;
-  border: 1px solid rgba(38, 64, 93, 0.12);
-  box-shadow: 0 8px 24px rgba(38, 64, 93, 0.08);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  box-shadow: var(--shadow-sm);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
   text-decoration: none;
-  color: #26405d;
-  transition: transform 160ms ease, box-shadow 160ms ease;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
 }
 
 .home-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 16px 40px rgba(38, 64, 93, 0.14);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--blue-soft);
+}
+
+.home-card:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(195, 94, 30, 0.35);
 }
 
 .home-card-icon {
+  display: grid;
+  place-items: center;
   width: 52px;
   height: 52px;
+  margin-bottom: 8px;
   border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 16px;
 }
 
-/* Ícones sóbrios: um único tom neutro (cinza-ardósia) para todos os módulos.
-   As classes tone-* seguem no JSX, mas hoje resolvem para a mesma cor neutra —
-   basta reeditar aqui se um dia quiser trazer a cor por módulo de volta. */
-.home-card-icon.tone-blue,
-.home-card-icon.tone-terracotta,
-.home-card-icon.tone-teal,
-.home-card-icon.tone-slate {
-  background: rgba(27, 39, 53, 0.07);
-  color: #334155;
-}
+/* Cor por módulo de volta: com os cards maiores, o ícone colorido é o que
+   deixa reconhecer o módulo de relance. */
+.home-card-icon.tone-blue { background: #eef2f7; color: var(--blue); }
+.home-card-icon.tone-teal { background: #e8f6f5; color: var(--green-dark); }
+.home-card-icon.tone-terracotta { background: var(--terracotta-light); color: var(--terracotta); }
+.home-card-icon.tone-slate { background: #eef1f5; color: var(--muted); }
 
-.home-card h2 {
-  margin: 0 0 6px;
+.home-card h3 {
+  margin: 0;
   font-size: var(--font-size-xl);
   font-weight: 700;
 }
 
 .home-card p {
-  margin: 0 0 18px;
+  margin: 0 0 10px;
+  color: var(--muted);
   font-size: var(--font-size-sm);
-  line-height: 1.5;
-  color: rgba(38, 64, 93, 0.68);
+  line-height: 1.45;
 }
 
 .home-card-cta {
@@ -173,80 +341,47 @@
   align-items: center;
   gap: 6px;
   margin-top: auto;
+  color: var(--terracotta-dark);
   font-size: var(--font-size-sm);
   font-weight: 700;
-  color: #c35e1e;
   transition: gap 150ms ease;
 }
 
-.home-card:hover .home-card-cta {
-  gap: 9px;
+.home-card:hover .home-card-cta { gap: 9px; }
+
+@media (max-width: 520px) {
+  .home-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .home-card { padding: 16px 14px 14px; }
+  .home-card-icon { width: 44px; height: 44px; }
+  .home-card p { display: none; }
 }
 
-/* ---------- card sem acesso (cadeado + esmaecido) ---------- */
+/* ---------- módulos travados: uma linha no fim ---------- */
 
-.home-card-locked {
-  position: relative;
-  opacity: 0.55;
+.home-travados {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: var(--font-size-sm);
+}
+
+.home-travado {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--ctl-h-sm);
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px dashed var(--border-strong);
+  background: rgba(255, 255, 255, 0.6);
+  font-size: var(--font-size-sm);
   cursor: default;
 }
 
-.home-card-locked:hover {
-  transform: none;
-  box-shadow: 0 8px 24px rgba(38, 64, 93, 0.08);
-}
-
-.home-card-lock {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(38, 64, 93, 0.10);
-  color: #26405d;
-}
-
-.home-card-cta-locked {
-  color: rgba(38, 64, 93, 0.55);
-}
-
-/* ---------- card "Soluções Integradas" (abre o popup) ---------- */
-
-/* O card em si não é link: todo o conteúdo é um botão que abre o SolucoesModal. */
-.home-card-solucoes {
-  padding: 0;
-}
-
-.home-solucoes-toggle {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  text-align: left;
-  width: 100%;
-  padding: 26px 24px 22px;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-}
-
-.home-solucoes-toggle h2 {
-  margin: 0 0 6px;
-  font-size: var(--font-size-xl);
-  font-weight: 700;
-}
-
-.home-solucoes-toggle p {
-  margin: 0 0 18px;
-  font-size: var(--font-size-sm);
-  line-height: 1.5;
-  color: rgba(38, 64, 93, 0.68);
-}
+.home-travado em { font-style: normal; color: #94a3b8; }
 
 /* ---------- rodapé ---------- */
 
@@ -275,12 +410,8 @@
     height: 23px;
   }
 
-  .home-cards {
-    gap: 14px;
-  }
-
-  .home-card {
-    flex-basis: 100%;
+  .home-main {
+    padding: 16px 16px 32px;
   }
 }
 
@@ -444,100 +575,248 @@
 }
 
 /* ---- Humor do dia (HumorDoDia.jsx) ---------------------------------------
-   Logo abaixo da saudação: é a primeira coisa que a pessoa vê, e responder
-   custa um clique. */
+   Pílula ao lado da saudação. Respondido, encolhe para o emoji e "Mudar". */
+.home-humor-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
 .home-humor {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
-  gap: 8px 14px;
-  margin: -24px 0 32px;
-  padding: 10px 18px;
+  gap: 10px;
+  min-height: 50px;
+  min-width: 260px;
+  padding: 4px 6px 4px 14px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(38, 64, 93, 0.12);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  box-shadow: var(--shadow-sm);
+  box-sizing: border-box;
 }
-.home-humor-pergunta { color: #26405d; font-size: var(--font-size-base); }
-.home-humor-opcoes { display: flex; gap: 4px; }
+
+.home-humor-pergunta {
+  color: var(--ink-soft);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.home-humor-opcoes { display: flex; gap: 2px; }
+
 .home-humor-btn {
   display: inline-grid;
   place-items: center;
   width: 40px;
   height: 40px;
-  border-radius: 999px;
+  border-radius: 50%;
   border: 1px solid transparent;
   background: transparent;
-  font-size: var(--font-size-2xl);
-  line-height: 1;
   cursor: pointer;
-  transition: transform .12s var(--ease, ease), background .12s;
+  transition: transform 120ms ease, background 120ms ease;
 }
-.home-humor-btn:hover:not(:disabled) { transform: scale(1.12); background: rgba(38, 64, 93, 0.06); }
+.home-humor-btn:hover:not(:disabled) { transform: translateY(-2px); background: var(--terracotta-light); }
+.home-humor-btn.is-on { background: var(--terracotta-light); border-color: var(--terracotta-soft); }
 .home-humor-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(195, 94, 30, 0.35); }
-.home-humor-btn.is-on { background: rgba(195, 94, 30, 0.12); border-color: rgba(195, 94, 30, 0.45); }
-.home-humor-btn.is-apagado { opacity: .45; }
-.home-humor-nota { color: rgba(38, 64, 93, 0.6); font-size: var(--font-size-xs); }
-.home-humor-nota a { color: #26405d; }
-.home-humor-erro { width: 100%; color: #b91c1c; font-size: var(--font-size-xs); }
 
-/* ---- Aniversariantes e tempo de casa (AniversariantesMes.jsx) ------------
-   Abaixo dos cards: é informação, não atalho — não pode empurrar os módulos. */
-.home-aniv {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 22px;
-  width: 100%;
-  max-width: 980px;
-  margin-top: 28px;
-  padding: 22px 24px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(38, 64, 93, 0.12);
-  text-align: left;
-  box-sizing: border-box;
-}
-.home-aniv-col h3 {
-  display: flex;
+.home-humor-marcado {
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  margin: 0 0 10px;
-  color: #26405d;
-  font-size: var(--font-size-md);
-}
-.home-aniv-col ul { list-style: none; margin: 0; padding: 0; }
-.home-aniv-col li {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 0;
-  border-bottom: 1px solid rgba(38, 64, 93, 0.08);
-}
-.home-aniv-col li:last-child { border-bottom: none; }
-.home-aniv-col li.is-hoje { background: rgba(195, 94, 30, 0.08); border-radius: 8px; padding: 6px 8px; }
-.home-aniv-dia {
-  min-width: 28px;
-  font-weight: 700;
-  color: #c35e1e;
-  font-variant-numeric: tabular-nums;
+  gap: 8px;
+  color: var(--ink-soft);
   font-size: var(--font-size-sm);
 }
-.home-aniv-nome { flex: 1; color: #1b2735; font-size: var(--font-size-sm); }
-.home-aniv-nome small {
-  display: block;
-  color: rgba(38, 64, 93, 0.6);
-  font-size: var(--font-size-2xs);
-  text-transform: capitalize;
+.home-humor-marcado strong { color: var(--blue); }
+
+.home-humor-em { flex: none; }
+
+.home-humor-mudar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--ctl-h-sm);
+  margin-left: auto;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg);
+  color: var(--blue);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
 }
-.home-aniv-extra { color: rgba(38, 64, 93, 0.7); font-size: var(--font-size-xs); white-space: nowrap; }
-.home-aniv-vazio { margin: 0; color: rgba(38, 64, 93, 0.6); font-size: var(--font-size-sm); }
-.home-aniv-mais {
-  margin-top: 8px;
+.home-humor-mudar:hover { background: var(--terracotta-light); border-color: var(--terracotta); color: var(--terracotta-dark); }
+.home-humor-mudar:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(195, 94, 30, 0.35); }
+
+.home-humor-nota {
+  color: var(--muted);
+  font-size: var(--font-size-xs);
+}
+.home-humor-nota svg { vertical-align: -1px; }
+.home-humor-nota a { color: var(--blue); font-weight: 600; }
+.home-humor-erro { color: #b91c1c; font-size: var(--font-size-xs); }
+
+@media (max-width: 640px) {
+  .home-humor-wrap { width: 100%; align-items: stretch; }
+  .home-humor { flex-wrap: wrap; border-radius: 12px; padding: 8px 10px; min-width: 0; }
+  .home-humor-opcoes { width: 100%; justify-content: space-between; }
+}
+
+/* ---- Coluna de pessoas (AniversariantesMes.jsx) ---------------------------
+   Informação, não atalho: fica na lateral e não empurra os módulos. */
+
+/* Avatar de iniciais; a cor vem da pessoa (t1 a t4), não da posição. */
+.home-pav {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--blue-soft);
+  color: var(--blue);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+.home-pav.t1 { background: var(--terracotta-soft); color: var(--terracotta-dark); }
+.home-pav.t2 { background: var(--blue-soft); color: var(--blue); }
+.home-pav.t3 { background: var(--green-soft); color: var(--green-dark); }
+.home-pav.t4 { background: #efe6da; color: #7a5a32; }
+
+.home-festa {
+  padding: 18px;
+  border-radius: 12px;
+  background: var(--blue);
+  color: #fff;
+  text-align: center;
+}
+.home-festa-avs { display: flex; justify-content: center; gap: 8px; margin: 4px 0 10px; }
+.home-festa .home-pav {
+  width: 64px;
+  height: 64px;
+  font-size: var(--font-size-xl);
+  box-shadow: 0 0 0 4px var(--blue), 0 0 0 6px var(--terracotta);
+}
+.home-festa b { display: block; font-size: var(--font-size-lg); }
+.home-festa > span { color: #c9d4e2; font-size: var(--font-size-sm); }
+.home-festa-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: var(--ctl-h);
+  margin-top: 12px;
+  border-radius: 10px;
+  background: var(--terracotta);
+  color: #fff;
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 150ms ease;
+}
+.home-festa-btn:hover { background: var(--terracotta-dark); }
+.home-festa-btn:focus-visible,
+.home-festa-mini:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5); }
+
+/* Dois ou mais aniversariantes no dia: lista dentro do cartão azul. */
+.home-festa-lista { padding: 16px; text-align: left; }
+.home-festa-lista h2 { margin: 0 0 12px; color: #fff; font-size: var(--font-size-md); font-weight: 700; }
+.home-festa-lista ul { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.home-festa-lista li { display: flex; align-items: center; gap: 10px; }
+.home-festa-lista .home-pav {
+  width: 36px;
+  height: 36px;
+  font-size: var(--font-size-xs);
+  box-shadow: 0 0 0 2px var(--terracotta);
+}
+.home-festa-nome {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.home-festa-nome small { display: block; color: #c9d4e2; font-size: var(--font-size-2xs); font-weight: 400; }
+.home-festa-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+  height: var(--ctl-h-sm);
+  padding: 0 10px;
+  border-radius: 8px;
+  background: var(--terracotta);
+  color: #fff;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 150ms ease;
+}
+.home-festa-mini:hover { background: var(--terracotta-dark); }
+
+.home-prox {
+  padding: 16px;
+  border-radius: 12px;
+  background: rgba(238, 242, 247, 0.92);
+}
+.home-prox h2 { margin: 0 0 10px; color: var(--muted); font-size: var(--font-size-sm); font-weight: 600; }
+.home-prox-linha { display: flex; align-items: center; gap: 12px; }
+.home-prox-linha .home-pav { width: 44px; height: 44px; }
+.home-prox b { display: block; color: var(--ink); font-size: var(--font-size-md); }
+.home-prox-linha span:not(.home-pav) { color: var(--ink-soft); font-size: var(--font-size-sm); }
+
+.home-rail-card {
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+.home-rail-card h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  color: var(--blue);
+  font-size: var(--font-size-md);
+  font-weight: 700;
+}
+
+.home-rail-lista { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.home-rail-lista li { display: flex; align-items: center; gap: 10px; }
+.home-rail-lista li.is-passou { opacity: 0.5; }
+.home-rail-lista .home-pav { width: 32px; height: 32px; font-size: var(--font-size-2xs); }
+.home-rail-nome {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: var(--font-size-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.home-rail-nome small { display: block; color: var(--muted); font-size: var(--font-size-2xs); }
+.home-rail-dia {
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #eef2f7;
+  color: var(--blue);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.home-rail-anos { color: var(--terracotta-dark); font-size: var(--font-size-xs); font-weight: 700; white-space: nowrap; }
+.home-rail-mais {
+  margin-top: 10px;
+  padding: 0;
   border: none;
   background: none;
-  padding: 0;
-  color: #26405d;
+  color: var(--terracotta-dark);
   font-size: var(--font-size-xs);
-  text-decoration: underline;
+  font-weight: 600;
   cursor: pointer;
 }

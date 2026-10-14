@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, BarChart3, Clock, CreditCard, Headset, Sparkles, ShieldCheck, LogOut, ArrowRight, Lock, Hourglass, Blocks, MessageSquarePlus, Megaphone, Radar, ClipboardCheck } from 'lucide-react';
+import { Users, BarChart3, Clock, CreditCard, Headset, Sparkles, ShieldCheck, LogOut, ArrowRight, Lock, Hourglass, Blocks, MessageSquarePlus, Megaphone, Radar } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { isSuperAdmin } from '../../config/superAdmin';
 import { areasAdministrativoDe } from '../../config/administrativo';
@@ -19,26 +19,25 @@ import GestaoPessoasModal from './GestaoPessoasModal';
 import HumorDoDia from './HumorDoDia';
 import AniversariantesMes from './AniversariantesMes';
 import DestaqueDoDia from './DestaqueDoDia';
+import AprovacoesHome from './AprovacoesHome';
+import { iniciais, nomeProprio } from '../../utils/pessoas';
 import { areasGestaoPessoas } from '../../components/Layout/nav';
 import NovidadesModal from '../../components/Novidades/NovidadesModal';
 import SinoNotificacoes from '../../components/Notificacoes/SinoNotificacoes';
 import AtalhoAprovacoes from '../../modules/aprovacoes/AtalhoAprovacoes';
-import { usePendenciasAprovacao } from '../../modules/aprovacoes/usePendencias';
 import AvatarUsuario from '../../components/UI/AvatarUsuario';
 import { nomeCurto } from '../../utils/formatters';
 import './Home.css';
 
-function iniciais(nome) {
-  if (!nome) return '?';
-  const partes = nome.trim().split(/\s+/);
-  const primeira = partes[0]?.[0] ?? '';
-  const ultima = partes.length > 1 ? partes[partes.length - 1][0] : '';
-  return (primeira + ultima).toUpperCase();
-}
+// "Terça-feira, 13 de outubro"
+const hojePorExtenso = () => {
+  const t = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+  return t.charAt(0).toUpperCase() + t.slice(1);
+};
 
 export default function Home() {
   const { user, modules, logout, marcarNovidadesVistas } = useAuth();
-  const saudacao = nomeCurto(user?.nome);
+  const saudacao = nomeProprio(nomeCurto(user?.nome));
   const [solucoesAbertas, setSolucoesAbertas] = useState(false);
   const [programasAbertos, setProgramasAbertos] = useState(false);
   const [financeiroAberto, setFinanceiroAberto] = useState(false);
@@ -76,20 +75,8 @@ export default function Home() {
   // em qual deles o que ela precisa mora. Com uma área só liberada o popup
   // teria um botão sozinho, então vai direto, como no card "Financeiro".
   const areasAdm = areasAdministrativoDe(user);
-  const aprovacoesPendentes = usePendenciasAprovacao();
 
   const cards = [
-    {
-      // Central de Aprovações: o que espera a decisão da pessoa em todos os
-      // módulos. Aberta a todos — quem não aprova nada vê a caixa vazia.
-      to: '/aprovacoes',
-      icon: ClipboardCheck,
-      tone: 'terracotta',
-      title: 'Aprovações',
-      desc: aprovacoesPendentes > 0
-        ? `${aprovacoesPendentes} ${aprovacoesPendentes === 1 ? 'item esperando' : 'itens esperando'} a sua decisão`
-        : 'Tudo o que espera a sua decisão, de todos os módulos',
-    },
     {
       acao: () => setGpAberto(true),
       icon: Users,
@@ -181,7 +168,20 @@ export default function Home() {
       title: 'Gerenciar acessos',
       desc: 'Papéis e acessos de todos os usuários, em todos os apps',
     },
+    {
+      // Atalhos para as ferramentas externas da empresa: abre o popup
+      // SolucoesModal (lista em src/config/solucoesIntegradas.js).
+      acao: () => setSolucoesAbertas(true),
+      icon: Blocks,
+      tone: 'terracotta',
+      title: 'Soluções Integradas',
+      desc: 'Acesso rápido às ferramentas usadas na empresa',
+    },
   ].filter(Boolean);
+  // Os travados saem da grade: ocupavam o lugar de um módulo que funciona e
+  // disputavam a atenção com ele. Viram uma linha discreta no fim.
+  const abertos = cards.filter((c) => !c.locked);
+  const travados = cards.filter((c) => c.locked);
 
   return (
     <div className="home-hero">
@@ -232,98 +232,78 @@ export default function Home() {
       </header>
 
       <main className="home-main">
-        <DestaqueDoDia />
-        <h1>{saudacao ? `Olá, ${saudacao}!` : 'Olá!'} 🚀</h1>
-        <p className="home-sub">O que você precisa fazer hoje?</p>
-        <HumorDoDia />
+        <div className="home-col">
+          <DestaqueDoDia />
+          <div className="home-ola">
+            <div>
+              <h1>{saudacao ? `Olá, ${saudacao}!` : 'Olá!'} 🚀</h1>
+              <p className="home-sub">{hojePorExtenso()}</p>
+            </div>
+            <HumorDoDia />
+          </div>
 
-        <div className="home-cards">
-          {cards.map((c) => {
-            const Icon = c.icon;
-            if (c.locked) {
-              // Dois motivos de travar levam ao mesmo visual, mas dizem coisas
-              // diferentes: "Em breve" é o módulo que ainda não abriu para
-              // ninguém; "Sem acesso" é permissão que falta a esta pessoa.
-              const Trava = c.emBreve ? Hourglass : Lock;
-              const motivo = c.emBreve ? 'Em breve' : 'Sem acesso';
-              const dica = c.emBreve
-                ? 'Este app ainda está em construção'
-                : 'Você não tem acesso a este app';
-              return (
-                <div key={c.title} className="home-card home-card-locked" aria-disabled="true">
+          {/* A Central de Aprovações deixou de ser card: é a única coisa da
+              Home que pede ação, então vem antes dos módulos. */}
+          <AprovacoesHome />
+
+          <h2 className="home-mods-tit">Seus módulos</h2>
+          <div className="home-cards">
+            {abertos.map((c) => {
+              const Icon = c.icon;
+              const conteudo = (
+                <>
                   <span className={`home-card-icon tone-${c.tone}`}>
                     <Icon size={26} />
                   </span>
-                  <span className="home-card-lock" title={dica}>
-                    <Trava size={15} />
-                  </span>
-                  <h2>{c.title}</h2>
+                  <h3>{c.title}</h3>
                   <p>{c.desc}</p>
-                  <span className="home-card-cta home-card-cta-locked">
-                    <Trava size={14} /> {motivo}
+                  <span className="home-card-cta">
+                    {c.acao ? 'Escolher' : 'Acessar'} <ArrowRight size={15} />
                   </span>
-                </div>
+                </>
               );
-            }
-            const conteudo = (
-              <>
-                <span className={`home-card-icon tone-${c.tone}`}>
-                  <Icon size={26} />
-                </span>
-                <h2>{c.title}</h2>
-                <p>{c.desc}</p>
-                <span className="home-card-cta">
-                  {c.acao ? 'Escolher' : 'Acessar'} <ArrowRight size={15} />
-                </span>
-              </>
-            );
-
-            // Card que ABRE um popup em vez de navegar (Programas). Botão, e
-            // não link: não há para onde ir até a escolha ser feita.
-            if (c.acao) {
-              return (
-                <div key={c.title} className="home-card home-card-solucoes">
-                  <button
-                    type="button"
-                    className="home-solucoes-toggle"
-                    onClick={c.acao}
-                    aria-haspopup="dialog"
-                  >
+              // Card que ABRE um popup em vez de navegar. Botão, e não link:
+              // não há para onde ir até a escolha ser feita.
+              if (c.acao) {
+                return (
+                  <button key={c.title} type="button" className="home-card" onClick={c.acao} aria-haspopup="dialog">
                     {conteudo}
                   </button>
-                </div>
+                );
+              }
+              return (
+                <Link key={c.title} to={c.to} className="home-card">
+                  {conteudo}
+                </Link>
               );
-            }
-
-            return (
-              <Link key={c.title} to={c.to} className="home-card">
-                {conteudo}
-              </Link>
-            );
-          })}
-
-          {/* Atalhos para as ferramentas externas da empresa: o card não expande,
-              abre o popup SolucoesModal (lista em src/config/solucoesIntegradas.js). */}
-          <div className="home-card home-card-solucoes">
-            <button
-              type="button"
-              className="home-solucoes-toggle"
-              onClick={() => setSolucoesAbertas(true)}
-              aria-haspopup="dialog"
-            >
-              <span className="home-card-icon tone-terracotta">
-                <Blocks size={26} />
-              </span>
-              <h2>Soluções Integradas</h2>
-              <p>Acesso rápido às ferramentas usadas na empresa</p>
-              <span className="home-card-cta">
-                Ver atalhos <ArrowRight size={15} />
-              </span>
-            </button>
+            })}
           </div>
+
+          {travados.length > 0 && (
+            <div className="home-travados">
+              Também no portal:
+              {travados.map((c) => {
+                // Dois motivos de travar, duas mensagens: "Em breve" é o módulo
+                // que ainda não abriu para ninguém; "Sem acesso" é permissão
+                // que falta a esta pessoa.
+                const Trava = c.emBreve ? Hourglass : Lock;
+                return (
+                  <span
+                    key={c.title}
+                    className="home-travado"
+                    title={c.emBreve ? 'Este módulo ainda está em construção' : 'Você não tem acesso a este módulo'}
+                  >
+                    <Trava size={13} aria-hidden="true" /> {c.title} <em>{c.emBreve ? 'em breve' : 'sem acesso'}</em>
+                  </span>
+                );
+              })}
+            </div>
+          )}
         </div>
 
-        <AniversariantesMes />
+        <aside className="home-rail" aria-label="Pessoas">
+          <AniversariantesMes />
+        </aside>
       </main>
 
       <footer className="home-footer">

@@ -1,4 +1,4 @@
-import { BarChart3, Clock, FileClock, Lightbulb, ShieldCheck } from 'lucide-react';
+import { Cake, ClipboardCheck, LayoutDashboard, Smile } from 'lucide-react';
 
 /**
  * O que mudou na plataforma, do mais novo para o mais antigo.
@@ -33,60 +33,38 @@ import { BarChart3, Clock, FileClock, Lightbulb, ShieldCheck } from 'lucide-reac
  */
 export const NOVIDADES = [
   {
-    // A Folga de Campo NÃO entra aqui: está em piloto para duas pessoas
-    // (FOLGA_CAMPO_LIBERADOS), e o aviso de novidade é lido pela empresa toda —
-    // anunciar porta que ninguém pode abrir só gera chamado para o DP.
-    id: '2026-09-22-inovacao-privacidade',
-    data: '2026-09-22',
+    // As versões anteriores saíram do histórico a pedido (13/10/2026). Quem
+    // tinha carimbado um id que não existe mais recebe só esta, uma vez.
+    id: '2026-10-13-home-nova',
+    data: '2026-10-13',
     itens: [
       {
-        icon: Lightbulb,
-        modulo: 'Programas',
-        marca: 'Novidade',
-        titulo: 'As regras do Programa de Inovação estão no Campo de Ideias',
-        texto: 'Elegibilidade, pontuação da premiação e prazos ficam a um clique do formulário.',
+        icon: LayoutDashboard,
+        modulo: 'Portal',
+        marca: 'Novo visual',
+        titulo: 'A Home ganhou cara nova',
+        texto: 'O que espera por você vem primeiro, os módulos em cartões maiores e as pessoas na lateral.',
       },
       {
-        icon: ShieldCheck,
+        icon: ClipboardCheck,
+        modulo: 'Aprovações',
+        marca: 'Novidade',
+        titulo: 'Tudo o que espera a sua decisão, num lugar só',
+        texto: 'A Central de Aprovações junta os pedidos de todos os módulos; aprovar é um clique.',
+      },
+      {
+        icon: Smile,
         modulo: 'Portal',
         marca: 'Novidade',
-        titulo: 'Aviso de Privacidade publicado',
-        texto: 'O rodapé da Home leva ao que a PHD faz com seus dados e a quem procurar.',
-      },
-    ],
-  },
-  {
-    id: '2026-09-01-dados-horas',
-    data: '2026-09-01',
-    itens: [
-      {
-        icon: BarChart3,
-        modulo: 'Dados',
-        marca: 'Novo nome',
-        de: 'PMO',
-        para: 'Dados',
-        titulo: 'O PMO agora se chama Dados',
-        texto: 'Mesmo app, mesmo endereço: só o nome mudou.',
+        titulo: 'Como você está hoje?',
+        texto: 'Marque seu humor em um clique: só você vê a sua resposta, a equipe vê o total.',
       },
       {
-        icon: Clock,
-        modulo: 'Gestão de Horas',
-        marca: 'Novo nome',
-        de: 'Controle de Horas',
-        para: 'Gestão de Horas',
-        titulo: 'O Controle de Horas virou Gestão de Horas',
-        texto: 'O nome agora cobre o módulo inteiro, hora extra incluída.',
-      },
-      {
-        icon: FileClock,
-        modulo: 'Gestão de Horas',
-        marca: 'Mudou de jeito',
-        titulo: 'Apontamento e Horas Extras, cada um na sua porta',
-        texto: 'O card pergunta por onde começar, e cada área mostra só o que é dela.',
-        opcoes: [
-          { icon: Clock, label: 'Apontamento' },
-          { icon: FileClock, label: 'Horas Extras' },
-        ],
+        icon: Cake,
+        modulo: 'Portal',
+        marca: 'Novidade',
+        titulo: 'Aniversariantes e tempo de casa do mês',
+        texto: 'Veja quem faz aniversário e dê parabéns pelo Teams com um clique.',
       },
     ],
   },

@@ -68,4 +68,5 @@ O `dist/` não é versionado. Para saber o que está no ar, procure a string no
 - `docs/padrao-visual-modulos.md`: tokens visuais, sidebar e cores da marca
 - `docs/plano-alcadas.md`: motor de alçadas e aprovações
 - `docs/plano-mobilizacao.md`: modelo de dados da Mobilização
+- `docs/api-portal.md`: API de leitura para sistemas de fora (ausências, apontamentos e horas extras)
 - `docs/arquivo/`: planos e especificações antigos, já implementados (só histórico)
