@@ -1,0 +1,31 @@
+.rec-mural {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+}
+.rec-mural.is-meu { border-color: var(--terracotta); }
+.rec-mural-av {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--blue-soft);
+  color: var(--blue);
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
+  margin-top: 2px;
+}
+.rec-mural-av img:not(.pts-selo) { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+.rec-mural-corpo { display: block; min-width: 0; text-align: left; }
+.rec-mural-corpo b { display: block; font-size: var(--font-size-xs); }
+.rec-mural-corpo b small { font-weight: 400; color: var(--muted); }
+.rec-mural-corpo .pts-rec-texto { display: block; margin: 2px 0 0; font-size: var(--font-size-sm); white-space: pre-wrap; overflow-wrap: anywhere; }
+.rec-mural-icones { display: flex; gap: 6px; margin-top: 6px; }
+.rec-mural-icones img { width: 34px; height: 34px; object-fit: contain; }

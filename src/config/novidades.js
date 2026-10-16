@@ -1,4 +1,4 @@
-import { Cake, ClipboardCheck, LayoutDashboard, Smile } from 'lucide-react';
+import { Aperture, Award, Cake, ClipboardCheck, LayoutDashboard, MessageSquareHeart, Palette, Smile, Star } from 'lucide-react';
 
 /**
  * O que mudou na plataforma, do mais novo para o mais antigo.
@@ -32,6 +32,46 @@ import { Cake, ClipboardCheck, LayoutDashboard, Smile } from 'lucide-react';
  *   marca    -> selo do canto do cartão ('Novo nome', 'Novidade', ...)
  */
 export const NOVIDADES = [
+  {
+    id: '2026-10-16-personalizacao',
+    data: '2026-10-16',
+    itens: [
+      {
+        icon: Star,
+        modulo: 'Portal',
+        marca: 'Novidade',
+        titulo: 'Pontos e Personalização',
+        texto: 'Ganhe pontos usando o portal e troque por molduras, títulos e temas. Toque nos seus pontos, ao lado de Novidades.',
+        opcoes: [
+          { icon: Aperture, label: 'Molduras' },
+          { icon: Award, label: 'Títulos' },
+          { icon: Palette, label: 'Temas do mês' },
+          { icon: MessageSquareHeart, label: 'Recados' },
+        ],
+      },
+      {
+        icon: Smile,
+        modulo: 'Portal',
+        marca: 'Novidade',
+        titulo: 'Como ganhar pontos',
+        texto: 'Entrar no portal, marcar como você está, contar o motivo e deixar recado de aniversário; 5 dias seguidos valem bônus.',
+      },
+      {
+        icon: Cake,
+        modulo: 'Portal',
+        marca: 'Novidade',
+        titulo: 'Mural de parabéns',
+        texto: 'No dia do aniversário, deixe um recado com ícones de festa; o aniversariante vê todos.',
+      },
+      {
+        icon: Palette,
+        modulo: 'Portal',
+        marca: 'Novidade',
+        titulo: 'Temas do mês',
+        texto: 'Halloween e Outubro Rosa em outubro, Novembro Azul em novembro e Natal em dezembro.',
+      },
+    ],
+  },
   {
     // As versões anteriores saíram do histórico a pedido (13/10/2026). Quem
     // tinha carimbado um id que não existe mais recebe só esta, uma vez.

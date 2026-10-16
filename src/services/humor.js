@@ -44,3 +44,13 @@ export async function aniversariantesDoMes(mes = null) {
   checar(error);
   return data || [];
 }
+
+/**
+ * Fotos de quem está na lista do mês, vindas do hub: { [colaborador_id]: url }.
+ * Falha vira {} — sem foto, a Home mostra as iniciais.
+ */
+export async function fotosAniversariantes() {
+  const { data, error } = await supabase.functions.invoke('fotos-aniversariantes', { body: {} });
+  if (error) return {};
+  return data?.fotos || {};
+}

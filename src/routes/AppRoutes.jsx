@@ -40,6 +40,7 @@ const PortalAdmin = lazyPagina(() => import('../pages/PortalAdmin/PortalAdmin'))
 const FaleConoscoCaixa = lazyPagina(() => import('../pages/FaleConosco/FaleConoscoCaixa'));
 const CentralAprovacoes = lazyPagina(() => import('../modules/aprovacoes/app/page'));
 const PainelHumor = lazyPagina(() => import('../pages/Humor/PainelHumor'));
+const Pontos = lazyPagina(() => import('../pages/Pontos/Pontos'));
 const AdminCadastro = lazyPagina(() => import('../pages/Admin/AdminCadastro'));
 const AdminListagem = lazyPagina(() => import('../pages/Admin/AdminListagem'));
 const AdminCandidatos = lazyPagina(() => import('../pages/Admin/AdminCandidatos'));
@@ -394,6 +395,21 @@ export default function AppRoutes() {
             <ProtectedRoute>
               <LazyPage>
                 <PainelHumor />
+              </LazyPage>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Personalização: moldura, título, tema do mês e enfeite dos recados,
+            tudo de graça; o RH modera o título personalizado. Aberta a todo
+            logado; as RPCs decidem o resto. /pontos era o endereço antigo. */}
+        <Route path="/pontos" element={<Navigate to="/personalizacao" replace />} />
+        <Route
+          path="/personalizacao"
+          element={
+            <ProtectedRoute>
+              <LazyPage>
+                <Pontos />
               </LazyPage>
             </ProtectedRoute>
           }

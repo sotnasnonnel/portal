@@ -1,0 +1,842 @@
+/* ==========================================================================
+   Lojinha PHD — o visual dos itens da lojinha, em qualquer tela do portal.
+   Classe derivada do id do item (src/config/pontos.js). Carregado em main.jsx
+   depois de ui.css.
+   ========================================================================== */
+
+@property --pts-a { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+@keyframes pts-gira { to { --pts-a: 360deg; } }
+
+/* --------------------------------------------------------------------------
+   Molduras. O anel é um ::after por FORA da bolinha, recortado por máscara:
+   não muda o tamanho da bolinha nem depende do fundo atrás dela. Espessura e
+   recuo em % da própria bolinha, então serve da barra lateral ao card grande.
+   -------------------------------------------------------------------------- */
+.pts-ring { position: relative; overflow: visible !important; }
+.pts-ring > img { border-radius: 50%; }
+.pts-ring::after {
+  content: "";
+  position: absolute;
+  inset: -12%;
+  border-radius: 50%;
+  padding: 9%;
+  background: var(--pts-ring, var(--terracotta));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+.pts-m-phd { --pts-ring: conic-gradient(#c35e1e 0 50%, #26405d 50% 100%); }
+.pts-m-zebra { --pts-ring: repeating-linear-gradient(45deg, #f2b705 0 5px, #161616 5px 10px); }
+.pts-m-planta { --pts-ring: repeating-conic-gradient(#ffffff 0 3deg, #1e4b8f 3deg 12deg); }
+.pts-m-planta::after { box-shadow: inset 0 0 0 1px #1e4b8f; }
+.pts-m-capacete { --pts-ring: linear-gradient(#f2b705, #e09e00); }
+.pts-m-neon { --pts-ring: linear-gradient(135deg, #22d3ee, #e879f9); animation: pts-neon 1.8s ease-in-out infinite alternate; }
+@keyframes pts-neon { from { box-shadow: 0 0 4px 1px rgba(34, 211, 238, .6); } to { box-shadow: 0 0 16px 5px rgba(232, 121, 249, .7); } }
+.pts-m-arco::after { background: conic-gradient(from var(--pts-a), #ef4444, #f59e0b, #eab308, #22c55e, #06b6d4, #6366f1, #d946ef, #ef4444); animation: pts-gira 4s linear infinite; }
+.pts-m-ouro { box-shadow: 0 0 12px 2px rgba(227, 179, 65, .4); }
+.pts-m-ouro::after { background: conic-gradient(from var(--pts-a), #8a6300, #f7d774, #b8860b, #fff3b0, #8a6300); animation: pts-gira 3s linear infinite; }
+.pts-m-coroa { box-shadow: 0 0 12px 2px rgba(227, 179, 65, .4); }
+.pts-m-coroa::after { background: conic-gradient(from var(--pts-a), #b8860b, #f7d774, #b8860b); animation: pts-gira 5s linear infinite; }
+.pts-m-fogo { box-shadow: 0 0 14px 3px rgba(249, 115, 22, .45); }
+.pts-m-fogo::after { background: conic-gradient(from var(--pts-a), #dc2626, #f97316, #facc15, #f97316, #dc2626); animation: pts-gira 1.6s linear infinite; }
+.pts-m-natal { --pts-ring: repeating-conic-gradient(#c0392b 0 15deg, #ffffff 15deg 30deg, #1e8449 30deg 45deg); }
+.pts-m-rosa { --pts-ring: conic-gradient(#ec4f95, #ff9cc6, #b0246a, #ec4f95); }
+.pts-m-azul { --pts-ring: conic-gradient(#2b7fd9, #8cc4ff, #0e4a8a, #2b7fd9); }
+
+.pts-selo {
+  position: absolute;
+  object-fit: contain;
+  border-radius: 0 !important;
+  z-index: 1;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .3));
+  pointer-events: none;
+}
+/* Fora do círculo, no alto à direita: não encosta no rosto. */
+.pts-selo.is-canto { top: -24%; right: -34%; width: 46%; height: 46%; }
+/* Sobre a cabeça, como um chapéu: só a aba encosta no anel. */
+.pts-selo.is-topo { top: -50%; left: 50%; width: 70%; height: 56%; transform: translateX(-50%); }
+
+/* --------------------------------------------------------------------------
+   Insígnias (títulos): plaquinhas esmaltadas, como as de identificação de
+   obra e de máquina. Esmalte com brilho no alto, filete claro por dentro,
+   quatro rebites nos cantos e um medalhão com a arte à esquerda. Cada título
+   muda só o esmalte (--esmalte) e a arte. Texto com maiúscula só no início.
+   -------------------------------------------------------------------------- */
+.pts-ins {
+  --esmalte: #1d3550;
+  --marfim: #f6efe2;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+  padding: 6px 18px 6px 11px;
+  border-radius: 9px;
+  color: var(--marfim);
+  text-align: left;
+  vertical-align: middle;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .17), rgba(255, 255, 255, 0) 45%), var(--esmalte);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .28),
+    inset 0 -2px 0 rgba(0, 0, 0, .22),
+    0 0 0 1px rgba(0, 0, 0, .35),
+    0 3px 6px rgba(0, 0, 0, .22);
+  isolation: isolate;
+}
+/* rebites */
+.pts-ins::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  --r: radial-gradient(circle, #f3e7cf 0 1.4px, rgba(0, 0, 0, .5) 1.9px 2.4px, transparent 2.8px);
+  background:
+    var(--r) 1px 1px / 9px 9px no-repeat,
+    var(--r) calc(100% - 1px) 1px / 9px 9px no-repeat,
+    var(--r) 1px calc(100% - 1px) / 9px 9px no-repeat,
+    var(--r) calc(100% - 1px) calc(100% - 1px) / 9px 9px no-repeat;
+}
+/* filete interno */
+.pts-ins::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, .2);
+  pointer-events: none;
+}
+.pts-ins-art {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, .3), rgba(255, 255, 255, .07) 65%);
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .3), inset 0 2px 4px rgba(0, 0, 0, .28);
+}
+.pts-ins-art > img { width: 70%; height: 70%; object-fit: contain; }
+.pts-ins-txt {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: .01em;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, .35);
+  overflow-wrap: anywhere;
+}
+
+/* Mini (ao lado do "Olá", no card do aniversariante): a mesma placa, sem rebites. */
+.pts-ins.is-mini { gap: 6px; padding: 2px 10px 2px 3px; border-radius: 7px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25), 0 0 0 1px rgba(0, 0, 0, .3); }
+.pts-ins.is-mini::before { display: none; }
+.pts-ins.is-mini::after { inset: 2px; border-radius: 5px; }
+.pts-ins.is-mini .pts-ins-art { width: 22px; height: 22px; }
+.pts-ins.is-mini .pts-ins-txt { font-size: var(--font-size-2xs); }
+
+/* Esmalte e arte de cada título */
+.pts-ins-t-botina {
+  --esmalte: #6b4426;
+  background:
+    radial-gradient(circle at 78% 70%, rgba(0, 0, 0, .18) 0 8px, transparent 9px),
+    radial-gradient(circle at 92% 25%, rgba(0, 0, 0, .14) 0 5px, transparent 6px),
+    linear-gradient(180deg, rgba(255, 255, 255, .15), rgba(255, 255, 255, 0) 45%),
+    var(--esmalte);
+}
+.pts-ins-t-botina .pts-ins-art { background: radial-gradient(circle at 35% 30%, #5a3820, #2f1d0f); }
+.pts-ins-t-botina .pts-ins-art > img { width: 80%; height: 80%; }
+
+.pts-ins-t-home { --esmalte: #2c5a78; }
+
+.pts-ins-t-crono { --esmalte: #1d3550; }
+.pts-ins-t-crono .pts-ins-art { background: #0f1c2d; place-items: initial; align-content: center; gap: 3px; padding: 0 7px; }
+.pts-ins-t-crono .pts-ins-art i { display: block; height: 4px; border-radius: 2px; transform-origin: left; animation: pts-barra 2.4s ease-in-out infinite; }
+.pts-ins-t-crono .pts-ins-art i:nth-child(1) { width: 60%; background: #e07a3a; }
+.pts-ins-t-crono .pts-ins-art i:nth-child(2) { width: 50%; margin-left: 28%; background: #2cc4b9; animation-delay: .3s; }
+.pts-ins-t-crono .pts-ins-art i:nth-child(3) { width: 42%; margin-left: 52%; background: #f7d774; animation-delay: .6s; }
+@keyframes pts-barra { 0% { transform: scaleX(.2); } 50%, 100% { transform: scaleX(1); } }
+.is-mini.pts-ins-t-crono .pts-ins-art { gap: 2px; padding: 0 4px; }
+.is-mini.pts-ins-t-crono .pts-ins-art i { height: 2px; }
+
+.pts-ins-t-cafe { --esmalte: #4a2f22; }
+
+.pts-ins-t-excel { --esmalte: #1f6e43; }
+.pts-ins-t-excel .pts-ins-art {
+  background: #fff;
+  background-image: linear-gradient(#cfe8d8 1px, transparent 1px), linear-gradient(90deg, #cfe8d8 1px, transparent 1px);
+  background-size: 8px 7px;
+}
+.pts-ins-t-excel .pts-ins-art b { color: #1f6e43; font-weight: 900; font-size: var(--font-size-md); margin-top: 6px; text-shadow: none; }
+.pts-ins-t-excel .pts-ins-art .pts-ins-coroa { position: absolute; top: 1px; left: 50%; width: 46%; height: auto; transform: translateX(-50%); }
+.is-mini.pts-ins-t-excel .pts-ins-art b { font-size: var(--font-size-2xs); margin-top: 3px; }
+
+.pts-ins-t-presente { --esmalte: #0f6b64; }
+.pts-ins-t-presente .pts-ins-art { background: #fff; grid-template-columns: repeat(3, 5px); gap: 2px; place-content: center; padding-top: 7px; }
+.pts-ins-t-presente .pts-ins-art::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 9px; background: #c35e1e; }
+.pts-ins-t-presente .pts-ins-art i { display: block; width: 5px; height: 4px; border-radius: 1px; background: #0f6b64; }
+.pts-ins-t-presente .pts-ins-art i:nth-child(n + 10) { display: none; }
+.is-mini.pts-ins-t-presente .pts-ins-art { grid-template-columns: repeat(3, 3px); gap: 1px; padding-top: 5px; }
+.is-mini.pts-ins-t-presente .pts-ins-art::before { height: 6px; }
+.is-mini.pts-ins-t-presente .pts-ins-art i { width: 3px; height: 2px; }
+
+.pts-ins-t-ia {
+  --esmalte: #2e2a7a;
+  background:
+    linear-gradient(rgba(165, 180, 252, .09) 1px, transparent 1px) 0 0 / 8px 8px,
+    linear-gradient(90deg, rgba(165, 180, 252, .09) 1px, transparent 1px) 0 0 / 8px 8px,
+    linear-gradient(180deg, rgba(255, 255, 255, .15), rgba(255, 255, 255, 0) 45%),
+    var(--esmalte);
+}
+.pts-ins-t-ia .pts-ins-art > img { width: 64%; height: 64%; margin-top: -7px; }
+/* Balão de "digitando" embaixo do robô */
+.pts-digitando { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); display: flex; gap: 2px; padding: 2px 4px; border-radius: 6px; background: #fff; }
+.pts-digitando i { width: 3px; height: 3px; border-radius: 50%; background: #4f46e5; animation: pts-digita 1.2s infinite; }
+.pts-digitando i:nth-child(2) { animation-delay: .2s; }
+.pts-digitando i:nth-child(3) { animation-delay: .4s; }
+@keyframes pts-digita { 0%, 60%, 100% { opacity: .25; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-1px); } }
+.is-mini .pts-digitando { display: none; }
+.is-mini.pts-ins-t-ia .pts-ins-art > img { margin-top: 0; width: 72%; height: 72%; }
+
+.pts-ins-t-livre { --esmalte: #26405d; }
+
+/* --------------------------------------------------------------------------
+   Temas do portal. Pintam o "chassi" (menu lateral, barra do topo, fundo da
+   Home e das páginas); os cards continuam claros, para nenhuma tela ficar
+   ilegível. Os tokens são redefinidos só dentro do menu e da barra.
+   -------------------------------------------------------------------------- */
+html[data-pts-tema] { --neutral-bg: var(--pts-page); }
+html[data-pts-tema] .modSb {
+  background: var(--pts-side);
+  background-image: var(--pts-side-pat, none);
+  border-right-color: var(--pts-side-border);
+  --ink: var(--pts-side-ink);
+  --muted: var(--pts-side-muted);
+  --bg-soft: var(--pts-side-hover);
+  --border: var(--pts-side-border);
+  --mod-accent-soft: var(--pts-acc);
+  --mod-accent-ink: var(--pts-acc-ink);
+  color: var(--pts-side-ink);
+}
+html[data-pts-tema] .modSb-userinfo strong { color: var(--pts-side-ink); }
+html[data-pts-tema] .portal-header {
+  background: var(--pts-top);
+  border-bottom-color: var(--pts-side-border);
+  --ink: var(--pts-top-ink);
+  --muted: var(--pts-top-muted);
+  --bg-soft: var(--pts-top-chip);
+  --terracotta-light: var(--pts-top-chip);
+}
+html[data-pts-tema] .home-hero { background-color: var(--pts-page); background-image: var(--pts-home); }
+
+html[data-pts-tema="natal"] {
+  --pts-side: #0f3b2a; --pts-side-ink: #f4e7c5; --pts-side-muted: #c9d8c0; --pts-side-hover: rgba(255, 255, 255, .08); --pts-side-border: #1d4d33;
+  --pts-side-pat: radial-gradient(rgba(255, 255, 255, .07) 1px, transparent 1.5px) 0 0 / 11px 11px;
+  --pts-acc: #c0392b; --pts-acc-ink: #fff;
+  --pts-top: #b3261e; --pts-top-ink: #ffffff; --pts-top-muted: #ffd9d4; --pts-top-chip: rgba(255, 255, 255, .15);
+  --pts-page: #fbf7f0;
+  --pts-home: radial-gradient(circle at 10% 0%, rgba(192, 57, 43, .12), transparent 40%), radial-gradient(circle at 90% 0%, rgba(15, 59, 42, .12), transparent 40%), #f8f2e8;
+}
+
+/* Decoração dos temas sazonais: camada fixa por cima de tudo, sem clique.
+   Imagens paradas (Fluent Emoji 3D + SVG próprios em assets/pontos). As
+   imagens dos enfeites das telas vêm destas variáveis. */
+:root {
+  --pts-i-arvore: url('../assets/pontos/arvore.png');
+  --pts-i-noel: url('../assets/pontos/noel.png');
+  --pts-i-presente: url('../assets/pontos/presente.png');
+  --pts-i-sino: url('../assets/pontos/sino.png');
+  --pts-i-estrela: url('../assets/pontos/estrela.png');
+  --pts-i-meia: url('../assets/pontos/meia-vermelha.svg');
+  --pts-i-boneco: url('../assets/pontos/boneco.png');
+  --pts-i-biscoito: url('../assets/pontos/biscoito.png');
+  --pts-i-vela: url('../assets/pontos/vela.png');
+  --pts-i-rena: url('../assets/pontos/rena.png');
+  --pts-i-bolo: url('../assets/pontos/bolo.png');
+  --pts-i-medalha: url('../assets/pontos/medalha.png');
+  --pts-i-fita: url('../assets/pontos/fita.png');
+  --pts-i-abobora: url('../assets/pontos/abobora.png');
+  --pts-i-fantasma: url('../assets/pontos/fantasma.png');
+  --pts-i-morcego: url('../assets/pontos/morcego.png');
+  --pts-i-aranha: url('../assets/pontos/aranha.png');
+  --pts-i-doce: url('../assets/pontos/doce.png');
+  --pts-i-caveira: url('../assets/pontos/caveira.png');
+  --pts-i-pirulito: url('../assets/pontos/pirulito.png');
+  --pts-i-laco-rosa: url('../assets/pontos/laco-rosa.svg');
+  --pts-i-laco-azul: url('../assets/pontos/laco-azul.svg');
+  --pts-i-bigode: url('../assets/pontos/bigode.svg');
+}
+
+.pts-deco { position: fixed; inset: 0; pointer-events: none; z-index: 900; overflow: hidden; }
+.pts-deco img { display: block; }
+/* Festão, meias, faixa e lua são enfeite da Home (e da lojinha, para a prévia):
+   dentro dos módulos ficariam por cima do trabalho. */
+body:not(:has(.home-hero, .pl-page)) .pts-deco { display: none; }
+
+/* Natal: festão de pinheiro no alto, meias penduradas, faixa de bengala doce embaixo */
+.pts-deco-natal .festao { position: absolute; top: -12px; left: 0; right: 0; height: 40px; background-repeat: repeat-x; background-size: 160px 40px; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .18)); }
+.pts-deco-natal .meia { position: absolute; top: 8px; display: flex; flex-direction: column; align-items: center; transform-origin: 50% 0; filter: drop-shadow(0 4px 4px rgba(0, 0, 0, .2)); }
+.pts-deco-natal .meia i { width: 2px; background: #7a5230; }
+.pts-deco-natal .meia img { width: 40px; height: 60px; margin-top: -1px; }
+.pts-deco-natal .bengala { position: absolute; left: 0; right: 0; bottom: 0; height: 10px; background: repeating-linear-gradient(-45deg, #c0392b 0 9px, #fff 9px 18px); box-shadow: 0 -1px 3px rgba(0, 0, 0, .15); }
+.pts-deco-natal .laco { position: absolute; top: 2px; left: 47%; width: 52px; height: 52px; transform: translateX(-50%); filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .25)); }
+
+
+/* --------------------------------------------------------------------------
+   Temas sazonais nas telas: Home (módulos, aniversários, tempo de casa,
+   saudação), menu lateral e barra do topo ganham enfeites próprios.
+   Enfeite = ::after/::before com uma das imagens acima, sem animação.
+   -------------------------------------------------------------------------- */
+
+/* Foguete do "Olá" vira a dupla da época */
+html[data-pts-tema="natal"] .home-foguete{ font-size: 0; display: inline-flex; gap: 4px; vertical-align: -6px; }
+html[data-pts-tema="natal"] .home-foguete::before,
+html[data-pts-tema="natal"] .home-foguete::after{ content: ""; width: 44px; height: 44px; background: center / contain no-repeat; }
+html[data-pts-tema="natal"] .home-foguete::before { background-image: var(--pts-i-arvore); }
+html[data-pts-tema="natal"] .home-foguete::after { background-image: var(--pts-i-noel); }
+
+/* Cards de módulo */
+html[data-pts-tema="natal"] .home-card{ position: relative; overflow: visible; }
+/* Cards em vermelho, verde e dourado, alternados */
+html[data-pts-tema="natal"] .home-card:nth-child(3n+1) { --n-cor: #c0392b; --n-fundo: #fdecea; --n-forte: #a8281d; }
+html[data-pts-tema="natal"] .home-card:nth-child(3n+2) { --n-cor: #1d6b45; --n-fundo: #e6f4ec; --n-forte: #14513a; }
+html[data-pts-tema="natal"] .home-card:nth-child(3n+3) { --n-cor: #c9971f; --n-fundo: #fbf3dc; --n-forte: #8a6300; }
+html[data-pts-tema="natal"] .home-card { background: linear-gradient(180deg, var(--n-fundo), #fff 70%); border: 2px solid var(--n-cor); }
+html[data-pts-tema="natal"] .home-card h3 { color: var(--n-forte); }
+html[data-pts-tema="natal"] .home-card .home-card-cta { color: var(--n-forte); }
+html[data-pts-tema="natal"] .home-card-icon { background: var(--n-cor) !important; color: #fff !important; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .35); }
+html[data-pts-tema="natal"] .home-card:hover { box-shadow: 0 8px 20px rgba(15, 59, 42, .2); }
+
+/* Aniversários, tempo de casa e próximo aniversário (coluna da direita) */
+html[data-pts-tema="natal"] .home-rail-card,
+html[data-pts-tema="natal"] .home-prox{ position: relative; overflow: hidden; }
+html[data-pts-tema="natal"] .home-rail-card::after,
+html[data-pts-tema="natal"] .home-prox::after{
+  content: "";
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 30px;
+  height: 30px;
+  background: center / contain no-repeat;
+}
+html[data-pts-tema="natal"] .home-rail-card,
+html[data-pts-tema="natal"] .home-prox { border: 2px solid #1d6b45; padding-top: 22px; }
+html[data-pts-tema="natal"] .home-rail-card::before,
+html[data-pts-tema="natal"] .home-prox::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: repeating-linear-gradient(-45deg, #c0392b 0 9px, #fff 9px 18px);
+}
+html[data-pts-tema="natal"] .home-rail-card[aria-label^="Aniversários"]::after { background-image: var(--pts-i-bolo); }
+html[data-pts-tema="natal"] .home-rail-card[aria-label^="Tempo de casa"]::after { background-image: var(--pts-i-medalha); }
+html[data-pts-tema="natal"] .home-prox::after { background-image: var(--pts-i-noel); }
+html[data-pts-tema="natal"] .home-rail-card h2 svg { color: #c0392b; }
+html[data-pts-tema="natal"] .home-prox { background: #fdf1ef; }
+
+/* Card de quem faz aniversário hoje */
+html[data-pts-tema="natal"] .home-festa {
+  background:
+    radial-gradient(circle at 15% 20%, rgba(255, 255, 255, .5) 0 2px, transparent 3px) 0 0 / 46px 46px,
+    radial-gradient(circle at 70% 60%, rgba(255, 255, 255, .35) 0 1.5px, transparent 2.5px) 0 0 / 34px 34px,
+    linear-gradient(160deg, #0f3b2a, #1d6b45);
+  border-top: 6px solid #c0392b;
+}
+
+/* Popups da Home (escolha de área de cada módulo, Soluções Integradas) */
+html[data-pts-tema="natal"] .solmodal { border: 3px solid #1d6b45; }
+html[data-pts-tema="natal"] .solmodal-head {
+  position: relative;
+  padding-bottom: 28px;
+  border-bottom: 0;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, .45) 0 1.5px, transparent 2.5px) 0 0 / 38px 38px,
+    radial-gradient(circle at 70% 70%, rgba(255, 255, 255, .3) 0 1px, transparent 2px) 0 0 / 26px 26px,
+    linear-gradient(135deg, #0f3b2a, #1d6b45);
+}
+html[data-pts-tema="natal"] .solmodal-head::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 8px;
+  background: repeating-linear-gradient(-45deg, #c0392b 0 9px, #fff 9px 18px);
+}
+html[data-pts-tema="natal"] .solmodal-head::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translateX(-50%);
+  background: var(--pts-i-fita) center / contain no-repeat;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .3));
+}
+html[data-pts-tema="natal"] .solmodal-head-txt h2 { color: #fff; }
+html[data-pts-tema="natal"] .solmodal-head-txt p { color: #cfe8d9; }
+html[data-pts-tema="natal"] .solmodal-head-icon { background: #c0392b; color: #fff; }
+html[data-pts-tema="natal"] .solmodal-close { background: rgba(255, 255, 255, .14); border-color: rgba(255, 255, 255, .35); color: #fff; }
+html[data-pts-tema="natal"] .progmodal-card:nth-child(3n+1) { --n-cor: #c0392b; --n-fundo: #fdecea; --n-forte: #a8281d; }
+html[data-pts-tema="natal"] .progmodal-card:nth-child(3n+2) { --n-cor: #1d6b45; --n-fundo: #e6f4ec; --n-forte: #14513a; }
+html[data-pts-tema="natal"] .progmodal-card:nth-child(3n+3) { --n-cor: #c9971f; --n-fundo: #fbf3dc; --n-forte: #8a6300; }
+html[data-pts-tema="natal"] .progmodal-card { border: 2px solid var(--n-cor); background: linear-gradient(180deg, var(--n-fundo), #fff 75%); }
+html[data-pts-tema="natal"] .progmodal-card:hover { border-color: var(--n-cor); box-shadow: 0 10px 26px rgba(15, 59, 42, .18); }
+html[data-pts-tema="natal"] .progmodal-card-icon { background: var(--n-cor) !important; color: #fff !important; }
+html[data-pts-tema="natal"] .progmodal-card strong,
+html[data-pts-tema="natal"] .progmodal-card-cta { color: var(--n-forte) !important; }
+html[data-pts-tema="natal"] .solmodal-destaque { border-color: #1d6b45; background: #e6f4ec; }
+html[data-pts-tema="natal"] .solmodal-destaque::before { background: repeating-linear-gradient(-45deg, #c0392b 0 6px, #fff 6px 12px); width: 6px; }
+html[data-pts-tema="natal"] .solmodal-lista > :nth-child(3n+1) .solmodal-item-icon { background: #fdecea; color: #c0392b; }
+html[data-pts-tema="natal"] .solmodal-lista > :nth-child(3n+2) .solmodal-item-icon { background: #e6f4ec; color: #1d6b45; }
+html[data-pts-tema="natal"] .solmodal-lista > :nth-child(3n+3) .solmodal-item-icon { background: #fbf3dc; color: #8a6300; }
+html[data-pts-tema="natal"] a.solmodal-item:hover { border-color: #c0392b; background: #fffaf9; }
+
+/* Menu lateral e barra do topo dos módulos */
+html[data-pts-tema="natal"] .modSb a.modSb-link.is-active,
+html[data-pts-tema="natal"] .modSb button.modSb-link.is-active {
+  background: repeating-linear-gradient(-45deg, #c0392b 0 10px, #a8281d 10px 20px);
+}
+
+html[data-pts-tema="natal"] .portal-header-greeting .name::before{
+  content: "";
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+  vertical-align: -5px;
+  background: center / contain no-repeat;
+}
+html[data-pts-tema="natal"] .portal-header-greeting .name::before { background-image: var(--pts-i-arvore); }
+
+/* --------------------------------------------------------------------------
+   Outubro Rosa e Novembro Azul: mesmos enfeites, cada um na sua cor. As
+   variáveis --c-* moram no <html> do tema e o resto é uma regra só para os
+   dois.
+   -------------------------------------------------------------------------- */
+html[data-pts-tema="outubro-rosa"] {
+  --c-forte: #b0246a; --c-cor: #ec4f95; --c-claro: #fde4ef; --c-fundo: #fff4f9; --c-escuro: #7a1c4b;
+  --c-laco: var(--pts-i-laco-rosa);
+}
+html[data-pts-tema="novembro-azul"] {
+  --c-forte: #0e4a8a; --c-cor: #2b7fd9; --c-claro: #dcebfb; --c-fundo: #f3f8fe; --c-escuro: #0e2f5c;
+  --c-laco: var(--pts-i-laco-azul);
+}
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) {
+  --pts-side: var(--c-escuro); --pts-side-ink: #ffffff; --pts-side-muted: rgba(255, 255, 255, .72);
+  --pts-side-hover: rgba(255, 255, 255, .1); --pts-side-border: rgba(255, 255, 255, .12);
+  --pts-acc: var(--c-cor); --pts-acc-ink: #fff;
+  --pts-top: var(--c-escuro); --pts-top-ink: #fff; --pts-top-muted: rgba(255, 255, 255, .75); --pts-top-chip: rgba(255, 255, 255, .14);
+  --pts-page: var(--c-fundo);
+  --pts-home: radial-gradient(circle at 85% 0%, var(--c-claro), transparent 45%), linear-gradient(180deg, var(--c-claro), var(--c-fundo) 40%);
+}
+
+/* Enfeite do alto: laços da campanha pendurados (no Novembro Azul, laços e bigodes) */
+.pts-deco-campanha .varal { position: absolute; top: 0; left: 0; right: 0; height: 6px; background: var(--c-cor); box-shadow: 0 2px 4px rgba(0, 0, 0, .15); }
+.pts-deco-campanha .pendurado { position: absolute; top: 4px; display: flex; flex-direction: column; align-items: center; transform-origin: 50% 0; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .2)); }
+.pts-deco-campanha .pendurado i { width: 2px; background: var(--c-forte); }
+.pts-deco-campanha .pendurado img { width: 30px; height: 42px; object-fit: contain; }
+.pts-deco-campanha .pendurado img.bigode { width: 50px; height: 22px; margin-top: 2px; }
+.pts-deco-campanha .faixa { position: absolute; left: 0; right: 0; bottom: 0; height: 8px; background: repeating-linear-gradient(-45deg, var(--c-cor) 0 9px, #fff 9px 18px); box-shadow: 0 -1px 3px rgba(0, 0, 0, .12); }
+
+/* "Olá": o foguete vira o laço (e o bigode, em novembro) */
+html[data-pts-tema="outubro-rosa"] .home-foguete,
+html[data-pts-tema="novembro-azul"] .home-foguete { font-size: 0; display: inline-flex; gap: 4px; vertical-align: -6px; }
+html[data-pts-tema="outubro-rosa"] .home-foguete::before,
+html[data-pts-tema="novembro-azul"] .home-foguete::before { content: ""; width: 34px; height: 46px; background: var(--c-laco) center / contain no-repeat; }
+html[data-pts-tema="novembro-azul"] .home-foguete::after { content: ""; width: 56px; height: 46px; background: var(--pts-i-bigode) center / contain no-repeat; }
+
+/* Cards de módulo em três tons da cor da campanha */
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) .home-card:nth-child(3n+1) { --n-cor: var(--c-forte); }
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) .home-card:nth-child(3n+2) { --n-cor: var(--c-cor); }
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) .home-card:nth-child(3n+3) { --n-cor: var(--c-escuro); }
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) .home-card { border: 2px solid var(--n-cor); background: linear-gradient(180deg, var(--c-claro), #fff 70%); }
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) .home-card h3,
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) .home-card .home-card-cta { color: var(--c-forte); }
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) .home-card-icon { background: var(--n-cor) !important; color: #fff !important; }
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) .home-card:hover { box-shadow: 0 8px 20px rgba(0, 0, 0, .12); }
+
+/* Aniversários, tempo de casa, próximo aniversário */
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) :is(.home-rail-card, .home-prox) {
+  position: relative; overflow: hidden; border: 2px solid var(--c-cor); padding-top: 22px; background: #fff;
+}
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) :is(.home-rail-card, .home-prox)::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 8px;
+  background: repeating-linear-gradient(-45deg, var(--c-cor) 0 9px, #fff 9px 18px);
+}
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) :is(.home-rail-card, .home-prox)::after {
+  content: ""; position: absolute; top: 12px; right: 12px; width: 22px; height: 30px; background: var(--c-laco) center / contain no-repeat;
+}
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) .home-rail-card h2 svg { color: var(--c-cor); }
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) .home-festa {
+  background: radial-gradient(circle at 50% 120%, var(--c-cor), transparent 65%), linear-gradient(160deg, var(--c-escuro), var(--c-forte));
+}
+
+/* Popups da Home */
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) .solmodal { border: 3px solid var(--c-cor); }
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) .solmodal-head {
+  position: relative; padding-bottom: 28px; border-bottom: 0; background: linear-gradient(135deg, var(--c-escuro), var(--c-forte));
+}
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) .solmodal-head::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 8px;
+  background: repeating-linear-gradient(-45deg, var(--c-cor) 0 9px, #fff 9px 18px);
+}
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) .solmodal-head-txt h2 { color: #fff; }
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) .solmodal-head-txt p { color: rgba(255, 255, 255, .8); }
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) .solmodal-head-icon { background: #fff; color: var(--c-forte); }
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) .solmodal-close { background: rgba(255, 255, 255, .14); border-color: rgba(255, 255, 255, .35); color: #fff; }
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) .progmodal-card { border: 2px solid var(--c-cor); background: linear-gradient(180deg, var(--c-claro), #fff 75%); }
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) .progmodal-card-icon,
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) .solmodal-item-icon { background: var(--c-cor) !important; color: #fff !important; }
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) :is(.progmodal-card strong, .progmodal-card-cta) { color: var(--c-forte) !important; }
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) .solmodal-destaque { border-color: var(--c-cor); background: var(--c-claro); }
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) .solmodal-destaque::before { background: var(--c-cor); }
+
+/* Menu e barra do topo dos módulos */
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) .portal-header-greeting .name::before {
+  content: ""; display: inline-block; width: 18px; height: 24px; margin-right: 8px; vertical-align: -5px;
+  background: var(--c-laco) center / contain no-repeat;
+}
+
+/* --------------------------------------------------------------------------
+   Recados do mural: enfeites comprados por quem escreveu
+   -------------------------------------------------------------------------- */
+.pts-rec-papel { background: #fff3a8 !important; border-color: #e8d46a !important; color: #3d3510; transform: rotate(-1deg); box-shadow: 2px 3px 0 rgba(0, 0, 0, .08); }
+.pts-rec-cartao {
+  border: 2px solid transparent !important;
+  background:
+    radial-gradient(circle at 94% 18%, #f7d774 0 2px, transparent 3px),
+    radial-gradient(circle at 88% 72%, #00a49a 0 2px, transparent 3px),
+    radial-gradient(circle at 97% 50%, #c35e1e 0 2px, transparent 3px),
+    linear-gradient(#fff, #fff) padding-box,
+    linear-gradient(120deg, #c35e1e, #f7d774, #00a49a, #26405d) border-box !important;
+  position: relative;
+}
+.pts-rec-cartao::after { content: "🎉"; position: absolute; top: -10px; right: -6px; font-size: var(--font-size-lg); transform: rotate(15deg); }
+.pts-rec-mao .pts-rec-texto { font-family: 'Caveat', 'Segoe Print', 'Comic Sans MS', cursive; font-size: var(--font-size-xl); line-height: 1.15; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pts-ring, .pts-ring::after, .pts-ins *, .pts-deco *,
+  html[data-pts-tema] *::before, html[data-pts-tema] *::after { animation: none !important; }
+}
+
+/* ==========================================================================
+   Halloween — noite. A Home vira uma cena escura: lua com halo, morcegos
+   parados contra ela e, embaixo, um horizonte de morro, árvores secas e
+   lápides saindo da névoa. Tudo é fundo da Home (atrás do conteúdo, nada
+   passa na frente). Os cards viram placas escuras; o ícone é uma janela
+   acesa, na cor de vela. Popups: cabeçalho escuro, corpo claro.
+   ========================================================================== */
+html[data-pts-tema="halloween"] {
+  --h-breu: #0c0a0f;
+  --h-lapide: #17131b;
+  --h-borda: #2a2230;
+  --h-pergaminho: #ece3d4;
+  --h-nevoa: #978b98;
+  --h-vela: #e3a344;
+  --h-vinho: #5a1622;
+
+  --pts-side: #0f0c13; --pts-side-ink: #e6dccd; --pts-side-muted: #8f8494;
+  --pts-side-hover: rgba(227, 163, 68, .08); --pts-side-border: #221b28;
+  --pts-acc: #e3a344; --pts-acc-ink: #17131b;
+  --pts-top: #0f0c13; --pts-top-ink: #e6dccd; --pts-top-muted: #8f8494; --pts-top-chip: rgba(255, 255, 255, .06);
+  --pts-page: #f2f0f3;
+  --pts-home: none;
+  --pts-i-horizonte: url('../assets/pontos/horizonte-halloween.svg');
+  --pts-i-morcego-sombra: url('../assets/pontos/morcego.svg');
+}
+
+/* A cena */
+html[data-pts-tema="halloween"] .home-hero {
+  color-scheme: dark;
+  --bg: var(--h-lapide);
+  --bg-soft: #120e16;
+  --border: var(--h-borda);
+  --border-strong: #3a3040;
+  --ink: var(--h-pergaminho);
+  --ink-soft: #cfc4b4;
+  --muted: var(--h-nevoa);
+  --blue: var(--h-pergaminho);
+  --blue-soft: var(--h-borda);
+  --terracotta-dark: var(--h-vela);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .5);
+  --shadow-md: 0 10px 30px rgba(0, 0, 0, .55);
+  background-color: var(--h-breu);
+  background-image:
+    /* morcegos contra a lua */
+    var(--pts-i-morcego-sombra), var(--pts-i-morcego-sombra), var(--pts-i-morcego-sombra),
+    /* crateras */
+    radial-gradient(circle 9px at 64% 60%, rgba(140, 125, 100, .35) 0 8px, transparent 9px),
+    radial-gradient(circle 6px at 36% 64%, rgba(140, 125, 100, .28) 0 5px, transparent 6px),
+    radial-gradient(circle 5px at 56% 30%, rgba(140, 125, 100, .25) 0 4px, transparent 5px),
+    /* lua */
+    radial-gradient(circle 44px at 50% 50%, #fbf6e9 0, #ece3cd 26px, #d3c7a8 40px, #c4b795 43px, transparent 44px),
+    /* halo */
+    radial-gradient(circle, rgba(236, 227, 212, .16), rgba(120, 100, 160, .06) 40%, transparent 68%),
+    /* névoa e horizonte */
+    linear-gradient(to top, rgba(110, 96, 128, .22), transparent),
+    var(--pts-i-horizonte),
+    linear-gradient(to top, rgba(110, 96, 128, .18), transparent 70%),
+    /* céu */
+    radial-gradient(ellipse at 70% -10%, #1d1626, transparent 60%),
+    linear-gradient(180deg, #120e17, var(--h-breu) 55%);
+  background-size:
+    40px 18px, 28px 13px, 22px 10px,
+    104px 104px, 104px 104px, 104px 104px,
+    104px 104px,
+    420px 420px,
+    100% 90px,
+    720px 150px,
+    100% 240px,
+    100% 100%, 100% 100%;
+  background-position:
+    calc(100% - 520px) 92px, calc(100% - 640px) 58px, calc(100% - 470px) 40px,
+    calc(100% - 430px) 18px, calc(100% - 430px) 18px, calc(100% - 430px) 18px,
+    calc(100% - 430px) 18px,
+    calc(100% - 272px) -140px,
+    0 100%,
+    0 100%,
+    0 100%,
+    0 0, 0 0;
+  background-repeat:
+    no-repeat, no-repeat, no-repeat,
+    no-repeat, no-repeat, no-repeat,
+    no-repeat,
+    no-repeat,
+    no-repeat,
+    repeat-x,
+    no-repeat,
+    no-repeat, no-repeat;
+}
+html[data-pts-tema="halloween"] .home-footer { color: var(--h-nevoa); position: relative; }
+html[data-pts-tema="halloween"] .home-travado { background: rgba(255, 255, 255, .03); }
+html[data-pts-tema="halloween"] .home-pontos { background: var(--h-lapide); }
+html[data-pts-tema="halloween"] .home-iconbtn,
+html[data-pts-tema="halloween"] .home-logout { background: var(--h-lapide); border-color: var(--h-borda); color: #cfc4b4; }
+html[data-pts-tema="halloween"] .home-rail-dia { background: #241c2b; color: var(--h-vela); }
+
+/* "Olá": a única luz é a abóbora acesa */
+html[data-pts-tema="halloween"] .home-foguete { font-size: 0; display: inline-flex; vertical-align: -6px; }
+html[data-pts-tema="halloween"] .home-foguete::before {
+  content: ""; width: 42px; height: 42px;
+  background: var(--pts-i-abobora) center / contain no-repeat;
+  filter: saturate(.8) brightness(.9) drop-shadow(0 0 10px rgba(227, 163, 68, .65));
+}
+
+/* Cards de módulo: placas escuras; o ícone é uma janela acesa */
+html[data-pts-tema="halloween"] .home-card { background: linear-gradient(180deg, #1b161f, var(--h-lapide)); }
+html[data-pts-tema="halloween"] .home-card-icon {
+  background: #1f150e !important;
+  color: var(--h-vela) !important;
+  box-shadow: inset 0 0 14px rgba(227, 163, 68, .35), 0 0 0 1px #3a2a1a;
+}
+html[data-pts-tema="halloween"] .home-card:hover {
+  border-color: var(--h-vela);
+  box-shadow: 0 0 0 1px rgba(227, 163, 68, .45), 0 14px 32px rgba(0, 0, 0, .6);
+}
+
+/* Aniversariante do dia: vinho, com a luz de uma vela embaixo */
+html[data-pts-tema="halloween"] .home-festa {
+  background:
+    radial-gradient(ellipse at 50% 115%, rgba(227, 163, 68, .4), transparent 60%),
+    linear-gradient(170deg, #2a0d14, var(--h-vinho));
+  border: 1px solid #3a1a22;
+}
+
+/* Popups: cabeçalho escuro, corpo claro (os tokens voltam ao claro aqui dentro) */
+html[data-pts-tema="halloween"] .solmodal {
+  color-scheme: light;
+  --bg: #fff; --bg-soft: #f8fafc; --border: #e2e8f0; --border-strong: #cbd5e1;
+  --ink: #0f172a; --ink-soft: #334155; --muted: #64748b; --blue: #26405d; --blue-soft: #d8dfe8;
+  --terracotta-dark: #9c4a17;
+  border: 1px solid var(--h-borda);
+}
+html[data-pts-tema="halloween"] .solmodal-head {
+  background: radial-gradient(ellipse at 90% -40%, rgba(236, 227, 212, .14), transparent 55%), linear-gradient(180deg, #120e17, var(--h-lapide));
+  border-bottom: 1px solid #3a2a1a;
+}
+html[data-pts-tema="halloween"] .solmodal-head-txt h2 { color: var(--h-pergaminho); }
+html[data-pts-tema="halloween"] .solmodal-head-txt p { color: var(--h-nevoa); }
+html[data-pts-tema="halloween"] .solmodal-head-icon { background: #1f150e; color: var(--h-vela); box-shadow: inset 0 0 12px rgba(227, 163, 68, .35); }
+html[data-pts-tema="halloween"] .solmodal-close { background: rgba(255, 255, 255, .06); border-color: var(--h-borda); color: var(--h-pergaminho); }
+html[data-pts-tema="halloween"] .progmodal-card-icon,
+html[data-pts-tema="halloween"] .solmodal-item-icon { background: #1f150e !important; color: var(--h-vela) !important; }
+html[data-pts-tema="halloween"] .progmodal-card:hover,
+html[data-pts-tema="halloween"] a.solmodal-item:hover { border-color: #b77a24; }
+html[data-pts-tema="halloween"] .solmodal-destaque::before { background: var(--h-vela); }
+
+/* ==========================================================================
+   Aprovações, Novidades e Notificações acompanham o tema. Cada tema define
+   o mesmo trio: --t-acc (destaque), --t-acc-ink (texto sobre ele) e
+   --t-faixa (o cabeçalho dos popups e da central). As regras abaixo valem
+   para todos os temas.
+   ========================================================================== */
+html[data-pts-tema="natal"] {
+  --t-acc: #c0392b; --t-acc-ink: #fff;
+  --t-faixa: radial-gradient(circle at 20% 30%, rgba(255, 255, 255, .4) 0 1.5px, transparent 2.5px) 0 0 / 38px 38px, linear-gradient(135deg, #0f3b2a, #1d6b45);
+  --t-fundo: var(--pts-home);
+}
+html[data-pts-tema="outubro-rosa"],
+html[data-pts-tema="novembro-azul"] {
+  --t-acc: var(--c-cor); --t-acc-ink: #fff;
+  --t-faixa: linear-gradient(135deg, var(--c-escuro), var(--c-forte));
+  --t-fundo: var(--pts-home);
+}
+html[data-pts-tema="halloween"] {
+  --t-acc: #e3a344; --t-acc-ink: #17131b;
+  --t-faixa: radial-gradient(ellipse at 90% -40%, rgba(236, 227, 212, .14), transparent 55%), linear-gradient(180deg, #120e17, #17131b);
+  --t-fundo: radial-gradient(ellipse at 70% -10%, #1d1626, transparent 60%), linear-gradient(180deg, #120e17, #0c0a0f 55%);
+}
+
+/* Contadores (sino, atalho de aprovações) */
+html[data-pts-tema] .notif-contador,
+html[data-pts-tema] .atalho-aprovacoes-num,
+html[data-pts-tema] .notif-ponto,
+html[data-pts-tema] .apv-grupo-num { background: var(--t-acc); color: var(--t-acc-ink); }
+
+/* Novidades */
+html[data-pts-tema] .novid-hero { background: var(--t-faixa); }
+html[data-pts-tema] .novid-item-icon { background: color-mix(in srgb, var(--t-acc) 14%, #fff); color: var(--t-acc); }
+html[data-pts-tema] .novid-btn { background: var(--t-acc); border-color: var(--t-acc); color: var(--t-acc-ink); }
+html[data-pts-tema] .novid-btn:hover { filter: brightness(.92); background: var(--t-acc); border-color: var(--t-acc); }
+html[data-pts-tema="halloween"] .novid-item-icon { background: #1f150e; color: #e3a344; }
+
+/* Notificações: cabeçalho na faixa do tema, lista clara */
+html[data-pts-tema] .notif-head { background: var(--t-faixa); border-bottom-color: transparent; }
+html[data-pts-tema] .notif-head strong { color: #fff; }
+html[data-pts-tema="halloween"] .notif-head strong { color: #ece3d4; }
+html[data-pts-tema] .notif-head .notif-fechar,
+html[data-pts-tema] .notif-head button { color: rgba(255, 255, 255, .85); }
+html[data-pts-tema] .notif-head .notif-fechar:hover { background: rgba(255, 255, 255, .14); color: #fff; }
+html[data-pts-tema] .notif-item.is-nova { background: color-mix(in srgb, var(--t-acc) 7%, #fff); }
+html[data-pts-tema] .notif-item.is-nova:hover { background: color-mix(in srgb, var(--t-acc) 13%, #fff); }
+
+/* Central de Aprovações: o fundo da Home do tema; os cards continuam claros */
+html[data-pts-tema] .apv-page { background-color: var(--pts-page); background-image: var(--t-fundo); background-size: auto; }
+html[data-pts-tema] .apv-chip.is-on { background: var(--t-acc); border-color: var(--t-acc); color: var(--t-acc-ink); }
+html[data-pts-tema] .apv-chip.is-on span { background: rgba(255, 255, 255, .22); color: inherit; }
+html[data-pts-tema] .apv-item.is-alvo { border-color: var(--t-acc); box-shadow: 0 0 0 3px color-mix(in srgb, var(--t-acc) 25%, transparent); }
+html[data-pts-tema] .apv-titulos b { color: var(--t-acc); }
+html[data-pts-tema="halloween"] .apv-page { background-color: #0c0a0f; color-scheme: dark; }
+html[data-pts-tema="halloween"] .apv-page :is(.apv-titulos h1, .apv-grupo h2) { color: #ece3d4; }
+html[data-pts-tema="halloween"] .apv-page :is(.apv-titulos p, .apv-nota, .apv-back) { color: #b3a7b4; }
+html[data-pts-tema="halloween"] .apv-page .apv-chip:not(.is-on) { background: #17131b; border-color: #2a2230; color: #cfc4b4; }
+html[data-pts-tema="halloween"] .apv-page .apv-vazio { background: #17131b; border-color: #2a2230; }
+html[data-pts-tema="halloween"] .apv-page .apv-vazio h2 { color: #ece3d4; }
+html[data-pts-tema="halloween"] .apv-page .apv-btn-ghost { background: #17131b; color: #cfc4b4; border-color: #2a2230; }
+/* Dentro da Home escura do Halloween, a lista do sino volta aos tokens claros. */
+html[data-pts-tema="halloween"] .notif-pop {
+  color-scheme: light;
+  --bg: #fff; --bg-soft: #f8fafc; --border: #e2e8f0; --border-strong: #cbd5e1;
+  --ink: #0f172a; --ink-soft: #334155; --muted: #64748b; --blue: #26405d; --blue-soft: #d8dfe8;
+  --terracotta-dark: #9c4a17;
+}
+
+/* "+N pts" que voa até o contador (GanhoPontos.jsx). A posição vem da animação. */
+.pts-ganho {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 3000;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f7b733, #e07a3a 55%, #c35e1e);
+  color: #fff;
+  font-size: var(--font-size-2xl);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  box-shadow: 0 10px 28px rgba(195, 94, 30, .45), 0 0 0 3px rgba(255, 255, 255, .7);
+  pointer-events: none;
+  opacity: 0;
+}
+.pts-ganho small { font-size: var(--font-size-sm); font-weight: 700; opacity: .9; }
+.pts-ganho svg { fill: #fff3b0; color: #fff3b0; }
+.pts-ganho-leitor { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ==========================================================================
+   Sustos do Halloween (SustosHalloween.jsx): por cima de tudo, sem receber
+   clique, 1,5–2,9 s cada, sempre com grito. Fotos em tela cheia.
+   ========================================================================== */
+.pts-susto { position: fixed; inset: 0; z-index: 2500; pointer-events: none; overflow: hidden; background: #000; }
+.s-foto { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+@keyframes pts-s-pula { from { transform: scale(.25); opacity: 0; } to { transform: scale(1.08); opacity: 1; } }
+@keyframes pts-s-treme {
+  0%, 100% { transform: translate(0, 0) scale(1.08); }
+  20% { transform: translate(-16px, 10px) scale(1.12); }
+  40% { transform: translate(14px, -12px) scale(1.09); }
+  60% { transform: translate(-10px, -8px) scale(1.14); }
+  80% { transform: translate(12px, 12px) scale(1.1); }
+}
+@keyframes pts-s-treme-perto {
+  0%, 100% { transform: translate(0, 0) scale(1.55); }
+  25% { transform: translate(-18px, 12px) scale(1.6); }
+  50% { transform: translate(16px, -14px) scale(1.56); }
+  75% { transform: translate(-12px, -10px) scale(1.63); }
+}
+@keyframes pts-s-glitch {
+  0% { filter: contrast(1.25) brightness(1); }
+  50% { filter: grayscale(1) contrast(2.2) brightness(.75) drop-shadow(14px 0 0 rgba(200, 0, 0, .75)) drop-shadow(-8px 0 0 rgba(0, 0, 0, .8)); }
+}
+@keyframes pts-s-flash { 0% { background: #fff; } 4%, 100% { background: #000; } }
+
+/* Fotos em pé cabem inteiras na altura (fundo preto nas laterais); o zoom do
+   vulto mira o rosto. */
+.pts-susto-grito .s-foto, .pts-susto-porta .s-foto { object-fit: contain; }
+.pts-susto-porta .s-foto { transform-origin: 50% 28%; }
+
+/* Mulher e homem gritando: pulam na tela de uma vez */
+.pts-susto-mulher, .pts-susto-grito { animation: pts-s-flash 1.5s steps(1) forwards; }
+.pts-susto-mulher .s-foto,
+.pts-susto-grito .s-foto {
+  animation: pts-s-pula .13s cubic-bezier(.2, 1.6, .4, 1) forwards, pts-s-treme .11s linear .13s infinite, pts-s-glitch .28s steps(2) .13s infinite;
+}
+
+/* Sorriso: surge devagar do escuro e avança */
+.pts-susto-sorriso .s-foto {
+  opacity: 0;
+  animation: pts-s-surge 1.7s ease-in forwards, pts-s-avanca .14s cubic-bezier(.2, 1.6, .4, 1) 1.72s forwards,
+    pts-s-treme-perto .1s linear 1.86s infinite, pts-s-glitch .28s steps(2) 1.86s infinite;
+}
+@keyframes pts-s-surge { from { opacity: 0; transform: scale(.85); } to { opacity: .8; transform: scale(1); } }
+@keyframes pts-s-avanca { from { opacity: .8; transform: scale(1); } to { opacity: 1; transform: scale(1.58); } }
+
+/* Porta: a luz falha mostrando o vulto, e ele pula */
+.pts-susto-porta .s-foto {
+  opacity: 0;
+  animation: pts-s-luz 1.5s steps(1) forwards, pts-s-avanca .14s cubic-bezier(.2, 1.6, .4, 1) 1.5s forwards,
+    pts-s-treme-perto .1s linear 1.64s infinite, pts-s-glitch .28s steps(2) 1.64s infinite;
+}
+@keyframes pts-s-luz {
+  0% { opacity: 0; } 12% { opacity: .55; } 16% { opacity: 0; } 34% { opacity: .7; } 37% { opacity: 0; }
+  55% { opacity: .5; } 58% { opacity: .05; } 70% { opacity: .8; } 74% { opacity: 0; } 88% { opacity: .85; } 100% { opacity: .8; }
+}
+
+/* Aranha gigante caindo no meio da tela */
+.pts-susto-aranha { background: transparent; animation: pts-s-escurece 2.2s ease-in-out forwards; }
+@keyframes pts-s-escurece { 0%, 100% { background: rgba(0, 0, 0, 0); } 18%, 80% { background: rgba(0, 0, 0, .55); } }
+.s-aranha { position: absolute; top: 0; left: 50%; display: block; transform: translateX(-50%); animation: pts-s-aranha 2.2s cubic-bezier(.3, 1.3, .5, 1) forwards; }
+.s-aranha i { position: absolute; bottom: 80%; left: 50%; width: 3px; height: 100vh; background: rgba(200, 190, 200, .5); }
+.s-aranha img { position: relative; width: 340px; height: 340px; filter: brightness(.35) contrast(1.6) drop-shadow(0 20px 30px rgba(0, 0, 0, .8)); animation: pts-s-pernas .09s linear .45s infinite alternate; }
+@keyframes pts-s-aranha {
+  0% { transform: translate(-50%, -360px); }
+  20% { transform: translate(-50%, 26vh); }
+  80% { transform: translate(-50%, 26vh); }
+  100% { transform: translate(-50%, -360px); }
+}
+@keyframes pts-s-pernas { from { transform: rotate(-4deg) scale(1); } to { transform: rotate(4deg) scale(1.06); } }
+

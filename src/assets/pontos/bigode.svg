@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 40">
+  <!-- Bigode do Novembro Azul -->
+  <defs>
+    <linearGradient id="pelo" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5aa0e6"/>
+      <stop offset=".55" stop-color="#1f6fc5"/>
+      <stop offset="1" stop-color="#0e4a8a"/>
+    </linearGradient>
+  </defs>
+  <path d="M48 12 C40 4 28 4 20 12 C14 18 8 22 2 18 C2 30 14 36 26 32 C36 29 42 24 48 20 C54 24 60 29 70 32 C82 36 94 30 94 18 C88 22 82 18 76 12 C68 4 56 4 48 12 Z" fill="url(#pelo)"/>
+  <g stroke="#0b3d73" stroke-opacity=".35" stroke-width="1.2" fill="none" stroke-linecap="round">
+    <path d="M24 16 Q30 22 26 28"/><path d="M34 13 Q40 19 37 25"/><path d="M62 13 Q56 19 59 25"/><path d="M72 16 Q66 22 70 28"/>
+  </g>
+  <path d="M26 11 C32 8 38 8 43 11" stroke="#fff" stroke-opacity=".45" stroke-width="2" fill="none" stroke-linecap="round"/>
+</svg>

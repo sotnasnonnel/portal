@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 88">
+  <!-- Laço de conscientização (Outubro Rosa). laco-azul.svg é o mesmo, em azul. -->
+  <defs>
+    <linearGradient id="fita" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff9cc6"/>
+      <stop offset=".5" stop-color="#ec4f95"/>
+      <stop offset="1" stop-color="#b0246a"/>
+    </linearGradient>
+    <linearGradient id="fita2" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f77fb4"/>
+      <stop offset="1" stop-color="#c2317a"/>
+    </linearGradient>
+  </defs>
+  <!-- perna esquerda (passa por trás) -->
+  <path d="M30 40 L10 80 L20 84 L37 50 Z" fill="url(#fita2)"/>
+  <!-- laçada -->
+  <path d="M32 4 C14 4 12 26 22 40 L30 52 L34 46 L26 36 C20 26 22 14 32 14 C42 14 44 26 38 36 L28 52 L44 84 L54 80 L36 46 L42 40 C52 26 50 4 32 4 Z" fill="url(#fita)"/>
+  <!-- brilho -->
+  <path d="M27 9 C21 12 19 20 21 27" stroke="#fff" stroke-opacity=".55" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M46 70 L50 78" stroke="#fff" stroke-opacity=".35" stroke-width="2" stroke-linecap="round"/>
+</svg>

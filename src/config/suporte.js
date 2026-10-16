@@ -13,6 +13,10 @@ export const ATENDENTES_SUPORTE = [
   'marcus.guimaraes@phdengenharia.eng.br',
 ];
 
+// Botão "Fale conosco" (barra dos módulos e Home). Desligado: o botão some, mas a
+// caixa em /fale-conosco continua no ar para responder o que já chegou.
+export const FALE_CONOSCO_ATIVO = false;
+
 export function ehSuporte(user) {
   return ATENDENTES_SUPORTE.includes((user?.email || '').toLowerCase());
 }

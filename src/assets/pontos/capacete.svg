@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 48">
+  <defs>
+    <radialGradient id="casco" cx=".38" cy=".3" r=".8">
+      <stop offset="0" stop-color="#ffe680"/>
+      <stop offset=".45" stop-color="#f2b705"/>
+      <stop offset="1" stop-color="#b07d00"/>
+    </radialGradient>
+  </defs>
+  <!-- capacete de obra -->
+  <path d="M10 34 Q10 8 32 6 Q54 8 54 34 Z" fill="url(#casco)"/>
+  <path d="M28 6.5 Q32 4 36 6.5 L37 30 H27 Z" fill="#ffd23f"/>
+  <path d="M28 6.5 Q32 4 36 6.5 L37 30 H27 Z" fill="none" stroke="#c99400" stroke-width="1"/>
+  <rect x="3" y="32" width="58" height="8" rx="4" fill="#e0a800"/>
+  <rect x="3" y="32" width="58" height="3.5" rx="1.75" fill="#ffd23f" opacity=".8"/>
+  <ellipse cx="22" cy="16" rx="5" ry="3" fill="#fff" opacity=".45" transform="rotate(-25 22 16)"/>
+</svg>

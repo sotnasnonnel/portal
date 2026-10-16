@@ -1,13 +1,16 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, BarChart3, Clock, CreditCard, Headset, Sparkles, ShieldCheck, LogOut, ArrowRight, Lock, Hourglass, Blocks, MessageSquarePlus, Megaphone, Radar } from 'lucide-react';
+import { Users, BarChart3, Clock, CreditCard, Headset, Sparkles, ShieldCheck, LogOut, ArrowRight, Lock, Hourglass, Blocks, MessageSquarePlus, Megaphone, Radar, Star } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { usePontos } from '../../contexts/PontosContext';
+import Insignia from '../../components/Pontos/Insignia';
+import { NOME_TITULO } from '../../config/pontos';
 import { isSuperAdmin } from '../../config/superAdmin';
 import { areasAdministrativoDe } from '../../config/administrativo';
 import { podeAcessarProgramas } from '../../config/programas';
 import { podeVerTorre } from '../../config/torre';
 import { areasFinanceiroDe } from '../../config/financeiro';
-import { FALE_CONOSCO_OPEN_EVENT, SLA_HORAS, MSG_FALE_CONOSCO_TRAVADO, faleConoscoTravado } from '../../config/suporte';
+import { FALE_CONOSCO_ATIVO, FALE_CONOSCO_OPEN_EVENT, SLA_HORAS, MSG_FALE_CONOSCO_TRAVADO, faleConoscoTravado } from '../../config/suporte';
 import { NOVIDADES, ULTIMA_NOVIDADE, novidadesNaoVistas } from '../../config/novidades';
 import FaleConoscoModal from '../../components/FaleConosco/FaleConoscoModal';
 import SolucoesModal from './SolucoesModal';
@@ -29,6 +32,8 @@ import AvatarUsuario from '../../components/UI/AvatarUsuario';
 import { nomeCurto } from '../../utils/formatters';
 import './Home.css';
 
+const preCarregarLoja = () => { import('../Pontos/Pontos'); };
+
 // "Terça-feira, 13 de outubro"
 const hojePorExtenso = () => {
   const t = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -38,6 +43,7 @@ const hojePorExtenso = () => {
 export default function Home() {
   const { user, modules, logout, marcarNovidadesVistas } = useAuth();
   const saudacao = nomeProprio(nomeCurto(user?.nome));
+  const { perfil, saldo } = usePontos();
   const [solucoesAbertas, setSolucoesAbertas] = useState(false);
   const [programasAbertos, setProgramasAbertos] = useState(false);
   const [financeiroAberto, setFinanceiroAberto] = useState(false);
@@ -185,7 +191,7 @@ export default function Home() {
 
   return (
     <div className="home-hero">
-      <FaleConoscoModal modulo="Portal" />
+      {FALE_CONOSCO_ATIVO && <FaleConoscoModal modulo="Portal" />}
       <header className="home-topbar">
         <div className="home-brand">
           <span className="home-logo-brand" role="img" aria-label="PHD Engenharia" />
@@ -206,10 +212,20 @@ export default function Home() {
             <Megaphone size={18} />
             {naoVistas.length > 0 && <span className="home-novidades-dot" aria-hidden="true" />}
           </button>
+          {/* Pontos: o saldo, ao lado de Novidades, leva para a Personalização.
+              É também o alvo do "+N" que voa quando a pessoa ganha pontos. */}
+          {saldo !== null && (
+            <Link to="/personalizacao" className="home-pontos" data-pontos-alvo
+              onMouseEnter={preCarregarLoja} onFocus={preCarregarLoja}
+              aria-label={`${saldo} pontos. Abrir a Personalização`} title="Seus pontos. Troque por molduras, títulos e temas">
+              <Star size={16} aria-hidden="true" /> <b>{saldo.toLocaleString('pt-BR')}</b> pts
+            </Link>
+          )}
           {/* A central de notificações é uma só; na Home ela fica no mesmo
               formato do botão de Novidades. */}
           <AtalhoAprovacoes className="home-iconbtn" />
           <SinoNotificacoes />
+          {FALE_CONOSCO_ATIVO && (
           <button
             type="button"
             className="home-fale"
@@ -223,6 +239,7 @@ export default function Home() {
             {faleConoscoTravado(user) ? <Lock size={16} /> : <MessageSquarePlus size={16} />}
             Fale conosco
           </button>
+          )}
           <AvatarUsuario className="home-avatar" iniciais={iniciais(user?.nome)} title={user?.nome} />
           <button type="button" className="home-logout" onClick={logout}>
             <LogOut size={16} />
@@ -236,8 +253,14 @@ export default function Home() {
           <DestaqueDoDia />
           <div className="home-ola">
             <div>
-              <h1>{saudacao ? `Olá, ${saudacao}!` : 'Olá!'} 🚀</h1>
+              <h1>{saudacao ? `Olá, ${saudacao}!` : 'Olá!'} <span className="home-foguete" aria-hidden="true">🚀</span></h1>
               <p className="home-sub">{hojePorExtenso()}</p>
+              {/* O título (insígnia) que a pessoa usa, abaixo da saudação. */}
+              {perfil?.titulo && (
+                <div className="home-pontos-linha">
+                  <Insignia id={perfil.titulo} nome={NOME_TITULO[perfil.titulo]} texto={perfil.titulo_texto} mini />
+                </div>
+              )}
             </div>
             <HumorDoDia />
           </div>

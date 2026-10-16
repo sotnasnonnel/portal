@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Lock, Pencil } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { usePontos } from '../../contexts/PontosContext';
 import {
   HUMORES, COMENTARIO_MAX, humorPorValor, veResumoHumor, veResumoEmpresa,
 } from '../../config/humor';
@@ -22,6 +23,7 @@ const chaveDe = (userId) => `${userId}|${new Date().toDateString()}`;
 
 export default function HumorDoDia() {
   const { user } = useAuth();
+  const { recarregar } = usePontos();
   const emCache = cache.chave === chaveDe(user?.id);
   const [hoje, setHoje] = useState(emCache ? cache.humor : null); // valor marcado hoje
   const [comentario, setComentario] = useState(emCache ? cache.comentario : ''); // o que está salvo
@@ -56,6 +58,8 @@ export default function HumorDoDia() {
       await registrarHumor(valor, texto);
       cache = { chave: chaveDe(user?.id), humor: valor, comentario: texto };
       depois();
+      // Marcar e contar o motivo dão pontos (gatilho no banco): saldo novo.
+      recarregar();
     } catch (e) {
       setErro(e?.message || 'Não foi possível salvar.');
     } finally {

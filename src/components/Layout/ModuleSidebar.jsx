@@ -3,6 +3,9 @@ import { Link, useLocation } from 'react-router-dom';
 import { ChevronDown, ChevronsLeft, ChevronsRight, Home, Lock, LogOut } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import AvatarUsuario from '../UI/AvatarUsuario';
+import Insignia from '../Pontos/Insignia';
+import { usePontos } from '../../contexts/PontosContext';
+import { NOME_TITULO } from '../../config/pontos';
 import './ModuleSidebar.css';
 
 // Sidebar única dos módulos do portal (Gestão de Horas, Atendimento,
@@ -49,6 +52,7 @@ export default function ModuleSidebar({
 }) {
   const pathname = useLocation().pathname || '';
   const { logout, user } = useAuth();
+  const { perfil: perfilPts } = usePontos();
   const nome = user?.nome || '';
   const email = user?.email || '';
   const [gruposAbertos, setGruposAbertos] = useState({});
@@ -196,6 +200,12 @@ export default function ModuleSidebar({
           <div className="modSb-userinfo">
             <strong title={nome || email}>{nome || 'Usuário'}</strong>
             <span>{papelLabel}</span>
+            {/* O título que a pessoa usa na Personalização, embaixo do nome. */}
+            {perfilPts?.titulo && (
+              <div className="modSb-titulo">
+                <Insignia id={perfilPts.titulo} nome={NOME_TITULO[perfilPts.titulo]} mini />
+              </div>
+            )}
           </div>
           <button className="modSb-logout" onClick={sair} title="Sair" type="button">
             <LogOut size={18} />

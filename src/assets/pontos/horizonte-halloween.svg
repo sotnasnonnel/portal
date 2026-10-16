@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 150" preserveAspectRatio="xMidYMax meet">
+  <!-- Trecho do horizonte do Halloween (repete na horizontal): morro, árvores
+       secas, lápides e cerca, em silhueta. Fica embaixo da Home. -->
+  <g fill="#060508">
+    <!-- morro -->
+    <path d="M0 150 V112 Q90 92 180 104 T360 100 T540 108 T720 112 V150 Z"/>
+
+    <!-- árvore seca grande -->
+    <path d="M118 104 C120 80 116 62 121 40 L126 40 C124 60 128 82 128 104 Z"/>
+    <path d="M122 70 C108 62 98 56 86 42 L88 40 C100 52 110 58 123 64 Z"/>
+    <path d="M86 42 C80 36 78 30 72 26 L74 24 C80 28 84 34 89 40 Z"/>
+    <path d="M86 46 C76 46 68 50 60 48 L60 46 C68 47 76 43 86 43 Z"/>
+    <path d="M124 56 C136 46 146 42 156 30 L158 32 C150 44 138 50 126 60 Z"/>
+    <path d="M150 38 C156 36 162 30 166 22 L168 23 C164 32 158 39 151 41 Z"/>
+    <path d="M122 44 C118 32 112 26 108 16 L110 15 C116 25 121 31 125 42 Z"/>
+    <path d="M125 46 C130 34 134 28 132 14 L134 14 C137 28 133 36 127 48 Z"/>
+    <path d="M140 49 C148 50 156 56 164 56 L164 58 C155 58 147 52 139 52 Z"/>
+
+    <!-- árvore seca pequena -->
+    <path d="M560 108 C562 92 559 80 563 66 L567 66 C565 80 568 94 567 108 Z"/>
+    <path d="M563 84 C552 78 546 70 538 62 L540 60 C548 68 554 75 564 80 Z"/>
+    <path d="M566 76 C574 68 582 66 590 56 L592 58 C585 68 576 72 567 80 Z"/>
+    <path d="M564 70 C562 60 558 54 556 46 L558 45 C561 53 565 60 567 68 Z"/>
+
+    <!-- lápides -->
+    <path d="M236 106 V88 Q236 78 246 78 Q256 78 256 88 V106 Z"/>
+    <path d="M272 104 V92 Q272 84 280 84 Q288 84 288 92 V104 Z"/>
+    <path d="M320 103 V84 H326 V76 H332 V84 H338 V90 H332 V103 Z"/>
+    <path d="M430 104 V90 Q430 82 438 82 Q446 82 446 90 V104 Z" transform="rotate(-6 438 94)"/>
+    <path d="M466 106 V86 Q466 76 477 76 Q488 76 488 86 V106 Z" transform="rotate(4 477 92)"/>
+
+    <!-- cerca -->
+    <g>
+      <rect x="610" y="96" width="110" height="3"/>
+      <rect x="610" y="104" width="110" height="3"/>
+      <path d="M614 110 V90 L617 86 L620 90 V110 Z"/>
+      <path d="M634 110 V88 L637 84 L640 88 V110 Z"/>
+      <path d="M654 112 V90 L657 86 L660 90 V112 Z"/>
+      <path d="M674 112 V88 L677 84 L680 88 V112 Z"/>
+      <path d="M694 112 V90 L697 86 L700 90 V112 Z"/>
+      <path d="M714 112 V88 L717 84 L720 88 V112 Z"/>
+    </g>
+  </g>
+</svg>

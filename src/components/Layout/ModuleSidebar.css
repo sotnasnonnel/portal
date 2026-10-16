@@ -214,7 +214,9 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.modSb-userinfo span { display: block; font-size: var(--font-size-2xs); color: var(--muted, #64748b); }
+.modSb-userinfo > span { display: block; font-size: var(--font-size-2xs); color: var(--muted, #64748b); }
+.modSb-titulo { margin-top: 4px; }
+.modSb-titulo .pts-ins { max-width: 100%; }
 .modSb-logout {
   background: none;
   border: none;

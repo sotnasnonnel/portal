@@ -1,10 +1,13 @@
 import { AuthProvider } from './contexts/AuthContext';
+import { PontosProvider } from './contexts/PontosContext';
 import AppRoutes from './routes/AppRoutes';
 
 export default function App() {
   return (
     <AuthProvider>
-      <AppRoutes />
+      <PontosProvider>
+        <AppRoutes />
+      </PontosProvider>
     </AuthProvider>
   );
 }

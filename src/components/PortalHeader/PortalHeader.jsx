@@ -1,6 +1,6 @@
 import { Menu, Calendar, HelpCircle, MessageSquarePlus, Lock } from "lucide-react";
 import { GUIA_OPEN_EVENT } from "../Guia/guides";
-import { FALE_CONOSCO_OPEN_EVENT, SLA_HORAS, MSG_FALE_CONOSCO_TRAVADO, faleConoscoTravado } from "../../config/suporte";
+import { FALE_CONOSCO_ATIVO, FALE_CONOSCO_OPEN_EVENT, SLA_HORAS, MSG_FALE_CONOSCO_TRAVADO, faleConoscoTravado } from "../../config/suporte";
 import { useAuth } from "../../contexts/AuthContext";
 import SinoNotificacoes from "../Notificacoes/SinoNotificacoes";
 import AtalhoAprovacoes from "../../modules/aprovacoes/AtalhoAprovacoes";
@@ -54,6 +54,7 @@ export default function PortalHeader({ modulo = '', onMenuToggle, acoes = null }
         {/* Central de Aprovações: o sino avisa, o número aqui é o que ainda espera. */}
         <AtalhoAprovacoes className="portal-header-help" />
         <SinoNotificacoes />
+        {FALE_CONOSCO_ATIVO && (
         <button
           type="button"
           className="portal-header-help portal-header-fale"
@@ -85,6 +86,7 @@ export default function PortalHeader({ modulo = '', onMenuToggle, acoes = null }
             </span>
           ) : null}
         </button>
+        )}
         <button
           type="button"
           className="portal-header-help"
@@ -100,7 +102,7 @@ export default function PortalHeader({ modulo = '', onMenuToggle, acoes = null }
         </div>
       </div>
 
-      <FaleConoscoModal modulo={modulo} caixa={caixa} />
+      {FALE_CONOSCO_ATIVO && <FaleConoscoModal modulo={modulo} caixa={caixa} />}
     </header>
   );
 }

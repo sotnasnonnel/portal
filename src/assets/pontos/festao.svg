@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 40">
+  <!-- Um trecho do festão de pinheiro (repete na horizontal): curva com
+       agulhas em tons de verde e uma bola no ponto mais baixo. -->
+  <defs>
+    <radialGradient id="bola" cx=".35" cy=".3" r=".75">
+      <stop offset="0" stop-color="#ffe7a3"/>
+      <stop offset=".35" stop-color="#e3b341"/>
+      <stop offset="1" stop-color="#8a6300"/>
+    </radialGradient>
+    <radialGradient id="bola2" cx=".35" cy=".3" r=".75">
+      <stop offset="0" stop-color="#ff9a8a"/>
+      <stop offset=".35" stop-color="#d63a2b"/>
+      <stop offset="1" stop-color="#7c150d"/>
+    </radialGradient>
+  </defs>
+  <path d="M0 4 Q80 30 160 4" fill="none" stroke="#14462f" stroke-width="10" stroke-linecap="round"/>
+  <g stroke-linecap="round" stroke-width="2.2">
+    <g stroke="#1d6b45">
+      <path d="M6 6 l-4 6"/><path d="M14 10 l-3 7"/><path d="M24 14 l-2 7"/><path d="M34 17 l-1 7"/><path d="M46 20 l0 7"/>
+      <path d="M58 22 l1 7"/><path d="M70 23 l1 7"/><path d="M90 23 l-1 7"/><path d="M102 22 l-1 7"/><path d="M114 20 l0 7"/>
+      <path d="M126 17 l1 7"/><path d="M136 14 l2 7"/><path d="M146 10 l3 7"/><path d="M154 6 l4 6"/>
+    </g>
+    <g stroke="#2f8a57">
+      <path d="M10 5 l3 -5"/><path d="M20 9 l4 -5"/><path d="M30 13 l4 -5"/><path d="M40 16 l4 -5"/><path d="M52 18 l4 -5"/>
+      <path d="M64 20 l3 -5"/><path d="M96 20 l-3 -5"/><path d="M108 18 l-4 -5"/><path d="M120 16 l-4 -5"/>
+      <path d="M130 13 l-4 -5"/><path d="M140 9 l-4 -5"/><path d="M150 5 l-3 -5"/>
+    </g>
+    <g stroke="#3fa86e" stroke-width="1.6">
+      <path d="M17 12 l-6 1"/><path d="M38 19 l-6 0"/><path d="M60 23 l-6 0"/><path d="M100 23 l6 0"/><path d="M122 19 l6 0"/><path d="M143 12 l6 1"/>
+    </g>
+  </g>
+  <!-- bolas -->
+  <path d="M80 22 V26" stroke="#8a6300" stroke-width="1.5"/>
+  <rect x="77" y="24" width="6" height="4" rx="1" fill="#b8860b"/>
+  <circle cx="80" cy="34" r="6.5" fill="url(#bola)"/>
+  <circle cx="32" cy="22" r="4.2" fill="url(#bola2)"/>
+  <circle cx="128" cy="22" r="4.2" fill="url(#bola2)"/>
+</svg>
