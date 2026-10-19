@@ -196,8 +196,8 @@
   border: 1px solid #2a2230; box-shadow: 0 24px 60px rgba(0, 0, 0, .55);
 }
 .pl-sustos img { width: 84px; height: 84px; filter: drop-shadow(0 0 18px rgba(220, 200, 255, .55)); }
+/* Só a pergunta: o convite não explica o que vem nem quando (19/10/2026). */
 .pl-sustos h2 { margin: 0; font-size: var(--font-size-2xl); }
-.pl-sustos p { margin: 0; color: #b3a7b4; font-size: var(--font-size-sm); line-height: 1.5; }
 .pl-sustos-acoes { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; justify-content: center; }
 .pl-sustos .pl-btn { background: #e3a344; color: #17131b; }
 .pl-sustos .pl-btn:hover:not(:disabled) { background: #f0b960; }

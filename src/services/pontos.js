@@ -71,7 +71,7 @@ export async function extrato(limite = 30) {
   return data || [];
 }
 
-/** Apaga o meu recado no mural de quem faz aniversário hoje. */
+/** Apaga o meu recado no mural de quem está em cartaz (hoje ou o fim de semana). */
 export async function excluirParabens(colaboradorId) {
   const { error } = await supabase.rpc('parabens_excluir', { p_para: colaboradorId });
   checar(error);

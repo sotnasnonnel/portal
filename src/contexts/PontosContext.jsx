@@ -106,8 +106,8 @@ export function PontosProvider({ children }) {
     <PontosContext.Provider value={value}>
       {children}
       <DecoTema tema={tema} />
-      {/* Sustos: só no dia 30 de outubro, com o Halloween valendo de verdade
-          (não na prévia) e para quem disse "sim". */}
+      {/* Sustos: na temporada (20 a 30 de outubro, ver diaDeSustos), com o
+          Halloween valendo de verdade (não na prévia) e para quem disse "sim". */}
       {meuTema === 'th-halloween' && previaTema === undefined && resumo?.perfil?.sustos && diaDeSustos() && <SustosHalloween />}
       {sustoTeste > 0 && <SustosHalloween key={sustoTeste} teste onFim={() => setSustoTeste(0)} />}
       {/* Um ganho por vez: o próximo sai quando o anterior chega. */}

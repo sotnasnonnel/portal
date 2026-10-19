@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Cake, X, Send, Loader2, Trash2 } from 'lucide-react';
+import { Cake, X, Send, Loader2, Trash2, Pencil } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePontos } from '../../contexts/PontosContext';
-import { muralDe, enviarParabens, excluirParabens } from '../../services/pontos';
+import { muralDe, enviarParabens, excluirParabens, visuais as visuaisPontos } from '../../services/pontos';
+import { notificarParabens } from '../../services/notificarParabens';
+import { carregarFotosMural, fotosMuralCobrem, fotosMuralEmCache } from './fotosMural';
 import RecadoMural from '../../components/Pontos/RecadoMural';
 import { ICONES_PARABENS, MAX_ICONES } from '../../config/pontos';
 import { IMG } from '../../config/pontosImagens';
@@ -18,21 +20,35 @@ const mensagemPronta = (primeiro) =>
   `Feliz aniversário, ${primeiro}! 🎉 Desejo muita saúde, felicidade e sucesso. Um grande abraço!`;
 
 /**
- * Mural de parabéns de quem faz aniversário hoje. Cada colega deixa UM recado
- * (pode editar ou excluir no dia); o aniversariante vê todos.
- * O banco só aceita recado no dia do aniversário (parabens_enviar).
+ * Mural de parabéns de quem está em cartaz. Cada colega deixa UM recado; o
+ * aniversariante vê todos.
+ *
+ * Depois de enviar, o formulário sai de cena: fica o recado no mural, com
+ * "Editar" e "Excluir" (pedido do usuário, 19/10/2026 — o campo de texto aberto
+ * com o recado dentro fazia parecer que ele ainda não tinha sido enviado). O
+ * formulário só volta no "Editar".
+ *
+ * O banco aceita recado no dia do aniversário e, quando ele cai no fim de
+ * semana, até a segunda (parabens_enviar / app_private.comemoracao_em_cartaz).
+ *
+ * Cada recado mostra a foto, o título e os enfeites de quem escreveu, e o
+ * recado novo avisa o aniversariante por e-mail (notificarParabens).
  *
  * Reusa a casca do SolucoesModal, como os outros popups da Home.
  */
 export default function MuralParabensModal({ pessoa, linkTeams, onClose }) {
-  const { user } = useAuth();
+  const { user, fotoUrl } = useAuth();
   const { perfil, recarregar } = usePontos();
   const [recados, setRecados] = useState(null);
+  const [visuais, setVisuais] = useState(() => new Map()); // título de quem escreveu
+  // As fotos que a Home já buscou (ver fotosMural.js): o modal nasce com elas.
+  const [fotos, setFotos] = useState(() => fotosMuralEmCache(pessoa.colaborador_id)?.fotos || {});
   const [texto, setTexto] = useState('');
   const [icones, setIcones] = useState(['festa', 'bolo']);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState('');
   const [ok, setOk] = useState('');
+  const [editando, setEditando] = useState(false);   // formulário reaberto
   const [excluindo, setExcluindo] = useState(false); // confirmação aberta
   const [apagando, setApagando] = useState(false);
   const souEu = pessoa.colaborador_id === user?.id;
@@ -57,6 +73,24 @@ export default function MuralParabensModal({ pessoa, linkTeams, onClose }) {
 
   useEffect(() => { carregar(); }, [carregar]);
 
+  // Quem escreveu, em texto, para a foto e o título serem buscados só quando a
+  // lista de autores muda: editar ou excluir o próprio recado recarrega o mural
+  // e não deve refazer as duas consultas.
+  const autores = recados ? [...new Set(recados.map((r) => r.de_id))].sort().join(',') : '';
+
+  // Título da lojinha de quem escreveu, e a foto de quem ainda não veio no
+  // que a Home buscou (um recado novo, de alguém que não estava no mural).
+  useEffect(() => {
+    if (!autores) return undefined;
+    let vivo = true;
+    const ids = autores.split(',');
+    visuaisPontos(ids).then((v) => { if (vivo) setVisuais(v); });
+    if (!fotosMuralCobrem(pessoa.colaborador_id, ids)) {
+      carregarFotosMural(pessoa.colaborador_id).then(({ fotos: f }) => { if (vivo) setFotos(f); });
+    }
+    return () => { vivo = false; };
+  }, [autores, pessoa.colaborador_id]);
+
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
@@ -68,7 +102,12 @@ export default function MuralParabensModal({ pessoa, linkTeams, onClose }) {
     };
   }, [onClose]);
 
-  const jaMandei = recados?.some((r) => r.de_id === user?.id);
+  const meuRecado = recados?.find((r) => r.de_id === user?.id) || null;
+  const jaMandei = Boolean(meuRecado);
+  // Quem ainda não mandou escreve direto; quem já mandou só vê o campo ao
+  // editar. Enquanto os recados não chegam não há como saber em qual dos dois
+  // casos a pessoa está: o formulário espera, em vez de aparecer e sumir.
+  const mostrarForm = !souEu && recados !== null && (!jaMandei || editando);
 
   const enviar = async (e) => {
     e.preventDefault();
@@ -78,7 +117,11 @@ export default function MuralParabensModal({ pessoa, linkTeams, onClose }) {
     setOk('');
     try {
       await enviarParabens(pessoa.colaborador_id, texto.trim(), icones);
+      // Recado novo avisa o aniversariante por e-mail; editar o próprio recado
+      // não manda outro aviso.
+      if (!jaMandei) notificarParabens(pessoa.colaborador_id);
       setOk(jaMandei ? 'Recado atualizado.' : 'Recado enviado.');
+      setEditando(false);
       await carregar();
       recarregar();
     } catch (err) {
@@ -86,6 +129,21 @@ export default function MuralParabensModal({ pessoa, linkTeams, onClose }) {
     } finally {
       setEnviando(false);
     }
+  };
+
+  const editar = () => {
+    setTexto(meuRecado.texto);
+    setIcones(meuRecado.icones || []);
+    setErro('');
+    setOk('');
+    setEditando(true);
+  };
+
+  // Cancelar desfaz o que foi digitado: o recado no mural continua o que está lá.
+  const cancelarEdicao = () => {
+    setTexto(meuRecado?.texto || '');
+    setIcones(meuRecado?.icones || []);
+    setEditando(false);
   };
 
   const excluir = async () => {
@@ -97,6 +155,7 @@ export default function MuralParabensModal({ pessoa, linkTeams, onClose }) {
       setTexto(mensagemPronta(primeiro));
       setIcones(['festa', 'bolo']);
       setExcluindo(false);
+      setEditando(false);
       setOk('Recado excluído.');
       await carregar();
     } catch (err) {
@@ -114,20 +173,30 @@ export default function MuralParabensModal({ pessoa, linkTeams, onClose }) {
     });
   };
 
-  // Excluir pede confirmação no próprio recado: é a única ação sem volta aqui.
-  const rodapeMeu = excluindo ? (
-    <span className="muralmodal-confirma">
-      Excluir seu recado?
-      <button type="button" className="muralmodal-sim" onClick={excluir} disabled={apagando}>
-        {apagando ? <Loader2 size={13} className="muralmodal-spin" /> : <Trash2 size={13} />} Excluir
-      </button>
-      <button type="button" className="muralmodal-nao" onClick={() => setExcluindo(false)} disabled={apagando}>Cancelar</button>
-    </span>
-  ) : (
-    <button type="button" className="muralmodal-excluir" onClick={() => setExcluindo(true)}>
-      <Trash2 size={13} /> Excluir meu recado
-    </button>
-  );
+  // Rodapé do próprio recado: editar e excluir, com a confirmação no lugar dos
+  // dois (excluir é a única ação sem volta aqui). Durante a edição o rodapé sai:
+  // os botões que valem estão no formulário.
+  let rodapeMeu = null;
+  if (!editando) {
+    rodapeMeu = excluindo ? (
+      <span className="muralmodal-confirma">
+        Excluir seu recado?
+        <button type="button" className="muralmodal-sim" onClick={excluir} disabled={apagando}>
+          {apagando ? <Loader2 size={13} className="muralmodal-spin" /> : <Trash2 size={13} />} Excluir
+        </button>
+        <button type="button" className="muralmodal-nao" onClick={() => setExcluindo(false)} disabled={apagando}>Cancelar</button>
+      </span>
+    ) : (
+      <span className="muralmodal-rodape">
+        <button type="button" className="muralmodal-editar" onClick={editar}>
+          <Pencil size={13} /> Editar
+        </button>
+        <button type="button" className="muralmodal-excluir" onClick={() => setExcluindo(true)}>
+          <Trash2 size={13} /> Excluir
+        </button>
+      </span>
+    );
+  }
 
   return (
     <div className="solmodal-overlay" onClick={onClose}>
@@ -136,15 +205,15 @@ export default function MuralParabensModal({ pessoa, linkTeams, onClose }) {
           <span className="solmodal-head-icon"><Cake size={20} /></span>
           <div className="solmodal-head-txt">
             <h2 id="mural-titulo">{souEu ? 'Seu mural de parabéns' : `Mural de ${primeiro}`}</h2>
-            <p>{souEu ? 'Os recados que os colegas deixaram para você hoje.' : `Deixe um recado de aniversário para ${primeiro}.`}</p>
+            <p>{souEu ? 'Os recados que os colegas deixaram para você.' : `Deixe um recado de aniversário para ${primeiro}.`}</p>
           </div>
           <button type="button" className="solmodal-close" onClick={onClose} aria-label="Fechar"><X size={18} /></button>
         </header>
 
         <div className="solmodal-body muralmodal-body">
-          {!souEu && (
+          {mostrarForm && (
             <form className="muralmodal-form" onSubmit={enviar}>
-              <label htmlFor="mural-texto">{jaMandei ? 'Seu recado (dá para editar hoje)' : 'Seu recado'}</label>
+              <label htmlFor="mural-texto">{editando ? 'Editando seu recado' : 'Seu recado'}</label>
               <textarea
                 id="mural-texto"
                 value={texto}
@@ -167,35 +236,54 @@ export default function MuralParabensModal({ pessoa, linkTeams, onClose }) {
                 })}
               </div>
               <div className="muralmodal-acoes">
-                <small>{texto.length}/{MAX}{!jaMandei && ' · vale 10 pontos'}</small>
+                <small>{texto.length}/{MAX}{!jaMandei && ' · vale 10 pontos e avisa por e-mail'}</small>
                 {linkTeams && <a href={linkTeams} target="_blank" rel="noopener noreferrer">Mandar também no Teams</a>}
+                {editando && (
+                  <button type="button" className="muralmodal-cancelar" onClick={cancelarEdicao} disabled={enviando}>
+                    Cancelar
+                  </button>
+                )}
                 <button type="submit" className="muralmodal-enviar" disabled={enviando || !texto.trim()}>
                   {enviando ? <Loader2 size={15} className="muralmodal-spin" /> : <Send size={15} />}
-                  {jaMandei ? 'Atualizar' : 'Enviar recado'}
+                  {jaMandei ? 'Salvar recado' : 'Enviar recado'}
                 </button>
               </div>
-              {erro && <p className="muralmodal-erro" role="alert">{erro}</p>}
-              {ok && <p className="muralmodal-ok" role="status">{ok}</p>}
             </form>
           )}
+
+          {/* Fora do formulário: o aviso tem de aparecer também quando ele se
+              fecha depois do envio. */}
+          {erro && <p className="muralmodal-erro" role="alert">{erro}</p>}
+          {ok && <p className="muralmodal-ok" role="status">{ok}</p>}
 
           <div className="muralmodal-lista">
             {recados === null && <p className="muralmodal-vazio"><Loader2 size={16} className="muralmodal-spin" /> Carregando recados…</p>}
             {recados?.length === 0 && (
               <p className="muralmodal-vazio">{souEu ? 'Ainda não chegou nenhum recado. O dia está só começando.' : 'Nenhum recado ainda. Seja o primeiro.'}</p>
             )}
-            {recados?.map((r) => (
-              <RecadoMural
-                key={r.id}
-                nome={r.de_nome}
-                texto={r.texto}
-                moldura={r.de_id === user?.id ? perfil?.moldura : r.moldura}
-                mural={r.de_id === user?.id ? perfil?.mural : r.mural}
-                icones={r.icones}
-                meu={r.de_id === user?.id}
-                rodape={r.de_id === user?.id ? rodapeMeu : null}
-              />
-            ))}
+            {recados?.map((r) => {
+              const meu = r.de_id === user?.id;
+              // O meu visual vem do contexto: muda na hora em que compro algo
+              // na lojinha, sem esperar a releitura do mural.
+              const v = meu ? perfil : visuais.get(r.de_id);
+              return (
+                <RecadoMural
+                  key={r.id}
+                  nome={r.de_nome}
+                  texto={r.texto}
+                  moldura={meu ? perfil?.moldura : r.moldura}
+                  mural={meu ? perfil?.mural : r.mural}
+                  titulo={v?.titulo}
+                  tituloTexto={v?.titulo_texto}
+                  // A minha foto já está em memória (a bolinha do topo); a dos
+                  // colegas vem do hub, e pode não ter chegado ainda.
+                  foto={(meu && fotoUrl) || fotos[r.de_id] || null}
+                  icones={r.icones}
+                  meu={meu}
+                  rodape={meu ? rodapeMeu : null}
+                />
+              );
+            })}
           </div>
         </div>
       </div>

@@ -46,7 +46,11 @@
 .muralmodal-spin { animation: muralmodal-gira 1s linear infinite; }
 @keyframes muralmodal-gira { to { transform: rotate(360deg); } }
 
-/* Excluir o próprio recado (com confirmação no lugar) */
+/* Editar e excluir o próprio recado. Depois de enviar, o formulário sai e
+   ficam estes dois botões no pé do recado (a confirmação do excluir ocupa o
+   lugar dos dois). */
+.muralmodal-rodape { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.muralmodal-editar,
 .muralmodal-excluir,
 .muralmodal-sim,
 .muralmodal-nao {
@@ -61,8 +65,24 @@
   font-weight: 600;
   cursor: pointer;
 }
+.muralmodal-editar,
 .muralmodal-excluir { border: 1px solid var(--border-strong); background: #fff; color: var(--ink-soft); }
+.muralmodal-editar:hover { border-color: var(--terracotta); color: var(--terracotta); background: var(--terracotta-light); }
 .muralmodal-excluir:hover { border-color: #fca5a5; color: #b91c1c; background: #fef2f2; }
+/* Cancelar a edição: mesma altura do botão de enviar, ao lado dele. */
+.muralmodal-cancelar {
+  height: var(--ctl-h-sm);
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--ctl-radius-sm);
+  background: #fff;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+.muralmodal-cancelar:disabled { opacity: .55; cursor: not-allowed; }
 .muralmodal-confirma { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 8px; font-size: var(--font-size-xs); font-weight: 600; color: #b91c1c; }
 .muralmodal-confirma .muralmodal-sim,
 .muralmodal-confirma .muralmodal-nao { margin-top: 0; }

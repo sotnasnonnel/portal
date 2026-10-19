@@ -4,33 +4,34 @@ import gritoA from '../../assets/pontos/sustos/grito-a.mp3';
 import gritoB from '../../assets/pontos/sustos/grito-b.mp3';
 import gritoC from '../../assets/pontos/sustos/grito-c.mp3';
 
-// Sustos do tema Halloween, só no dia 30 de outubro e só para quem disse
-// "sim" na Personalização (pontos_perfil.sustos; o dia é checado em
+// Sustos do tema Halloween, na temporada de 20 a 30 de outubro e só para quem
+// disse "sim" na Personalização (pontos_perfil.sustos; o dia é checado em
 // PontosContext). Assustam de verdade: fotos de terror que pulam na tela,
-// rosto surgindo do escuro, vulto com a luz falhando, aranha gigante, sempre
+// rosto surgindo do escuro, vulto com a luz falhando, sempre
 // com um GRITO alto: um dos três gravados (assets/pontos/sustos/grito-*.mp3,
 // enviados pelo usuário, recortados e no mesmo volume), sorteado a cada susto;
 // se não carregarem, um grito sintetizado aqui mesmo.
 // Regras para não atrapalhar o trabalho:
 //  - raros: o primeiro depois de 1–2 min, os outros a cada 3–7 min;
 //  - curtos (1,5–2,6 s), não bloqueiam clique (clicar ou Esc encerra);
-//  - nunca com a pessoa digitando, com popup aberto ou com a aba escondida;
+//  - digitando VALE: o susto não rouba o foco nem engole a tecla, e era
+//    justamente aí que ele fazia falta (pedido do usuário, 19/10/2026);
+//  - com popup aberto ou aba escondida, não: ali há uma decisão na mão da
+//    pessoa, e susto em aba escondida é só grito sem imagem;
 //  - quem pede menos animação no sistema não recebe nenhum.
 // Cada susto: a foto (chave de IMG) e quando o grito entra (ms do início).
+// Só as fotos que o usuário mandou — a aranha desenhada saiu (19/10/2026).
 const SUSTOS = {
   mulher: { foto: 'sustoMulher', dura: 1500, grito: 60 },
   grito: { foto: 'sustoGrito', dura: 1500, grito: 60 },
   sorriso: { foto: 'sustoSorriso', dura: 2900, grito: 1750 },
   porta: { foto: 'sustoPorta', dura: 2600, grito: 1500 },
-  aranha: { foto: null, dura: 2200, grito: 420 },
 };
 const TIPOS = Object.keys(SUSTOS);
 const sorteio = (min, max) => min + Math.random() * (max - min);
 
 function ocupado() {
   if (document.hidden) return true;
-  const el = document.activeElement;
-  if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return true;
   return !!document.querySelector('[role="dialog"], [aria-modal="true"]');
 }
 
@@ -148,7 +149,7 @@ function gritar(dur = 1.4) {
 }
 
 // `teste`: solta um susto na hora (botão do super admin na Personalização),
-// sem agenda nem dia 30, e avisa `onFim` quando acaba.
+// sem agenda nem temporada, e avisa `onFim` quando acaba.
 export default function SustosHalloween({ teste = false, onFim }) {
   const [susto, setSusto] = useState(null);
   const fimTeste = useRef(onFim);
@@ -158,7 +159,7 @@ export default function SustosHalloween({ teste = false, onFim }) {
   const ultimo = useRef(null);
 
   useEffect(() => {
-    Object.values(SUSTOS).forEach(({ foto }) => { if (foto) { const im = new Image(); im.src = IMG[foto]; } });
+    Object.values(SUSTOS).forEach(({ foto }) => { const im = new Image(); im.src = IMG[foto]; });
   }, []);
 
   // O navegador só deixa tocar som depois de um clique ou tecla da pessoa:
@@ -213,7 +214,7 @@ export default function SustosHalloween({ teste = false, onFim }) {
   useEffect(() => {
     if (!susto) return undefined;
     const cfg = SUSTOS[susto.tipo];
-    const grito = setTimeout(() => gritar(susto.tipo === 'aranha' ? 1.1 : 1.4), cfg.grito);
+    const grito = setTimeout(() => gritar(1.4), cfg.grito);
     const fim = setTimeout(acabar, cfg.dura);
     const onKey = (e) => { if (e.key === 'Escape') acabar(); };
     window.addEventListener('keydown', onKey);
@@ -229,8 +230,7 @@ export default function SustosHalloween({ teste = false, onFim }) {
   if (!susto) return null;
   return (
     <div className={`pts-susto pts-susto-${susto.tipo}`} key={susto.id} aria-hidden="true">
-      {SUSTOS[susto.tipo].foto && <img className="s-foto" src={IMG[SUSTOS[susto.tipo].foto]} alt="" />}
-      {susto.tipo === 'aranha' && <span className="s-aranha"><i /><img src={IMG.aranha} alt="" /></span>}
+      <img className="s-foto" src={IMG[SUSTOS[susto.tipo].foto]} alt="" />
     </div>
   );
 }

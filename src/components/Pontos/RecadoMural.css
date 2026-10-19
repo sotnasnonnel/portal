@@ -27,5 +27,7 @@
 .rec-mural-corpo b { display: block; font-size: var(--font-size-xs); }
 .rec-mural-corpo b small { font-weight: 400; color: var(--muted); }
 .rec-mural-corpo .pts-rec-texto { display: block; margin: 2px 0 0; font-size: var(--font-size-sm); white-space: pre-wrap; overflow-wrap: anywhere; }
+/* Título de quem escreveu, entre o nome e o recado. */
+.rec-mural-titulo { display: block; margin: 3px 0 1px; }
 .rec-mural-icones { display: flex; gap: 6px; margin-top: 6px; }
 .rec-mural-icones img { width: 34px; height: 34px; object-fit: contain; }

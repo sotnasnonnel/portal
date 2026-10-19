@@ -36,8 +36,15 @@ const MES_TEMA = { 'th-halloween': 10, 'th-outubro-rosa': 10, 'th-novembro-azul'
 const mesAtual = () => new Date().getMonth() + 1;
 export const temaNoMes = (id) => !!id && MES_TEMA[id] === mesAtual();
 
-// Sustos do Halloween: só no dia 30 de outubro (pedido do usuário).
-export const diaDeSustos = () => { const h = new Date(); return h.getMonth() === 9 && h.getDate() === 30; };
+// Sustos do Halloween: a temporada vai de 20 a 30 de outubro (era só o dia 30;
+// o usuário pediu em 19/10/2026 que começasse no dia seguinte). A data não é
+// dita em lugar nenhum da tela: a graça é não saber quando vem.
+const SUSTOS_DE = 20;
+const SUSTOS_ATE = 30;
+export const diaDeSustos = () => {
+  const h = new Date();
+  return h.getMonth() === 9 && h.getDate() >= SUSTOS_DE && h.getDate() <= SUSTOS_ATE;
+};
 
 /** "th-outubro-rosa" -> "outubro-rosa": o valor de data-pts-tema no <html>. */
 export function chaveTema(id) {

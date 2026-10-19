@@ -277,7 +277,7 @@ export default function Pontos() {
                   )}
                   {it.id === 'th-halloween' && usando && (
                     <button type="button" className="pl-sustos-troca" onClick={() => setPerguntaSustos(true)}>
-                      Sustos no dia 30: <b>{perfil.sustos ? 'ligados' : 'desligados'}</b>
+                      Sustos: <b>{perfil.sustos ? 'ligados' : 'desligados'}</b>
                     </button>
                   )}
                   <div className="pl-item-acao">
@@ -314,7 +314,7 @@ export default function Pontos() {
             setPerguntaSustos(false);
             try {
               await definirSustos(sim);
-              setMsg({ ok: true, t: sim ? 'Sustos ligados para o dia 30. Boa sorte. 👻' : 'Sem sustos. O Halloween fica só no visual.' });
+              setMsg({ ok: true, t: sim ? 'Sustos ligados. Boa sorte. 👻' : 'Sem sustos. O Halloween fica só no visual.' });
               await recarregar();
             } catch (e) {
               setMsg({ ok: false, t: e.message });
@@ -350,7 +350,12 @@ function Extrato({ saldo }) {
   );
 }
 
-/** Pergunta, ao escolher o Halloween, se a pessoa quer levar sustos. */
+/**
+ * Pergunta, ao escolher o Halloween, se a pessoa quer levar sustos.
+ *
+ * Só a pergunta: o que acontece, e principalmente QUANDO, não se conta
+ * (pedido do usuário, 19/10/2026 — explicar estraga o susto).
+ */
 function PerguntaSustos({ ligados, onEscolher, onFechar }) {
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onFechar(); };
@@ -362,10 +367,6 @@ function PerguntaSustos({ ligados, onEscolher, onFechar }) {
       <div className="pl-sustos" role="dialog" aria-modal="true" aria-labelledby="pl-sustos-tit" onClick={(e) => e.stopPropagation()}>
         <img src={IMG.fantasma} alt="" />
         <h2 id="pl-sustos-tit">Quer levar uns sustos?</h2>
-        <p>
-          No dia 30 de outubro, de vez em quando o portal escurece e uma imagem de terror pula na tela, por uns 2 segundos, <b>com um grito bem alto</b>. Abaixe o volume se estiver
-          em reunião. Nunca enquanto você digita, e um clique faz sumir. Dá para mudar depois no card do tema.
-        </p>
         <div className="pl-sustos-acoes">
           <button type="button" className="pl-btn is-sec" onClick={() => onEscolher(false)}>{ligados ? 'Desligar os sustos' : 'Não, obrigado'}</button>
           <button type="button" className="pl-btn" onClick={() => onEscolher(true)} autoFocus>{ligados ? 'Manter os sustos' : 'Quero sustos'}</button>

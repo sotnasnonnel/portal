@@ -38,7 +38,15 @@ export async function resumoHumor({ de, ate, escopo = 'equipe' }) {
   return data || [];
 }
 
-/** { colaborador_id, nome, funcao, tipo: 'aniversario'|'tempo_casa', dia, anos_casa, email }. */
+/**
+ * { colaborador_id, nome, funcao, tipo: 'aniversario'|'tempo_casa', dia, mes,
+ *   anos_casa, email, celebra_em }.
+ *
+ * `celebra_em` é o dia da comemoração que ainda está em cartaz (null = fora da
+ * janela do fim de semana) e só nessas linhas vem o e-mail. Sem `mes` a lista
+ * pedida é do mês corrente, mas pode trazer quem comemorou no fim de semana do
+ * mês anterior.
+ */
 export async function aniversariantesDoMes(mes = null) {
   const { data, error } = await supabase.rpc('aniversariantes_mes', { p_mes: mes });
   checar(error);
@@ -53,4 +61,19 @@ export async function fotosAniversariantes() {
   const { data, error } = await supabase.functions.invoke('fotos-aniversariantes', { body: {} });
   if (error) return {};
   return data?.fotos || {};
+}
+
+/**
+ * Fotos de quem escreveu no mural de parabéns de alguém, vindas do hub:
+ * { fotos: { [colaborador_id]: url }, ids: [colaborador_id] }. A mesma Edge
+ * Function das fotos da Home, que tira a lista de pessoas da RPC
+ * parabens_mural — e não do cliente. `ids` é quem foi consultado, com ou sem
+ * foto. Falha vira vazio — sem foto, o recado mostra as iniciais.
+ */
+export async function fotosDoMural(colaboradorId) {
+  const { data, error } = await supabase.functions.invoke('fotos-aniversariantes', {
+    body: { mural: colaboradorId },
+  });
+  if (error) return { fotos: {}, ids: [] };
+  return { fotos: data?.fotos || {}, ids: data?.ids || [] };
 }

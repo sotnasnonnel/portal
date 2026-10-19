@@ -13,7 +13,7 @@ const PARTICULAS = new Set(["de", "da", "do", "das", "dos", "e"]);
 export function partes(nome: string): string[] {
   return String(nome || "")
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\u0300-\u036f]/g, "") // acentos do NFD, em escape: o arquivo fica ASCII
     .toLowerCase()
     .split(/[^a-z]+/)
     .filter((p) => p && !PARTICULAS.has(p));

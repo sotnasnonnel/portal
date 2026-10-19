@@ -826,17 +826,5 @@ html[data-pts-tema="halloween"] .notif-pop {
   55% { opacity: .5; } 58% { opacity: .05; } 70% { opacity: .8; } 74% { opacity: 0; } 88% { opacity: .85; } 100% { opacity: .8; }
 }
 
-/* Aranha gigante caindo no meio da tela */
-.pts-susto-aranha { background: transparent; animation: pts-s-escurece 2.2s ease-in-out forwards; }
-@keyframes pts-s-escurece { 0%, 100% { background: rgba(0, 0, 0, 0); } 18%, 80% { background: rgba(0, 0, 0, .55); } }
-.s-aranha { position: absolute; top: 0; left: 50%; display: block; transform: translateX(-50%); animation: pts-s-aranha 2.2s cubic-bezier(.3, 1.3, .5, 1) forwards; }
-.s-aranha i { position: absolute; bottom: 80%; left: 50%; width: 3px; height: 100vh; background: rgba(200, 190, 200, .5); }
-.s-aranha img { position: relative; width: 340px; height: 340px; filter: brightness(.35) contrast(1.6) drop-shadow(0 20px 30px rgba(0, 0, 0, .8)); animation: pts-s-pernas .09s linear .45s infinite alternate; }
-@keyframes pts-s-aranha {
-  0% { transform: translate(-50%, -360px); }
-  20% { transform: translate(-50%, 26vh); }
-  80% { transform: translate(-50%, 26vh); }
-  100% { transform: translate(-50%, -360px); }
-}
-@keyframes pts-s-pernas { from { transform: rotate(-4deg) scale(1); } to { transform: rotate(4deg) scale(1.06); } }
+/* A aranha gigante saiu em 19/10/2026: ficaram só as fotos de terror. */
 

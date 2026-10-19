@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Cake, Award, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { comemoracoesDoDia } from './comemoracao';
+import { comemoracoesEmCartaz } from './comemoracao';
 import './DestaqueDoDia.css';
 
-// Fechar vale só para hoje: amanhã o destaque já não apareceria mesmo.
+// Fechar vale só para o dia: quem fecha no sábado volta a ver na segunda, que é
+// quando o resto da empresa está olhando (ver a janela em comemoracao.js).
 const CHAVE = 'home-destaque-fechado';
 const hojeIso = () => new Date().toLocaleDateString('sv-SE');
 const lerFechado = () => {
@@ -13,10 +14,12 @@ const lerFechado = () => {
 
 // Destaque no topo da Home no aniversário e no aniversário de empresa — só
 // para a própria pessoa: sai das datas dela no perfil carregado, nada de lista.
+// Na segunda ele ainda aparece para quem comemorou no fim de semana, com o
+// texto falando do dia certo em vez de "hoje".
 export default function DestaqueDoDia() {
   const { user } = useAuth();
   const [fechado, setFechado] = useState(lerFechado);
-  const itens = comemoracoesDoDia({ dataNascimento: user?.dataNascimento, dataAdmissao: user?.dataAdmissao });
+  const itens = comemoracoesEmCartaz({ dataNascimento: user?.dataNascimento, dataAdmissao: user?.dataAdmissao });
   if (fechado || itens.length === 0) return null;
 
   const fechar = () => {
@@ -24,21 +27,31 @@ export default function DestaqueDoDia() {
     try { localStorage.setItem(CHAVE, hojeIso()); } catch { /* sem storage, fecha só nesta tela */ }
   };
   const nome = (user?.nome || '').split(' ')[0].toLowerCase().replace(/^\S/, (l) => l.toUpperCase());
-  const aniversario = itens.some((i) => i.tipo === 'aniversario');
+  const aniversario = itens.find((i) => i.tipo === 'aniversario');
   const casa = itens.find((i) => i.tipo === 'tempo_casa');
   const anos = casa ? `${casa.anos} ${casa.anos === 1 ? 'ano' : 'anos'}` : '';
 
   let titulo;
   let texto;
   if (aniversario && casa) {
+    // As duas datas podem cair em dias diferentes do mesmo fim de semana.
+    const quando = aniversario.quando === casa.quando ? aniversario.quando : 'neste fim de semana';
     titulo = `Dia duplo, ${nome}! 🎉`;
-    texto = `Hoje é o seu aniversário e você completa ${anos} de PHD. Parabéns e obrigado por fazer parte do time!`;
+    texto = quando === 'hoje'
+      ? `Hoje é o seu aniversário e você completa ${anos} de PHD. Parabéns e obrigado por fazer parte do time!`
+      : `Seu aniversário e seus ${anos} de PHD foram ${quando}. Parabéns e obrigado por fazer parte do time!`;
   } else if (aniversario) {
-    titulo = `Feliz aniversário, ${nome}! 🎂`;
-    texto = 'Toda a PHD deseja a você um dia incrível e um novo ano cheio de conquistas.';
+    titulo = aniversario.quando === 'hoje'
+      ? `Feliz aniversário, ${nome}! 🎂`
+      : `Seu aniversário foi ${aniversario.quando}, ${nome}! 🎂`;
+    texto = aniversario.quando === 'hoje'
+      ? 'Toda a PHD deseja a você um dia incrível e um novo ano cheio de conquistas.'
+      : 'Toda a PHD deseja a você um novo ano cheio de conquistas. Os recados dos colegas estão no seu mural.';
   } else {
     titulo = `${anos} de PHD, ${nome}! 🏆`;
-    texto = 'Hoje é o seu aniversário de empresa. Obrigado por fazer parte da nossa história!';
+    texto = casa.quando === 'hoje'
+      ? 'Hoje é o seu aniversário de empresa. Obrigado por fazer parte da nossa história!'
+      : `Seu aniversário de empresa foi ${casa.quando}. Obrigado por fazer parte da nossa história!`;
   }
 
   return (
