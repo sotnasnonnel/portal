@@ -90,6 +90,63 @@
 .muralmodal-sim:disabled { opacity: .6; }
 .muralmodal-nao { border: 1px solid var(--border-strong); background: #fff; color: var(--ink-soft); }
 
+/* Reação do aniversariante em cada recado: curtir, responder e o campo da
+   resposta. Mesmas pílulas do "Editar"/"Excluir" do próprio recado. */
+.muralmodal-reacoes { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.muralmodal-curtir,
+.muralmodal-responder {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+  padding: 4px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: var(--font-size-2xs);
+  font-weight: 600;
+  cursor: pointer;
+}
+.muralmodal-curtir:hover { border-color: #fda4af; color: #be123c; background: #fff1f2; }
+.muralmodal-curtir.is-on { border-color: #be123c; color: #be123c; background: #fff1f2; }
+.muralmodal-responder:hover { border-color: var(--terracotta); color: var(--terracotta); background: var(--terracotta-light); }
+.muralmodal-curtir:focus-visible,
+.muralmodal-responder:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+.muralmodal-respform { display: block; margin-top: 8px; }
+.muralmodal-respform textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 56px;
+  padding: 6px 10px;
+  border: var(--ctl-border) solid var(--border-strong);
+  border-radius: var(--ctl-radius-sm);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  color: var(--ink);
+}
+.muralmodal-respform textarea:focus { outline: none; border-color: var(--terracotta); box-shadow: var(--focus-ring); }
+.muralmodal-respacoes { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.muralmodal-respacoes small { color: var(--muted); font-size: var(--font-size-2xs); margin-right: auto; }
+.muralmodal-respacoes .muralmodal-nao { margin-top: 0; }
+.muralmodal-respenviar {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border: 1px solid var(--terracotta);
+  border-radius: 999px;
+  background: var(--terracotta);
+  color: #fff;
+  font: inherit;
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
+  cursor: pointer;
+}
+.muralmodal-respenviar:disabled { opacity: .55; cursor: not-allowed; }
+
 /* Ícones do recado: escolha de até 3 */
 .muralmodal-icones { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 .muralmodal-icones > span { font-size: var(--font-size-xs); font-weight: 600; color: var(--ink-soft); margin-right: 4px; }

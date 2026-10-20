@@ -31,3 +31,24 @@
 .rec-mural-titulo { display: block; margin: 3px 0 1px; }
 .rec-mural-icones { display: flex; gap: 6px; margin-top: 6px; }
 .rec-mural-icones img { width: 34px; height: 34px; object-fit: contain; }
+
+/* Reação do aniversariante: o coração e a resposta embaixo do recado. */
+.rec-mural-curtido {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  font-size: var(--font-size-2xs);
+  font-weight: 600;
+  color: #be123c;
+}
+.rec-mural-resposta {
+  display: block;
+  margin-top: 8px;
+  padding: 7px 10px;
+  border-left: 3px solid var(--terracotta);
+  border-radius: 0 8px 8px 0;
+  background: var(--terracotta-light);
+}
+.rec-mural-resposta b { display: block; font-size: var(--font-size-2xs); color: var(--terracotta); }
+.rec-mural-resposta > span { display: block; margin-top: 2px; font-size: var(--font-size-sm); white-space: pre-wrap; overflow-wrap: anywhere; }

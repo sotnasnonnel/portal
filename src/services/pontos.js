@@ -77,6 +77,21 @@ export async function excluirParabens(colaboradorId) {
   checar(error);
 }
 
+/**
+ * Curtida do aniversariante num recado do próprio mural (liga e desliga).
+ * O banco confere que o recado é para quem está chamando.
+ */
+export async function curtirParabens(recadoId, curtir) {
+  const { error } = await supabase.rpc('parabens_curtir', { p_recado: recadoId, p_curtir: curtir });
+  checar(error);
+}
+
+/** Resposta do aniversariante a um recado. Texto vazio apaga a resposta. */
+export async function responderParabens(recadoId, texto) {
+  const { error } = await supabase.rpc('parabens_responder', { p_recado: recadoId, p_texto: texto });
+  checar(error);
+}
+
 /** Liga/desliga os sustos aleatórios do tema Halloween. */
 export async function definirSustos(ligar) {
   const { error } = await supabase.rpc('pontos_definir_sustos', { p_ligar: ligar });
