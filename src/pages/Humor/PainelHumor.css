@@ -1,7 +1,7 @@
 /* Painel do humor (/humor). Página avulsa, como a central de Aprovações. Cores
    da escala em config/humor.js (validadas); aqui só a estrutura. */
 
-.hum-page { max-width: 980px; margin: 0 auto; padding: 24px 20px 48px; }
+.hum-page { padding: 24px 20px 48px; }
 
 .hum-header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
 .hum-back {
@@ -59,7 +59,16 @@
   display: flex; flex-wrap: wrap; gap: 6px 16px; list-style: none; margin: 10px 0 0; padding: 0;
   font-size: var(--font-size-sm); color: var(--ink-soft);
 }
-.hum-legenda li { display: inline-flex; align-items: center; gap: 6px; }
+.hum-legenda li { display: inline-flex; }
+.hum-legenda-item {
+  display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border: 1px solid transparent;
+  border-radius: 999px; background: none; color: inherit; font: inherit; cursor: pointer;
+}
+.hum-legenda-item:hover { background: #f2f1ec; }
+.hum-legenda-item.is-on { border-color: var(--border-strong); background: #fff; }
+.hum-legenda-item:focus-visible { box-shadow: var(--focus-ring); outline: none; }
+.hum-dist-seg { cursor: pointer; }
+.hum-page .is-apagado { opacity: .35; }
 .hum-legenda strong { color: var(--ink); font-variant-numeric: tabular-nums; }
 
 /* Barras por dia: finas, ancoradas na base, topo arredondado. */
@@ -69,6 +78,16 @@
 }
 .hum-barra-col { position: relative; flex: 1; height: 100%; display: flex; align-items: flex-end; outline: none; }
 .hum-barra-col:focus-visible .hum-barra { box-shadow: var(--focus-ring); }
+.hum-barra-col.is-clicavel { cursor: pointer; }
+.hum-barra-col.is-sel .hum-barra { box-shadow: 0 0 0 2px var(--ink); }
+
+/* Filtro vindo do clique no gráfico. */
+.hum-filtro-ativo {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 12px 0 10px;
+  font-size: var(--font-size-sm); color: var(--muted);
+}
+.hum-filtro-ativo .hum-chip { display: inline-flex; align-items: center; gap: 6px; }
+.hum-limpar { border: 0; background: none; padding: 0; color: var(--blue); font: inherit; cursor: pointer; }
 .hum-barra {
   width: 100%; max-width: 22px; margin: 0 auto; display: flex; flex-direction: column; gap: 2px;
   border-radius: 4px 4px 0 0; overflow: hidden;

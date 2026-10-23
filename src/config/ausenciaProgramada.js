@@ -45,6 +45,12 @@ export function isAusenciaRh(user) {
   return user.rhDp === true || user.perfil === 'rh' || user.perfil === 'admin' || isSuperAdmin(user);
 }
 
+// Quem vê a empresa toda (painel e humor), sem poder mexer: o RH e quem tem
+// colaboradores.ve_ausencia_humor. Espelha app_private.is_ausencia_leitor().
+export function veAusenciaTodos(user) {
+  return isAusenciaRh(user) || user?.veAusenciaHumor === true;
+}
+
 // Quem enxerga a fila de aprovação e a equipe no menu. A fila em si é
 // filtrada pelo banco (aprovador_id), então mostrar a mais não abre dado.
 export function veAprovacoes(user) {

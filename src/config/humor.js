@@ -9,7 +9,7 @@
 //   - o que foi respondido antes da mudança continua só nos números: a tela
 //     dizia "Só você vê a sua resposta".
 
-import { isAusenciaRh } from './ausenciaProgramada.js';
+import { isAusenciaRh, veAusenciaTodos } from './ausenciaProgramada.js';
 
 export const MINIMO_ANONIMATO = 3;
 export const COMENTARIO_MAX = 500;   // mesmo limite do banco
@@ -32,17 +32,24 @@ export const humorPorValor = (v) => HUMORES.find((h) => h.valor === Number(v)) |
 /** Quem vê o resumo: gestão (a equipe) e o RH (a empresa). */
 export const veResumoHumor = (user) => ['gestor', 'coordenador', 'admin'].includes(user?.perfil)
   || isAusenciaRh(user);
-export const veResumoEmpresa = (user) => isAusenciaRh(user);
-/** Resposta e comentário por pessoa: só o RH. Espelha humor_respostas no banco. */
-export const veRespostasHumor = (user) => isAusenciaRh(user);
+export const veResumoEmpresa = (user) => veAusenciaTodos(user);
+/** Resposta e comentário por pessoa: o RH e quem tem ve_ausencia_humor. Espelha humor_respostas no banco. */
+export const veRespostasHumor = (user) => veAusenciaTodos(user);
 
 const semAcento = (s) => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
-/** Filtro da lista por pessoa: nome (sem acento/caixa) e "só com comentário". */
-export function filtrarRespostas(respostas = [], { busca = '', soComentario = false } = {}) {
+/**
+ * Filtro da lista por pessoa: nome (sem acento/caixa), "só com comentário" e,
+ * vindos do clique no gráfico, o dia ('AAAA-MM-DD') e o humor (1 a 5).
+ */
+export function filtrarRespostas(respostas = [], {
+  busca = '', soComentario = false, dia = null, humor = null,
+} = {}) {
   const termo = semAcento(busca).trim();
   return respostas.filter((r) => (!termo || semAcento(r.nome).includes(termo))
-    && (!soComentario || !!r.comentario));
+    && (!soComentario || !!r.comentario)
+    && (!dia || String(r.dia).slice(0, 10) === dia)
+    && (!humor || Number(r.humor) === Number(humor)));
 }
 
 /** O dia tem distribuição? Dia com poucas respostas vem do banco só com o total. */

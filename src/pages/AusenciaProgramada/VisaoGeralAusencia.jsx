@@ -4,9 +4,10 @@ import {
   UserMinus, Undo2, ChevronDown, ChevronRight,
 } from 'lucide-react';
 import {
-  csv, diaISO, diasAteLimite, fmtDataBr, rotuloPeriodo, situacaoPeriodo, statusExibido, statusLabel,
-  SITUACAO_LABEL,
+  csv, diaISO, diasAteLimite, fmtDataBr, isAusenciaRh, rotuloPeriodo, situacaoPeriodo, statusExibido,
+  statusLabel, SITUACAO_LABEL,
 } from '../../config/ausenciaProgramada';
+import { useAuth } from '../../contexts/AuthContext';
 import { MOD_AUSENCIA } from '../../config/modulosAusencia';
 import { servicoAusencia } from '../../services/ausenciaProgramada';
 import {
@@ -23,12 +24,15 @@ const normal = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').t
 // Duas telas no mesmo componente, que só mudam o escopo:
 //  * escopo 'equipe' — o gestor acompanha a subárvore dele;
 //  * escopo 'todos'  — o RH acompanha a empresa, corrige períodos e cadastra
-//    quem ainda não tem saldo.
+//    quem ainda não tem saldo. Quem só tem leitura (ve_ausencia_humor) vê a
+//    mesma tela sem as ações.
 //
 // Serve aos dois módulos (`mod`): Ausência Programada e Folga de Campo.
 export default function VisaoGeralAusencia({ mod = MOD_AUSENCIA, escopo = 'equipe' }) {
   const api = servicoAusencia(mod);
-  const ehRh = escopo === 'todos';
+  const { user } = useAuth();
+  const todos = escopo === 'todos';
+  const ehRh = todos && isAusenciaRh(user);
   const [periodos, setPeriodos] = useState([]);
   const [pedidos, setPedidos] = useState([]);
   const [semPeriodo, setSemPeriodo] = useState([]);
@@ -201,8 +205,8 @@ export default function VisaoGeralAusencia({ mod = MOD_AUSENCIA, escopo = 'equip
     }
   }
 
-  const titulo = ehRh ? mod.tituloPainel : mod.tituloEquipe;
-  const Icone = ehRh ? LayoutDashboard : Users;
+  const titulo = todos ? mod.tituloPainel : mod.tituloEquipe;
+  const Icone = todos ? LayoutDashboard : Users;
 
   if (loading) {
     return (
@@ -222,7 +226,7 @@ export default function VisaoGeralAusencia({ mod = MOD_AUSENCIA, escopo = 'equip
     <div className="admin-page animate-fade-in-up">
       <h1 className="page-title"><Icone size={28} /> {titulo}</h1>
       <p className="page-subtitle">
-        {ehRh
+        {todos
           ? 'Saldos, datas limite e pedidos da empresa toda. Correções de saldo ficam registradas com motivo.'
           : `Saldos e ${mod.plural.toLowerCase()} de quem está abaixo de você no organograma.`}
       </p>

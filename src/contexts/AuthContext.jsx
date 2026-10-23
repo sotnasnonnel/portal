@@ -147,6 +147,8 @@ export function AuthProvider({ children }) {
         email: colab.email,
         perfil: perfilEfetivo,
         rhDp,
+        // Leitura da Ausência Programada e do Humor da empresa (veAusenciaTodos).
+        veAusenciaHumor: colab.ve_ausencia_humor === true,
         solicVistoEm: colab.solic_visto_em || null,
         // Última versão de "Novidades" que a pessoa já viu (config/novidades.js).
         novidadesVistoId: colab.novidades_visto_id || null,

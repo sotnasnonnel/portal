@@ -23,7 +23,7 @@ import { podeAcessarMobilizacao } from '../config/mobilizacao';
 import TorreShell from '../modules/torre/app/components/AppShell';
 import { podeVerTorre } from '../config/torre';
 import { podeAcessarFechamentoPj } from '../config/fechamentoPj';
-import { isAusenciaRh, veAprovacoes } from '../config/ausenciaProgramada';
+import { isAusenciaRh, veAprovacoes, veAusenciaTodos } from '../config/ausenciaProgramada';
 import { MODULOS_AUSENCIA } from '../config/modulosAusencia';
 import {
   ROTA_FOLGA_CAMPO, isFolgaCampoRh, podeAcessarFolgaCampo,
@@ -272,7 +272,7 @@ function AusenciaGestaoRoute({ rota, children }) {
 
 function AusenciaRhRoute({ rota, children }) {
   const { user } = useAuth();
-  if (!isAusenciaRh(user)) return <Navigate to={rota} replace />;
+  if (!veAusenciaTodos(user)) return <Navigate to={rota} replace />;
   return children;
 }
 

@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { isHorasExtrasDp } from '../../config/horasExtras';
 import { podeAcessarFechamentoPj, ROTA_FECHAMENTO_PJ } from '../../config/fechamentoPj';
-import { isAusenciaRh, veAprovacoes } from '../../config/ausenciaProgramada';
+import { isAusenciaRh, veAprovacoes, veAusenciaTodos } from '../../config/ausenciaProgramada';
 import { MODULOS_AUSENCIA, MOD_AUSENCIA } from '../../config/modulosAusencia';
 import {
   ROTA_FOLGA_CAMPO, isFolgaCampoRh, podeAcessarFolgaCampo,
@@ -76,7 +76,7 @@ function grupoAusencia(user, mod) {
           { label: 'Equipe', Icon: Users, href: `${mod.rota}/equipe` },
         ]
         : []),
-      ...(isAusenciaRh(user)
+      ...(veAusenciaTodos(user)
         ? [{ label: 'Painel RH', Icon: LayoutDashboard, href: `${mod.rota}/painel` }]
         : []),
     ],

@@ -57,3 +57,14 @@ test('filtro da lista por pessoa ignora acento e caixa, e separa quem comentou',
   assert.equal(filtrarRespostas(lista, { busca: 'souza', soComentario: true }).length, 0);
   assert.equal(filtrarRespostas(lista).length, 2);
 });
+
+test('filtro do gráfico: dia e humor', () => {
+  const lista = [
+    { dia: '2026-10-15', nome: 'ANA', humor: 4 },
+    { dia: '2026-10-15', nome: 'BIA', humor: 2 },
+    { dia: '2026-10-16', nome: 'CAIO', humor: 4 },
+  ];
+  assert.deepEqual(filtrarRespostas(lista, { dia: '2026-10-15' }).map((r) => r.nome), ['ANA', 'BIA']);
+  assert.deepEqual(filtrarRespostas(lista, { humor: 4 }).map((r) => r.nome), ['ANA', 'CAIO']);
+  assert.deepEqual(filtrarRespostas(lista, { dia: '2026-10-15', humor: 4 }).map((r) => r.nome), ['ANA']);
+});
