@@ -27,8 +27,13 @@ test('opções: distintas, em ordem, sem vazio, uma por grafia', () => {
   });
 });
 
-test('período inclui as duas pontas', () => {
-  assert.deepEqual(ids(filtrarLista(rows, { de: '2026-09-01', ate: '2026-09-10' })), [1, 3]);
+test('pagar em bate a data de pagamento; sem pagamento agendado sai', () => {
+  const comPagamento = [
+    { ...rows[0], payment_date: '2026-10-20' },
+    { ...rows[1], payment_date: '2026-10-21' },
+    rows[2],
+  ];
+  assert.deepEqual(ids(filtrarLista(comPagamento, { pagarEm: '2026-10-20' })), [1]);
 });
 
 test('sem filtro, lista inteira', () => {

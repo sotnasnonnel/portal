@@ -381,6 +381,50 @@
   font-weight: 600;
 }
 
+/* ── Baixar vários PDFs (só admin) ─────────────────────────────────
+   Caixa de marcar na primeira coluna, só nos pedidos que têm PDF; a faixa
+   com o botão aparece acima da tabela quando há algo marcado. */
+.table .col-sel {
+  width: var(--ctl-h-icon);
+  padding: 0 0 0 var(--space-2);
+}
+
+.sel-alvo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--ctl-h-icon);
+  min-height: var(--ctl-h-icon);
+  cursor: pointer;
+}
+
+.sel-alvo input {
+  margin: 0;
+  accent-color: var(--terracotta);
+  cursor: pointer;
+}
+
+.table tbody tr.is-marcado {
+  background: var(--terracotta-light);
+}
+
+.lote-pdf {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--border);
+  background: var(--terracotta-light);
+}
+
+.lote-pdf-conta {
+  margin-right: auto;
+  font-size: var(--font-size-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+}
+
 /* ── Tabela vira lista de cards no mobile ─────────────────────────
    Cada linha é um cartão; os rótulos da coluna voltam via data-label.
    768px (e não 640) para cobrir o celular deitado (667/736/844px), onde as
@@ -431,14 +475,31 @@
     flex-shrink: 0;
   }
 
-  /* Primeira célula (solicitante) vira o título do card */
-  .table-responsive tbody td:first-child {
+  /* Primeira célula (solicitante) vira o título do card. Para o admin, a
+     primeira é a caixa de marcar, que vai para o canto do card. */
+  .table-responsive tbody td:first-child,
+  .table-responsive tbody td.col-sel + td {
     font-size: 15px;
     font-weight: 700;
     padding-bottom: 2px;
   }
-  .table-responsive tbody td:first-child::before {
+  .table-responsive tbody td:first-child::before,
+  .table-responsive tbody td.col-sel + td::before {
     display: none;
+  }
+
+  .table-responsive tbody tr {
+    position: relative;
+  }
+  .table-responsive tbody td.col-sel {
+    position: absolute;
+    top: var(--space-2);
+    right: var(--space-2);
+    width: auto;
+    padding: 0;
+  }
+  .table-responsive tbody td.col-sel + td {
+    padding-right: var(--ctl-h-icon);
   }
 
   .table-responsive tbody td.num {

@@ -152,17 +152,35 @@ function temPalavra(desc, key) {
   if (!k) return false;
   const i = desc.indexOf(k);
   if (i < 0) return false;
+  const inteira = SO_PALAVRA_INTEIRA.has(k);
   // início do texto ou logo depois de um caractere que não é letra/número
   for (let pos = i; pos >= 0; pos = desc.indexOf(k, pos + 1)) {
     const antes = pos === 0 ? "" : desc[pos - 1];
-    if (!antes || !/[A-Z0-9]/.test(antes)) return true;
+    const depois = desc[pos + k.length] || "";
+    if ((!antes || !/[A-Z0-9]/.test(antes)) && (!inteira || !/[A-Z]/.test(depois))) return true;
   }
   return false;
+}
+
+// Chaves que só valem como palavra inteira: "GIN" não pode pegar "GINGER ALE"
+// (refrigerante) nem "GINSENG". "GIN TONICA" continua barrado.
+const SO_PALAVRA_INTEIRA = new Set(["GIN"]);
+
+// Linha que diz que é refrigerante. Cervejaria também faz refrigerante (a
+// Antarctica faz o guaraná, a soda e a água tônica), então a MARCA sozinha
+// não basta para chamar a linha de bebida alcoólica: "GUARANA ANTARCTICA"
+// passa, "CERV ANTARCTICA" e "ANTARCTICA SUBZERO" continuam barrados.
+// Pedido do usuário, 23/10/2026.
+const REFRIGERANTE_KEYS = ["REFRI", "GUARANA", "GUAR", "SODA", "SUKITA", "TONICA"];
+
+function ehRefrigerante(desc) {
+  return REFRIGERANTE_KEYS.some((k) => temPalavra(desc, k));
 }
 
 // Itens que não podem ser reembolsados, detectados por palavra-chave na
 // descrição (acento-insensível). As chaves cobrem termos genéricos e algumas
 // marcas comuns. Mantidas conservadoras para evitar falso positivo.
+// `marcas` só contam quando a linha não diz que é refrigerante (ehRefrigerante).
 const FORBIDDEN_KEYWORDS = [
   {
     label: "Bebida alcoólica",
@@ -170,6 +188,8 @@ const FORBIDDEN_KEYWORDS = [
       "CERVEJA", "CERV ", "CHOPP", "CHOPE", "VINHO", "VODKA", "WHISKY", "WHISKEY",
       "CACHACA", "GIN", "LICOR", "ESPUMANTE", "CAIPIRINHA", "CAIPIROSKA", "TEQUILA",
       "CONHAQUE", "APERITIVO", "COQUETEL", "VERMUTE", "SAKE", "ABSINTO",
+    ],
+    marcas: [
       "HEINEKEN", "BRAHMA", "SKOL", "BUDWEISER", "STELLA", "AMSTEL", "SPATEN",
       "EISENBAHN", "BOHEMIA", "ANTARCTICA", "ITAIPAVA", "PETRA", "DEVASSA",
     ],
@@ -188,7 +208,8 @@ export function detectForbiddenItems(items) {
     if (!d) continue;
     if (ehCombustivel(d)) continue; // abastecimento não é bebida/vestuário
     for (const f of FORBIDDEN_KEYWORDS) {
-      if (f.keys.some((k) => temPalavra(d, k))) {
+      const porMarca = f.marcas?.some((k) => temPalavra(d, k)) && !ehRefrigerante(d);
+      if (f.keys.some((k) => temPalavra(d, k)) || porMarca) {
         found.push({
           label: f.label,
           description: it.description,

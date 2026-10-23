@@ -8,9 +8,10 @@ import { autoTable } from "jspdf-autotable";
 import { PDFDocument } from "pdf-lib";
 import { formatBillable, formatCurrency, formatDate } from "../lib/format.js";
 import { computePaymentDate } from "../lib/reimbursementPolicy.js";
-import { STATUS_LABEL } from "./reimbursements.js";
+import { getReimbursement, STATUS_LABEL } from "./reimbursements.js";
 import { refToDataUrl } from "./nfStorage.js";
 import { mimeFromDataUrl } from "../lib/image.js";
+import { nomesSemRepetir } from "../lib/pdfLote.js";
 
 const FIXO_EMPRESA = "PHDA";
 const FIXO_TIPO = "REEMB_SN";
@@ -267,15 +268,58 @@ async function juntarNotasPdf(doc, notasPdf) {
   return final.save();
 }
 
+function baixarArquivo(blob, nome) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = nome;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 /** Botao "Gerar PDF": baixa o arquivo, como sempre fez. */
 export async function generateReembolsoPdf(r) {
   const bytes = await montarReembolsoPdf(r);
-  const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = buildReembolsoFileName(r);
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  baixarArquivo(new Blob([bytes], { type: "application/pdf" }), buildReembolsoFileName(r));
+}
+
+/**
+ * "Baixar PDFs" da lista: o PDF de cada pedido marcado, todos num .zip (o
+ * navegador barra varios downloads seguidos). Um so sai como PDF solto.
+ *
+ * Um por vez, como o "Regerar PDFs do cliente": cada um busca o pedido com as
+ * notas e monta o PDF no navegador, e em paralelo isso travaria a aba. Pedido
+ * que falha nao para os outros: volta em `falhas`.
+ *
+ * `aoAvancar(feitos, total)` alimenta o progresso na tela.
+ */
+export async function baixarPdfsEmZip(linhas, nomeZip, aoAvancar) {
+  const arquivos = [];
+  const falhas = [];
+  for (const [i, linha] of linhas.entries()) {
+    aoAvancar?.(i, linhas.length);
+    try {
+      const { data: r, error } = await getReimbursement(linha.id);
+      if (error || !r) throw new Error(error?.message || "Pedido não encontrado.");
+      arquivos.push({ nome: buildReembolsoFileName(r), bytes: await montarReembolsoPdf(r) });
+    } catch (err) {
+      falhas.push({ linha, motivo: err.message });
+    }
+  }
+  aoAvancar?.(linhas.length, linhas.length);
+
+  if (arquivos.length === 1) {
+    baixarArquivo(new Blob([arquivos[0].bytes], { type: "application/pdf" }), arquivos[0].nome);
+  } else if (arquivos.length > 1) {
+    // zipSync e nao zip: a versao assincrona do fflate monta o worker por eval
+    // (ver fechamentoPj/lib/pastaDocumentos.js). Sem compressao: as notas ja
+    // vem comprimidas dentro do PDF, e comprimir de novo so demoraria.
+    const { zipSync } = await import("fflate");
+    const nomes = nomesSemRepetir(arquivos.map((a) => a.nome));
+    const zip = zipSync(Object.fromEntries(arquivos.map((a, i) => [nomes[i], a.bytes])), { level: 0 });
+    baixarArquivo(new Blob([zip], { type: "application/zip" }), nomeZip);
+  }
+  return { baixados: arquivos.length, falhas };
 }
 
 /** Envio ao Financeiro: o mesmo PDF, como arquivo, com o nome no padrao do cliente. */

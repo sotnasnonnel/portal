@@ -83,6 +83,32 @@ test("bebida alcoólica de verdade continua sinalizada", () => {
   assert.ok(r.items.every((i) => i.label === "Bebida alcoólica"));
 });
 
+test("refrigerante não é bebida alcoólica, mesmo com marca de cervejaria", () => {
+  // Pedido do usuário (23/10/2026): a Antarctica faz cerveja e guaraná, e o
+  // "GIN" da lista pegava o começo de "GINGER ALE".
+  const r = detectForbiddenItems([
+    { description: "GUARANA ANTARCTICA 350ML", value: 6 },
+    { description: "Guaraná Antarctica Zero 2L", value: 11 },
+    { description: "REFRIG GUAR ANTARCTICA LT", value: 6 },
+    { description: "SODA LIMONADA ANTARCTICA", value: 6 },
+    { description: "SUKITA LARANJA 350ML", value: 5 },
+    { description: "AGUA TONICA ANTARCTICA", value: 7 },
+    { description: "GINGER ALE SCHWEPPES", value: 7 },
+  ]);
+  assert.deepEqual(r.items.map((i) => i.description), []);
+});
+
+test("cerveja da mesma marca do refrigerante continua sinalizada", () => {
+  const r = detectForbiddenItems([
+    { description: "CERVEJA ANTARCTICA ORIGINAL 600ML", value: 14 },
+    { description: "ANTARCTICA SUBZERO LATA", value: 5 },
+    { description: "CERV ANTARCTICA PILSEN", value: 5 },
+    { description: "BRAHMA DUPLO MALTE", value: 6 },
+  ]);
+  assert.equal(r.items.length, 4);
+  assert.ok(r.items.every((i) => i.label === "Bebida alcoólica"));
+});
+
 test("refeição dentro do teto não gera excedente", () => {
   const r = evaluateFoodOverage([
     item({ description: "Almoço", meal_category: "ALMOÇO", value: 38 }),

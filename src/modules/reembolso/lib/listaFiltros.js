@@ -33,21 +33,19 @@ export function opcoesDaLista(rows) {
 }
 
 /**
- * `busca`: { obra, solicitante, de, ate }. Obra e solicitante vêm da lista
+ * `busca`: { obra, solicitante, pagarEm }. Obra e solicitante vêm da lista
  * suspensa e batem pelo valor inteiro (sem acento e sem caixa, como nas
- * opções). Datas em "AAAA-MM-DD", comparadas com a data do pedido
- * (request_date), inclusive nas duas pontas. Campo vazio não filtra.
+ * opções). `pagarEm` em "AAAA-MM-DD" bate com a data de pagamento agendada
+ * (payment_date); pedido sem pagamento agendado sai. Campo vazio não filtra.
  */
 export function filtrarLista(rows, busca = {}) {
   const obra = normalizar(busca.obra);
   const solicitante = normalizar(busca.solicitante);
-  const { de, ate } = busca;
+  const { pagarEm } = busca;
   return rows.filter((r) => {
     if (obra && normalizar(r.client_obra) !== obra) return false;
     if (solicitante && normalizar(r.requester_name) !== solicitante) return false;
-    const data = String(r.request_date ?? "").slice(0, 10);
-    if (de && (!data || data < de)) return false;
-    if (ate && (!data || data > ate)) return false;
+    if (pagarEm && String(r.payment_date ?? "").slice(0, 10) !== pagarEm) return false;
     return true;
   });
 }

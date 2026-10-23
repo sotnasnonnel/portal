@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, CalendarCheck, Clock, FileSpreadsheet, FileText, Loader2, Plus, RefreshCw, X } from "lucide-react";
+import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, CalendarCheck, Clock, FileDown, FileSpreadsheet, FileText, Loader2, Plus, RefreshCw, X } from "lucide-react";
 import { listReimbursements, paidAmount, STATUS, STATUS_LABEL } from "../services/reimbursements.js";
 import { formatBillable, formatCurrency, formatDate, relativeDays } from "../lib/format.js";
 import { kindMeta } from "../lib/kind.js";
 import { filtrarLista, opcoesDaLista, ordenarLista, proximaOrdem } from "../lib/listaFiltros.js";
+import { temPdf } from "../lib/pdfLote.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useConfirm, useToast } from "../context/FeedbackContext.jsx";
 import { baixarPlanilhaReembolsos } from "../services/reembolsoPlanilha.js";
@@ -42,7 +43,7 @@ const BILLABLE_FILTERS = [
   { value: "sem", label: "Não informado" },
 ];
 
-const BUSCA_VAZIA = { obra: "", solicitante: "", de: "", ate: "" };
+const BUSCA_VAZIA = { obra: "", solicitante: "", pagarEm: "" };
 
 function matchBillable(row, filter) {
   if (!filter) return true;
@@ -89,6 +90,8 @@ export default function Reembolsos({ kind = "reembolso" }) {
   const [loading, setLoading] = useState(true);
   const [baixando, setBaixando] = useState(false);
   const [regerando, setRegerando] = useState(null); // null = parado; { feitos, total } = em andamento
+  const [selecao, setSelecao] = useState(() => new Set()); // ids marcados para baixar o PDF
+  const [baixandoPdfs, setBaixandoPdfs] = useState(null); // mesmo formato de `regerando`
   const showToast = useToast();
   const confirm = useConfirm();
   // null = ainda não escolhido: cada papel cai na sua fila de trabalho —
@@ -147,6 +150,45 @@ export default function Reembolsos({ kind = "reembolso" }) {
       ),
     [byStatus, activeBillable, busca, ordem]
   );
+
+  // Seleção para baixar vários PDFs (só admin, só pedido que tem PDF). Vale o
+  // que está na tela: marcado que saiu do filtro não entra no download, para
+  // ninguém baixar o que não está vendo.
+  const comPdf = useMemo(() => (isAdmin ? filtered.filter(temPdf) : []), [isAdmin, filtered]);
+  const selecionados = useMemo(() => comPdf.filter((r) => selecao.has(r.id)), [comPdf, selecao]);
+  const todosMarcados = comPdf.length > 0 && selecionados.length === comPdf.length;
+  const marcar = (id) =>
+    setSelecao((s) => {
+      const nova = new Set(s);
+      if (nova.has(id)) nova.delete(id);
+      else nova.add(id);
+      return nova;
+    });
+  const marcarTodos = () => setSelecao(todosMarcados ? new Set() : new Set(comPdf.map((r) => r.id)));
+
+  const baixarPdfs = async () => {
+    setBaixandoPdfs({ feitos: 0, total: selecionados.length });
+    try {
+      const { baixarPdfsEmZip } = await import("../services/reembolsoPdf.js");
+      const nomeZip = `PDFs ${meta.plural} ${new Date().toLocaleDateString("sv-SE")}.zip`;
+      const { baixados, falhas } = await baixarPdfsEmZip(selecionados, nomeZip, (feitos, total) =>
+        setBaixandoPdfs({ feitos, total })
+      );
+      // Ficam marcados só os que falharam, prontos para tentar de novo.
+      setSelecao(new Set(falhas.map((f) => f.linha.id)));
+      if (!falhas.length) showToast(`${baixados} PDF(s) baixado(s).`, "success");
+      else
+        showToast(
+          `${baixados} de ${baixados + falhas.length} PDFs baixados. Não saíram (seguem marcados): ` +
+            falhas.map((f) => f.linha.requester_name).join(", "),
+          "error"
+        );
+    } catch (err) {
+      showToast(`Não foi possível baixar os PDFs: ${err.message}`, "error");
+    } finally {
+      setBaixandoPdfs(null);
+    }
+  };
 
   // Para quando o gerador do PDF muda e os já anexados ficam na versão antiga.
   const regerarPdfs = async () => {
@@ -392,12 +434,8 @@ export default function Reembolsos({ kind = "reembolso" }) {
             ))}
           </select>
           <label className="busca-data">
-            <span>De</span>
-            <input type="date" value={busca.de} max={busca.ate || undefined} onChange={mudarBusca("de")} />
-          </label>
-          <label className="busca-data">
-            <span>Até</span>
-            <input type="date" value={busca.ate} min={busca.de || undefined} onChange={mudarBusca("ate")} />
+            <span>Pagar em</span>
+            <input type="date" value={busca.pagarEm} onChange={mudarBusca("pagarEm")} />
           </label>
           {temBusca && (
             <button type="button" className="chip" onClick={() => setBusca(BUSCA_VAZIA)}>
@@ -405,6 +443,36 @@ export default function Reembolsos({ kind = "reembolso" }) {
             </button>
           )}
         </div>
+
+        {selecionados.length > 0 && (
+          <div className="lote-pdf" role="region" aria-label="PDFs selecionados">
+            <span className="lote-pdf-conta">
+              {selecionados.length} de {comPdf.length} com PDF {selecionados.length === 1 ? "marcado" : "marcados"}
+            </span>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={baixarPdfs}
+              disabled={baixandoPdfs !== null}
+              title="Baixa os PDFs marcados (com as NFs anexadas) num arquivo .zip"
+            >
+              {baixandoPdfs ? <Loader2 size={16} className="spin" /> : <FileDown size={16} />}
+              {baixandoPdfs
+                ? `Gerando ${baixandoPdfs.feitos} de ${baixandoPdfs.total}…`
+                : selecionados.length === 1
+                  ? "Baixar PDF"
+                  : `Baixar ${selecionados.length} PDFs (.zip)`}
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => setSelecao(new Set())}
+              disabled={baixandoPdfs !== null}
+            >
+              Desmarcar
+            </button>
+          </div>
+        )}
 
         {loading ? (
           <div className="list-empty" role="status" aria-live="polite">
@@ -425,6 +493,24 @@ export default function Reembolsos({ kind = "reembolso" }) {
           <table className="table table-responsive">
             <thead>
               <tr>
+                {isAdmin && (
+                  <th className="col-sel">
+                    {comPdf.length > 0 && (
+                      <label className="sel-alvo" title="Marcar todos os aprovados da lista">
+                        <input
+                          type="checkbox"
+                          checked={todosMarcados}
+                          ref={(el) => {
+                            if (el) el.indeterminate = selecionados.length > 0 && !todosMarcados;
+                          }}
+                          onChange={marcarTodos}
+                          disabled={baixandoPdfs !== null}
+                          aria-label="Marcar todos os aprovados da lista para baixar os PDFs"
+                        />
+                      </label>
+                    )}
+                  </th>
+                )}
                 <ThOrdena coluna="solicitante" ordem={ordem} setOrdem={setOrdem}>Solicitante</ThOrdena>
                 <ThOrdena coluna="obra" ordem={ordem} setOrdem={setOrdem}>Cliente / Obra</ThOrdena>
                 <th title="Reembolsável pelo cliente?">Cliente reembolsa</th>
@@ -441,6 +527,7 @@ export default function Reembolsos({ kind = "reembolso" }) {
                   tabIndex={0}
                   role="link"
                   aria-label={`Abrir ${meta.singular} de ${row.requester_name}`}
+                  className={selecao.has(row.id) && temPdf(row) ? "is-marcado" : undefined}
                   onClick={() => navigate(`${meta.base}/${row.id}`)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
@@ -449,6 +536,23 @@ export default function Reembolsos({ kind = "reembolso" }) {
                     }
                   }}
                 >
+                  {isAdmin && (
+                    // A linha inteira abre o pedido: o clique e a tecla na
+                    // caixa não podem subir até ela.
+                    <td className="col-sel" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                      {temPdf(row) && (
+                        <label className="sel-alvo">
+                          <input
+                            type="checkbox"
+                            checked={selecao.has(row.id)}
+                            onChange={() => marcar(row.id)}
+                            disabled={baixandoPdfs !== null}
+                            aria-label={`Marcar o PDF de ${row.requester_name}`}
+                          />
+                        </label>
+                      )}
+                    </td>
+                  )}
                   <td data-label="Solicitante">{row.requester_name}</td>
                   <td data-label="Cliente / Obra">{row.client_obra}</td>
                   <td data-label="Cliente reembolsa">{formatBillable(row.billable_to_client)}</td>
