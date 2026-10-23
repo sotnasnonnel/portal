@@ -59,6 +59,20 @@ Não há CI. Para publicar:
 2. `npm run build`
 3. Suba o conteúdo de `dist/` para o host. O `base: './'` do Vite permite servir de qualquer pasta.
 
+`deploy\publicar-portal.cmd` faz os três passos sozinho e envia para a pasta **`portal`** do
+servidor `hst-1.phdengenharia.tech` (SFTP, porta 2222, usuário `sistema_phd`). As pastas
+vizinhas (hub, gerencia, charts...) são outros sistemas. Os comandos de envio ficam em
+`deploy\portal.sftp`: `cd portal` primeiro (se falhar, nada é enviado) e `index.html` por
+último. Arquivo novo em `public/` precisa de uma linha `put` lá.
+
+Para entrar no servidor, o script usa:
+
+- **senha**: arquivo `.env.deploy` na raiz contendo só a senha, na primeira linha (ignorado
+  pelo git; o `psftp` do PuTTY lê com `-pwfile`). Uma vez por máquina, aceite o servidor no
+  cache do PuTTY: `psftp -P 2222 sistema_phd@hst-1.phdengenharia.tech`, responda `y` e saia
+  com `bye`;
+- ou, sem `.env.deploy`, a chave SSH `%USERPROFILE%\.ssh\phd_deploy`.
+
 O `dist/` não é versionado. Para saber o que está no ar, procure a string no
 `dist/` publicado, e não no git.
 

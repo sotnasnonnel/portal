@@ -29,6 +29,8 @@ portal_phd/
 portal_phd.zip
 
 .env
+# Senha do servidor para o deploy (deploy\publicar-portal.cmd lê daqui com o psftp -pwfile)
+.env.deploy
 
 # Cache da CLI do Supabase
 supabase/.temp/
