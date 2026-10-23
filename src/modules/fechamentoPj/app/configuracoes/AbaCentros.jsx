@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Plus, Search, Trash2, Save, RotateCcw } from 'lucide-react';
 import { useFechamentoPj } from '../components/contexto';
-import { Aviso, Vazio } from '../components/ui';
+import { Modal, Campo, Aviso, Vazio } from '../components/ui';
 import { salvarCentros, excluirCentro, auditar } from '../../lib/dados';
 import { CC_RM_REGEX, codigoRmCentroCusto, normalizar } from '../../lib/formato';
 import TableScroll from '../../../../components/UI/TableScroll';
 
 const paraLinha = (c) => ({ cod_ct: c.cod_ct, codigo_rm: c.codigo_rm || '', descricao: c.descricao || '', origem: c.origem, salvo: true });
+
+const NOVO = { cod_ct: '', codigo_rm: '', descricao: '' };
 
 // Vazio é aceito (fica PENDENTE); preenchido precisa virar d.ddd.dddddd.
 const validarCodigo = (v) => {
@@ -24,7 +26,8 @@ export default function AbaCentros({ onSujo }) {
   const { centros = [], rateios = [], recarregar, notificar } = useFechamentoPj();
   const [linhas, setLinhas] = useState(() => centros.map(paraLinha));
   const [busca, setBusca] = useState('');
-  const [novoCt, setNovoCt] = useState('');
+  const [novo, setNovo] = useState(null); // modal "Novo centro"
+  const [erroNovo, setErroNovo] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
 
@@ -71,7 +74,30 @@ export default function AbaCentros({ onSujo }) {
     if (!novos.length) { setErro('Esse COD CT já está na base.'); return; }
     setErro('');
     setLinhas((ls) => [...ls, ...novos.map((cod_ct) => ({ cod_ct, codigo_rm: '', descricao: '', origem: 'Manual', salvo: false }))]);
-    setNovoCt('');
+  }
+
+  // Centro criado pelo modal grava na hora; as edições pendentes da tabela continuam pendentes.
+  async function cadastrar() {
+    const codCt = novo.cod_ct.trim();
+    const codigo = validarCodigo(novo.codigo_rm);
+    if (!codCt) { setErroNovo('Informe o COD CT.'); return; }
+    // centros também: o upsert sobrescreveria um centro gravado depois que a aba abriu.
+    if ([...linhas, ...centros].some((l) => normalizar(l.cod_ct) === normalizar(codCt))) { setErroNovo(`O COD CT ${codCt} já está na base.`); return; }
+    if (!codigo.ok) { setErroNovo('Código RM inválido. Use d.ddd.dddddd (ou 10 dígitos), ou deixe em branco.'); return; }
+    setErroNovo('');
+    setSalvando(true);
+    try {
+      const [gravado] = await salvarCentros([{ cod_ct: codCt, codigo_rm: codigo.valor || null, descricao: novo.descricao.trim() || null, origem: 'Manual' }]);
+      await auditar('Centro de custo cadastrado', `${codCt} → ${gravado.codigo_rm || 'pendente'}${gravado.descricao ? ` • ${gravado.descricao}` : ''}`);
+      setLinhas((ls) => [...ls, paraLinha(gravado)]);
+      await recarregar();
+      notificar(`Centro ${codCt} cadastrado.`);
+      setNovo(null);
+    } catch (e) {
+      setErroNovo(e.message);
+    } finally {
+      setSalvando(false);
+    }
   }
 
   function formatarAoSair(codCt, valor) {
@@ -145,10 +171,8 @@ export default function AbaCentros({ onSujo }) {
               <Search size={16} />
               <input type="text" placeholder="COD CT, código RM, descrição…" value={busca} onChange={(e) => setBusca(e.target.value)} />
             </div>
-            <input className="form-input pj-cfg-novo-ct" placeholder="Novo COD CT" value={novoCt} onChange={(e) => setNovoCt(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') incluir([novoCt]); }} />
-            <button type="button" className="btn btn-outline" onClick={() => incluir([novoCt])} disabled={!novoCt.trim()}>
-              <Plus size={16} /> Adicionar
+            <button type="button" className="btn btn-primary" onClick={() => { setErroNovo(''); setNovo(NOVO); }} disabled={salvando}>
+              <Plus size={16} /> Novo centro
             </button>
           </div>
         </div>
@@ -198,6 +222,32 @@ export default function AbaCentros({ onSujo }) {
           <Save size={16} /> {salvando ? 'Salvando…' : 'Salvar alterações'}
         </button>
       </div>
+
+      {novo && (
+        <Modal titulo="Novo centro de custo" onFechar={() => setNovo(null)} bloqueado={salvando}
+          rodape={(
+            <>
+              <button type="button" className="btn btn-outline" onClick={() => setNovo(null)} disabled={salvando}>Cancelar</button>
+              <button type="button" className="btn btn-primary" onClick={cadastrar} disabled={salvando}>{salvando ? 'Salvando…' : 'Cadastrar centro'}</button>
+            </>
+          )}>
+          {erroNovo && <Aviso tipo="erro">{erroNovo}</Aviso>}
+          <div className="pj-form-grid pj-cfg-modal-grid">
+            <Campo rotulo="COD CT" obrigatorio dica="Como vem no organograma, ex.: ADMB-CT10.">
+              <input className="form-input" autoFocus value={novo.cod_ct}
+                onChange={(e) => setNovo((n) => ({ ...n, cod_ct: e.target.value.toUpperCase().replace(/\s/g, '') }))} />
+            </Campo>
+            <Campo rotulo="Código RM" dica="d.ddd.dddddd. Em branco, o centro fica pendente.">
+              <input className="form-input pj-num" value={novo.codigo_rm} placeholder="0.000.000000"
+                onChange={(e) => setNovo((n) => ({ ...n, codigo_rm: e.target.value }))}
+                onBlur={(e) => { const v = validarCodigo(e.target.value); if (v.ok) setNovo((n) => ({ ...n, codigo_rm: v.valor })); }} />
+            </Campo>
+            <Campo rotulo="Descrição" largura="total">
+              <input className="form-input" value={novo.descricao} onChange={(e) => setNovo((n) => ({ ...n, descricao: e.target.value }))} />
+            </Campo>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

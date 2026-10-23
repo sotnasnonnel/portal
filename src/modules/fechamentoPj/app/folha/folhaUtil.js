@@ -97,16 +97,26 @@ export function calendarioSugerido(competencia, anterior) {
   return { envio: `${base}-25`, prazo: `${base}-27T17:00`, pagamento: deslocarMeses(`${base}-03`, 1) };
 }
 
-// Tomador do termo. Todo prestador fatura contra a PHD Assessoria, inclusive
-// quem está marcado como PHD Engenharia no cadastro: não há filial nem CNPJ
-// separado para a Engenharia (decisão de 16/09/2026). A empresa do cadastro
-// segue valendo só como classificação nos relatórios.
+// Tomador do termo: a empresa do cadastro do prestador (pj_prestadores.empresa)
+// decide contra quem a NF sai. Razão social, CNPJ e endereço como estão na
+// Receita. Sem empresa reconhecida, fica a Assessoria, que é o padrão do cadastro.
 // Espelhado em supabase/functions/send-termo-pj — mudou aqui, muda lá.
-export const TOMADOR = { razao: 'PHD ASSESSORIA EM GESTAO LTDA', cnpj: '45.420.053/0001-08', curto: 'PHD Assessoria' };
+export const TOMADORES = {
+  'PHD ASSESSORIA': {
+    razao: 'PHD ASSESSORIA EM GESTAO LTDA',
+    cnpj: '45.420.053/0001-08',
+    curto: 'PHD Assessoria',
+    endereco: 'Av. Raja Gabáglia, 4343 - Santa Lúcia, Belo Horizonte-MG, 30350-577',
+  },
+  'PHD ENGENHARIA': {
+    razao: 'PHD SOLUCOES EM ENGENHARIA S.A.',
+    cnpj: '30.860.911/0001-50',
+    curto: 'PHD Engenharia',
+    endereco: 'Rua Jurupari, 210, 2º andar - Santa Lúcia, Belo Horizonte-MG, 30350-590',
+  },
+};
 
-export const tomadorDaEmpresa = () => TOMADOR;
-
-export const ENDERECO_TOMADOR = 'Av. Raja Gabáglia, 4343 - Santa Lúcia, Belo Horizonte-MG, 30350-577';
+export const tomadorDaEmpresa = (empresa) => TOMADORES[normalizar(empresa)] || TOMADORES['PHD ASSESSORIA'];
 
 export const emailValido = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v || '').trim());
 

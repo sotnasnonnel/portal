@@ -86,10 +86,8 @@
 .pj-cfg-cc { min-width: 140px; max-width: 170px; font-variant-numeric: tabular-nums; }
 .pj-cfg-desc { min-width: 180px; }
 .pj-cfg-invalido { border-color: var(--color-danger); }
-.pj-cfg-novo-ct { width: 160px; }
 
 @media (max-width: 720px) {
   .pj-cfg-contato { grid-template-columns: minmax(0, 1fr) auto; }
   .pj-cfg-contato > input:nth-child(2) { grid-column: 1; }
-  .pj-cfg-novo-ct { width: auto; flex: 1 1 140px; }
 }

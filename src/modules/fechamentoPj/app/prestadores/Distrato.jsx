@@ -6,10 +6,18 @@ import { dataBr, dataExtenso, valorComExtenso, numeroExtenso, mascararCnpj, fmtB
 import { auditar, envelopesDoPrestador } from '../../lib/dados';
 import { totaisEventos, EVENTO_BRUTO } from '../../lib/calculo';
 
-const CONTRATANTE = {
-  nome: 'PHD ASSESSORIA EM GESTÃO LTDA',
-  cnpj: '45.420.053/0001-08',
-  endereco: 'Rua Jurupari, 210 - 2º andar – Santa Lúcia – Belo Horizonte – Minas Gerais – CEP 30.350-590',
+// Contratante = a empresa do cadastro do prestador. Sede como está na Receita.
+const CONTRATANTES = {
+  'PHD ASSESSORIA': {
+    nome: 'PHD ASSESSORIA EM GESTÃO LTDA',
+    cnpj: '45.420.053/0001-08',
+    endereco: 'Av. Raja Gabáglia, 4343 - sala 400, 5º andar – Santa Lúcia – Belo Horizonte – Minas Gerais – CEP 30.350-577',
+  },
+  'PHD ENGENHARIA': {
+    nome: 'PHD SOLUÇÕES EM ENGENHARIA S.A.',
+    cnpj: '30.860.911/0001-50',
+    endereco: 'Rua Jurupari, 210 - 2º andar – Santa Lúcia – Belo Horizonte – Minas Gerais – CEP 30.350-590',
+  },
 };
 
 const ou = (v, alternativa = '[não informado]') => (String(v ?? '').trim() ? v : alternativa);
@@ -110,6 +118,7 @@ export default function Distrato({ encerramento, prestador, onFechar }) {
   const verbas = envelope ? proventos.map((e) => textoProvento(e, envelope, encerramento)) : [];
   const detalheDescontos = listaDescontos.map((e) => `${e.descricao} (${fmtBRL(e.valor)})`).join('; ');
 
+  const contratante = CONTRATANTES[prestador.empresa] || CONTRATANTES['PHD ASSESSORIA'];
   const razaoSocial = ou(prestador.razao_social, '[RAZÃO SOCIAL NÃO INFORMADA]');
   const cnpjContratada = prestador.cnpj ? mascararCnpj(prestador.cnpj) : '[não informado]';
 
@@ -149,8 +158,8 @@ export default function Distrato({ encerramento, prestador, onFechar }) {
         </p>
         <p>Figuram como PARTES:</p>
         <p>
-          <b>{CONTRATANTE.nome}</b>, pessoa jurídica de direito privado, inscrita no CNPJ sob o nº {CONTRATANTE.cnpj},
-          com sede na {CONTRATANTE.endereco}, neste ato representada na forma de seu contrato social, doravante
+          <b>{contratante.nome}</b>, pessoa jurídica de direito privado, inscrita no CNPJ sob o nº {contratante.cnpj},
+          com sede na {contratante.endereco}, neste ato representada na forma de seu contrato social, doravante
           denominada <b>“CONTRATANTE”</b>.
         </p>
         <p>
@@ -259,7 +268,7 @@ export default function Distrato({ encerramento, prestador, onFechar }) {
         <p><b>PARTES</b></p>
         <div className="pjp-assinaturas pj-quebra-evitar">
           <div className="pjp-assinatura">
-            {CONTRATANTE.nome}<br />CNPJ: {CONTRATANTE.cnpj}
+            {contratante.nome}<br />CNPJ: {contratante.cnpj}
           </div>
           <div className="pjp-assinatura">
             {razaoSocial}<br />{prestador.nome}<br />CNPJ: {cnpjContratada}

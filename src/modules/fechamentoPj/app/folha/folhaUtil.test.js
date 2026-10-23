@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { naFolhaDaCompetencia } from './folhaUtil.js';
+import { naFolhaDaCompetencia, tomadorDaEmpresa } from './folhaUtil.js';
 
 const SET = '2026-09-01'; // competência de setembro
 
@@ -32,4 +32,16 @@ test('desligado sem data de término sai da folha', () => {
 
 test('envelope sem cadastro atual fica: sem o prestador não há como julgar', () => {
   assert.equal(naFolhaDaCompetencia(null, SET), true);
+});
+
+test('tomador do termo segue a empresa do cadastro', () => {
+  assert.equal(tomadorDaEmpresa('PHD ENGENHARIA').cnpj, '30.860.911/0001-50');
+  assert.equal(tomadorDaEmpresa('PHD ASSESSORIA').cnpj, '45.420.053/0001-08');
+  // Cadastro congelado antigo ou digitado à mão: caixa e espaço não importam.
+  assert.equal(tomadorDaEmpresa(' phd engenharia ').cnpj, '30.860.911/0001-50');
+});
+
+test('sem empresa reconhecida, o tomador é a Assessoria', () => {
+  assert.equal(tomadorDaEmpresa('').cnpj, '45.420.053/0001-08');
+  assert.equal(tomadorDaEmpresa(null).cnpj, '45.420.053/0001-08');
 });

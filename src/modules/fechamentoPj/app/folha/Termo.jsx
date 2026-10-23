@@ -6,7 +6,7 @@ import { marcarTermo, auditar, enviarTermosEmail } from '../../lib/dados';
 import { substituirAssunto } from '../../lib/calculo';
 import { competenciaRotulo, dataBr, dataHoraBr, fmtBRL, mascararCnpj, round2 } from '../../lib/formato';
 import {
-  tomadorDaEmpresa, ENDERECO_TOMADOR, copiasDoTermo, emailValido,
+  tomadorDaEmpresa, copiasDoTermo, emailValido,
 } from './folhaUtil';
 import logoPhd from '../../../../assets/logo-phd.png';
 import TableScroll from '../../../../components/UI/TableScroll';
@@ -49,7 +49,7 @@ function DocumentoTermo({ linha, competenciaAtual, config }) {
         <tbody>
           <tr><th>Tomador do serviço</th><td>{tomador.razao}</td></tr>
           <tr><th>CNPJ do tomador</th><td>{tomador.cnpj}</td></tr>
-          <tr><th>Endereço</th><td>{ENDERECO_TOMADOR}</td></tr>
+          <tr><th>Endereço</th><td>{tomador.endereco}</td></tr>
           <tr><th>Descrição do serviço</th><td>Atentar-se para o escopo contratual.</td></tr>
           <tr><th>Valor bruto</th><td>{fmtBRL(bruto)}</td></tr>
           <tr><th>Valor líquido da NF</th><td><b>{fmtBRL(liquido)}</b></td></tr>

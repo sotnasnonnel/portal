@@ -34,9 +34,23 @@ function json(body: unknown, status = 200) {
 
 const MAX_ENVELOPES = 200;
 
-// Espelho de src/modules/fechamentoPj/app/folha/folhaUtil.js (TOMADOR e ENDERECO_TOMADOR).
-const TOMADOR = { razao: "PHD ASSESSORIA EM GESTAO LTDA", cnpj: "45.420.053/0001-08" };
-const ENDERECO_TOMADOR = "Av. Raja Gabáglia, 4343 - Santa Lúcia, Belo Horizonte-MG, 30350-577";
+// Espelho de src/modules/fechamentoPj/app/folha/folhaUtil.js (TOMADORES e
+// tomadorDaEmpresa): a empresa do cadastro do prestador decide o tomador.
+type Tomador = { razao: string; cnpj: string; endereco: string };
+const TOMADORES: Record<string, Tomador> = {
+  "PHD ASSESSORIA": {
+    razao: "PHD ASSESSORIA EM GESTAO LTDA",
+    cnpj: "45.420.053/0001-08",
+    endereco: "Av. Raja Gabáglia, 4343 - Santa Lúcia, Belo Horizonte-MG, 30350-577",
+  },
+  "PHD ENGENHARIA": {
+    razao: "PHD SOLUCOES EM ENGENHARIA S.A.",
+    cnpj: "30.860.911/0001-50",
+    endereco: "Rua Jurupari, 210, 2º andar - Santa Lúcia, Belo Horizonte-MG, 30350-590",
+  },
+};
+const tomadorDaEmpresa = (empresa: unknown): Tomador =>
+  TOMADORES[String(empresa ?? "").trim().replace(/\s+/g, " ").toUpperCase()] ?? TOMADORES["PHD ASSESSORIA"];
 
 const esc = (s: unknown) =>
   String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -87,7 +101,7 @@ async function graphToken(tenant: string, clientId: string, secret: string): Pro
   return data.access_token as string;
 }
 
-type Pessoa = { codigo: string; nome: string; email: string; razaoSocial: string; cnpj: string };
+type Pessoa = { codigo: string; nome: string; email: string; razaoSocial: string; cnpj: string; empresa: string };
 
 // Mesma regra de pessoaDoEnvelope (folhaUtil.js): o cadastro congelado no
 // fechamento vence o cadastro atual.
@@ -99,15 +113,16 @@ function pessoaDoEnvelope(env: any, p: any): Pessoa {
     email: String(c?.email ?? p?.email ?? "").trim(),
     razaoSocial: c?.razaoSocial || p?.razao_social || "",
     cnpj: c?.cnpj || p?.cnpj || "",
+    empresa: c?.empresa || p?.empresa || "",
   };
 }
 
 // Corpo do e-mail = o mesmo termo da tela (DocumentoTermo em Termo.jsx).
 function montarHtml(o: {
-  pessoa: Pessoa; competencia: string; bruto: number; descontos: number;
+  pessoa: Pessoa; tomador: Tomador; competencia: string; bruto: number; descontos: number;
   comp: any; emailFinanceiro: string; logo: string;
 }) {
-  const { pessoa, competencia, bruto, descontos, comp, emailFinanceiro, logo } = o;
+  const { pessoa, tomador, competencia, bruto, descontos, comp, emailFinanceiro, logo } = o;
   const rot = competenciaRotulo(competencia);
   const liquido = Math.round((bruto - descontos) * 100) / 100;
   const th = 'style="text-align:left;color:#6b7280;font-weight:500;padding:6px 14px 6px 0;border-bottom:1px solid #eef0f3;vertical-align:top"';
@@ -136,9 +151,9 @@ function montarHtml(o: {
           Fica autorizada a emissão da Nota Fiscal no valor líquido de <strong>${brl(liquido)}</strong>.</p>
         <h2 style="margin:0 0 6px;font-size:15px;color:#26405d">Dados para emissão da Nota Fiscal</h2>
         <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;font-size:14px">
-          ${linha("Tomador do serviço", esc(TOMADOR.razao))}
-          ${linha("CNPJ do tomador", esc(TOMADOR.cnpj))}
-          ${linha("Endereço", esc(ENDERECO_TOMADOR))}
+          ${linha("Tomador do serviço", esc(tomador.razao))}
+          ${linha("CNPJ do tomador", esc(tomador.cnpj))}
+          ${linha("Endereço", esc(tomador.endereco))}
           ${linha("Descrição do serviço", "Atentar-se para o escopo contratual.")}
           ${linha("Valor bruto", brl(bruto))}
           ${linha("Valor líquido da NF", `<strong>${brl(liquido)}</strong>`)}
@@ -156,7 +171,7 @@ function montarHtml(o: {
           </ul>
           <span style="font-size:13px;color:#6b7280">Nota Fiscal recebida depois do prazo passa para a data de pagamento seguinte.</span>
         </td></tr></table>
-        <p style="margin:20px 0 0">Atenciosamente,<br><strong>${esc(TOMADOR.razao)}</strong><br>
+        <p style="margin:20px 0 0">Atenciosamente,<br><strong>${esc(tomador.razao)}</strong><br>
           <span style="color:#e8814a;font-style:italic">Tudo acontece com gente!</span></p>
       </td></tr>
     </table>
@@ -205,7 +220,7 @@ Deno.serve(async (req) => {
     const prestIds = [...new Set(envelopes.map((e) => e.prestador_id))];
     const comps = [...new Set(envelopes.map((e) => e.competencia))];
     const [{ data: prestadores, error: eP }, { data: competencias, error: eC }, { data: config, error: eCfg }] = await Promise.all([
-      db.from("pj_prestadores").select("id, codigo, nome, email, razao_social, cnpj").in("id", prestIds),
+      db.from("pj_prestadores").select("id, codigo, nome, email, razao_social, cnpj, empresa").in("id", prestIds),
       db.from("pj_competencias").select("competencia, data_envio_termos, prazo_nf, data_pagamento").in("competencia", comps),
       db.from("pj_config").select("email_financeiro, contatos_extras, assunto_email, copia_financeiro").eq("id", 1).maybeSingle(),
     ]);
@@ -238,8 +253,9 @@ Deno.serve(async (req) => {
       const descontos = Number(env.descontos) || 0;
       const liquido = Math.round((bruto - descontos) * 100) / 100;
       const comp = competencias?.find((c) => c.competencia === env.competencia);
+      const tomador = tomadorDaEmpresa(pessoa.empresa);
       const html = montarHtml({
-        pessoa, competencia: env.competencia, bruto, descontos,
+        pessoa, tomador, competencia: env.competencia, bruto, descontos,
         comp, emailFinanceiro: emailFin, logo,
       });
       // PDF com o mesmo termo. Se a geração falhar, o e-mail ainda sai com o
@@ -253,8 +269,8 @@ Deno.serve(async (req) => {
           brutoTexto: brl(bruto),
           liquidoTexto: brl(liquido),
           descontosTexto: brl(descontos),
-          tomador: TOMADOR,
-          enderecoTomador: ENDERECO_TOMADOR,
+          tomador,
+          enderecoTomador: tomador.endereco,
           emailFinanceiro: emailFin,
           prazos: {
             envioTermos: dataBr(comp?.data_envio_termos),
