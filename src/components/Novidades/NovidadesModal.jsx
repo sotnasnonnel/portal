@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
-import { Megaphone, X, Sparkles, ArrowRight } from 'lucide-react';
+import { Megaphone, X, Sparkles, ArrowRight, MousePointerClick } from 'lucide-react';
 import { formatarData } from '../../utils/formatters';
+import { tutorialDasNovidades } from '../../config/novidades';
 import './Novidades.css';
 
 /**
@@ -15,8 +16,14 @@ import './Novidades.css';
  * cada mudança é MOSTRADA além de escrita — a fita "PMO → Dados" e os
  * mini-cartões das áreas dizem em um olhar o que o parágrafo leva três linhas
  * para dizer. O conteúdo vem de config/novidades.js; aqui só se desenha.
+ *
+ * Versão com `tutorial` (um passo a passo na tela): no aviso automático o
+ * botão do rodapé vira "Ver como funciona", mas fechar continua sendo só
+ * `onClose` — é a Home que emenda o passo a passo, por qualquer caminho de
+ * fechar. No histórico, a versão ganha o botão "Ver o passo a passo", que
+ * chama `onTutorial(id)`.
  */
-export default function NovidadesModal({ novidades = [], historico = false, onClose }) {
+export default function NovidadesModal({ novidades = [], historico = false, onClose, onTutorial }) {
   // Esc fecha e a página atrás não rola enquanto o aviso está aberto.
   useEffect(() => {
     const onKey = (e) => {
@@ -39,6 +46,8 @@ export default function NovidadesModal({ novidades = [], historico = false, onCl
   // sua data no corpo.
   const unica = novidades.length === 1 ? novidades[0] : null;
   const totalItens = novidades.reduce((n, v) => n + v.itens.length, 0);
+  // Só o aviso que abriu sozinho emenda no passo a passo ao fechar.
+  const tutorial = historico ? null : tutorialDasNovidades(novidades);
 
   return (
     <div className="novid-overlay" onClick={onClose}>
@@ -133,13 +142,25 @@ export default function NovidadesModal({ novidades = [], historico = false, onCl
                   );
                 })}
               </ul>
+
+              {/* Fora do cabeçalho da versão, que some quando a lista tem
+                  uma versão só: o botão tem de aparecer nos dois casos. */}
+              {historico && versao.tutorial && onTutorial && (
+                <button type="button" className="novid-tutorial" onClick={() => onTutorial(versao.tutorial)}>
+                  <MousePointerClick size={15} aria-hidden="true" />
+                  Ver o passo a passo do Feed
+                </button>
+              )}
             </section>
           ))}
         </div>
 
         <footer className="novid-footer">
+          {/* O rodapé avisa o que vem depois de fechar: quem esperava só um
+              "Entendi" não leva susto com o destaque na tela. */}
+          {tutorial && <span className="novid-footer-dica">Um passo a passo mostra onde clicar.</span>}
           <button type="button" className="novid-btn" onClick={onClose}>
-            {historico ? 'Fechar' : 'Entendi'}
+            {tutorial ? <>Ver como funciona <ArrowRight size={16} aria-hidden="true" /></> : historico ? 'Fechar' : 'Entendi'}
           </button>
         </footer>
       </div>

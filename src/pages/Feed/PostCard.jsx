@@ -232,7 +232,8 @@ export default function PostCard({ post, links, eu, moderador, destaque = false,
 
       {!editando && <FotosDoPost midias={midias} links={links} onAbrir={setFoto} />}
 
-      <div className="feed-post-acoes">
+      {/* data-tour: o passo a passo do feed aponta as ações do primeiro post. */}
+      <div className="feed-post-acoes" data-tour="post-acoes">
         <button type="button" className={`feed-acao ${post.curti ? 'is-on' : ''}`} aria-pressed={post.curti}
           onClick={alternarCurtida} disabled={post.oculto && !meu}
           aria-label={`${post.curti ? 'Remover curtida' : 'Curtir'} (${plural(post.curtidas, 'curtida', 'curtidas')})`}>

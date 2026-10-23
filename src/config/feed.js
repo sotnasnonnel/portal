@@ -6,12 +6,13 @@ import { isSuperAdmin } from './superAdmin.js';
 
 export const ROTA_FEED = '/feed';
 
-// Lançamento: enquanto false, o feed fica escondido (botão da Home e a rota)
-// para todo mundo menos o super admin, que segue testando. Pedido do usuário,
-// 20/10/2026: "vamos lançar depois". Para lançar, trocar para true.
-export const FEED_LIBERADO = false;
+// Lançado para todo mundo em 23/10/2026, a pedido do usuário (de 20/10 até
+// lá, só o super admin via, testando). `veFeed` continua sendo o ponto único
+// de quem vê o feed (botão da Home e a rota): se precisar fechar de novo, é
+// voltar isto para false — o super admin segue entrando.
+export const FEED_LIBERADO = true;
 
-/** Quem vê o feed agora: todos depois do lançamento; antes, só o super admin. */
+/** Quem vê o feed: todos com FEED_LIBERADO; com ele fechado, só o super admin. */
 export const veFeed = (user) => FEED_LIBERADO || isSuperAdmin(user);
 
 export const TEXTO_MAX = 3000;

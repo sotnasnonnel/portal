@@ -25,6 +25,7 @@ import { podeVerTorre } from '../config/torre';
 import { podeAcessarFechamentoPj } from '../config/fechamentoPj';
 import { isAusenciaRh, veAprovacoes, veAusenciaTodos } from '../config/ausenciaProgramada';
 import { veFeed } from '../config/feed';
+import { TourProvider } from '../components/Tour/TourContext';
 import { MODULOS_AUSENCIA } from '../config/modulosAusencia';
 import {
   ROTA_FOLGA_CAMPO, isFolgaCampoRh, podeAcessarFolgaCampo,
@@ -352,678 +353,684 @@ function SolicAdminRoute({ children }) {
 export default function AppRoutes() {
   return (
     <HashRouter>
-      <Routes>
-        <Route
-          path="/login"
-          element={
-            <PublicRoute>
-              <LazyPage>
-                <Login />
-              </LazyPage>
-            </PublicRoute>
-          }
-        />
-
-        {/* Aviso de Privacidade (LGPD): fora do ProtectedRoute de propósito. A
-            lei manda divulgar o contato do encarregado, e o link também fica na
-            tela de login — onde ninguém está autenticado. Não mostra dado de
-            ninguém: é texto institucional. */}
-        <Route path="/privacidade" element={<LazyPage><Privacidade /></LazyPage>} />
-
-        {/* Home do portal: tela cheia, fora do Layout do DP (sem sidebar/header) */}
-        <Route
-          path="/home"
-          element={
-            <ProtectedRoute>
-              <LazyPage>
-                <Home />
-              </LazyPage>
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Central de Aprovações: aberta a todo logado. Cada módulo continua
-            decidindo quem pode aprovar o quê — a central só junta e reusa. */}
-        <Route
-          path="/aprovacoes"
-          element={
-            <ProtectedRoute>
-              <LazyPage>
-                <CentralAprovacoes />
-              </LazyPage>
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Humor da equipe/empresa: só números agregados. A tela devolve para a
-            Home quem não é gestão nem RH; a RPC barra de novo no banco. */}
-        <Route
-          path="/humor"
-          element={
-            <ProtectedRoute>
-              <LazyPage>
-                <PainelHumor />
-              </LazyPage>
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Feed: antes do lançamento (FEED_LIBERADO), só o super admin entra;
-            depois, todo logado. As RPCs barram quem está inativo. */}
-        <Route
-          path="/feed"
-          element={
-            <ProtectedRoute>
-              <FeedRoute>
+      {/* Passo a passo vivo (components/Tour): dentro do router, porque cada
+          passo depende da rota, e em volta das rotas, porque o tutorial
+          atravessa telas (o do feed começa na Home) e não pode recomeçar a cada troca. */}
+      <TourProvider>
+        <Routes>
+          <Route
+            path="/login"
+            element={
+              <PublicRoute>
                 <LazyPage>
-                  <Feed />
+                  <Login />
                 </LazyPage>
-              </FeedRoute>
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Personalização: moldura, título, tema do mês e enfeite dos recados,
-            tudo de graça; o RH modera o título personalizado. Aberta a todo
-            logado; as RPCs decidem o resto. /pontos era o endereço antigo. */}
-        <Route path="/pontos" element={<Navigate to="/personalizacao" replace />} />
-        <Route
-          path="/personalizacao"
-          element={
-            <ProtectedRoute>
-              <LazyPage>
-                <Pontos />
-              </LazyPage>
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Fale conosco: aberto a todo logado. A RLS decide o que cada um vê —
-            quem atende enxerga a fila inteira, os demais só o que enviaram. */}
-        <Route
-          path="/fale-conosco"
-          element={
-            <ProtectedRoute>
-              <LazyPage>
-                <FaleConoscoCaixa />
-              </LazyPage>
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Gerenciamento de acessos do portal — só o super-admin (gate na própria página) */}
-        <Route
-          path="/portal-admin"
-          element={
-            <ProtectedRoute>
-              <LazyPage>
-                <PortalAdmin />
-              </LazyPage>
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }
-        >
-
-          <Route
-            path="/admin/cadastro"
-            element={
-              <ModuleRoute module="dp">
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <LazyPage>
-                    <AdminCadastro />
-                  </LazyPage>
-                </ProtectedRoute>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="/admin/candidatos"
-            element={
-              <ModuleRoute module="dp">
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <LazyPage>
-                    <AdminCandidatos />
-                  </LazyPage>
-                </ProtectedRoute>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="/admin/listagem"
-            element={
-              <ModuleRoute module="dp">
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <LazyPage>
-                    <AdminListagem />
-                  </LazyPage>
-                </ProtectedRoute>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="/admin/solicitacoes"
-            element={
-              <ModuleRoute module="dp">
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <LazyPage>
-                    <AdminSolicitacoes />
-                  </LazyPage>
-                </ProtectedRoute>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="/admin/fluxos"
-            element={
-              <ModuleRoute module="dp">
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <LazyPage>
-                    <AdminFluxos />
-                  </LazyPage>
-                </ProtectedRoute>
-              </ModuleRoute>
+              </PublicRoute>
             }
           />
 
-          {/* Horas Extras — tratamento do DP. O pedido, o acompanhamento e a
-              aprovação ficam na Gestão de Horas (/horas/extras). */}
+          {/* Aviso de Privacidade (LGPD): fora do ProtectedRoute de propósito. A
+              lei manda divulgar o contato do encarregado, e o link também fica na
+              tela de login — onde ninguém está autenticado. Não mostra dado de
+              ninguém: é texto institucional. */}
+          <Route path="/privacidade" element={<LazyPage><Privacidade /></LazyPage>} />
+
+          {/* Home do portal: tela cheia, fora do Layout do DP (sem sidebar/header) */}
           <Route
-            path="/admin/horas-extras"
+            path="/home"
             element={
-              <ModuleRoute module="dp">
-                <HorasDpRoute>
-                  <LazyPage>
-                    <PainelHorasExtras />
-                  </LazyPage>
-                </HorasDpRoute>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="/admin/horas-extras/excecoes"
-            element={
-              <ModuleRoute module="dp">
-                <HorasDpRoute>
-                  <LazyPage>
-                    <ExcecoesPrazoHE />
-                  </LazyPage>
-                </HorasDpRoute>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="/admin/horas-extras/auditoria"
-            element={
-              <ModuleRoute module="dp">
-                <HorasDpRoute>
-                  <LazyPage>
-                    <AuditoriaHE />
-                  </LazyPage>
-                </HorasDpRoute>
-              </ModuleRoute>
+              <ProtectedRoute>
+                <LazyPage>
+                  <Home />
+                </LazyPage>
+              </ProtectedRoute>
             }
           />
 
-          {/* Fechamento PJ. A casca carrega a base e guarda a competência em exibição. */}
+          {/* Central de Aprovações: aberta a todo logado. Cada módulo continua
+              decidindo quem pode aprovar o quê — a central só junta e reusa. */}
           <Route
-            path="/admin/fechamento-pj"
+            path="/aprovacoes"
             element={
-              <ModuleRoute module="dp">
-                <FechamentoPjRoute>
+              <ProtectedRoute>
+                <LazyPage>
+                  <CentralAprovacoes />
+                </LazyPage>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Humor da equipe/empresa: só números agregados. A tela devolve para a
+              Home quem não é gestão nem RH; a RPC barra de novo no banco. */}
+          <Route
+            path="/humor"
+            element={
+              <ProtectedRoute>
+                <LazyPage>
+                  <PainelHumor />
+                </LazyPage>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Feed: lançado em 23/10/2026, todo logado entra (antes, só o super
+              admin; o FeedRoute ainda passa por veFeed, para dar para fechar de
+              novo pelo FEED_LIBERADO). As RPCs barram quem está inativo. */}
+          <Route
+            path="/feed"
+            element={
+              <ProtectedRoute>
+                <FeedRoute>
                   <LazyPage>
-                    <FechamentoPjShell />
+                    <Feed />
                   </LazyPage>
-                </FechamentoPjRoute>
-              </ModuleRoute>
+                </FeedRoute>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Personalização: moldura, título, tema do mês e enfeite dos recados,
+              tudo de graça; o RH modera o título personalizado. Aberta a todo
+              logado; as RPCs decidem o resto. /pontos era o endereço antigo. */}
+          <Route path="/pontos" element={<Navigate to="/personalizacao" replace />} />
+          <Route
+            path="/personalizacao"
+            element={
+              <ProtectedRoute>
+                <LazyPage>
+                  <Pontos />
+                </LazyPage>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Fale conosco: aberto a todo logado. A RLS decide o que cada um vê —
+              quem atende enxerga a fila inteira, os demais só o que enviaram. */}
+          <Route
+            path="/fale-conosco"
+            element={
+              <ProtectedRoute>
+                <LazyPage>
+                  <FaleConoscoCaixa />
+                </LazyPage>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Gerenciamento de acessos do portal — só o super-admin (gate na própria página) */}
+          <Route
+            path="/portal-admin"
+            element={
+              <ProtectedRoute>
+                <LazyPage>
+                  <PortalAdmin />
+                </LazyPage>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            element={
+              <ProtectedRoute>
+                <Layout />
+              </ProtectedRoute>
             }
           >
-            <Route index element={<LazyPage><PjFolha /></LazyPage>} />
-            <Route path="prestadores" element={<LazyPage><PjPrestadores /></LazyPage>} />
-            <Route path="prestadores/:id" element={<LazyPage><PjPrestador /></LazyPage>} />
-            <Route path="fornecedores" element={<LazyPage><PjFornecedores /></LazyPage>} />
-            <Route path="relatorios" element={<LazyPage><PjRelatorios /></LazyPage>} />
-            <Route path="historico" element={<LazyPage><PjHistorico /></LazyPage>} />
-            <Route path="configuracoes" element={<LazyPage><PjConfiguracoes /></LazyPage>} />
+
+            <Route
+              path="/admin/cadastro"
+              element={
+                <ModuleRoute module="dp">
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <LazyPage>
+                      <AdminCadastro />
+                    </LazyPage>
+                  </ProtectedRoute>
+                </ModuleRoute>
+              }
+            />
+            <Route
+              path="/admin/candidatos"
+              element={
+                <ModuleRoute module="dp">
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <LazyPage>
+                      <AdminCandidatos />
+                    </LazyPage>
+                  </ProtectedRoute>
+                </ModuleRoute>
+              }
+            />
+            <Route
+              path="/admin/listagem"
+              element={
+                <ModuleRoute module="dp">
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <LazyPage>
+                      <AdminListagem />
+                    </LazyPage>
+                  </ProtectedRoute>
+                </ModuleRoute>
+              }
+            />
+            <Route
+              path="/admin/solicitacoes"
+              element={
+                <ModuleRoute module="dp">
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <LazyPage>
+                      <AdminSolicitacoes />
+                    </LazyPage>
+                  </ProtectedRoute>
+                </ModuleRoute>
+              }
+            />
+            <Route
+              path="/admin/fluxos"
+              element={
+                <ModuleRoute module="dp">
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <LazyPage>
+                      <AdminFluxos />
+                    </LazyPage>
+                  </ProtectedRoute>
+                </ModuleRoute>
+              }
+            />
+
+            {/* Horas Extras — tratamento do DP. O pedido, o acompanhamento e a
+                aprovação ficam na Gestão de Horas (/horas/extras). */}
+            <Route
+              path="/admin/horas-extras"
+              element={
+                <ModuleRoute module="dp">
+                  <HorasDpRoute>
+                    <LazyPage>
+                      <PainelHorasExtras />
+                    </LazyPage>
+                  </HorasDpRoute>
+                </ModuleRoute>
+              }
+            />
+            <Route
+              path="/admin/horas-extras/excecoes"
+              element={
+                <ModuleRoute module="dp">
+                  <HorasDpRoute>
+                    <LazyPage>
+                      <ExcecoesPrazoHE />
+                    </LazyPage>
+                  </HorasDpRoute>
+                </ModuleRoute>
+              }
+            />
+            <Route
+              path="/admin/horas-extras/auditoria"
+              element={
+                <ModuleRoute module="dp">
+                  <HorasDpRoute>
+                    <LazyPage>
+                      <AuditoriaHE />
+                    </LazyPage>
+                  </HorasDpRoute>
+                </ModuleRoute>
+              }
+            />
+
+            {/* Fechamento PJ. A casca carrega a base e guarda a competência em exibição. */}
+            <Route
+              path="/admin/fechamento-pj"
+              element={
+                <ModuleRoute module="dp">
+                  <FechamentoPjRoute>
+                    <LazyPage>
+                      <FechamentoPjShell />
+                    </LazyPage>
+                  </FechamentoPjRoute>
+                </ModuleRoute>
+              }
+            >
+              <Route index element={<LazyPage><PjFolha /></LazyPage>} />
+              <Route path="prestadores" element={<LazyPage><PjPrestadores /></LazyPage>} />
+              <Route path="prestadores/:id" element={<LazyPage><PjPrestador /></LazyPage>} />
+              <Route path="fornecedores" element={<LazyPage><PjFornecedores /></LazyPage>} />
+              <Route path="relatorios" element={<LazyPage><PjRelatorios /></LazyPage>} />
+              <Route path="historico" element={<LazyPage><PjHistorico /></LazyPage>} />
+              <Route path="configuracoes" element={<LazyPage><PjConfiguracoes /></LazyPage>} />
+            </Route>
+
+            {/* Para conhecimento: a RPC devolve só os avisos da própria pessoa. */}
+            <Route path="/conhecimento" element={<LazyPage><AvisosConhecimento /></LazyPage>} />
+
+            {MODULOS_AUSENCIA.flatMap((mod) => rotasAusencia(mod))}
+
+            {/* Folga de Campo: módulo próprio, sem saldo (config/folgaCampo.js). */}
+            <Route
+              path={ROTA_FOLGA_CAMPO}
+              element={<FolgaCampoRoute><LazyPage><MinhaFolga /></LazyPage></FolgaCampoRoute>}
+            />
+            <Route
+              path={`${ROTA_FOLGA_CAMPO}/aprovacoes`}
+              element={<FolgaCampoRoute gestao><LazyPage><AprovacoesFolga /></LazyPage></FolgaCampoRoute>}
+            />
+            <Route
+              path={`${ROTA_FOLGA_CAMPO}/equipe`}
+              element={<FolgaCampoRoute gestao><LazyPage><ConsultaFolga key="equipe" escopo="equipe" /></LazyPage></FolgaCampoRoute>}
+            />
+            <Route
+              path={`${ROTA_FOLGA_CAMPO}/painel`}
+              element={<FolgaCampoRoute rh><LazyPage><ConsultaFolga key="todos" escopo="todos" /></LazyPage></FolgaCampoRoute>}
+            />
+
+            {/* Adicional de Ausências (config/adicionalAusencia.js). `key` remonta
+                a tela ao trocar de escopo. */}
+            {[['meus', ROTA_ADICIONAL], ['aprovar', `${ROTA_ADICIONAL}/aprovacoes`], ['todos', `${ROTA_ADICIONAL}/painel`]]
+              .map(([escopo, path]) => (
+                <Route key={`adicional-${escopo}`} path={path}
+                  element={(
+                    <AdicionalRoute escopo={escopo}>
+                      <LazyPage><AdicionalAusencias key={escopo} escopo={escopo} /></LazyPage>
+                    </AdicionalRoute>
+                  )} />
+              ))}
+
+            <Route
+              path="/gestor"
+              element={
+                <ModuleRoute module="dp">
+                  <ProtectedRoute allowedRoles={['gestor', 'coordenador']}>
+                    <LazyPage>
+                      <GestorDashboard />
+                    </LazyPage>
+                  </ProtectedRoute>
+                </ModuleRoute>
+              }
+            />
+            <Route
+              path="/gestor/aprovacoes"
+              element={
+                <ModuleRoute module="dp">
+                  <ProtectedRoute allowedRoles={['gestor', 'coordenador']}>
+                    <LazyPage>
+                      <GestorAprovacoes />
+                    </LazyPage>
+                  </ProtectedRoute>
+                </ModuleRoute>
+              }
+            />
+            <Route
+              path="/gestor/aprovacoes/:id"
+              element={
+                <ModuleRoute module="dp">
+                  <ProtectedRoute allowedRoles={['gestor', 'coordenador']}>
+                    <LazyPage>
+                      <GestorDetalhes />
+                    </LazyPage>
+                  </ProtectedRoute>
+                </ModuleRoute>
+              }
+            />
+            <Route
+              path="/gestor/equipe"
+              element={
+                <ModuleRoute module="dp">
+                  <ProtectedRoute allowedRoles={['gestor', 'coordenador']}>
+                    <LazyPage>
+                      <GestorEquipe />
+                    </LazyPage>
+                  </ProtectedRoute>
+                </ModuleRoute>
+              }
+            />
+            <Route
+              path="/gestor/ausencia"
+              element={
+                <ModuleRoute module="dp">
+                  <ProtectedRoute allowedRoles={['gestor', 'coordenador']}>
+                    <LazyPage>
+                      <GestorAusencia />
+                    </LazyPage>
+                  </ProtectedRoute>
+                </ModuleRoute>
+              }
+            />
+            <Route
+              path="/gestor/minha-ausencia"
+              element={
+                <ModuleRoute module="dp">
+                  <ProtectedRoute allowedRoles={['gestor', 'coordenador']}>
+                    <LazyPage>
+                      <UsuarioDashboard />
+                    </LazyPage>
+                  </ProtectedRoute>
+                </ModuleRoute>
+              }
+            />
+            <Route
+              path="/gestor/solicitacoes"
+              element={
+                <ModuleRoute module="dp">
+                  <Navigate to="/gestor/solicitacoes/nova" replace />
+                </ModuleRoute>
+              }
+            />
+            <Route
+              path="/gestor/solicitacoes/nova"
+              element={
+                <ModuleRoute module="dp">
+                  <ProtectedRoute allowedRoles={['gestor', 'coordenador', 'rh']}>
+                    <LazyPage>
+                      <RequisicoesHub />
+                    </LazyPage>
+                  </ProtectedRoute>
+                </ModuleRoute>
+              }
+            />
+            <Route
+              path="/gestor/solicitacoes/nova/:tipo"
+              element={
+                <ModuleRoute module="dp">
+                  <ProtectedRoute allowedRoles={['gestor', 'coordenador', 'rh']}>
+                    <LazyPage>
+                      <NovaRequisicao />
+                    </LazyPage>
+                  </ProtectedRoute>
+                </ModuleRoute>
+              }
+            />
+            <Route
+              path="/gestor/solicitacoes/acompanhar"
+              element={
+                <ModuleRoute module="dp">
+                  <ProtectedRoute allowedRoles={['gestor', 'coordenador', 'rh']}>
+                    <LazyPage>
+                      <AcompanharRequisicoes />
+                    </LazyPage>
+                  </ProtectedRoute>
+                </ModuleRoute>
+              }
+            />
+
+            <Route
+              path="/organograma"
+              element={
+                <ProtectedRoute>
+                  <OrganogramaRoute>
+                    <LazyPage>
+                      <ConsultaOrganograma />
+                    </LazyPage>
+                  </OrganogramaRoute>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/valores"
+              element={
+                <ProtectedRoute>
+                  <ValoresRoute>
+                    <LazyPage>
+                      <AjustesValores />
+                    </LazyPage>
+                  </ValoresRoute>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/usuario"
+              element={
+                <ModuleRoute module="dp">
+                  <ProtectedRoute allowedRoles={['usuario']}>
+                    <LazyPage>
+                      <UsuarioDashboard />
+                    </LazyPage>
+                  </ProtectedRoute>
+                </ModuleRoute>
+              }
+            />
           </Route>
 
-          {/* Para conhecimento: a RPC devolve só os avisos da própria pessoa. */}
-          <Route path="/conhecimento" element={<LazyPage><AvisosConhecimento /></LazyPage>} />
-
-          {MODULOS_AUSENCIA.flatMap((mod) => rotasAusencia(mod))}
-
-          {/* Folga de Campo: módulo próprio, sem saldo (config/folgaCampo.js). */}
           <Route
-            path={ROTA_FOLGA_CAMPO}
-            element={<FolgaCampoRoute><LazyPage><MinhaFolga /></LazyPage></FolgaCampoRoute>}
-          />
-          <Route
-            path={`${ROTA_FOLGA_CAMPO}/aprovacoes`}
-            element={<FolgaCampoRoute gestao><LazyPage><AprovacoesFolga /></LazyPage></FolgaCampoRoute>}
-          />
-          <Route
-            path={`${ROTA_FOLGA_CAMPO}/equipe`}
-            element={<FolgaCampoRoute gestao><LazyPage><ConsultaFolga key="equipe" escopo="equipe" /></LazyPage></FolgaCampoRoute>}
-          />
-          <Route
-            path={`${ROTA_FOLGA_CAMPO}/painel`}
-            element={<FolgaCampoRoute rh><LazyPage><ConsultaFolga key="todos" escopo="todos" /></LazyPage></FolgaCampoRoute>}
-          />
-
-          {/* Adicional de Ausências (config/adicionalAusencia.js). `key` remonta
-              a tela ao trocar de escopo. */}
-          {[['meus', ROTA_ADICIONAL], ['aprovar', `${ROTA_ADICIONAL}/aprovacoes`], ['todos', `${ROTA_ADICIONAL}/painel`]]
-            .map(([escopo, path]) => (
-              <Route key={`adicional-${escopo}`} path={path}
-                element={(
-                  <AdicionalRoute escopo={escopo}>
-                    <LazyPage><AdicionalAusencias key={escopo} escopo={escopo} /></LazyPage>
-                  </AdicionalRoute>
-                )} />
-            ))}
-
-          <Route
-            path="/gestor"
-            element={
-              <ModuleRoute module="dp">
-                <ProtectedRoute allowedRoles={['gestor', 'coordenador']}>
-                  <LazyPage>
-                    <GestorDashboard />
-                  </LazyPage>
-                </ProtectedRoute>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="/gestor/aprovacoes"
-            element={
-              <ModuleRoute module="dp">
-                <ProtectedRoute allowedRoles={['gestor', 'coordenador']}>
-                  <LazyPage>
-                    <GestorAprovacoes />
-                  </LazyPage>
-                </ProtectedRoute>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="/gestor/aprovacoes/:id"
-            element={
-              <ModuleRoute module="dp">
-                <ProtectedRoute allowedRoles={['gestor', 'coordenador']}>
-                  <LazyPage>
-                    <GestorDetalhes />
-                  </LazyPage>
-                </ProtectedRoute>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="/gestor/equipe"
-            element={
-              <ModuleRoute module="dp">
-                <ProtectedRoute allowedRoles={['gestor', 'coordenador']}>
-                  <LazyPage>
-                    <GestorEquipe />
-                  </LazyPage>
-                </ProtectedRoute>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="/gestor/ausencia"
-            element={
-              <ModuleRoute module="dp">
-                <ProtectedRoute allowedRoles={['gestor', 'coordenador']}>
-                  <LazyPage>
-                    <GestorAusencia />
-                  </LazyPage>
-                </ProtectedRoute>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="/gestor/minha-ausencia"
-            element={
-              <ModuleRoute module="dp">
-                <ProtectedRoute allowedRoles={['gestor', 'coordenador']}>
-                  <LazyPage>
-                    <UsuarioDashboard />
-                  </LazyPage>
-                </ProtectedRoute>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="/gestor/solicitacoes"
-            element={
-              <ModuleRoute module="dp">
-                <Navigate to="/gestor/solicitacoes/nova" replace />
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="/gestor/solicitacoes/nova"
-            element={
-              <ModuleRoute module="dp">
-                <ProtectedRoute allowedRoles={['gestor', 'coordenador', 'rh']}>
-                  <LazyPage>
-                    <RequisicoesHub />
-                  </LazyPage>
-                </ProtectedRoute>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="/gestor/solicitacoes/nova/:tipo"
-            element={
-              <ModuleRoute module="dp">
-                <ProtectedRoute allowedRoles={['gestor', 'coordenador', 'rh']}>
-                  <LazyPage>
-                    <NovaRequisicao />
-                  </LazyPage>
-                </ProtectedRoute>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="/gestor/solicitacoes/acompanhar"
-            element={
-              <ModuleRoute module="dp">
-                <ProtectedRoute allowedRoles={['gestor', 'coordenador', 'rh']}>
-                  <LazyPage>
-                    <AcompanharRequisicoes />
-                  </LazyPage>
-                </ProtectedRoute>
-              </ModuleRoute>
-            }
-          />
-
-          <Route
-            path="/organograma"
             element={
               <ProtectedRoute>
-                <OrganogramaRoute>
-                  <LazyPage>
-                    <ConsultaOrganograma />
-                  </LazyPage>
-                </OrganogramaRoute>
+                <ModuleRoute module="reembolso">
+                  <FeedbackProvider>
+                    <ReembolsoAppLayout />
+                  </FeedbackProvider>
+                </ModuleRoute>
               </ProtectedRoute>
             }
-          />
+          >
+            <Route path="/reembolsos" element={<LazyPage><Reembolsos kind="reembolso" /></LazyPage>} />
+            {/* Antes de /reembolsos/:id, senão "dashboard" cairia no detalhe. */}
+            <Route path="/reembolsos/dashboard" element={<LazyPage><DashboardReembolso /></LazyPage>} />
+            <Route path="/reembolsos/novo" element={<LazyPage><ReembolsoForm kind="reembolso" /></LazyPage>} />
+            <Route path="/reembolsos/:id/editar" element={<LazyPage><ReembolsoForm kind="reembolso" /></LazyPage>} />
+            <Route path="/reembolsos/:id" element={<LazyPage><ReembolsoDetail /></LazyPage>} />
+            <Route path="/adiantamentos" element={<LazyPage><Reembolsos kind="adiantamento" /></LazyPage>} />
+            <Route path="/adiantamentos/novo" element={<LazyPage><ReembolsoForm kind="adiantamento" /></LazyPage>} />
+            <Route path="/adiantamentos/:id/editar" element={<LazyPage><ReembolsoForm kind="adiantamento" /></LazyPage>} />
+            <Route path="/adiantamentos/:id" element={<LazyPage><ReembolsoDetail /></LazyPage>} />
+            <Route path="/adiantamentos/:id/prestar-contas" element={<LazyPage><PrestacaoContas /></LazyPage>} />
+          </Route>
 
           <Route
-            path="/valores"
+            path="/solic"
             element={
               <ProtectedRoute>
-                <ValoresRoute>
-                  <LazyPage>
-                    <AjustesValores />
-                  </LazyPage>
-                </ValoresRoute>
+                <ModuleRoute module="solic">
+                  <SolicShell />
+                </ModuleRoute>
               </ProtectedRoute>
             }
-          />
+          >
+            <Route index element={<Navigate to="/solic/dashboard" replace />} />
+            <Route path="dashboard" element={<LazyPage><SolicDashboard /></LazyPage>} />
+            <Route path="survey" element={<LazyPage><SolicSurvey /></LazyPage>} />
+            <Route path="surveys/new" element={<LazyPage><SolicSurveyNew /></LazyPage>} />
+            <Route path="asset" element={<LazyPage><SolicAsset /></LazyPage>} />
+            <Route path="admin/requests" element={<SolicAdminRoute><LazyPage><SolicAdminRequests /></LazyPage></SolicAdminRoute>} />
+            <Route path="admin/prazos" element={<SolicAdminRoute><LazyPage><SolicAdminPrazos /></LazyPage></SolicAdminRoute>} />
+            <Route path="admin/cadastros" element={<SolicAdminRoute><LazyPage><SolicAdminCadastros /></LazyPage></SolicAdminRoute>} />
+            <Route path="admin/usuarios" element={<SolicAdminRoute><LazyPage><SolicAdminUsuarios /></LazyPage></SolicAdminRoute>} />
+            <Route path="admin/contracts/new" element={<SolicAdminRoute><LazyPage><SolicAdminContractNew /></LazyPage></SolicAdminRoute>} />
+          </Route>
 
           <Route
-            path="/usuario"
+            path="/horas"
             element={
-              <ModuleRoute module="dp">
-                <ProtectedRoute allowedRoles={['usuario']}>
-                  <LazyPage>
-                    <UsuarioDashboard />
-                  </LazyPage>
-                </ProtectedRoute>
-              </ModuleRoute>
+              <ProtectedRoute>
+                {/* Módulo aberto a todos os usuários logados (sem gate de permissão). */}
+                <HorasShell />
+              </ProtectedRoute>
             }
-          />
-        </Route>
+          >
+            {/* A diretoria não aponta horas: o índice depende do papel. */}
+            <Route index element={<HorasIndex />} />
+            <Route path="apontar" element={<LazyPage><HorasApontar /></LazyPage>} />
+            <Route path="dashboard" element={<LazyPage><HorasDashboard /></LazyPage>} />
+            <Route path="registros" element={<LazyPage><HorasRegistros /></LazyPage>} />
+            <Route path="config" element={<LazyPage><HorasConfig /></LazyPage>} />
+            {/* Campos que a equipe pede antes de iniciar o cronômetro. */}
+            <Route path="config/apontamento" element={<LazyPage><HorasConfigApontamento /></LazyPage>} />
+            {/* Quem enxerga cada projeto no seletor do apontamento. */}
+            <Route path="config/projetos" element={<LazyPage><HorasConfigProjetos /></LazyPage>} />
+            <Route path="equipe" element={<LazyPage><HorasEquipe /></LazyPage>} />
+            {/* Rota antiga de Projetos: virou a aba Configuração. */}
+            <Route path="projetos" element={<Navigate to="/horas/config" replace />} />
 
-        <Route
-          element={
-            <ProtectedRoute>
-              <ModuleRoute module="reembolso">
-                <FeedbackProvider>
-                  <ReembolsoAppLayout />
-                </FeedbackProvider>
-              </ModuleRoute>
-            </ProtectedRoute>
-          }
-        >
-          <Route path="/reembolsos" element={<LazyPage><Reembolsos kind="reembolso" /></LazyPage>} />
-          {/* Antes de /reembolsos/:id, senão "dashboard" cairia no detalhe. */}
-          <Route path="/reembolsos/dashboard" element={<LazyPage><DashboardReembolso /></LazyPage>} />
-          <Route path="/reembolsos/novo" element={<LazyPage><ReembolsoForm kind="reembolso" /></LazyPage>} />
-          <Route path="/reembolsos/:id/editar" element={<LazyPage><ReembolsoForm kind="reembolso" /></LazyPage>} />
-          <Route path="/reembolsos/:id" element={<LazyPage><ReembolsoDetail /></LazyPage>} />
-          <Route path="/adiantamentos" element={<LazyPage><Reembolsos kind="adiantamento" /></LazyPage>} />
-          <Route path="/adiantamentos/novo" element={<LazyPage><ReembolsoForm kind="adiantamento" /></LazyPage>} />
-          <Route path="/adiantamentos/:id/editar" element={<LazyPage><ReembolsoForm kind="adiantamento" /></LazyPage>} />
-          <Route path="/adiantamentos/:id" element={<LazyPage><ReembolsoDetail /></LazyPage>} />
-          <Route path="/adiantamentos/:id/prestar-contas" element={<LazyPage><PrestacaoContas /></LazyPage>} />
-        </Route>
+            {/* Horas Extras: pedir, acompanhar e aprovar — aberto a todos os
+                logados, como o resto do módulo. O tratamento do DP (painel,
+                exceções de prazo e auditoria) fica na Gestão de Pessoas. */}
+            <Route path="extras" element={<Navigate to="/horas/extras/minhas" replace />} />
+            <Route path="extras/nova" element={<LazyPage><HorasExtrasNova /></LazyPage>} />
+            <Route path="extras/minhas" element={<LazyPage><HorasExtrasMinhas /></LazyPage>} />
+            <Route path="extras/aprovacoes" element={<LazyPage><HorasExtrasAprovacoes /></LazyPage>} />
+          </Route>
 
-        <Route
-          path="/solic"
-          element={
-            <ProtectedRoute>
-              <ModuleRoute module="solic">
-                <SolicShell />
-              </ModuleRoute>
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Navigate to="/solic/dashboard" replace />} />
-          <Route path="dashboard" element={<LazyPage><SolicDashboard /></LazyPage>} />
-          <Route path="survey" element={<LazyPage><SolicSurvey /></LazyPage>} />
-          <Route path="surveys/new" element={<LazyPage><SolicSurveyNew /></LazyPage>} />
-          <Route path="asset" element={<LazyPage><SolicAsset /></LazyPage>} />
-          <Route path="admin/requests" element={<SolicAdminRoute><LazyPage><SolicAdminRequests /></LazyPage></SolicAdminRoute>} />
-          <Route path="admin/prazos" element={<SolicAdminRoute><LazyPage><SolicAdminPrazos /></LazyPage></SolicAdminRoute>} />
-          <Route path="admin/cadastros" element={<SolicAdminRoute><LazyPage><SolicAdminCadastros /></LazyPage></SolicAdminRoute>} />
-          <Route path="admin/usuarios" element={<SolicAdminRoute><LazyPage><SolicAdminUsuarios /></LazyPage></SolicAdminRoute>} />
-          <Route path="admin/contracts/new" element={<SolicAdminRoute><LazyPage><SolicAdminContractNew /></LazyPage></SolicAdminRoute>} />
-        </Route>
+          <Route
+            path="/financeiro"
+            element={
+              <ProtectedRoute>
+                <ModuleRoute module="financeiro">
+                  <FinanceiroShell />
+                </ModuleRoute>
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Navigate to="/financeiro/dashboard" replace />} />
+            <Route path="dashboard" element={<LazyPage><FinanceiroDashboard /></LazyPage>} />
+            <Route path="cartoes" element={<LazyPage><FinanceiroCartoes /></LazyPage>} />
+            <Route path="solicitacoes" element={<Navigate to="/financeiro/solicitacoes/nova" replace />} />
+            {/* Acesso ao módulo já é gateado por cargo (ModuleRoute financeiro); quem
+                está aqui pode abrir. Sem restrição extra por perfil (que não reflete cargo). */}
+            <Route path="solicitacoes/nova" element={<LazyPage><FinanceiroHub /></LazyPage>} />
+            <Route path="solicitacoes/nova/:tipo" element={<LazyPage><NovaSolicitacaoFin /></LazyPage>} />
+            <Route path="solicitacoes/acompanhar" element={<LazyPage><AcompanharFin /></LazyPage>} />
+            <Route path="fluxos" element={<LazyPage><FinanceiroFluxos /></LazyPage>} />
+          </Route>
 
-        <Route
-          path="/horas"
-          element={
-            <ProtectedRoute>
-              {/* Módulo aberto a todos os usuários logados (sem gate de permissão). */}
-              <HorasShell />
-            </ProtectedRoute>
-          }
-        >
-          {/* A diretoria não aponta horas: o índice depende do papel. */}
-          <Route index element={<HorasIndex />} />
-          <Route path="apontar" element={<LazyPage><HorasApontar /></LazyPage>} />
-          <Route path="dashboard" element={<LazyPage><HorasDashboard /></LazyPage>} />
-          <Route path="registros" element={<LazyPage><HorasRegistros /></LazyPage>} />
-          <Route path="config" element={<LazyPage><HorasConfig /></LazyPage>} />
-          {/* Campos que a equipe pede antes de iniciar o cronômetro. */}
-          <Route path="config/apontamento" element={<LazyPage><HorasConfigApontamento /></LazyPage>} />
-          {/* Quem enxerga cada projeto no seletor do apontamento. */}
-          <Route path="config/projetos" element={<LazyPage><HorasConfigProjetos /></LazyPage>} />
-          <Route path="equipe" element={<LazyPage><HorasEquipe /></LazyPage>} />
-          {/* Rota antiga de Projetos: virou a aba Configuração. */}
-          <Route path="projetos" element={<Navigate to="/horas/config" replace />} />
+          {/* Atendimento: módulo aberto a todos os logados (como o Controle de
+              Horas), então só ProtectedRoute — sem ModuleRoute. A camada de
+              aprovação/atendimento é que terá gate próprio quando existir.
+              Enquanto está em construção, a rota inteira (e as filhas junto)
+              devolve para a Home, exceto para quem está testando. */}
+          <Route
+            path="/administrativo"
+            element={
+              <ProtectedRoute>
+                <AdmEmBreveRoute>
+                  <AdministrativoShell />
+                </AdmEmBreveRoute>
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Navigate to="/administrativo/novo" replace />} />
+            <Route path="novo" element={<LazyPage><CatalogoAdm /></LazyPage>} />
+            <Route path="novo/:classe/:servico" element={<LazyPage><NovoChamadoAdm /></LazyPage>} />
+            <Route path="meus" element={<LazyPage><MeusChamadosAdm /></LazyPage>} />
+            <Route path="aprovacoes" element={<LazyPage><AprovacoesAdm /></LazyPage>} />
+            <Route path="fila" element={<LazyPage><FilaAdm /></LazyPage>} />
+            <Route path="kanban" element={<LazyPage><KanbanAdm /></LazyPage>} />
+            <Route path="chamado/:id" element={<LazyPage><ChamadoAdm /></LazyPage>} />
+            <Route path="config" element={<LazyPage><ConfigAdm /></LazyPage>} />
+            <Route path="fluxos" element={<LazyPage><FluxosAdm /></LazyPage>} />
+            <Route path="dashboard" element={<LazyPage><DashboardAdm /></LazyPage>} />
+            <Route path="satisfacao" element={<LazyPage><SatisfacaoAdm /></LazyPage>} />
+          </Route>
 
-          {/* Horas Extras: pedir, acompanhar e aprovar — aberto a todos os
-              logados, como o resto do módulo. O tratamento do DP (painel,
-              exceções de prazo e auditoria) fica na Gestão de Pessoas. */}
-          <Route path="extras" element={<Navigate to="/horas/extras/minhas" replace />} />
-          <Route path="extras/nova" element={<LazyPage><HorasExtrasNova /></LazyPage>} />
-          <Route path="extras/minhas" element={<LazyPage><HorasExtrasMinhas /></LazyPage>} />
-          <Route path="extras/aprovacoes" element={<LazyPage><HorasExtrasAprovacoes /></LazyPage>} />
-        </Route>
+          {/* Estoque: almoxarifado de EPIs e uniformes. Consultar é de todos os
+              logados — é o que o Adm precisa antes de prometer um item; movimentar
+              é do time do Adm, e quem barra é a RLS. Enquanto está em construção,
+              a rota inteira devolve para a Home, exceto para quem está testando. */}
+          <Route
+            path="/estoque"
+            element={
+              <ProtectedRoute>
+                <EstoqueEmBreveRoute>
+                  <EstoqueShell />
+                </EstoqueEmBreveRoute>
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Navigate to="/estoque/posicao" replace />} />
+            <Route path="posicao" element={<LazyPage><PosicaoEstoque /></LazyPage>} />
+            <Route path="entrada" element={<LazyPage><EntradaEstoque /></LazyPage>} />
+            <Route path="saida" element={<LazyPage><SaidaEstoque /></LazyPage>} />
+            <Route path="ajuste" element={<LazyPage><AjusteEstoque /></LazyPage>} />
+            <Route path="movimentos" element={<LazyPage><MovimentosEstoque /></LazyPage>} />
+            <Route path="dashboard" element={<LazyPage><DashboardEstoque /></LazyPage>} />
+          </Route>
 
-        <Route
-          path="/financeiro"
-          element={
-            <ProtectedRoute>
-              <ModuleRoute module="financeiro">
-                <FinanceiroShell />
-              </ModuleRoute>
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Navigate to="/financeiro/dashboard" replace />} />
-          <Route path="dashboard" element={<LazyPage><FinanceiroDashboard /></LazyPage>} />
-          <Route path="cartoes" element={<LazyPage><FinanceiroCartoes /></LazyPage>} />
-          <Route path="solicitacoes" element={<Navigate to="/financeiro/solicitacoes/nova" replace />} />
-          {/* Acesso ao módulo já é gateado por cargo (ModuleRoute financeiro); quem
-              está aqui pode abrir. Sem restrição extra por perfil (que não reflete cargo). */}
-          <Route path="solicitacoes/nova" element={<LazyPage><FinanceiroHub /></LazyPage>} />
-          <Route path="solicitacoes/nova/:tipo" element={<LazyPage><NovaSolicitacaoFin /></LazyPage>} />
-          <Route path="solicitacoes/acompanhar" element={<LazyPage><AcompanharFin /></LazyPage>} />
-          <Route path="fluxos" element={<LazyPage><FinanceiroFluxos /></LazyPage>} />
-        </Route>
+          {/* Mobilização: o passo a passo que a planilha controlava. Acompanhar é
+              de todos os logados, como no Adm — a RLS mostra a cada um os
+              processos em que ele está envolvido; abrir processo e configurar o
+              catálogo são do time do Adm. Enquanto está em construção, a rota
+              inteira devolve para a Home, exceto para quem está testando. */}
+          <Route
+            path="/mobilizacao"
+            element={
+              <ProtectedRoute>
+                <MobilizacaoEmBreveRoute>
+                  <MobilizacaoShell />
+                </MobilizacaoEmBreveRoute>
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Navigate to="/mobilizacao/kanban" replace />} />
+            <Route path="kanban" element={<LazyPage><KanbanMob /></LazyPage>} />
+            <Route path="fila" element={<LazyPage><FilaMob /></LazyPage>} />
+            <Route path="processos" element={<LazyPage><ProcessosMob /></LazyPage>} />
+            <Route path="mobilizados" element={<LazyPage><MobilizadosMob /></LazyPage>} />
+            <Route path="processo/:id" element={<LazyPage><ProcessoMob /></LazyPage>} />
+            <Route path="nova" element={<LazyPage><NovaMob /></LazyPage>} />
+            <Route path="dashboard" element={<LazyPage><DashboardMob /></LazyPage>} />
+            <Route path="catalogo" element={<LazyPage><CatalogoMob /></LazyPage>} />
+            {/* A torre saiu daqui e virou modulo proprio. A rota fica como
+                redirecionamento porque ela circulou como link durante a revisao —
+                tirar de vez transformaria esses links em volta para a Home, sem
+                explicacao. */}
+            <Route path="torre" element={<Navigate to="/torre/mapa" replace />} />
+          </Route>
 
-        {/* Atendimento: módulo aberto a todos os logados (como o Controle de
-            Horas), então só ProtectedRoute — sem ModuleRoute. A camada de
-            aprovação/atendimento é que terá gate próprio quando existir.
-            Enquanto está em construção, a rota inteira (e as filhas junto)
-            devolve para a Home, exceto para quem está testando. */}
-        <Route
-          path="/administrativo"
-          element={
-            <ProtectedRoute>
-              <AdmEmBreveRoute>
-                <AdministrativoShell />
-              </AdmEmBreveRoute>
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Navigate to="/administrativo/novo" replace />} />
-          <Route path="novo" element={<LazyPage><CatalogoAdm /></LazyPage>} />
-          <Route path="novo/:classe/:servico" element={<LazyPage><NovoChamadoAdm /></LazyPage>} />
-          <Route path="meus" element={<LazyPage><MeusChamadosAdm /></LazyPage>} />
-          <Route path="aprovacoes" element={<LazyPage><AprovacoesAdm /></LazyPage>} />
-          <Route path="fila" element={<LazyPage><FilaAdm /></LazyPage>} />
-          <Route path="kanban" element={<LazyPage><KanbanAdm /></LazyPage>} />
-          <Route path="chamado/:id" element={<LazyPage><ChamadoAdm /></LazyPage>} />
-          <Route path="config" element={<LazyPage><ConfigAdm /></LazyPage>} />
-          <Route path="fluxos" element={<LazyPage><FluxosAdm /></LazyPage>} />
-          <Route path="dashboard" element={<LazyPage><DashboardAdm /></LazyPage>} />
-          <Route path="satisfacao" element={<LazyPage><SatisfacaoAdm /></LazyPage>} />
-        </Route>
+          {/* Torre de Controle: a mesma visão da torre da Mobilização, servida
+              como módulo próprio para quem não trabalha dentro dela. SÓ LEITURA —
+              existe para a reunião de torre, onde o Adm apresenta e cada
+              responsável confere o que é seu. */}
+          <Route
+            path="/torre"
+            element={(
+              <ProtectedRoute>
+                <TorreRoute>
+                  <TorreShell />
+                </TorreRoute>
+              </ProtectedRoute>
+            )}
+          >
+            <Route index element={<Navigate to="/torre/mapa" replace />} />
+            <Route path="mapa" element={<LazyPage><MapaTorre /></LazyPage>} />
+            <Route path="quadro" element={<LazyPage><QuadroTorre /></LazyPage>} />
+            <Route path="etapas" element={<LazyPage><EtapasTorre /></LazyPage>} />
+          </Route>
 
-        {/* Estoque: almoxarifado de EPIs e uniformes. Consultar é de todos os
-            logados — é o que o Adm precisa antes de prometer um item; movimentar
-            é do time do Adm, e quem barra é a RLS. Enquanto está em construção,
-            a rota inteira devolve para a Home, exceto para quem está testando. */}
-        <Route
-          path="/estoque"
-          element={
-            <ProtectedRoute>
-              <EstoqueEmBreveRoute>
-                <EstoqueShell />
-              </EstoqueEmBreveRoute>
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Navigate to="/estoque/posicao" replace />} />
-          <Route path="posicao" element={<LazyPage><PosicaoEstoque /></LazyPage>} />
-          <Route path="entrada" element={<LazyPage><EntradaEstoque /></LazyPage>} />
-          <Route path="saida" element={<LazyPage><SaidaEstoque /></LazyPage>} />
-          <Route path="ajuste" element={<LazyPage><AjusteEstoque /></LazyPage>} />
-          <Route path="movimentos" element={<LazyPage><MovimentosEstoque /></LazyPage>} />
-          <Route path="dashboard" element={<LazyPage><DashboardEstoque /></LazyPage>} />
-        </Route>
+          {/* Programas: os programas internos da PHD (Campo de Ideias e Alavanca).
+              Aberto a todos os logados, como a Gestão de Horas — só o painel da
+              Alavanca tem dono (o time comercial), e o gate dele fica na própria
+              página. Enquanto está em construção, a rota inteira devolve para a
+              Home, exceto para quem está testando. */}
+          <Route
+            path="/programas"
+            element={
+              <ProtectedRoute>
+                <ProgramasEmBreveRoute>
+                  <ProgramasShell />
+                </ProgramasEmBreveRoute>
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Navigate to="/programas/inicio" replace />} />
+            <Route path="inicio" element={<LazyPage><InicioProgramas /></LazyPage>} />
+            {/* Mesma divisão dos dois programas: "ideias" é onde se participa
+                (botões + o que eu registrei) e "dashboard" é onde se lê. A rota
+                antiga de escolha entre as formas redireciona — link guardado não
+                pode cair em página morta. */}
+            <Route path="dashboard" element={<LazyPage><DashboardIdeias /></LazyPage>} />
+            <Route path="ideias" element={<LazyPage><CampoDeIdeias /></LazyPage>} />
+            <Route path="ideias/nova" element={<Navigate to="/programas/ideias" replace />} />
+            <Route path="ideias/nova/:tipo" element={<LazyPage><NovaIdeia /></LazyPage>} />
+            <Route path="iniciativas" element={<LazyPage><IniciativasEmUso /></LazyPage>} />
+            <Route path="pedidos" element={<LazyPage><PedidosIniciativa /></LazyPage>} />
+            <Route path="alavanca" element={<LazyPage><MinhasIndicacoes /></LazyPage>} />
+            <Route path="alavanca/nova" element={<LazyPage><NovaIndicacao /></LazyPage>} />
+            {/* Irmão de /alavanca, e não filho: a sidebar marca o item ativo por
+                startsWith, e aninhado os dois links acenderiam juntos. */}
+            <Route path="painel-alavanca" element={<LazyPage><PainelAlavanca /></LazyPage>} />
+          </Route>
 
-        {/* Mobilização: o passo a passo que a planilha controlava. Acompanhar é
-            de todos os logados, como no Adm — a RLS mostra a cada um os
-            processos em que ele está envolvido; abrir processo e configurar o
-            catálogo são do time do Adm. Enquanto está em construção, a rota
-            inteira devolve para a Home, exceto para quem está testando. */}
-        <Route
-          path="/mobilizacao"
-          element={
-            <ProtectedRoute>
-              <MobilizacaoEmBreveRoute>
-                <MobilizacaoShell />
-              </MobilizacaoEmBreveRoute>
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Navigate to="/mobilizacao/kanban" replace />} />
-          <Route path="kanban" element={<LazyPage><KanbanMob /></LazyPage>} />
-          <Route path="fila" element={<LazyPage><FilaMob /></LazyPage>} />
-          <Route path="processos" element={<LazyPage><ProcessosMob /></LazyPage>} />
-          <Route path="mobilizados" element={<LazyPage><MobilizadosMob /></LazyPage>} />
-          <Route path="processo/:id" element={<LazyPage><ProcessoMob /></LazyPage>} />
-          <Route path="nova" element={<LazyPage><NovaMob /></LazyPage>} />
-          <Route path="dashboard" element={<LazyPage><DashboardMob /></LazyPage>} />
-          <Route path="catalogo" element={<LazyPage><CatalogoMob /></LazyPage>} />
-          {/* A torre saiu daqui e virou modulo proprio. A rota fica como
-              redirecionamento porque ela circulou como link durante a revisao —
-              tirar de vez transformaria esses links em volta para a Home, sem
-              explicacao. */}
-          <Route path="torre" element={<Navigate to="/torre/mapa" replace />} />
-        </Route>
-
-        {/* Torre de Controle: a mesma visão da torre da Mobilização, servida
-            como módulo próprio para quem não trabalha dentro dela. SÓ LEITURA —
-            existe para a reunião de torre, onde o Adm apresenta e cada
-            responsável confere o que é seu. */}
-        <Route
-          path="/torre"
-          element={(
-            <ProtectedRoute>
-              <TorreRoute>
-                <TorreShell />
-              </TorreRoute>
-            </ProtectedRoute>
-          )}
-        >
-          <Route index element={<Navigate to="/torre/mapa" replace />} />
-          <Route path="mapa" element={<LazyPage><MapaTorre /></LazyPage>} />
-          <Route path="quadro" element={<LazyPage><QuadroTorre /></LazyPage>} />
-          <Route path="etapas" element={<LazyPage><EtapasTorre /></LazyPage>} />
-        </Route>
-
-        {/* Programas: os programas internos da PHD (Campo de Ideias e Alavanca).
-            Aberto a todos os logados, como a Gestão de Horas — só o painel da
-            Alavanca tem dono (o time comercial), e o gate dele fica na própria
-            página. Enquanto está em construção, a rota inteira devolve para a
-            Home, exceto para quem está testando. */}
-        <Route
-          path="/programas"
-          element={
-            <ProtectedRoute>
-              <ProgramasEmBreveRoute>
-                <ProgramasShell />
-              </ProgramasEmBreveRoute>
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Navigate to="/programas/inicio" replace />} />
-          <Route path="inicio" element={<LazyPage><InicioProgramas /></LazyPage>} />
-          {/* Mesma divisão dos dois programas: "ideias" é onde se participa
-              (botões + o que eu registrei) e "dashboard" é onde se lê. A rota
-              antiga de escolha entre as formas redireciona — link guardado não
-              pode cair em página morta. */}
-          <Route path="dashboard" element={<LazyPage><DashboardIdeias /></LazyPage>} />
-          <Route path="ideias" element={<LazyPage><CampoDeIdeias /></LazyPage>} />
-          <Route path="ideias/nova" element={<Navigate to="/programas/ideias" replace />} />
-          <Route path="ideias/nova/:tipo" element={<LazyPage><NovaIdeia /></LazyPage>} />
-          <Route path="iniciativas" element={<LazyPage><IniciativasEmUso /></LazyPage>} />
-          <Route path="pedidos" element={<LazyPage><PedidosIniciativa /></LazyPage>} />
-          <Route path="alavanca" element={<LazyPage><MinhasIndicacoes /></LazyPage>} />
-          <Route path="alavanca/nova" element={<LazyPage><NovaIndicacao /></LazyPage>} />
-          {/* Irmão de /alavanca, e não filho: a sidebar marca o item ativo por
-              startsWith, e aninhado os dois links acenderiam juntos. */}
-          <Route path="painel-alavanca" element={<LazyPage><PainelAlavanca /></LazyPage>} />
-        </Route>
-
-        <Route path="*" element={<Navigate to="/home" replace />} />
-      </Routes>
+          <Route path="*" element={<Navigate to="/home" replace />} />
+        </Routes>
+      </TourProvider>
     </HashRouter>
   );
 }

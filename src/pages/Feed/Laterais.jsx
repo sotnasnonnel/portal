@@ -29,7 +29,7 @@ export function LateralEsquerda() {
         {user?.funcao && <span className="feed-perfil-cargo">{cargo(user.funcao)}</span>}
         {perfil?.titulo && NOME_TITULO[perfil.titulo] && <Insignia id={perfil.titulo} nome={NOME_TITULO[perfil.titulo]} mini />}
         {saldo !== null && (
-          <Link to="/personalizacao" className="feed-perfil-pontos">
+          <Link to="/personalizacao" className="feed-perfil-pontos" data-pontos-alvo>
             <Star size={14} aria-hidden="true" /> <b>{saldo.toLocaleString('pt-BR')}</b> pts · Trocar visual
           </Link>
         )}

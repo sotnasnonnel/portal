@@ -17,7 +17,10 @@ const ITENS = [
   { Icon: ScrollText, titulo: 'Regras sempre à mão', texto: 'Elas ficam no ícone ao lado do Atualizar. Viu algo fora delas? Use o "Denunciar" do post.' },
 ];
 
-export default function BoasVindasFeed({ onFechar }) {
+// Com o passo a passo do feed rodando (ele espera esta tela fechar, ver
+// usePausaTour em Feed.jsx), o botão diz que ele continua: "Começar" fazia
+// parecer que o destaque que volta em seguida era outra coisa.
+export default function BoasVindasFeed({ onFechar, comTutorial = false }) {
   useEffect(() => {
     const tecla = (e) => { if (e.key === 'Escape') onFechar(); };
     window.addEventListener('keydown', tecla);
@@ -44,7 +47,9 @@ export default function BoasVindasFeed({ onFechar }) {
         </ul>
 
         <div className="feed-modal-rodape is-leitura">
-          <button type="button" className="feed-btn-publicar" onClick={onFechar} autoFocus>Começar</button>
+          <button type="button" className="feed-btn-publicar" onClick={onFechar} autoFocus>
+            {comTutorial ? 'Continuar o passo a passo' : 'Começar'}
+          </button>
         </div>
       </div>
     </div>

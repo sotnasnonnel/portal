@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Loader2, AlertCircle, Flag, X, RefreshCw, ScrollText } from 'lucide-react';
+import { ArrowLeft, Loader2, AlertCircle, Flag, X, RefreshCw, ScrollText, CircleHelp } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTour, usePausaTour } from '../../components/Tour/TourContext';
+import { TUTORIAL_FEED } from '../../config/tutoriais';
 import {
   cursorDe, ehModeradorFeed, juntarPaginas, POR_PAGINA, precisaAceitarTermos, tempoRelativo, TERMOS_FEED,
 } from '../../config/feed';
@@ -82,6 +84,14 @@ function PaginaFeed() {
   const [boasVindas, setBoasVindas] = useState(false);
   const termoPendente = aceite !== undefined && precisaAceitarTermos(aceite);
 
+  // Passo a passo do feed (config/tutoriais.js): ele chega aqui vindo da Home
+  // e espera as regras serem aceitas, as boas-vindas fecharem e os posts
+  // carregarem — destacar a tela por baixo de um termo obrigatório seria
+  // apontar para o que não dá para clicar. Na aba Denúncias os alvos nem
+  // existem, então ele espera a volta para o feed.
+  const { ativo, iniciar } = useTour();
+  usePausaTour(aceite === undefined || termoPendente || verTermos || boasVindas || carregando || aba !== 'feed');
+
   // Entrou no feed: zera o contador de posts novos do ícone da Home.
   useEffect(() => { api.marcarFeedVisto(); }, []);
   useEffect(() => { api.termosAceitos().then(setAceite, () => setAceite(null)); }, []);
@@ -157,15 +167,27 @@ function PaginaFeed() {
               <h1>Feed PHD</h1>
               <p>O que está rolando nas obras, nos projetos e no escritório.</p>
             </div>
-            {aceite && !termoPendente && (
-              <button type="button" className="feed-iconbtn" aria-label="Regras do feed" title="Regras do feed"
-                onClick={() => setVerTermos(true)}>
-                <ScrollText size={18} />
+            {/* Os ícones num grupo só: soltos no flex-wrap, no celular o
+                Atualizar descia sozinho para outra linha. */}
+            <div className="feed-header-acoes">
+              {aceite && !termoPendente && (
+                <>
+                  {/* Rever o passo a passo quando quiser. Começa já no feed: o
+                      passo da Home (onde fica o ícone) não serve a quem está aqui. */}
+                  <button type="button" className="feed-iconbtn" aria-label="Como usar o feed" title="Como usar o feed"
+                    onClick={() => iniciar(TUTORIAL_FEED, { passo: 'feed-post' })}>
+                    <CircleHelp size={18} />
+                  </button>
+                  <button type="button" className="feed-iconbtn" aria-label="Regras do feed" title="Regras do feed"
+                    data-tour="feed-regras" onClick={() => setVerTermos(true)}>
+                    <ScrollText size={18} />
+                  </button>
+                </>
+              )}
+              <button type="button" className="feed-iconbtn" aria-label="Atualizar" title="Atualizar" onClick={carregar}>
+                <RefreshCw size={18} />
               </button>
-            )}
-            <button type="button" className="feed-iconbtn" aria-label="Atualizar" title="Atualizar" onClick={carregar}>
-              <RefreshCw size={18} />
-            </button>
+            </div>
           </header>
 
           {moderador && (
@@ -215,7 +237,7 @@ function PaginaFeed() {
       </div>
       {termoPendente && <TermosFeed obrigatorio onAceitar={aceitarTermos} />}
       {verTermos && !termoPendente && <TermosFeed aceite={aceite} onFechar={fecharTermos} />}
-      {boasVindas && <BoasVindasFeed onFechar={fecharBoasVindas} />}
+      {boasVindas && <BoasVindasFeed comTutorial={Boolean(ativo)} onFechar={fecharBoasVindas} />}
     </div>
   );
 }

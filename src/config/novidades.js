@@ -1,4 +1,12 @@
-import { Aperture, Award, Cake, ClipboardCheck, LayoutDashboard, MessageSquareHeart, Palette, Smile, Star } from 'lucide-react';
+import {
+  Aperture, AtSign, Award, Cake, ClipboardCheck, Fingerprint, HardHat, Heart, ImagePlus, Laugh, LayoutDashboard,
+  MessageCircle, MessageSquareHeart, Newspaper, Palette, Ruler, Smile, Star,
+} from 'lucide-react';
+import { COMO_GANHAR } from './pontos.js';
+
+// O valor do post vem da mesma lista do "Como ganhar pontos", para o aviso não
+// discordar da loja se o valor mudar (mesma conta do BoasVindasFeed).
+const PONTOS_POST = COMO_GANHAR.find((g) => g.o === 'Postar no feed')?.p;
 
 /**
  * O que mudou na plataforma, do mais novo para o mais antigo.
@@ -30,8 +38,60 @@ import { Aperture, Award, Cake, ClipboardCheck, LayoutDashboard, MessageSquareHe
  *   de/para  -> a fita "PMO → Dados" (renomeações)
  *   opcoes   -> mini-cartões do que a pessoa vai encontrar na tela ([{ icon, label }])
  *   marca    -> selo do canto do cartão ('Novo nome', 'Novidade', ...)
+ *
+ * Na VERSÃO (não no item), `tutorial` é o id de um passo a passo de
+ * config/tutoriais.js. Fechar o aviso automático que contém essa versão — por
+ * qualquer caminho — começa o passo a passo (quem decide é a Home), e o botão
+ * do rodapé avisa isso ("Ver como funciona"). No histórico a versão ganha um
+ * botão "Ver o passo a passo", e reabrir o histórico não começa nada sozinho.
+ * Serve para a novidade que só se entende vendo onde clicar.
  */
 export const NOVIDADES = [
+  {
+    // Lançamento do feed para todo mundo (config/feed.js) e os títulos novos
+    // da Personalização: fechar o aviso já cai no passo a passo do feed, que
+    // leva da Home até a primeira postagem.
+    id: '2026-10-23-feed',
+    data: '2026-10-23',
+    tutorial: 'feed',
+    itens: [
+      {
+        icon: Newspaper,
+        modulo: 'Portal',
+        marca: 'Novidade',
+        titulo: 'Feed PHD',
+        texto: 'Poste fotos e novidades da obra, do projeto e da vida; curta, comente e marque colegas com @.',
+        opcoes: [
+          { icon: ImagePlus, label: 'Fotos' },
+          { icon: Heart, label: 'Curtidas' },
+          { icon: MessageCircle, label: 'Comentários' },
+          { icon: AtSign, label: 'Marcar com @' },
+        ],
+      },
+      ...(PONTOS_POST ? [{
+        icon: Star,
+        modulo: 'Portal',
+        marca: 'Novidade',
+        titulo: 'Post vale ponto',
+        texto: `O primeiro post do dia vale +${PONTOS_POST} pontos para a lojinha.`,
+      }] : []),
+      {
+        // Os 36 dos quatro grupos novos mais "Movido a Monster" e "Equino",
+        // que entraram nos Clássicos (GRUPOS_TITULO, em config/pontos.js).
+        icon: Award,
+        modulo: 'Portal',
+        marca: 'Novidade',
+        titulo: '38 títulos novos',
+        texto: 'Do "Mago do Power BI" ao "Engenheiro raiz", cada um com arte e frase. Troque pelos seus pontos.',
+        opcoes: [
+          { icon: Ruler, label: 'Engenharia e planejamento' },
+          { icon: Laugh, label: 'Humor corporativo' },
+          { icon: HardHat, label: 'Campo e obra' },
+          { icon: Fingerprint, label: 'Personalidade' },
+        ],
+      },
+    ],
+  },
   {
     id: '2026-10-16-personalizacao',
     data: '2026-10-16',
@@ -125,4 +185,13 @@ export function novidadesNaoVistas(vistoId) {
   const i = NOVIDADES.findIndex((n) => n.id === vistoId);
   if (i < 0) return NOVIDADES.slice(0, 1);
   return NOVIDADES.slice(0, i);
+}
+
+/**
+ * O passo a passo que acompanha estas versões: o `tutorial` da primeira que
+ * tiver um (a lista vem da mais nova para a mais antiga), ou null. Um aviso só
+ * puxa um passo a passo — dois em fila depois de fechar seria demais.
+ */
+export function tutorialDasNovidades(versoes = []) {
+  return versoes.find((v) => v.tutorial)?.tutorial ?? null;
 }

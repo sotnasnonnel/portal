@@ -112,7 +112,8 @@ function ModalPublicar({ user, fotosIniciais = false, onFechar, onPublicado, onE
           <button type="button" className="feed-iconbtn" aria-label="Fechar" onClick={fechar}><X size={20} /></button>
         </div>
 
-        <div className="feed-modal-corpo">
+        {/* Os data-tour marcam os passos do passo a passo (config/tutoriais.js). */}
+        <div className="feed-modal-corpo" data-tour="post-texto">
           <CampoMencoes inputRef={textoRef} value={texto} onChange={setTexto} mencoes={mencoes} onMencoes={setMencoes}
             rows={7} maxLength={TEXTO_MAX} disabled={enviando}
             placeholder="Sobre o que você quer falar? Use @ para marcar alguém." aria-label="Texto da publicação" />
@@ -128,7 +129,7 @@ function ModalPublicar({ user, fotosIniciais = false, onFechar, onPublicado, onE
           )}
         </div>
 
-        <div className="feed-modal-ferramentas">
+        <div className="feed-modal-ferramentas" data-tour="post-ferramentas">
           <input ref={inputRef} type="file" accept="image/*" multiple hidden onChange={escolher} />
           <button type="button" className="feed-ferramenta" onClick={() => inputRef.current?.click()}
             disabled={fotos.length >= FOTOS_MAX || enviando} title="Adicionar fotos">
@@ -142,7 +143,7 @@ function ModalPublicar({ user, fotosIniciais = false, onFechar, onPublicado, onE
             {restantes <= 300 ? `${restantes} restantes` : ''}
           </span>
           <button type="button" className="feed-btn-publicar" onClick={publicar} disabled={enviando || !temConteudo}
-            aria-busy={enviando}>
+            aria-busy={enviando} data-tour="post-publicar">
             {enviando
               ? <><Loader2 size={16} className="feed-spin" /> Publicando…</>
               : <><SendHorizontal size={16} /> Publicar</>}
@@ -160,7 +161,7 @@ export default function Composer({ user, onPublicado, onErro }) {
     <>
       <section className="feed-chamada">
         <MeuAvatar user={user} />
-        <button type="button" className="feed-chamada-pilula" onClick={() => setAberto('texto')}>
+        <button type="button" className="feed-chamada-pilula" data-tour="feed-chamada" onClick={() => setAberto('texto')}>
           Sobre o que você quer falar?
         </button>
         <button type="button" className="feed-iconbtn is-foto" aria-label="Criar publicação com foto" title="Foto"

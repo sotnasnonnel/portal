@@ -352,17 +352,60 @@
   color: var(--color-primary, #c35e1e);
 }
 
+/* "Ver o passo a passo" (só no histórico, na versão que tem um). Botão de
+   verdade, ao contrário dos mini-cartões acima — daí o contorno de acento e o
+   hover, para não ser confundido com eles. */
+.novid-tutorial {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: var(--ctl-h-sm, 32px);
+  margin-top: 12px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(195, 94, 30, 0.28);
+  background: rgba(195, 94, 30, 0.06);
+  color: var(--color-primary, #c35e1e);
+  font-size: var(--font-size-xs, 12px);
+  font-weight: var(--fw-semibold, 600);
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.novid-tutorial:hover {
+  background: rgba(195, 94, 30, 0.12);
+}
+
+.novid-tutorial:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(195, 94, 30, 0.35);
+}
+
 /* ------------------------------- Rodapé -------------------------------- */
 
 .novid-footer {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px 14px;
   padding: 14px 22px;
   border-top: 1px solid var(--neutral-border, #e2e8f0);
   background: var(--neutral-surface, #fff);
 }
 
+/* Avisa, ao lado do botão, que fechar abre o passo a passo. Discreto: é a
+   explicação do botão, não uma segunda chamada. */
+.novid-footer-dica {
+  font-size: var(--font-size-xs, 12px);
+  color: var(--neutral-muted, #64748b);
+}
+
 .novid-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   height: var(--ctl-h-lg, 44px);
   padding: 0 22px;
   border-radius: 9999px;
@@ -414,5 +457,11 @@
 
   .novid-btn {
     width: 100%;
+  }
+
+  /* Com o botão na largura toda, a dica vai para a linha de cima. */
+  .novid-footer-dica {
+    width: 100%;
+    text-align: center;
   }
 }

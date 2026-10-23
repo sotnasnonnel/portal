@@ -1,0 +1,241 @@
+/* Passo a passo vivo (TourOverlay.jsx). Uma camada fixa por cima de tudo: o
+   modal do feed usa 900, a foto em tela cheia 1000 e as Novidades 300. Acima
+   dela só o "+N pts" que voa (3000) e os sustos do Halloween (2500).
+
+   As cores vêm do tema do mês quando há um (--t-acc em styles/pontos.css):
+   o balão fica sempre claro, como os popups do portal nos temas, e só o
+   destaque troca de cor. A tinta do selo é o destaque escurecido, para ler
+   bem também no âmbar do Halloween. */
+.tour {
+  --tour-acc: var(--t-acc, var(--terracotta, #c35e1e));
+  --tour-acc-ink: var(--t-acc-ink, #fff);
+  --tour-acc-forte: color-mix(in srgb, var(--tour-acc) 62%, #000);
+  --tour-veu: rgba(15, 23, 42, 0.62);
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Passos livres (dentro do modal de publicar): o modal já tem o fundo dele, e
+   a pessoa precisa enxergar a lista do "@" e os emojis que abrem fora do buraco. */
+.tour.is-livre { --tour-veu: rgba(15, 23, 42, 0.28); }
+
+/* ---- Buraco -------------------------------------------------------------
+   Um retângulo vazio cuja sombra gigante é o véu: o buraco é o que sobra.
+   Sem clique (pointer-events: none) — quem segura clique são as faixas. */
+.tour-buraco {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: var(--radius-md, 10px);
+  box-shadow: 0 0 0 9999px var(--tour-veu);
+  transition: box-shadow 0.2s ease;
+  animation: tour-surge 0.25s ease;
+}
+/* Só na troca de passo: durante a rolagem o buraco segue o alvo sem atraso. */
+.tour-buraco.is-anima {
+  transition: transform 0.32s ease, width 0.32s ease, height 0.32s ease, box-shadow 0.2s ease;
+}
+.tour.is-recolhido .tour-buraco { box-shadow: 0 0 0 9999px transparent; }
+
+.tour-anel {
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--tour-acc);
+  border-radius: inherit;
+  animation: tour-pulso 1.6s ease-out infinite;
+}
+
+/* Alvo que não apareceu: véu inteiro, balão no meio. */
+.tour-veu {
+  position: absolute;
+  inset: 0;
+  background: var(--tour-veu);
+  animation: tour-surge 0.25s ease;
+}
+
+.tour-faixa {
+  position: absolute;
+  pointer-events: auto;
+}
+
+/* ---- Balão --------------------------------------------------------------- */
+.tour-balao {
+  position: absolute;
+  width: min(340px, calc(100vw - 32px));
+  box-sizing: border-box;
+  padding: 16px 16px 12px;
+  border-radius: var(--radius-lg, 16px);
+  background: var(--neutral-surface, #fff);
+  color: var(--ink);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.32), 0 2px 6px rgba(15, 23, 42, 0.12);
+  font-family: var(--font-family);
+  /* Fica no DOM o tempo todo (é medido antes de aparecer e o leitor de tela
+     acompanha o texto), mas só recebe clique quando está posicionado. */
+  opacity: 0;
+  pointer-events: none;
+}
+.tour-balao.is-pronto {
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 0.18s ease;
+}
+.tour.is-recolhido .tour-balao {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Clique fora do buraco: o balão sacode. Dois nomes iguais para a animação
+   recomeçar a cada clique (data-treme alterna 1 e 2). */
+.tour-balao[data-treme="1"] { animation: tour-treme-a 0.4s ease; }
+.tour-balao[data-treme="2"] { animation: tour-treme-b 0.4s ease; }
+
+.tour-seta {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: inherit;
+  transform: rotate(45deg);
+}
+/* data-lado diz onde o BALÃO está em relação ao alvo; a seta fica do outro lado. */
+.tour-balao[data-lado="baixo"] .tour-seta { top: -7px; left: calc(var(--tour-seta) - 7px); }
+.tour-balao[data-lado="cima"] .tour-seta { bottom: -7px; left: calc(var(--tour-seta) - 7px); }
+.tour-balao[data-lado="direita"] .tour-seta { left: -7px; top: calc(var(--tour-seta) - 7px); }
+.tour-balao[data-lado="esquerda"] .tour-seta { right: -7px; top: calc(var(--tour-seta) - 7px); }
+
+.tour-contagem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--font-size-2xs);
+  font-weight: var(--fw-bold, 700);
+  letter-spacing: var(--ls-wide, 0.06em);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.tour-contagem::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--tour-acc);
+}
+
+.tour-titulo {
+  margin: 6px 0 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--fw-bold, 700);
+  line-height: var(--lh-tight, 1.25);
+  letter-spacing: var(--ls-tight, -0.02em);
+  color: var(--ink);
+}
+
+.tour-texto {
+  margin: 6px 0 0;
+  font-size: var(--font-size-sm);
+  line-height: var(--lh-relaxed, 1.65);
+  color: var(--ink-soft, #334155);
+}
+
+.tour-selo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px 0 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tour-acc) 12%, #fff);
+  color: var(--tour-acc-forte);
+  font-size: var(--font-size-xs);
+  font-weight: var(--fw-semibold, 600);
+}
+
+.tour-rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.tour-nav {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.tour-pular {
+  height: var(--ctl-h-sm);
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+}
+.tour-pular:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+
+.tour-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--ctl-h-sm);
+  padding: 0 16px;
+  border: 1px solid var(--tour-acc);
+  border-radius: 999px;
+  background: var(--tour-acc);
+  color: var(--tour-acc-ink);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: var(--fw-semibold, 600);
+  cursor: pointer;
+  transition: filter 0.15s ease, background-color 0.15s ease;
+}
+.tour-btn:hover { filter: brightness(0.92); }
+.tour-btn.is-sec {
+  border-color: var(--border-strong);
+  background: var(--neutral-surface, #fff);
+  color: var(--ink-soft, #334155);
+}
+.tour-btn.is-sec:hover { filter: none; background: var(--neutral-bg, #f8fafc); }
+.tour-btn:focus-visible,
+.tour-pular:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--tour-acc) 40%, transparent);
+  border-radius: 999px;
+}
+
+@keyframes tour-surge { from { opacity: 0; } to { opacity: 1; } }
+@keyframes tour-pulso {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--tour-acc) 55%, transparent); }
+  70%, 100% { box-shadow: 0 0 0 14px color-mix(in srgb, var(--tour-acc) 0%, transparent); }
+}
+@keyframes tour-treme-a {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+@keyframes tour-treme-b {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+
+/* Quem pediu menos movimento: nada desliza, pulsa nem sacode; o anel fica
+   parado com um halo. */
+@media (prefers-reduced-motion: reduce) {
+  .tour-buraco,
+  .tour-buraco.is-anima,
+  .tour-veu,
+  .tour-balao.is-pronto { animation: none; transition: none; }
+  .tour-anel {
+    animation: none;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--tour-acc) 30%, transparent);
+  }
+  .tour-balao[data-treme] { animation: none; }
+}

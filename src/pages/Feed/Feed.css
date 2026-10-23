@@ -32,7 +32,8 @@
   .feed-centro { justify-self: center; }
   .feed-lateral.is-dir { display: none; }
 }
-.feed-titulos { flex: 1 1 240px; }
+.feed-titulos { flex: 1 1 200px; }
+.feed-header-acoes { display: flex; align-items: center; gap: 4px; }
 .feed-titulos h1 { margin: 0; font-size: var(--font-size-2xl); color: var(--ink); }
 .feed-titulos p { margin: 2px 0 0; font-size: var(--font-size-sm); color: var(--muted); }
 

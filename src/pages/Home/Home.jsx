@@ -13,7 +13,8 @@ import { podeAcessarProgramas } from '../../config/programas';
 import { podeVerTorre } from '../../config/torre';
 import { areasFinanceiroDe } from '../../config/financeiro';
 import { FALE_CONOSCO_ATIVO, FALE_CONOSCO_OPEN_EVENT, SLA_HORAS, MSG_FALE_CONOSCO_TRAVADO, faleConoscoTravado } from '../../config/suporte';
-import { NOVIDADES, ULTIMA_NOVIDADE, novidadesNaoVistas } from '../../config/novidades';
+import { NOVIDADES, ULTIMA_NOVIDADE, novidadesNaoVistas, tutorialDasNovidades } from '../../config/novidades';
+import { useTour } from '../../components/Tour/TourContext';
 import FaleConoscoModal from '../../components/FaleConosco/FaleConoscoModal';
 import SolucoesModal from './SolucoesModal';
 import ProgramasModal from './ProgramasModal';
@@ -46,6 +47,7 @@ export default function Home() {
   const { user, modules, logout, marcarNovidadesVistas } = useAuth();
   const saudacao = nomeProprio(nomeCurto(user?.nome));
   const { perfil, saldo } = usePontos();
+  const { iniciar } = useTour();
   const [novosNoFeed, setNovosNoFeed] = useState(0);
   useEffect(() => {
     let vivo = true;
@@ -69,10 +71,17 @@ export default function Home() {
   const [novidades, setNovidades] = useState(() => (naoVistas.length ? { itens: naoVistas, historico: false } : null));
 
   const fecharNovidades = () => {
+    // O aviso que abriu sozinho e traz um passo a passo (o `tutorial` da
+    // versão, em config/novidades.js) emenda nele ao fechar, por qualquer
+    // caminho: o botão já dizia "Ver como funciona", e quem fechou no X também
+    // nunca viu onde clicar. Fechar o histórico não começa nada — lá o passo
+    // a passo tem botão próprio.
+    const tutorial = novidades && !novidades.historico ? tutorialDasNovidades(naoVistas) : null;
     setNovidades(null);
     // Carimba sempre a versão mais recente: quem fechou viu o que havia de novo,
     // e reabrir pelo botão não deve ressuscitar o aviso automático.
     if (naoVistas.length) marcarNovidadesVistas(ULTIMA_NOVIDADE.id);
+    if (tutorial) iniciar(tutorial);
   };
 
   // Com as duas áreas liberadas, a escolha (Cartões / Reembolso) vem antes de
@@ -222,9 +231,10 @@ export default function Home() {
           </button>
           {/* Feed PHD: posts, curtidas e comentários (pages/Feed). */}
           {/* Post novo avisa SÓ aqui, com o número do que chegou desde a última
-              visita; o sino fica para quando a pessoa é marcada. */}
+              visita; o sino fica para quando a pessoa é marcada. É também o
+              primeiro passo do passo a passo do feed (data-tour). */}
           {veFeed(user) && (
-          <Link to="/feed" className="home-iconbtn" title="Feed PHD — o que está rolando na empresa"
+          <Link to="/feed" className="home-iconbtn" data-tour="home-feed" title="Feed PHD — o que está rolando na empresa"
             aria-label={novosNoFeed > 0 ? `Feed PHD (${novosNoFeed} post${novosNoFeed === 1 ? '' : 's'} novo${novosNoFeed === 1 ? '' : 's'})` : 'Feed PHD'}>
             <Newspaper size={18} />
             {novosNoFeed > 0 && <span className="home-feed-contador" aria-hidden="true">{novosNoFeed > 9 ? '9+' : novosNoFeed}</span>}
@@ -364,6 +374,7 @@ export default function Home() {
           novidades={novidades.itens}
           historico={novidades.historico}
           onClose={fecharNovidades}
+          onTutorial={(id) => { setNovidades(null); iniciar(id); }}
         />
       )}
     </div>
