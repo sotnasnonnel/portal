@@ -4,7 +4,9 @@ import { ArrowLeft, Check, X, Loader2, CalendarClock, Eye, Aperture, Award, Pale
 import { useAuth } from '../../contexts/AuthContext';
 import { usePontos } from '../../contexts/PontosContext';
 import { catalogo, comprar, usar, extrato as lerExtrato, definirSustos } from '../../services/pontos';
-import { CATEGORIAS, NOME_MES, AMOSTRA_TEMA, COMO_GANHAR, TEMA_PADRAO, classeMoldura, temaNoMes } from '../../config/pontos';
+import {
+  CATEGORIAS, NOME_MES, AMOSTRA_TEMA, COMO_GANHAR, TEMA_PADRAO, GRUPOS_TITULO, GRUPO_TITULO, classeMoldura, temaNoMes,
+} from '../../config/pontos';
 import { IMG } from '../../config/pontosImagens';
 import Insignia from '../../components/Pontos/Insignia';
 import SeloMoldura from '../../components/Pontos/SeloMoldura';
@@ -102,7 +104,8 @@ function Voce({ user, foto, moldura, titulo, tituloNome, mural, olhando }) {
 // ---------------------------------------------------------------------------
 function Miniatura({ item, user, foto }) {
   if (item.categoria === 'moldura') return <Bolinha nome={user?.nome} foto={foto} moldura={item.id} tam={64} />;
-  if (item.categoria === 'titulo') return <Insignia id={item.id} nome={item.nome} />;
+  // A frase já está no card (descrição), embaixo da insígnia.
+  if (item.categoria === 'titulo') return <Insignia id={item.id} nome={item.nome} frase={false} />;
   if (item.categoria === 'tema') {
     const [menu, acento, fundo, enfeite] = AMOSTRA_TEMA[item.id] || [];
     return (
@@ -195,6 +198,12 @@ export default function Pontos() {
 
   const abas = CATEGORIAS;
   const daAba = vitrine.filter((i) => i.categoria === aba);
+  // Títulos em grupos (config/pontos.js), na ordem de lá; título que o front
+  // ainda não conhece vai para o fim. As outras abas são uma grade só.
+  const gruposDaAba = aba !== 'titulo' ? [{ nome: null, itens: daAba }]
+    : [...GRUPOS_TITULO.map((g) => g.nome), 'Outros']
+      .map((nome) => ({ nome, itens: daAba.filter((i) => (GRUPO_TITULO[i.id] || 'Outros') === nome) }))
+      .filter((g) => g.itens.length > 0);
 
   return (
     <div className="pl-page">
@@ -254,8 +263,11 @@ export default function Pontos() {
       </nav>
 
       {erroCatalogo && <p className="pl-aviso">{erroCatalogo}</p>}
+      {gruposDaAba.map((g) => (
+        <section key={g.nome || aba} className="pl-grupo" aria-label={g.nome || undefined}>
+          {g.nome && <h2 className="pl-grupo-tit">{g.nome}</h2>}
           <div className="pl-grade">
-            {daAba.map((it) => {
+            {g.itens.map((it) => {
               const usando = emUso(perfil, it);
               const foraDoMes = it.mes && it.mes !== mesAtual();
               const temIt = compras.get(it.id)?.status === 'ok';
@@ -307,6 +319,8 @@ export default function Pontos() {
               );
             })}
           </div>
+        </section>
+      ))}
       {perguntaSustos && (
         <PerguntaSustos
           ligados={!!perfil.sustos}

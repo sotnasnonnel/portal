@@ -1,0 +1,14 @@
+-- Migration: título "Movido a Monster" na Personalização (bogsuuhrgvopzgcceoqz)
+-- ============================================================================
+-- Pedido do usuário (20/10/2026). Só um item novo no catálogo, com o mesmo
+-- preço dos outros títulos; a arte (logo da Monster) está em
+-- src/assets/pontos/monster.png e o esmalte em src/styles/pontos.css
+-- (pts-ins-t-monster).
+-- Sem dependência de deploy: o front antigo não conhece o id e mostra o item
+-- sem arte na vitrine até o deploy. `preco` é legado (obrigatório); vale `custo`.
+-- Já aplicada em 20/10/2026.
+-- ============================================================================
+insert into public.pontos_itens (id, categoria, nome, descricao, preco, custo, requer_aprovacao, em_breve, ordem)
+values ('t-monster', 'titulo', 'Movido a Monster', 'Energético na veia. Garras verdes na insígnia.', 150, 80, false, false, 45)
+on conflict (id) do update set nome = excluded.nome, descricao = excluded.descricao, custo = excluded.custo,
+  ativo = true, ordem = excluded.ordem;

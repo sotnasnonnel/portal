@@ -166,6 +166,14 @@
 
 .pts-ins-t-cafe { --esmalte: #4a2f22; }
 
+.pts-ins-t-monster { --esmalte: #1c2a14; }
+.pts-ins-t-monster .pts-ins-art { background: radial-gradient(circle at 50% 40%, #1f2d16, #0b0f08); }
+.pts-ins-t-monster .pts-ins-art > img { width: 62%; height: 78%; object-fit: contain; }
+
+.pts-ins-t-equino { --esmalte: #5a3a22; }
+.pts-ins-t-equino .pts-ins-art { background: radial-gradient(circle at 50% 35%, #e9d8b8, #b99a6c); }
+.pts-ins-t-equino .pts-ins-art > img { width: 74%; height: 86%; object-fit: contain; }
+
 .pts-ins-t-excel { --esmalte: #1f6e43; }
 .pts-ins-t-excel .pts-ins-art {
   background: #fff;
@@ -204,6 +212,89 @@
 .is-mini.pts-ins-t-ia .pts-ins-art > img { margin-top: 0; width: 72%; height: 72%; }
 
 .pts-ins-t-livre { --esmalte: #26405d; }
+
+/* Títulos novos (23/10/2026): cada um muda o esmalte e, quando a arte é
+   escura, clareia o medalhão. */
+/* Engenharia, planejamento e gestão */
+.pts-ins-t-domador { --esmalte: #1d4e6e; }
+.pts-ins-t-caminho-critico { --esmalte: #7a2430; }
+.pts-ins-t-pull-planning { --esmalte: #2d5f4f; }
+.pts-ins-t-restricoes { --esmalte: #3b3f7a; }
+.pts-ins-t-linha-base { --esmalte: #1f4f8a; }
+.pts-ins-t-replan { --esmalte: #6b4f12; }
+.pts-ins-t-replan .pts-ins-art > img:not(.pts-ins-coroa) { width: 56%; height: 56%; margin-top: 7px; }
+.pts-ins-t-replan .pts-ins-art .pts-ins-coroa { position: absolute; top: 1px; left: 50%; width: 44%; height: auto; transform: translateX(-50%); }
+.pts-ins-t-power-bi { --esmalte: #7a5d0e; }
+.pts-ins-t-curva-s { --esmalte: #1e5a4c; }
+.pts-ins-t-ppc { --esmalte: #2b6b2f; }
+.pts-ins-t-monte-carlo { --esmalte: #3a1f5c; }
+/* Humor corporativo e cotidiano da PHD */
+.pts-ins-t-clt-premium { --esmalte: #2f6b3a; }
+.pts-ins-t-reuniao { --esmalte: #4a5568; }
+.pts-ins-t-reuniao .pts-ins-art { background: radial-gradient(circle at 50% 35%, #f4f6f9, #c9d2de); }
+.pts-ins-t-teams { --esmalte: #4b53bc; }
+.pts-ins-t-incendios { --esmalte: #9c2a1f; }
+.pts-ins-t-deixa-comigo { --esmalte: #b5651d; }
+.pts-ins-t-cafe-desespero { --esmalte: #5a3527; }
+.pts-ins-t-sextou { --esmalte: #8a3b6e; }
+.pts-ins-t-ultimo { --esmalte: #1b2340; }
+.pts-ins-t-diretoria { --esmalte: #1c2733; }
+.pts-ins-t-ctrl-cv { --esmalte: #334155; }
+.pts-ins-t-ctrl-cv .pts-ins-art { background: radial-gradient(circle at 50% 35%, #f4f6f9, #c9d2de); }
+/* Campo, obras e engenharia raiz */
+.pts-ins-t-raiz { --esmalte: #8a5a14; }
+.pts-ins-t-botina-ouro { --esmalte: #8f6a0d; }
+.pts-ins-t-botina-ouro .pts-ins-art { background: radial-gradient(circle at 35% 30%, #fbe7a1, #d4a017 60%, #9a7209); }
+.pts-ins-t-botina-ouro .pts-ins-art > img { width: 80%; height: 80%; }
+.pts-ins-t-churrasqueira { --esmalte: #7a2e1a; }
+.pts-ins-t-rdo { --esmalte: #2c4a6e; }
+.pts-ins-t-desvios { --esmalte: #4a3b0a; }
+/* Amassado: o capacete torto no medalhão. */
+.pts-ins-t-capacete { --esmalte: #5c5f66; }
+.pts-ins-t-capacete .pts-ins-art > img { width: 76%; transform: rotate(-16deg) translateY(1px); }
+.pts-ins-t-prancheta { --esmalte: #6b4a2b; }
+.pts-ins-t-parada { --esmalte: #3d4451; }
+/* Personalidade e comportamento */
+.pts-ins-t-resolvedor { --esmalte: #26405d; }
+.pts-ins-t-caos { --esmalte: #4a3a6b; }
+.pts-ins-t-lenda { --esmalte: #5c1f3a; }
+.pts-ins-t-memes { --esmalte: #b0541a; }
+.pts-ins-t-prazo { --esmalte: #8a1f2b; }
+.pts-ins-t-multitarefas { --esmalte: #1a5a7a; }
+.pts-ins-t-excelencia { --esmalte: #1d3550; }
+.pts-ins-t-fora-curva { --esmalte: #2a2f6b; }
+
+/* Frase do título, embaixo do nome na insígnia grande. */
+.pts-ins-frase {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--font-size-2xs);
+  font-weight: 600;
+  letter-spacing: 0;
+  opacity: .85;
+}
+
+/* Dica da insígnia mini (nome e frase), solta no <body> por Insignia.jsx. */
+.pts-ins-dica {
+  position: fixed;
+  z-index: 1300;
+  width: max-content;
+  max-width: 240px;
+  padding: 8px 11px;
+  border-radius: 8px;
+  background: #16212e;
+  color: #f6efe2;
+  font-size: var(--font-size-xs);
+  line-height: 1.35;
+  text-align: left;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .25);
+  pointer-events: none;
+  transform: translate(-50%, -100%);
+  animation: pts-dica .12s ease-out;
+}
+.pts-ins-dica.is-embaixo { transform: translate(-50%, 0); }
+.pts-ins-dica b { display: block; margin-bottom: 1px; font-weight: 800; }
+@keyframes pts-dica { from { opacity: 0; } to { opacity: 1; } }
 
 /* --------------------------------------------------------------------------
    Temas do portal. Pintam o "chassi" (menu lateral, barra do topo, fundo da
@@ -274,9 +365,9 @@ html[data-pts-tema="natal"] {
 
 .pts-deco { position: fixed; inset: 0; pointer-events: none; z-index: 900; overflow: hidden; }
 .pts-deco img { display: block; }
-/* Festão, meias, faixa e lua são enfeite da Home (e da lojinha, para a prévia):
-   dentro dos módulos ficariam por cima do trabalho. */
-body:not(:has(.home-hero, .pl-page)) .pts-deco { display: none; }
+/* Festão, meias, faixa e lua são enfeite da Home, do feed e da lojinha (para a
+   prévia): dentro dos módulos ficariam por cima do trabalho. */
+body:not(:has(.home-hero, .pl-page, .feed-page)) .pts-deco { display: none; }
 
 /* Natal: festão de pinheiro no alto, meias penduradas, faixa de bengala doce embaixo */
 .pts-deco-natal .festao { position: absolute; top: -12px; left: 0; right: 0; height: 40px; background-repeat: repeat-x; background-size: 160px 40px; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .18)); }
@@ -557,7 +648,7 @@ html[data-pts-tema="halloween"] {
 }
 
 /* A cena */
-html[data-pts-tema="halloween"] .home-hero {
+html[data-pts-tema="halloween"] :is(.home-hero, .feed-page) {
   color-scheme: dark;
   --bg: var(--h-lapide);
   --bg-soft: #120e16;
@@ -734,6 +825,85 @@ html[data-pts-tema="halloween"] .apv-page .apv-chip:not(.is-on) { background: #1
 html[data-pts-tema="halloween"] .apv-page .apv-vazio { background: #17131b; border-color: #2a2230; }
 html[data-pts-tema="halloween"] .apv-page .apv-vazio h2 { color: #ece3d4; }
 html[data-pts-tema="halloween"] .apv-page .apv-btn-ghost { background: #17131b; color: #cfc4b4; border-color: #2a2230; }
+
+/* ==========================================================================
+   Feed (/feed) nos temas. O mesmo tratamento da Home: enfeites pendurados no
+   alto (por isso o conteúdo desce), cards com a borda e as cores do tema, o
+   ícone da época ao lado do título e, no Halloween, a cena da noite com as
+   placas escuras. O modal de publicar fica sempre claro (é onde se escreve).
+   ========================================================================== */
+html[data-pts-tema] .feed-page { min-height: 100vh; }
+html[data-pts-tema]:not([data-pts-tema="halloween"]) .feed-page {
+  background-color: var(--pts-page); background-image: var(--pts-home);
+}
+/* Espaço para o festão/meias (Natal) e o varal (campanhas) não cobrirem o título. */
+html[data-pts-tema="natal"] .feed-page { padding-top: 104px; }
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) .feed-page { padding-top: 84px; }
+
+/* Destaques na cor do tema */
+html[data-pts-tema] .feed-btn-publicar:not(:disabled),
+html[data-pts-tema] .feed-coment-caixa.tem-texto .feed-btn-enviar { background: var(--t-acc); color: var(--t-acc-ink); box-shadow: none; }
+html[data-pts-tema] .feed-btn-publicar:hover:not(:disabled),
+html[data-pts-tema] .feed-coment-caixa.tem-texto .feed-btn-enviar:hover:not(:disabled) { background: var(--t-acc); filter: brightness(.92); }
+html[data-pts-tema] .feed-btn-publicar:disabled { background: color-mix(in srgb, var(--t-acc) 35%, #fff); }
+html[data-pts-tema] .feed-abas button.is-on { background: var(--t-acc); border-color: var(--t-acc); color: var(--t-acc-ink); }
+html[data-pts-tema] .feed-post.is-fixado { border-color: var(--t-acc); }
+html[data-pts-tema] .feed-fixado { color: var(--t-acc); }
+html[data-pts-tema] .feed-perfil-pontos { background: color-mix(in srgb, var(--t-acc) 14%, #fff); color: var(--t-acc); }
+html[data-pts-tema] :is(.feed-atalhos svg, .feed-ferramenta svg, .feed-iconbtn.is-foto, .feed-bloco-tit svg) { color: var(--t-acc); }
+
+/* Ícone da época ao lado de "Feed PHD" (o mesmo do "Olá" da Home) */
+html[data-pts-tema] .feed-titulos h1 { display: flex; align-items: center; gap: 8px; }
+html[data-pts-tema] .feed-titulos h1::after { content: ""; flex: none; height: 36px; background: center / contain no-repeat; }
+html[data-pts-tema="natal"] .feed-titulos h1::after { width: 80px; background-image: var(--pts-i-arvore), var(--pts-i-noel); background-size: 36px 36px; background-position: left center, right center; }
+html[data-pts-tema="outubro-rosa"] .feed-titulos h1::after { width: 28px; background-image: var(--c-laco); }
+html[data-pts-tema="novembro-azul"] .feed-titulos h1::after { width: 76px; background-image: var(--c-laco), var(--pts-i-bigode); background-size: 26px 36px, 46px 36px; background-position: left center, right center; }
+html[data-pts-tema="halloween"] .feed-titulos h1::after {
+  width: 36px; background-image: var(--pts-i-abobora);
+  filter: saturate(.8) brightness(.9) drop-shadow(0 0 10px rgba(227, 163, 68, .65));
+}
+
+/* Natal: cards em vermelho, verde e dourado, como os cards de módulo */
+html[data-pts-tema="natal"] .feed-coluna > .feed-post:nth-of-type(3n+1) { --n-cor: #c0392b; --n-fundo: #fdecea; }
+html[data-pts-tema="natal"] .feed-coluna > .feed-post:nth-of-type(3n+2) { --n-cor: #1d6b45; --n-fundo: #e6f4ec; }
+html[data-pts-tema="natal"] .feed-coluna > .feed-post:nth-of-type(3n+3) { --n-cor: #c9971f; --n-fundo: #fbf3dc; }
+html[data-pts-tema="natal"] .feed-post { border: 2px solid var(--n-cor, #1d6b45); background: linear-gradient(180deg, var(--n-fundo, #e6f4ec), #fff 90px); }
+html[data-pts-tema="natal"] :is(.feed-chamada, .feed-bloco) { border: 2px solid #1d6b45; }
+html[data-pts-tema="natal"] .feed-bloco-tit { color: #14513a; }
+
+/* Campanhas: cards nos três tons da cor do mês */
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) .feed-coluna > .feed-post:nth-of-type(3n+1) { --n-cor: var(--c-forte); }
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) .feed-coluna > .feed-post:nth-of-type(3n+2) { --n-cor: var(--c-cor); }
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) .feed-coluna > .feed-post:nth-of-type(3n+3) { --n-cor: var(--c-escuro); }
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) .feed-post { border: 2px solid var(--n-cor, var(--c-cor)); background: linear-gradient(180deg, var(--c-claro), #fff 90px); }
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) :is(.feed-chamada, .feed-bloco) { border: 2px solid var(--c-cor); }
+:is(html[data-pts-tema="outubro-rosa"], html[data-pts-tema="novembro-azul"]) :is(.feed-bloco-tit, .feed-titulos h1) { color: var(--c-forte); }
+
+/* Halloween: a cena é o fundo (regra da Home, acima); posts e blocos viram
+   placas escuras, o realce é a luz de vela. */
+html[data-pts-tema="halloween"] .feed-page :is(.feed-post, .feed-chamada, .feed-bloco, .feed-vazio, .feed-denuncia) {
+  background: linear-gradient(180deg, #1b161f, var(--h-lapide)); border-color: var(--h-borda);
+}
+html[data-pts-tema="halloween"] .feed-page .feed-post:hover { border-color: #3a2a1a; }
+html[data-pts-tema="halloween"] .feed-page .feed-post.is-fixado { border-color: var(--h-vela); box-shadow: 0 0 0 1px rgba(227, 163, 68, .35); }
+html[data-pts-tema="halloween"] .feed-page :is(.feed-chamada-pilula, .feed-coment, .feed-coment-caixa textarea, .feed-editar textarea, .feed-denuncia-trecho) {
+  background: #120e16; border-color: var(--h-borda); color: var(--h-pergaminho);
+}
+html[data-pts-tema="halloween"] .feed-page .feed-chamada-pilula:hover { background: #1a1420; }
+html[data-pts-tema="halloween"] .feed-page :is(.feed-iconbtn, .feed-acao, .feed-atalhos a, .feed-top li button, .feed-menu-lista button):hover { background: rgba(227, 163, 68, .08); }
+html[data-pts-tema="halloween"] .feed-page .feed-menu-lista { background: var(--h-lapide); border-color: var(--h-borda); }
+html[data-pts-tema="halloween"] .feed-page .feed-abas button:not(.is-on) { background: var(--h-lapide); border-color: var(--h-borda); color: #cfc4b4; }
+html[data-pts-tema="halloween"] .feed-page .feed-foto { background: #120e16; }
+html[data-pts-tema="halloween"] .feed-page .feed-av { background: #241c2b; color: var(--h-vela); }
+html[data-pts-tema="halloween"] .feed-page .feed-acao.is-on { color: #ff6b8b; }
+html[data-pts-tema="halloween"] .feed-page .feed-perfil-pontos { background: #1f150e; color: var(--h-vela); }
+html[data-pts-tema="halloween"] .feed-page .feed-aviso { background: #2a2010; color: var(--h-vela); }
+/* O modal de publicar continua claro: desfaz as cores escuras da cena. */
+html[data-pts-tema="halloween"] .feed-page .feed-modal-fundo {
+  color-scheme: light; --bg: #fff; --bg-soft: #f2f2f2; --border: #e2e8f0; --border-strong: #cbd5e1;
+  --ink: #0f172a; --ink-soft: #334155; --muted: #64748b; --blue: #26405d; --blue-soft: #d8dfe8;
+}
+html[data-pts-tema="halloween"] .feed-page .feed-modal .feed-av { background: var(--blue-soft); color: var(--blue); }
 /* Dentro da Home escura do Halloween, a lista do sino volta aos tokens claros. */
 html[data-pts-tema="halloween"] .notif-pop {
   color-scheme: light;
@@ -828,3 +998,21 @@ html[data-pts-tema="halloween"] .notif-pop {
 
 /* A aranha gigante saiu em 19/10/2026: ficaram só as fotos de terror. */
 
+html[data-pts-tema] .feed-link-url:hover { color: var(--t-acc); }
+html[data-pts-tema="halloween"] .feed-page .feed-link-url { color: var(--h-vela); }
+
+/* "Próximo aniversário" tem fundo claro fixo (Home.css); na noite o texto vira
+   pergaminho e sumia. Vira placa escura, como os outros cards da coluna. */
+html[data-pts-tema="halloween"] .home-prox {
+  background: linear-gradient(180deg, #1b161f, var(--h-lapide));
+  border: 1px solid var(--h-borda);
+}
+html[data-pts-tema] .feed-mencao { background: color-mix(in srgb, var(--t-acc) 14%, transparent); color: var(--t-acc); }
+html[data-pts-tema="halloween"] .feed-page .feed-mencoes-lista { background: var(--h-lapide); border-color: var(--h-borda); }
+html[data-pts-tema="halloween"] .feed-page .feed-mencoes-lista button.is-ativo { background: rgba(227, 163, 68, .1); }
+html[data-pts-tema="halloween"] .feed-page .feed-modal .feed-mencoes-lista { background: #fff; border-color: #e2e8f0; }
+html[data-pts-tema="halloween"] .feed-page .feed-modal .feed-mencoes-lista button.is-ativo { background: #f1f5f9; }
+html[data-pts-tema] .feed-mencoes-txt b mark { color: var(--t-acc); }
+html[data-pts-tema] .feed-mencoes-lista button.is-todos .feed-mencoes-av { background: var(--t-acc); color: var(--t-acc-ink); }
+html[data-pts-tema="halloween"] .feed-page .feed-mencoes-lista :is(.feed-mencoes-cab, .feed-mencoes-dica) { background: #120e16; border-color: var(--h-borda); }
+html[data-pts-tema="halloween"] .feed-page .feed-modal .feed-mencoes-lista :is(.feed-mencoes-cab, .feed-mencoes-dica) { background: #f8fafc; border-color: #e2e8f0; }

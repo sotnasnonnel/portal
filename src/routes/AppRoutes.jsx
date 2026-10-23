@@ -24,6 +24,7 @@ import TorreShell from '../modules/torre/app/components/AppShell';
 import { podeVerTorre } from '../config/torre';
 import { podeAcessarFechamentoPj } from '../config/fechamentoPj';
 import { isAusenciaRh, veAprovacoes, veAusenciaTodos } from '../config/ausenciaProgramada';
+import { veFeed } from '../config/feed';
 import { MODULOS_AUSENCIA } from '../config/modulosAusencia';
 import {
   ROTA_FOLGA_CAMPO, isFolgaCampoRh, podeAcessarFolgaCampo,
@@ -41,6 +42,7 @@ const FaleConoscoCaixa = lazyPagina(() => import('../pages/FaleConosco/FaleConos
 const CentralAprovacoes = lazyPagina(() => import('../modules/aprovacoes/app/page'));
 const PainelHumor = lazyPagina(() => import('../pages/Humor/PainelHumor'));
 const Pontos = lazyPagina(() => import('../pages/Pontos/Pontos'));
+const Feed = lazyPagina(() => import('../pages/Feed/Feed'));
 const AdminCadastro = lazyPagina(() => import('../pages/Admin/AdminCadastro'));
 const AdminListagem = lazyPagina(() => import('../pages/Admin/AdminListagem'));
 const AdminCandidatos = lazyPagina(() => import('../pages/Admin/AdminCandidatos'));
@@ -329,6 +331,12 @@ function rotasAusencia(mod) {
   ];
 }
 
+function FeedRoute({ children }) {
+  const { user } = useAuth();
+  if (!veFeed(user)) return <Navigate to="/home" replace />;
+  return children;
+}
+
 function HorasDpRoute({ children }) {
   const { user } = useAuth();
   if (!isHorasExtrasDp(user)) return <Navigate to="/home" replace />;
@@ -396,6 +404,21 @@ export default function AppRoutes() {
               <LazyPage>
                 <PainelHumor />
               </LazyPage>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Feed: antes do lançamento (FEED_LIBERADO), só o super admin entra;
+            depois, todo logado. As RPCs barram quem está inativo. */}
+        <Route
+          path="/feed"
+          element={
+            <ProtectedRoute>
+              <FeedRoute>
+                <LazyPage>
+                  <Feed />
+                </LazyPage>
+              </FeedRoute>
             </ProtectedRoute>
           }
         />

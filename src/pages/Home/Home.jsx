@@ -1,8 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, BarChart3, Clock, CreditCard, Headset, Sparkles, ShieldCheck, LogOut, ArrowRight, Lock, Hourglass, Blocks, MessageSquarePlus, Megaphone, Radar, Star } from 'lucide-react';
+import { Users, BarChart3, Clock, CreditCard, Headset, Sparkles, ShieldCheck, LogOut, ArrowRight, Lock, Hourglass, Blocks, MessageSquarePlus, Megaphone, Radar, Star, Newspaper } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePontos } from '../../contexts/PontosContext';
+import { novidadesDoFeed } from '../../services/feed';
+import { veFeed } from '../../config/feed';
 import Insignia from '../../components/Pontos/Insignia';
 import { NOME_TITULO } from '../../config/pontos';
 import { isSuperAdmin } from '../../config/superAdmin';
@@ -44,6 +46,12 @@ export default function Home() {
   const { user, modules, logout, marcarNovidadesVistas } = useAuth();
   const saudacao = nomeProprio(nomeCurto(user?.nome));
   const { perfil, saldo } = usePontos();
+  const [novosNoFeed, setNovosNoFeed] = useState(0);
+  useEffect(() => {
+    let vivo = true;
+    if (veFeed(user)) novidadesDoFeed().then((n) => { if (vivo) setNovosNoFeed(n); });
+    return () => { vivo = false; };
+  }, [user]);
   const [solucoesAbertas, setSolucoesAbertas] = useState(false);
   const [programasAbertos, setProgramasAbertos] = useState(false);
   const [financeiroAberto, setFinanceiroAberto] = useState(false);
@@ -212,6 +220,16 @@ export default function Home() {
             <Megaphone size={18} />
             {naoVistas.length > 0 && <span className="home-novidades-dot" aria-hidden="true" />}
           </button>
+          {/* Feed PHD: posts, curtidas e comentários (pages/Feed). */}
+          {/* Post novo avisa SÓ aqui, com o número do que chegou desde a última
+              visita; o sino fica para quando a pessoa é marcada. */}
+          {veFeed(user) && (
+          <Link to="/feed" className="home-iconbtn" title="Feed PHD — o que está rolando na empresa"
+            aria-label={novosNoFeed > 0 ? `Feed PHD (${novosNoFeed} post${novosNoFeed === 1 ? '' : 's'} novo${novosNoFeed === 1 ? '' : 's'})` : 'Feed PHD'}>
+            <Newspaper size={18} />
+            {novosNoFeed > 0 && <span className="home-feed-contador" aria-hidden="true">{novosNoFeed > 9 ? '9+' : novosNoFeed}</span>}
+          </Link>
+          )}
           {/* Pontos: o saldo, ao lado de Novidades, leva para a Personalização.
               É também o alvo do "+N" que voa quando a pessoa ganha pontos. */}
           {saldo !== null && (

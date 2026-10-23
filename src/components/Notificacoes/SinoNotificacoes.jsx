@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Check, CheckCheck, Clock, ThumbsUp, X, AlertTriangle } from 'lucide-react';
+import { AtSign, Bell, Check, CheckCheck, Clock, ThumbsUp, X, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   listarNotificacoes, marcarLida, marcarTodasLidas, ouvirNotificacoes, NOTIF_EVENT,
@@ -20,6 +20,8 @@ const VISUAL = {
   andamento: { Icon: ThumbsUp, tom: 'andamento' },
   concluida: { Icon: Check, tom: 'ok' },
   reprovada: { Icon: AlertTriangle, tom: 'nao' },
+  // Alguém marcou a pessoa no feed (o único aviso do feed que vai para o sino).
+  mencao: { Icon: AtSign, tom: 'vez' },
 };
 
 const MODULO_LABEL = {
@@ -31,6 +33,7 @@ const MODULO_LABEL = {
   programas: 'Programas',
   estoque: 'Estoque',
   mobilizacao: 'Mobilização',
+  feed: 'Feed',
 };
 
 // "agora", "há 5 min", "ontem" — data cheia só quando passa de uma semana.

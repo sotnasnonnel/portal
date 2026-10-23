@@ -14,6 +14,9 @@
 //                         aniversariante (parabens_mural), para o modal do
 //                         mural — pedido do usuário, 19/10/2026: o recado tem
 //                         de mostrar a foto de quem escreveu.
+//   { feed: [ids] }    -> autores de posts e comentários do feed. O cliente diz
+//                         quem está na tela; a RPC feed_autores corta quem não
+//                         tem nada visível no feed (pedido do usuário, 20/10/2026).
 //
 // A foto sai do hub quando ele tem; quando não tem (o hub cobre só parte da
 // empresa), do próprio Microsoft 365 pela permissão de aplicativo — ver
@@ -119,16 +122,24 @@ Deno.serve(async (req) => {
       auth: { persistSession: false },
       global: { headers: { Authorization: authHeader } },
     });
-    let corpo: { mural?: unknown } = {};
+    let corpo: { mural?: unknown; feed?: unknown } = {};
     try {
       corpo = (await req.json()) ?? {};
     } catch {
       corpo = {}; // corpo vazio: a lista do mês, como sempre
     }
     const mural = typeof corpo.mural === "string" ? corpo.mural : null;
+    const feed = Array.isArray(corpo.feed)
+      ? corpo.feed.filter((x): x is string => typeof x === "string").slice(0, 60)
+      : null;
 
     const ids = new Set<string>();
-    if (mural) {
+    if (feed) {
+      if (feed.length === 0) return json({ fotos: {}, ids: [] });
+      const { data: autores, error: eFeed } = await comoUsuario.rpc("feed_autores", { p_ids: feed });
+      if (eFeed) return json({ error: eFeed.message }, 401);
+      for (const id of (autores ?? []) as string[]) ids.add(id);
+    } else if (mural) {
       const { data: recados, error: eMural } = await comoUsuario.rpc("parabens_mural", { p_para: mural });
       if (eMural) return json({ error: eMural.message }, 401);
       for (const r of (recados ?? []) as { de_id: string }[]) ids.add(r.de_id);

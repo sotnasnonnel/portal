@@ -879,3 +879,11 @@ button.home-festa-btn { width: 100%; }
 .home-pontos:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 .home-pontos svg { color: #f59e0b; fill: #fde68a; }
 .home-pontos b { font-size: var(--font-size-md); font-variant-numeric: tabular-nums; }
+
+/* Feed: número de posts novos desde a última visita, no canto do ícone. */
+.home-feed-contador {
+  position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box;
+  display: grid; place-items: center; border-radius: 999px;
+  background: var(--color-primary, #c35e1e); color: #fff; font-size: var(--font-size-2xs); font-weight: 700; line-height: 1;
+  box-shadow: 0 0 0 2px #fff;
+}

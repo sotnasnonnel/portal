@@ -1,0 +1,491 @@
+/* Feed do portal (/feed). Página avulsa, como o painel do Humor, de ponta a ponta
+   da tela: as laterais têm largura fixa e o feed fica com o resto. */
+
+.feed-page { padding: 20px 16px 48px; }
+
+.feed-header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+/* Linha própria, com respiro antes do título (ao lado dele ficava colada). */
+.feed-back {
+  display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; margin-bottom: 14px;
+  font-size: var(--font-size-sm); color: var(--muted); text-decoration: none;
+}
+.feed-back:hover { color: var(--ink); }
+
+/* Três colunas: você | feed | a empresa. O feed tem largura de leitura e fica
+   no centro; as laterais dividem o resto da tela, com os blocos (até 400px)
+   encostados no feed. As laterais somem em tela menor. */
+.feed-grade {
+  display: grid; grid-template-columns: minmax(300px, 1fr) minmax(0, 720px) minmax(320px, 1fr); gap: 28px;
+  align-items: start;
+}
+.feed-centro { display: flex; flex-direction: column; min-width: 0; }
+.feed-lateral { display: flex; flex-direction: column; gap: 16px; min-width: 0; width: 100%; max-width: 400px; }
+.feed-lateral.is-esq { position: sticky; top: 16px; justify-self: end; }
+.feed-lateral.is-dir { justify-self: start; }
+@media (max-width: 1360px) {
+  .feed-grade { grid-template-columns: minmax(0, 1fr) minmax(320px, 380px); }
+  .feed-centro { max-width: 720px; justify-self: end; width: 100%; }
+  .feed-lateral.is-esq { display: none; }
+}
+@media (max-width: 960px) {
+  .feed-grade { grid-template-columns: minmax(0, 1fr); }
+  .feed-centro { justify-self: center; }
+  .feed-lateral.is-dir { display: none; }
+}
+.feed-titulos { flex: 1 1 240px; }
+.feed-titulos h1 { margin: 0; font-size: var(--font-size-2xl); color: var(--ink); }
+.feed-titulos p { margin: 2px 0 0; font-size: var(--font-size-sm); color: var(--muted); }
+
+.feed-coluna { display: flex; flex-direction: column; gap: 14px; }
+
+.feed-iconbtn {
+  display: inline-grid; place-items: center; width: var(--ctl-h-sm); height: var(--ctl-h-sm);
+  border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer;
+}
+.feed-iconbtn:hover { background: #f1f5f9; color: var(--ink); }
+.feed-iconbtn:focus-visible { box-shadow: var(--focus-ring); outline: none; }
+
+.feed-spin { animation: feed-gira 1s linear infinite; }
+@keyframes feed-gira { to { transform: rotate(360deg); } }
+
+.feed-abas { display: flex; gap: 4px; margin-bottom: 12px; }
+.feed-abas button {
+  display: inline-flex; align-items: center; gap: 6px; height: var(--ctl-h-sm); padding: 0 14px;
+  border: 1px solid var(--border); border-radius: 999px; background: #fff;
+  color: var(--ink-soft); font-size: var(--font-size-sm); cursor: pointer;
+}
+.feed-abas button.is-on { border-color: var(--terracotta); color: var(--terracotta); font-weight: 600; }
+
+.feed-erro {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 12px; padding: 8px 12px;
+  border: 1px solid #f5c2c0; border-radius: 10px; background: #fdf0ef; color: #9b2c26; font-size: var(--font-size-sm);
+}
+.feed-erro .feed-iconbtn { margin-left: auto; color: inherit; }
+
+.feed-vazio {
+  display: flex; align-items: center; justify-content: center; gap: 8px; padding: 32px 16px;
+  border: 1px dashed var(--border-strong); border-radius: 12px; background: #fff;
+  color: var(--muted); font-size: var(--font-size-sm); text-align: center;
+}
+
+/* ---- Publicar: chamada no topo + modal (molde do selink / LinkedIn) ---- */
+.feed-post, .feed-chamada, .feed-bloco {
+  background: #fff; border: 1px solid var(--border); border-radius: 12px;
+}
+.feed-post { padding: 14px 16px; }
+.feed-chamada { display: flex; align-items: center; gap: 10px; padding: 12px; }
+.feed-chamada-pilula {
+  flex: 1; height: var(--ctl-h-lg); padding: 0 16px; border: 1px solid var(--border-strong); border-radius: 999px;
+  background: #f8fafc; color: var(--muted); font: inherit; font-size: var(--font-size-md); text-align: left; cursor: pointer;
+}
+.feed-chamada-pilula:hover { background: #f1f5f9; }
+.feed-chamada-pilula:focus-visible { box-shadow: var(--focus-ring); outline: none; }
+.feed-iconbtn.is-foto { width: var(--ctl-h-lg); height: var(--ctl-h-lg); border-radius: 10px; color: var(--blue); }
+
+.feed-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.feed-modal-fundo {
+  position: fixed; inset: 0; z-index: 900; display: flex; align-items: flex-start; justify-content: center;
+  overflow-y: auto; padding: 32px 16px; background: rgba(15, 23, 42, .45);
+}
+.feed-modal {
+  display: flex; flex-direction: column; width: 100%; max-width: 560px; margin: auto 0;
+  background: #fff; border-radius: 16px; box-shadow: 0 24px 64px rgba(15, 23, 42, .25);
+}
+.feed-modal-cab { display: flex; align-items: center; gap: 12px; padding: 16px 18px 8px; }
+.feed-modal-quem { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.feed-modal-quem b { font-size: var(--font-size-lg); color: var(--ink); }
+.feed-modal-quem span { font-size: var(--font-size-xs); color: var(--muted); }
+.feed-modal-corpo { padding: 4px 18px 8px; }
+/* Sem borda: o painel inteiro já é o campo. */
+.feed-modal-corpo textarea {
+  width: 100%; min-height: 160px; padding: 0; border: 0; resize: none; box-sizing: border-box;
+  font: inherit; font-size: var(--font-size-lg); line-height: 1.5; color: var(--ink); background: transparent;
+}
+.feed-modal-corpo textarea:focus { outline: none; }
+.feed-modal-ferramentas { display: flex; gap: 4px; padding: 0 12px 8px; }
+.feed-ferramenta {
+  display: inline-flex; align-items: center; gap: 6px; height: var(--ctl-h-sm); padding: 0 10px; border: 0; border-radius: 8px;
+  background: none; color: var(--ink-soft); font: inherit; font-size: var(--font-size-sm); cursor: pointer;
+}
+.feed-ferramenta svg { color: var(--blue); }
+.feed-ferramenta:hover:not(:disabled) { background: #f1f5f9; }
+.feed-ferramenta:disabled { opacity: .5; cursor: default; }
+/* Emojis: painel que abre para cima do botão, em grade de 8. */
+.feed-emoji { position: relative; }
+.feed-emoji-painel {
+  position: absolute; bottom: calc(100% + 6px); left: 0; z-index: 20; width: 288px; max-height: 260px; overflow-y: auto;
+  padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: #fff;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, .18);
+}
+.feed-emoji-grupo + .feed-emoji-grupo { margin-top: 10px; }
+.feed-emoji-grupo p { margin: 0 0 6px; font-size: var(--font-size-xs); font-weight: 600; color: var(--muted); }
+.feed-emoji-grade { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; }
+.feed-emoji-grade button {
+  display: grid; place-items: center; height: var(--ctl-h-sm); padding: 0; border: 0; border-radius: 6px;
+  background: none; font-size: var(--font-size-xl); line-height: 1; cursor: pointer;
+}
+.feed-emoji-grade button:hover { background: #f1f5f9; }
+.feed-emoji-grade button:focus-visible { box-shadow: var(--focus-ring); outline: none; }
+.feed-modal-rodape {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 18px; border-top: 1px solid var(--border);
+}
+.feed-composer-fotos { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.feed-composer-foto { position: relative; width: 84px; height: 84px; }
+.feed-composer-foto img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+.feed-composer-foto button {
+  position: absolute; top: 4px; right: 4px; display: grid; place-items: center; width: 22px; height: 22px;
+  border: 0; border-radius: 50%; background: rgba(15, 23, 42, .7); color: #fff; cursor: pointer;
+}
+.feed-contador { font-size: var(--font-size-xs); color: var(--muted); }
+.feed-contador.is-estouro { color: #b42318; font-weight: 600; }
+.feed-editar textarea {
+  width: 100%; resize: vertical; min-height: 72px; padding: 8px 10px; box-sizing: border-box;
+  border: 1px solid var(--border); border-radius: 8px; font: inherit; font-size: var(--font-size-md); color: var(--ink);
+}
+.feed-editar textarea:focus { outline: none; border-color: var(--terracotta); box-shadow: var(--focus-ring); }
+
+/* ---- Post ---- */
+.feed-post.is-fixado { border-color: var(--terracotta); }
+.feed-post.is-oculto { opacity: .8; border-style: dashed; }
+.feed-fixado {
+  display: inline-flex; align-items: center; gap: 4px; margin-bottom: 8px;
+  font-size: var(--font-size-2xs); font-weight: 700; color: var(--terracotta); text-transform: uppercase; letter-spacing: .04em;
+}
+.feed-post-topo { display: flex; align-items: flex-start; gap: 8px; }
+.feed-post-topo .feed-autor { flex: 1; min-width: 0; }
+.feed-post-txt { margin: 12px 0 0; font-size: var(--font-size-md); color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; }
+.feed-post-txt.is-cortado { display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+.feed-vermais {
+  padding: 0; border: 0; background: none; color: var(--muted); font: inherit; font-size: var(--font-size-sm); font-weight: 600; cursor: pointer;
+}
+.feed-vermais:hover { color: var(--blue); text-decoration: underline; }
+
+.feed-autor { display: flex; align-items: center; gap: 10px; }
+.feed-av {
+  position: relative; flex: none; width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--blue-soft); color: var(--blue); font-size: var(--font-size-xs); font-weight: 700;
+}
+.feed-autor.is-pequeno .feed-av { width: 32px; height: 32px; font-size: var(--font-size-2xs); }
+.feed-av.is-grande { width: 56px; height: 56px; font-size: var(--font-size-md); }
+.feed-chamada .feed-av { width: 44px; height: 44px; }
+.feed-av > img:not(.pts-selo) { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+/* Laterais um pouco maiores: perfil, títulos e listas com mais presença. */
+.feed-lateral .feed-av.is-grande { width: 72px; height: 72px; font-size: var(--font-size-lg); }
+.feed-lateral .feed-bloco { padding: 16px 18px; }
+.feed-lateral .feed-bloco-tit { font-size: var(--font-size-md); }
+.feed-lateral .feed-perfil > b { font-size: var(--font-size-lg); }
+.feed-lateral .feed-atalhos a { padding: 10px 12px; font-size: var(--font-size-md); }
+.feed-lateral .feed-top b, .feed-lateral .feed-top-trecho, .feed-lateral .feed-ganhar li { font-size: var(--font-size-sm); }
+.feed-lateral .feed-top-num, .feed-lateral .feed-ganhar small { font-size: var(--font-size-xs); }
+.feed-autor-txt { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; min-width: 0; }
+.feed-autor-txt b { font-size: var(--font-size-sm); color: var(--ink); }
+.feed-autor-sub { font-size: var(--font-size-xs); color: var(--muted); }
+
+.feed-menu { position: relative; }
+.feed-menu-lista {
+  position: absolute; right: 0; top: calc(100% + 4px); z-index: 10; min-width: 180px; padding: 4px;
+  background: #fff; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 8px 24px rgba(15, 23, 42, .12);
+}
+.feed-menu-lista button {
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px; border: 0; border-radius: 6px;
+  background: none; color: var(--ink-soft); font: inherit; font-size: var(--font-size-sm); text-align: left; cursor: pointer;
+}
+.feed-menu-lista button:hover { background: #f1f5f9; color: var(--ink); }
+
+.feed-aviso {
+  display: flex; align-items: center; gap: 6px; margin-top: 10px; padding: 6px 10px; border-radius: 8px;
+  background: #fef6e7; color: #8a5a00; font-size: var(--font-size-xs);
+}
+.feed-tag { display: inline-block; margin-top: 4px; font-size: var(--font-size-2xs); color: #8a5a00; }
+
+.feed-editar { margin-top: 10px; }
+.feed-editar-acoes { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+
+/* Uma foto: inteira e centralizada no card. */
+.feed-fotos.is-1 { display: flex; justify-content: center; margin: 12px 0 0; }
+.feed-fotos.is-1 .feed-foto { width: auto; height: auto; max-width: 100%; border-radius: 10px; background: none; }
+.feed-fotos.is-1 .feed-foto img { width: auto; height: auto; max-width: 100%; max-height: 560px; object-fit: contain; }
+
+/* Várias fotos: carrossel que sangra até a borda do card, como no LinkedIn.
+   A foto aparece inteira (contain); a sobra fica no fundo do .feed-foto. */
+.feed-carrossel { position: relative; margin: 12px -16px 0; }
+.feed-carrossel-trilho {
+  display: flex; height: min(480px, 90vw); overflow-x: auto; scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain; scrollbar-width: none;
+}
+.feed-carrossel-trilho::-webkit-scrollbar { display: none; }
+.feed-carrossel-trilho .feed-foto { flex: 0 0 100%; scroll-snap-align: start; scroll-snap-stop: always; }
+.feed-carrossel-trilho .feed-foto img { object-fit: contain; }
+.feed-carrossel-seta {
+  position: absolute; top: 50%; transform: translateY(-50%); display: grid; place-items: center;
+  width: var(--ctl-h-sm); height: var(--ctl-h-sm); border: 0; border-radius: 50%;
+  background: rgba(255, 255, 255, .92); color: var(--ink); cursor: pointer; box-shadow: 0 2px 8px rgba(15, 23, 42, .25);
+}
+.feed-carrossel-seta:hover { background: #fff; }
+.feed-carrossel-seta:focus-visible { box-shadow: var(--focus-ring); outline: none; }
+.feed-carrossel-seta.is-esq { left: 10px; }
+.feed-carrossel-seta.is-dir { right: 10px; }
+.feed-carrossel-conta, .feed-lightbox-conta {
+  position: absolute; top: 10px; right: 10px; padding: 2px 8px; border-radius: 999px;
+  background: rgba(15, 23, 42, .7); color: #fff; font-size: var(--font-size-xs); font-weight: 600;
+  font-variant-numeric: tabular-nums; pointer-events: none;
+}
+.feed-foto { display: block; width: 100%; height: 100%; min-height: 0; padding: 0; border: 0; background: #f1f5f9; cursor: zoom-in; overflow: hidden; }
+.feed-foto img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .2s; }
+.feed-foto:hover img { transform: scale(1.02); }
+.feed-foto:focus-visible { outline: 2px solid var(--terracotta); outline-offset: -2px; }
+
+.feed-post-acoes { display: flex; gap: 8px; margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--border); }
+.feed-acao {
+  display: inline-flex; align-items: center; gap: 6px; height: var(--ctl-h-sm); padding: 0 10px;
+  border: 0; border-radius: 8px; background: none; color: var(--ink-soft); font: inherit; font-size: var(--font-size-sm); cursor: pointer;
+}
+.feed-acao:hover:not(:disabled) { background: #f1f5f9; }
+.feed-acao:disabled { opacity: .5; cursor: default; }
+.feed-acao.is-on { color: #d6336c; }
+.feed-acao.is-aberto { color: var(--ink); font-weight: 600; }
+.feed-acao:focus-visible { box-shadow: var(--focus-ring); outline: none; }
+
+/* ---- Comentários ---- */
+.feed-coments { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+.feed-coment { padding: 8px 10px; border-radius: 10px; background: #f8fafc; }
+.feed-coment.is-oculto { border: 1px dashed #e8c77a; }
+.feed-coment.is-removido { font-size: var(--font-size-xs); font-style: italic; color: var(--muted); }
+.feed-coment-txt { margin: 4px 0 0 40px; font-size: var(--font-size-sm); color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
+.feed-coment .feed-tag { margin-left: 40px; }
+.feed-coment-acoes { display: flex; flex-wrap: wrap; gap: 12px; margin: 4px 0 0 40px; }
+.feed-respostas { display: flex; flex-direction: column; gap: 8px; margin: 8px 0 0 28px; padding-left: 10px; border-left: 2px solid var(--border); }
+.feed-responder { display: flex; align-items: flex-start; gap: 6px; color: var(--muted); }
+.feed-responder .feed-coment-caixa { flex: 1; }
+
+.feed-link {
+  display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; background: none;
+  color: var(--muted); font: inherit; font-size: var(--font-size-xs); cursor: pointer;
+}
+.feed-link:hover { color: var(--ink); text-decoration: underline; }
+
+/* Comentário: pílula com o enviar redondo dentro, que acende quando há texto. */
+.feed-coment-caixa { display: flex; align-items: flex-end; gap: 8px; }
+.feed-coment-campo { position: relative; flex: 1; display: flex; min-width: 0; }
+.feed-btn-enviar {
+  position: absolute; right: 4px; bottom: 4px; display: grid; place-items: center;
+  width: var(--ctl-h-sm); height: var(--ctl-h-sm); border: 0; border-radius: 50%;
+  background: transparent; color: var(--border-strong); cursor: default; transition: background .15s, color .15s, transform .15s;
+}
+.feed-coment-caixa.tem-texto .feed-btn-enviar { background: var(--terracotta); color: #fff; cursor: pointer; }
+.feed-coment-caixa.tem-texto .feed-btn-enviar:hover:not(:disabled) { background: var(--terracotta-dark); transform: scale(1.05); }
+.feed-btn-enviar:focus-visible { box-shadow: var(--focus-ring); outline: none; }
+.feed-cancelar { align-self: center; }
+
+/* Publicar: pílula da marca, com ícone; apagada até ter o que publicar. */
+.feed-btn-publicar {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 132px;
+  height: var(--ctl-h); padding: 0 22px; border: 0; border-radius: 999px;
+  background: var(--terracotta); color: #fff; font: inherit; font-size: var(--font-size-md); font-weight: 600;
+  cursor: pointer; box-shadow: 0 2px 6px rgba(195, 94, 30, .25); transition: background .15s, box-shadow .15s, transform .15s;
+}
+.feed-btn-publicar:hover:not(:disabled) { background: var(--terracotta-dark); box-shadow: 0 4px 12px rgba(195, 94, 30, .3); transform: translateY(-1px); }
+.feed-btn-publicar:focus-visible { box-shadow: var(--focus-ring); outline: none; }
+.feed-btn-publicar:disabled { background: var(--terracotta-soft); color: #fff; box-shadow: none; cursor: default; }
+.feed-btn-publicar[aria-busy="true"] { background: var(--terracotta); opacity: .85; }
+.feed-coment-caixa textarea {
+  flex: 1; min-height: var(--ctl-h); max-height: 160px; padding: 10px 46px 10px 16px; resize: none; box-sizing: border-box;
+  border: 1px solid var(--border-strong); border-radius: 20px; font: inherit; font-size: var(--font-size-sm); color: var(--ink);
+  background: #fff; line-height: 1.4; field-sizing: content;
+}
+.feed-coment-caixa textarea:focus { outline: none; border-color: var(--terracotta); box-shadow: var(--focus-ring); }
+
+.feed-mais { align-self: center; }
+
+/* ---- Foto em tela cheia ---- */
+.feed-lightbox {
+  position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center;
+  background: rgba(2, 6, 23, .88); outline: none;
+}
+.feed-lightbox img { max-width: 92vw; max-height: 88vh; object-fit: contain; border-radius: 6px; }
+.feed-lightbox-fechar, .feed-lightbox-seta {
+  position: absolute; display: grid; place-items: center; width: var(--ctl-h-lg); height: var(--ctl-h-lg); border: 0; border-radius: 50%;
+  background: rgba(255, 255, 255, .12); color: #fff; cursor: pointer;
+}
+.feed-lightbox-fechar { top: 16px; right: 16px; }
+.feed-lightbox-seta.is-esq { left: 16px; }
+.feed-lightbox-seta.is-dir { right: 16px; }
+.feed-lightbox-conta { top: 26px; right: auto; left: 16px; }
+
+/* ---- Laterais ---- */
+.feed-bloco { padding: 14px; }
+.feed-bloco-tit {
+  display: flex; align-items: center; gap: 6px; margin: 0 0 10px;
+  font-size: var(--font-size-sm); font-weight: 700; color: var(--ink);
+}
+.feed-perfil { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+.feed-perfil > b { font-size: var(--font-size-md); color: var(--ink); }
+.feed-perfil-cargo { font-size: var(--font-size-xs); color: var(--muted); }
+.feed-perfil-pontos {
+  display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; padding: 4px 10px; border-radius: 999px;
+  background: var(--terracotta-light); color: var(--terracotta-dark); font-size: var(--font-size-xs); text-decoration: none;
+}
+.feed-perfil-pontos:hover { background: var(--terracotta-soft); }
+.feed-atalhos { display: flex; flex-direction: column; padding: 6px; }
+.feed-atalhos a {
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px;
+  color: var(--ink-soft); font-size: var(--font-size-sm); text-decoration: none;
+}
+.feed-atalhos a:hover { background: #f1f5f9; color: var(--ink); }
+.feed-atalhos svg { color: var(--blue); }
+/* O humor da Home é uma pílula de uma linha; na lateral estreita vira cartão,
+   com a pergunta em cima e as carinhas embaixo. */
+.feed-lateral .home-humor-wrap { margin: 0; align-items: stretch; }
+.feed-lateral .home-humor {
+  flex-direction: column; min-width: 0; padding: 12px; border-radius: 12px; box-shadow: none; gap: 6px;
+}
+.feed-lateral .home-humor-pergunta { white-space: normal; text-align: center; }
+.feed-lateral .home-humor-btn { width: var(--ctl-h-icon); height: var(--ctl-h-icon); }
+.feed-lateral .home-humor-marcado { flex-wrap: wrap; justify-content: center; }
+.feed-lateral .home-humor-coment { min-width: 0; }
+.feed-rail { flex: none; }
+.feed-top { display: flex; flex-direction: column; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.feed-top li button {
+  display: flex; flex-direction: column; gap: 2px; width: 100%; padding: 8px; border: 0; border-radius: 8px;
+  background: none; font: inherit; text-align: left; cursor: pointer;
+}
+.feed-top li button:hover { background: #f8fafc; }
+.feed-top b { font-size: var(--font-size-xs); color: var(--ink); }
+.feed-top-trecho {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  font-size: var(--font-size-xs); color: var(--ink-soft);
+}
+.feed-top-num { display: inline-flex; align-items: center; gap: 3px; font-size: var(--font-size-2xs); color: var(--muted); }
+.feed-ganhar { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.feed-ganhar li { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: var(--font-size-xs); color: var(--ink); }
+.feed-ganhar small { display: block; color: var(--muted); font-size: var(--font-size-2xs); }
+.feed-ganhar b { color: var(--terracotta); white-space: nowrap; }
+
+/* ---- Denúncias (moderação) ---- */
+.feed-denuncias { display: flex; flex-direction: column; gap: 10px; }
+.feed-denuncia { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+.feed-denuncia-cab { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: var(--font-size-sm); }
+.feed-denuncia-cab span { color: var(--muted); font-size: var(--font-size-xs); }
+.feed-denuncia-trecho { margin: 8px 0; padding: 8px 10px; border-radius: 8px; background: #f8fafc; font-size: var(--font-size-sm); white-space: pre-wrap; }
+.feed-denuncia-motivos { margin: 0 0 8px; padding-left: 18px; font-size: var(--font-size-xs); color: var(--ink-soft); }
+.feed-denuncia-acoes { display: flex; justify-content: flex-end; gap: 8px; }
+
+@media (max-width: 560px) {
+  .feed-page { padding: 16px 12px 40px; }
+  .feed-post { padding: 12px; }
+  .feed-carrossel { margin: 12px -12px 0; }
+  .feed-coment-txt, .feed-coment-acoes, .feed-coment .feed-tag { margin-left: 0; }
+  .feed-respostas { margin-left: 8px; }
+}
+
+/* Endereço no texto do post ou comentário */
+.feed-link-url { color: var(--blue); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; overflow-wrap: anywhere; }
+.feed-link-url:hover { color: var(--terracotta); }
+
+/* ---- Marcação com @ ---- */
+.feed-mencao {
+  padding: 0 3px; border-radius: 4px; background: color-mix(in srgb, var(--blue) 10%, transparent);
+  color: var(--blue); font-weight: 600;
+}
+.feed-mencoes-campo { position: relative; display: flex; flex: 1; min-width: 0; }
+.feed-mencoes-campo > textarea { flex: 1; }
+.feed-mencoes-lista {
+  position: absolute; left: 0; top: calc(100% + 6px); z-index: 30; width: min(340px, 100%);
+  border: 1px solid var(--border); border-radius: 12px; background: #fff; overflow: hidden;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, .2); animation: feed-surge .12s ease-out;
+}
+.feed-mencoes-lista.para-cima { top: auto; bottom: calc(100% + 6px); }
+@keyframes feed-surge { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.feed-mencoes-lista.para-cima { animation-name: feed-surge-cima; }
+@keyframes feed-surge-cima { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.feed-mencoes-cab {
+  display: flex; align-items: center; gap: 6px; padding: 8px 12px; border-bottom: 1px solid var(--border);
+  font-size: var(--font-size-xs); font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em;
+}
+.feed-mencoes-lista ul { max-height: 288px; overflow-y: auto; margin: 0; padding: 4px; list-style: none; }
+.feed-mencoes-lista button {
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 8px; border: 0; border-radius: 8px;
+  background: none; font: inherit; text-align: left; cursor: pointer;
+}
+.feed-mencoes-lista button.is-ativo { background: #eef2f7; }
+.feed-mencoes-av {
+  flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%;
+  background: var(--blue-soft); color: var(--blue); font-size: var(--font-size-2xs); font-weight: 700;
+}
+.feed-mencoes-lista button.is-todos .feed-mencoes-av { background: var(--terracotta); color: #fff; }
+.feed-mencoes-txt { display: flex; flex-direction: column; min-width: 0; }
+.feed-mencoes-txt b { font-size: var(--font-size-sm); color: var(--ink); font-weight: 600; }
+.feed-mencoes-txt b mark { background: none; color: var(--terracotta); font-weight: 800; }
+.feed-mencoes-txt small { font-size: var(--font-size-xs); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.feed-mencoes-dica { padding: 6px 12px; border-top: 1px solid var(--border); background: #f8fafc; font-size: var(--font-size-2xs); color: var(--muted); }
+.feed-av.is-mini { width: 30px; height: 30px; font-size: var(--font-size-2xs); }
+
+/* Post aberto pelo aviso de marcação */
+.feed-post.is-destaque { border-color: var(--blue); box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 15%, transparent); }
+.feed-marcado { color: var(--blue); }
+
+/* ---- Regras de convivência (TermosFeed): cobre o feed até o aceite ---- */
+.feed-termos { max-width: 620px; }
+.feed-termos-tit { flex: 1; margin: 0; font-size: var(--font-size-lg); color: var(--ink); }
+/* A lista rola por dentro: o aceite e os botões ficam sempre à vista. */
+.feed-termos .feed-modal-corpo { max-height: min(62vh, 560px); overflow-y: auto; padding-bottom: 14px; }
+.feed-termos-intro { margin: 0 0 12px; font-size: var(--font-size-sm); line-height: 1.5; color: var(--muted); }
+.feed-termos-lista { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.feed-termos-lista li {
+  display: flex; align-items: flex-start; gap: 8px; padding: 0 12px 0 15px;
+  font-size: var(--font-size-sm); line-height: 1.5; color: var(--ink-soft);
+}
+/* Marcador no lugar do ícone do destaque, para os textos começarem alinhados. */
+.feed-termos-lista li:not(.is-destaque)::before {
+  content: ''; flex: none; width: 6px; height: 6px; margin: .6em 4px 0; border-radius: 50%; background: var(--terracotta);
+}
+.feed-termos-lista li strong { color: var(--ink); }
+/* Destaque no molde dos termos do Financeiro: os itens que mais dão problema. */
+.feed-termos-lista li.is-destaque {
+  padding: 10px 12px; border: 1px solid #fde68a; border-left-width: 3px; border-radius: 8px; background: #fffbeb; color: #92400e;
+}
+.feed-termos-lista li.is-destaque strong { color: #92400e; }
+.feed-termos-lista li.is-destaque svg { flex-shrink: 0; margin-top: 3px; }
+.feed-termos-aceite { padding: 12px 18px 4px; border-top: 1px solid var(--border); }
+/* O "de acordo" é um cartão inteiro clicável; marcado, ganha a cor da marca. */
+.feed-termos-check {
+  display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px;
+  border: 1px solid var(--border-strong); border-radius: 10px; background: #f8fafc;
+  font-size: var(--font-size-sm); color: var(--ink); cursor: pointer; transition: border-color .15s, background .15s;
+}
+.feed-termos-check:hover { border-color: var(--terracotta-soft); }
+.feed-termos-check.is-marcado { border-color: var(--terracotta); background: var(--terracotta-light); font-weight: 600; }
+.feed-termos-check input { margin-top: 2px; accent-color: var(--terracotta); cursor: pointer; }
+.feed-termos-ok { display: flex; align-items: center; gap: 6px; margin: 0; font-size: var(--font-size-sm); color: var(--muted); }
+.feed-termos-ok svg { color: #15803d; }
+.feed-termos-erro { margin: 10px 0 0; font-size: var(--font-size-sm); color: #9b2c26; }
+.feed-termos .feed-modal-rodape { border-top: 0; }
+.feed-modal-rodape.is-leitura { justify-content: flex-end; }
+.feed-termos-sair { font-size: var(--font-size-sm); color: var(--muted); text-decoration: none; white-space: nowrap; }
+.feed-termos-sair:hover { color: var(--ink); text-decoration: underline; }
+/* Celular: o aceite ocupa a largura toda e o "Voltar" vai para baixo dele. */
+@media (max-width: 480px) {
+  .feed-termos .feed-modal-rodape:not(.is-leitura) { flex-direction: column-reverse; align-items: stretch; }
+  .feed-termos-sair { text-align: center; }
+}
+
+/* ---- Boas-vindas (BoasVindasFeed): depois do primeiro aceite ---- */
+.feed-boasvindas { position: relative; max-width: 520px; }
+.feed-boasvindas-x { position: absolute; top: 12px; right: 12px; }
+.feed-boasvindas-topo { padding: 28px 28px 8px; text-align: center; }
+.feed-boasvindas-icone {
+  display: inline-grid; place-items: center; width: 56px; height: 56px; margin-bottom: 12px; border-radius: 16px;
+  background: var(--terracotta-light); color: var(--terracotta);
+}
+.feed-boasvindas-topo h2 { margin: 0; font-size: var(--font-size-xl); color: var(--ink); }
+.feed-boasvindas-topo p { margin: 6px 0 0; font-size: var(--font-size-sm); line-height: 1.5; color: var(--muted); }
+.feed-boasvindas-lista { display: flex; flex-direction: column; gap: 12px; margin: 0; padding: 16px 28px 8px; list-style: none; }
+.feed-boasvindas-lista li { display: flex; align-items: flex-start; gap: 12px; }
+.feed-boasvindas-lista li > span:last-child { display: flex; flex-direction: column; gap: 2px; font-size: var(--font-size-sm); line-height: 1.45; color: var(--ink-soft); }
+.feed-boasvindas-lista b { font-size: var(--font-size-md); color: var(--ink); }
+.feed-boasvindas-ic {
+  flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px;
+  background: var(--terracotta-light); color: var(--terracotta);
+}
+.feed-boasvindas .feed-modal-rodape { margin-top: 8px; }
