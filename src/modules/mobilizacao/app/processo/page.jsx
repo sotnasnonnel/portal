@@ -32,6 +32,7 @@ const TEXTO_EVENTO = {
   atribuido: 'Responsável alterado',
   cancelado: 'Processo cancelado',
   carga: 'Carga da planilha',
+  corrigido: 'Dado corrigido',
 };
 
 export default function ProcessoMob() {
@@ -404,6 +405,7 @@ export default function ProcessoMob() {
                 <span className="mob-evento-txt">
                   {TEXTO_EVENTO[ev.tipo] || ev.tipo}
                   {ev.dados?.etapa ? ` — ${ev.dados.etapa}` : ''}
+                  {ev.dados?.campo ? ` — ${ev.dados.campo}` : ''}
                   {ev.de || ev.para ? ` (${ev.deNome || '—'} → ${ev.paraNome || '—'})` : ''}
                   {/* Autor nulo é honesto: carga da planilha e correção no banco
                       não têm sessão de usuário. */}
