@@ -68,6 +68,19 @@ export async function listarIdeias() {
   return anexarAutores(data || []);
 }
 
+/** Um registro só (a ficha de ROI abre por id). `null` se não existe. */
+export async function buscarIdeia(id) {
+  const { data, error } = await supabase
+    .from('programas_ideias')
+    .select(COLUNAS)
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw new Error(`Não foi possível carregar o registro: ${error.message}`);
+  if (!data) return null;
+  const [comAutor] = await anexarAutores([data]);
+  return comAutor;
+}
+
 /**
  * Grava ideia ou iniciativa. O CHECK do banco (programas_ideias_campos_por_tipo)
  * é quem garante os campos obrigatórios de cada forma; aqui só limpamos o que

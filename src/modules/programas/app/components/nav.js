@@ -1,4 +1,4 @@
-import { Boxes, ClipboardList, LayoutDashboard, Lightbulb, Rocket, Target } from 'lucide-react';
+import { Boxes, ClipboardList, LayoutDashboard, Lightbulb, Rocket, Target, Trophy } from 'lucide-react';
 
 // Navegação da sidebar dos Programas, na divisão padrão do portal (grupos
 // colapsáveis, como no Financeiro). Fica fora do Sidebar.jsx para não quebrar o
@@ -16,7 +16,11 @@ import { Boxes, ClipboardList, LayoutDashboard, Lightbulb, Rocket, Target } from
 const PROGRAMA_NAV = {
   ideias: {
     participar: [{ label: 'Campo de Ideias', href: '/programas/ideias', Icon: Lightbulb }],
-    painel: { label: 'Painel da Inovação', href: '/programas/dashboard', Icon: LayoutDashboard },
+    // O Ranking sai das fichas de ROI de cada registro; é leitura, como o painel.
+    painel: [
+      { label: 'Painel da Inovação', href: '/programas/dashboard', Icon: LayoutDashboard },
+      { label: 'Ranking', href: '/programas/ranking', Icon: Trophy },
+    ],
   },
   // Consulta, não participação: por isso entra sem painel — os números dela
   // são os do módulo Inovação, no backoffice, e não se remontam aqui.
@@ -43,7 +47,8 @@ export function programaDaRota(pathname = '') {
   if (pathname.startsWith('/programas/alavanca') || pathname.startsWith('/programas/painel-alavanca')) {
     return 'alavanca';
   }
-  if (pathname.startsWith('/programas/ideias') || pathname.startsWith('/programas/dashboard')) {
+  if (pathname.startsWith('/programas/ideias') || pathname.startsWith('/programas/dashboard')
+    || pathname.startsWith('/programas/ranking')) {
     return 'ideias';
   }
   if (pathname.startsWith('/programas/iniciativas') || pathname.startsWith('/programas/pedidos')) {
@@ -65,7 +70,7 @@ export function navSections({ ehComercial = false, ehAdmin = false, programa = n
   const paineis = chaves
     .filter((k) => PROGRAMA_NAV[k].painel)
     .filter((k) => !PROGRAMA_NAV[k].soComercial || ehComercial)
-    .map((k) => PROGRAMA_NAV[k].painel);
+    .flatMap((k) => PROGRAMA_NAV[k].painel);
 
   const secoes = [
     {

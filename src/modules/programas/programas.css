@@ -991,3 +991,45 @@
 }
 .pg-responder .pg-textarea { min-height: 76px; }
 .pg-responder .pg-campo { margin-bottom: 0; }
+
+/* ======================= ficha de ROI e Ranking ======================= */
+/* fieldset só para travar os campos de quem lê a ficha alheia: sem moldura. */
+.pg-roi-fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.pg-roi-fieldset:disabled .pg-chip { cursor: default; }
+
+/* Título do bloco com o selo (Pendente / Revisar / A validar) na mesma linha. */
+.pg-roi-cab { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+.pg-roi-cab .pg-card-tit { margin: 0; }
+
+/* Nome e responsável vêm do registro: leitura, em texto e não em número grande. */
+.pg-roi-ident { margin: 0 0 16px; }
+.pg-roi-ident dd { font-size: var(--font-size-md); font-weight: 600; }
+
+.pg-roi-metricas { margin: 4px 0 0; padding: 12px 14px; background: var(--p-gray-50); border-radius: 10px; }
+.pg-roi-metricas dd { font-size: var(--font-size-xl); }
+.pg-roi-depois { margin-top: 16px; }
+.pg-roi-revisar { margin: 8px 0 0; font-size: var(--font-size-xs); color: #b91c1c; line-height: 1.5; }
+.pg-roi-pts { font-weight: 500; color: var(--p-muted); }
+
+.pg-roi-checklist { list-style: none; margin: 0 0 14px; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px 16px; }
+.pg-roi-checklist li { display: flex; align-items: center; gap: 8px; font-size: var(--font-size-sm); color: var(--p-muted); }
+.pg-roi-checklist li.is-ok { color: var(--p-ink); }
+.pg-roi-checklist li.is-ok svg { color: #047857; }
+
+.pg-roi-eleg { margin: 0 0 10px; padding: 10px 12px; border-radius: 10px; font-size: var(--font-size-sm); line-height: 1.5; }
+.pg-roi-eleg.tom-ok { background: #ecfdf5; color: #047857; }
+.pg-roi-eleg.tom-atencao { background: #fff9ed; color: #8a6300; }
+
+/* Ranking */
+.pg-roi-resumo { margin: 0 0 14px; }
+.pg-roi-vazio { padding: 28px 20px; }
+.pg-roi-valor { display: block; color: var(--p-ink); font-weight: 600; }
+.pg-roi-pos {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 24px; padding: 0 6px;
+  border-radius: 6px; background: var(--p-gray-100); color: var(--p-ink);
+  font-size: var(--font-size-xs); font-weight: 700; font-variant-numeric: tabular-nums;
+}
+/* Os três primeiros são os vencedores: o acento marca o pódio, e a posição
+   escrita continua dizendo a mesma coisa. */
+.pg-roi-podio .pg-roi-pos { background: var(--p-primary-soft); color: var(--p-primary); }
+.pg-roi-total { font-size: var(--font-size-lg); color: var(--p-ink); }

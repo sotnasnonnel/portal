@@ -130,6 +130,8 @@ const NovaIdeia = lazyPagina(() => import('../modules/programas/app/ideias/nova/
 const MinhasIndicacoes = lazyPagina(() => import('../modules/programas/app/alavanca/page'));
 const NovaIndicacao = lazyPagina(() => import('../modules/programas/app/alavanca/nova/page'));
 const PainelAlavanca = lazyPagina(() => import('../modules/programas/app/painelAlavanca/page'));
+const FichaRoi = lazyPagina(() => import('../modules/programas/app/roi/page'));
+const RankingInovacao = lazyPagina(() => import('../modules/programas/app/ranking/page'));
 const IniciativasEmUso = lazyPagina(() => import('../modules/programas/app/iniciativas/page'));
 const PedidosIniciativa = lazyPagina(() => import('../modules/programas/app/pedidos/page'));
 const PosicaoEstoque = lazyPagina(() => import('../modules/estoque/app/posicao/page'));
@@ -1019,6 +1021,8 @@ export default function AppRoutes() {
             <Route path="ideias" element={<LazyPage><CampoDeIdeias /></LazyPage>} />
             <Route path="ideias/nova" element={<Navigate to="/programas/ideias" replace />} />
             <Route path="ideias/nova/:tipo" element={<LazyPage><NovaIdeia /></LazyPage>} />
+            <Route path="ideias/:id/roi" element={<LazyPage><FichaRoi /></LazyPage>} />
+            <Route path="ranking" element={<LazyPage><RankingInovacao /></LazyPage>} />
             <Route path="iniciativas" element={<LazyPage><IniciativasEmUso /></LazyPage>} />
             <Route path="pedidos" element={<LazyPage><PedidosIniciativa /></LazyPage>} />
             <Route path="alavanca" element={<LazyPage><MinhasIndicacoes /></LazyPage>} />
