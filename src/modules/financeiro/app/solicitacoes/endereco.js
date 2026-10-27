@@ -8,6 +8,14 @@
  * montada aqui em 3 linhas legíveis.
  */
 
+import { mascaraCep, cepValido } from '../../../../services/cep.js';
+
+// Reexportadas porque o formulário do cartão as importa daqui: a máscara e a
+// conferência do CEP viraram serviço compartilhado quando o Atendimento passou
+// a pedir endereço de entrega, e duas cópias da mesma regra é uma a mais do que
+// precisa existir.
+export { mascaraCep, cepValido };
+
 export const UFS = [
   'AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MG', 'MS', 'MT',
   'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO',
@@ -22,14 +30,6 @@ export const ENDERECO_VAZIO = {
   cidade: '',
   uf: '',
 };
-
-/** Máscara 00000-000 (só dígitos, hífen entrando sozinho). */
-export function mascaraCep(valor) {
-  const d = (valor || '').replace(/\D/g, '').slice(0, 8);
-  return d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d;
-}
-
-export const cepValido = (v) => (v || '').replace(/\D/g, '').length === 8;
 
 /** Campos sem os quais o cartão não chega: o complemento é opcional. */
 export function faltasEndereco(e) {

@@ -40,6 +40,32 @@ test('validarCamposExtras: número precisa ser número', () => {
   assert.equal(validarCamposExtras(def, { qtd: '12' }), '');
 });
 
+// O "123" digitado e abandonado não é campo vazio: só `obrigatorio` o deixaria
+// passar, e CEP incompleto não busca endereço nenhum.
+test('validarCamposExtras: CEP pela metade é barrado', () => {
+  const def = [campo({ chave: 'cep', rotulo: 'CEP', tipo: 'cep', obrigatorio: true })];
+  assert.match(validarCamposExtras(def, { cep: '30140' }), /CEP/);
+  assert.equal(validarCamposExtras(def, { cep: '30140-070' }), '');
+  // Vazio continua caindo na mensagem de obrigatório, que é a mais direta.
+  assert.equal(validarCamposExtras(def, { cep: '' }), 'Preencha o campo "CEP".');
+});
+
+test('o endereço inteiro é exigido ao abrir pedido de equipamento', () => {
+  const schema = schemaDoServico('ti', 'solicitacao-equipamentos');
+  const completo = {
+    cc: 'CC-10', tipo: ['Notebook'], data_necessidade: '2026-11-03',
+    cep: '30140-070', logradouro: 'Rua das Acácias', numero: '120', complemento: 'Galpão 2',
+    bairro: 'Savassi', cidade: 'Belo Horizonte', uf: 'MG',
+  };
+  assert.equal(validarCamposExtras(schema, completo), '');
+  for (const chave of ['cep', 'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'uf']) {
+    assert.notEqual(
+      validarCamposExtras(schema, { ...completo, [chave]: '' }), '',
+      `${chave} em branco passou`,
+    );
+  }
+});
+
 test('limparValores: descarta vazios e converte número', () => {
   const def = [
     campo(),

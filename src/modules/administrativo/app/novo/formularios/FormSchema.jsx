@@ -14,10 +14,12 @@ import { schemaDoServico } from './schemas';
 
 const TITULO_GRUPO = {
   condutor: 'Documentos do condutor',
+  endereco: 'Endereço da entrega',
 };
 
 const DICA_GRUPO = {
   condutor: 'A locadora confere a CNH na retirada — vencida, o carro não sai.',
+  endereco: 'Comece pelo CEP: rua, bairro, cidade e estado vêm preenchidos.',
 };
 
 export default function FormSchema({
@@ -25,6 +27,11 @@ export default function FormSchema({
 }) {
   const schema = schemaDoServico(classe, servico) || [];
   const mexer = (chave, valor) => onChange({ ...valores, [chave]: valor });
+  // Forma de FUNÇÃO, e não `{ ...valores, ...patch }` como em `mexer`: o patch
+  // do CEP chega depois da consulta, quando `valores` desta renderização já é
+  // passado — espalhá-lo apagaria o que foi digitado enquanto a rede respondia
+  // (os próprios dígitos do CEP, inclusive).
+  const remendar = (patch) => onChange((atual) => ({ ...atual, ...patch }));
 
   return schema.map((campo, i) => {
     // Cabeçalho no PRIMEIRO campo do grupo: o esquema é uma lista plana, e
@@ -58,6 +65,7 @@ export default function FormSchema({
             campo={campo}
             valor={valores[campo.chave]}
             onChange={mexer}
+            onPatch={remendar}
             pessoas={pessoas}
           />
         )}

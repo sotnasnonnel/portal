@@ -10,6 +10,8 @@
  * marcou `obrigatorio`.
  */
 
+import { cepValido } from '../../../services/cep.js';
+
 export const TIPOS_CAMPO = [
   { valor: 'texto', label: 'Texto' },
   { valor: 'texto_longo', label: 'Texto longo' },
@@ -61,6 +63,11 @@ export function validarCamposExtras(definicao = [], valores = {}) {
     }
     if (!vazio(v) && campo.tipo === 'numero' && Number.isNaN(Number(v))) {
       return `O campo "${campo.rotulo}" deve ser um número.`;
+    }
+    // CEP pela metade não é campo vazio, e passaria batido só com `obrigatorio`
+    // — e é justamente o CEP incompleto que não busca endereço nenhum.
+    if (!vazio(v) && campo.tipo === 'cep' && !cepValido(v)) {
+      return `Informe o "${campo.rotulo}" completo, com oito dígitos.`;
     }
   }
   return '';

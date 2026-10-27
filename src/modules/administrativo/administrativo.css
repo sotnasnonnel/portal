@@ -232,6 +232,20 @@
   font-size: var(--font-size-sm); font-weight: 600; color: var(--a-muted); pointer-events: none;
 }
 
+/* Campo de CEP: o estado da consulta (buscando / achou) fica DENTRO da caixa,
+   à direita, para a dica de baixo não mudar de altura a cada tecla e empurrar
+   os campos do endereço. */
+.adm-cep { position: relative; display: block; }
+.adm-cep .adm-input { padding-right: 38px; }
+.adm-cep svg { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); }
+.adm-cep .adm-spin { color: var(--a-muted); }
+.adm-cep-ok { color: #047857; }
+.adm-cep-erro {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: var(--font-size-xs); color: var(--a-red);
+}
+.adm-cep-erro svg { flex: none; }
+
 /* ---- anexos ---- */
 .adm-anexo-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;

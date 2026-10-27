@@ -13,7 +13,7 @@
  * - "Observação" é campo à parte, porque nas abas ela convive com a descrição.
  * - Anexo idem: é o do chamado.
  *
- * tipo: texto | texto_longo | numero | data | hora | datahora | selecao | selecao_multipla | sim_nao | pessoa
+ * tipo: texto | texto_longo | numero | data | hora | datahora | selecao | selecao_multipla | sim_nao | pessoa | cep
  */
 
 const TIPOS_EQUIP_TI = ['Notebook', 'Desktop', 'Monitor', 'Teclado', 'Mouse', 'Headset'];
@@ -27,6 +27,33 @@ const cc = (obrigatorio = true) => ({ chave: 'cc', rotulo: 'Centro de custo', ti
 const observacao = () => ({ chave: 'observacao', rotulo: 'Observação', tipo: 'texto_longo', obrigatorio: false });
 const placa = () => ({ chave: 'placa', rotulo: 'Placa', tipo: 'texto', obrigatorio: true });
 const dataNecessidade = () => ({ chave: 'data_necessidade', rotulo: 'Data de necessidade', tipo: 'data', obrigatorio: true });
+
+/**
+ * Endereço de entrega do equipamento.
+ *
+ * Substituiu o campo "Localização" dos dois serviços de equipamento: um texto
+ * livre ("obra do cliente", "escritório de BH") não entrega nada, e o Adm tinha
+ * de perguntar o endereço por fora, chamado a chamado, com o equipamento
+ * esperando a resposta. Pedir os dois seria pedir o mesmo duas vezes.
+ *
+ * Aqui o CEP puxa rua, bairro, cidade e estado do ViaCEP — então o que resta
+ * digitar é justamente o que nenhuma consulta sabe: o número e o complemento.
+ *
+ * Os quatro campos do CEP ficam no esquema (e não escondidos no componente)
+ * porque são DADO do pedido: a tela de detalhe os lê daqui para mostrar o
+ * endereço a quem vai entregar.
+ *
+ * `grupo` faz o formulário desenhar o bloco junto, sob um subtítulo.
+ */
+const enderecoDaEntrega = () => [
+  { chave: 'cep', rotulo: 'CEP', tipo: 'cep', obrigatorio: true, grupo: 'endereco' },
+  { chave: 'logradouro', rotulo: 'Rua', tipo: 'texto', obrigatorio: true, grupo: 'endereco' },
+  { chave: 'numero', rotulo: 'Número', tipo: 'texto', obrigatorio: true, grupo: 'endereco' },
+  { chave: 'complemento', rotulo: 'Complemento', tipo: 'texto', obrigatorio: true, grupo: 'endereco' },
+  { chave: 'bairro', rotulo: 'Bairro', tipo: 'texto', obrigatorio: true, grupo: 'endereco' },
+  { chave: 'cidade', rotulo: 'Cidade', tipo: 'texto', obrigatorio: true, grupo: 'endereco' },
+  { chave: 'uf', rotulo: 'Estado', tipo: 'texto', obrigatorio: true, grupo: 'endereco' },
+];
 
 // Uber e Correio pedem exatamente a mesma coisa: um deslocamento.
 const deslocamento = () => [
@@ -145,8 +172,8 @@ export const SCHEMAS = {
   'ti/solicitacao-equipamentos': [
     cc(),
     { chave: 'tipo', rotulo: 'Tipo', tipo: 'selecao_multipla', obrigatorio: true, opcoes: TIPOS_EQUIP_TI },
-    { chave: 'localizacao', rotulo: 'Localização', tipo: 'texto', obrigatorio: true },
     dataNecessidade(),
+    ...enderecoDaEntrega(),
     observacao(),
   ],
   'ti/troca-equipamentos': [
@@ -155,8 +182,8 @@ export const SCHEMAS = {
     { chave: 'numero_serie', rotulo: 'Número de série', tipo: 'texto', obrigatorio: false },
     { chave: 'patrimonio', rotulo: 'Patrimônio', tipo: 'texto', obrigatorio: false },
     { chave: 'motivo', rotulo: 'Motivo', tipo: 'selecao', obrigatorio: true, opcoes: ['Upgrade', 'Quebra'] },
-    { chave: 'localizacao', rotulo: 'Localização', tipo: 'texto', obrigatorio: true },
     dataNecessidade(),
+    ...enderecoDaEntrega(),
     observacao(),
   ],
   'ti/liberacao-acessos': [
@@ -323,7 +350,13 @@ const ROTULOS_CODIFICADOS = {
   contato_cliente: 'Contato do setor do cliente', devolucao: 'Há devolução',
   devolucao_descricao: 'O que será devolvido', treinamentos: 'Treinamentos',
   tipo: 'Tipo', tipo_livre: 'Peças e tamanhos', motivo: 'Motivo',
-  localizacao: 'Localização', observacao: 'Observação',
+  observacao: 'Observação',
+  // `localizacao` saiu dos dois serviços de equipamento (virou o bloco de
+  // endereço), mas NÃO pode sair daqui: continua sendo campo de Saúde e
+  // segurança, a mobilização ainda o grava nos filhos que abre, e os chamados
+  // antigos de TI o têm guardado. Sem a entrada, todos esses passariam a exibir
+  // "localizacao" na tela de detalhe.
+  localizacao: 'Localização',
   // Fica aqui como defesa: `itens` é renderizado por um bloco próprio na tela
   // do chamado (está em CAMPOS_OCULTOS), mas se um dia escapar para a lista
   // genérica é melhor sair "Itens solicitados" do que "itens".

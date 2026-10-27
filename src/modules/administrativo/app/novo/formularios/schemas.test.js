@@ -23,7 +23,7 @@ const SEM_CAMPOS_POR_DECISAO = [
 
 const TIPOS_VALIDOS = new Set([
   'texto', 'texto_longo', 'numero', 'data', 'hora', 'datahora', 'selecao', 'selecao_multipla',
-  'sim_nao', 'pessoa',
+  'sim_nao', 'pessoa', 'cep',
 ]);
 
 const todosCampos = () => Object.entries(SCHEMAS).flatMap(([k, s]) => s.map((c) => [k, c]));
@@ -63,6 +63,42 @@ test('nenhum esquema recria a descrição ou os anexos do chamado', () => {
 
 test('Uber e Correio pedem exatamente a mesma coisa', () => {
   assert.deepEqual(SCHEMAS['uber/viagem-uber'], SCHEMAS['correio/correio']);
+});
+
+// Os dois serviços que entregam equipamento na mão de alguém. Sem endereço
+// completo o Adm voltava a perguntar por fora, chamado a chamado.
+const ENTREGAM_EQUIPAMENTO = ['ti/solicitacao-equipamentos', 'ti/troca-equipamentos'];
+
+test('quem entrega equipamento pede o endereço inteiro, e tudo obrigatório', () => {
+  for (const servico of ENTREGAM_EQUIPAMENTO) {
+    const porChave = Object.fromEntries(SCHEMAS[servico].map((c) => [c.chave, c]));
+    for (const chave of ['cep', 'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'uf']) {
+      assert.ok(porChave[chave], `${servico}: falta o campo ${chave}`);
+      assert.equal(porChave[chave].obrigatorio, true, `${servico}: ${chave} deveria ser obrigatório`);
+      assert.equal(porChave[chave].grupo, 'endereco', `${servico}: ${chave} fora do bloco do endereço`);
+    }
+    assert.equal(porChave.cep.tipo, 'cep', `${servico}: o CEP precisa do tipo que busca o endereço`);
+  }
+});
+
+// O subtítulo do bloco é desenhado no PRIMEIRO campo do grupo (FormSchema olha o
+// campo anterior), então o endereço quebrado em duas partes abriria dois
+// cabeçalhos "Endereço da entrega" no mesmo formulário.
+test('o bloco do endereço fica junto no esquema', () => {
+  for (const servico of ENTREGAM_EQUIPAMENTO) {
+    const marcas = SCHEMAS[servico].map((c) => (c.grupo === 'endereco' ? 'e' : '-')).join('');
+    assert.equal(marcas.replace(/-/g, '').length, 7, `${servico}: o endereço não tem 7 campos`);
+    assert.ok(/^-*e+-*$/.test(marcas), `${servico}: o bloco do endereço está partido (${marcas})`);
+  }
+});
+
+// Só o CEP busca endereço; um segundo campo de CEP no mesmo serviço preencheria
+// os mesmos campos irmãos e as duas consultas brigariam pelo resultado.
+test('nenhum serviço tem dois campos de CEP', () => {
+  for (const [servico, schema] of Object.entries(SCHEMAS)) {
+    const ceps = schema.filter((c) => c.tipo === 'cep');
+    assert.ok(ceps.length <= 1, `${servico} tem ${ceps.length} campos de CEP`);
+  }
 });
 
 test('schemaUsaPessoa acha o seletor de pessoa', () => {
@@ -164,5 +200,5 @@ test('sim/não, listas e vazio', () => {
 test('múltipla escolha começa como lista vazia', () => {
   const inicial = inicialDoSchema(SCHEMAS['ti/solicitacao-equipamentos']);
   assert.deepEqual(inicial.tipo, []);
-  assert.equal(inicial.localizacao, '');
+  assert.equal(inicial.cep, '');
 });
