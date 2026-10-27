@@ -4,13 +4,12 @@ import { Inbox, Archive, Loader2, AlertCircle, Star } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { listarMeusChamados, buscarAvaliacaoPendente } from '../../lib/chamados';
 import { STATUS_LABEL as ROTULO_STATUS } from '../../lib/statusChamado';
+import { formatarDataHora } from '../../../../utils/formatters';
 
 
 
 const data = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR') : '—');
-const dataHora = (iso) => (iso
-  ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
-  : '—');
+const dataHora = (iso) => formatarDataHora(iso, '—');
 
 export default function MeusChamadosAdm() {
   const { user } = useAuth();

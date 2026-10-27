@@ -17,6 +17,24 @@ export const formatarData = (data) => {
   return d.toLocaleDateString('pt-BR');
 };
 
+/**
+ * Instante (timestamp do banco) como "27/10/2026 09:46", no fuso de quem olha.
+ *
+ * Não usar `dateStyle: 'short'`: em pt-BR ele escreve o ano com dois dígitos
+ * ("27/10/26"). O padrão do portal é dd/mm/aaaa. A vírgula que o navegador põe
+ * entre data e hora sai: em tabela ela só ocupa espaço.
+ */
+const FMT_DATA_HORA = new Intl.DateTimeFormat('pt-BR', {
+  day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+});
+
+export const formatarDataHora = (iso, vazio = '—') => {
+  if (!iso) return vazio;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return vazio;
+  return FMT_DATA_HORA.format(d).replace(',', '');
+};
+
 export const formatarMoeda = (valor) => {
   if (!valor && valor !== 0) return '—';
   return Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });

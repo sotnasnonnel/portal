@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { X } from 'lucide-react';
-import { rotuloFluxoCurto } from '../../../../config/mobilizacao';
+import { rotuloFluxoCurto, MOSTRAR_RESPONSAVEL } from '../../../../config/mobilizacao';
 
 const dataBr = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : '—');
 const atraso = (d) => (Number(d) === 1 ? '1 dia' : `${Number(d)} dias`);
@@ -58,7 +58,7 @@ export default function DetalheIndicador({ titulo, descricao, tipo, itens, onFec
                     </tr>
                   ) : (
                     <tr>
-                      <th>Etapa</th><th>Processo</th><th>Responsável</th>
+                      <th>Etapa</th><th>Processo</th>{MOSTRAR_RESPONSAVEL && <th>Responsável</th>}
                       <th className="num">Previsto</th><th className="num">Atraso</th>
                     </tr>
                   )}
@@ -76,9 +76,11 @@ export default function DetalheIndicador({ titulo, descricao, tipo, itens, onFec
                     <tr key={e.id}>
                       <td><Link to={`/mobilizacao/processo/${e.processo_id}`} onClick={onFechar}>{e.titulo}</Link></td>
                       <td>{e.processoTitulo || '—'}</td>
-                      <td>
-                        {e.responsavelNome || <span className="mob-cartao-sem-dono">sem responsável</span>}
-                      </td>
+                      {MOSTRAR_RESPONSAVEL && (
+                        <td>
+                          {e.responsavelNome || <span className="mob-cartao-sem-dono">sem responsável</span>}
+                        </td>
+                      )}
                       <td className="num">{dataBr(e.data_prevista)}</td>
                       <td className="num is-vencido">{atraso(e.dias_atraso)}</td>
                     </tr>

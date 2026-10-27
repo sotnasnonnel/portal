@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { X, ArrowRight, AlertTriangle } from 'lucide-react';
 import { STATUS_LABEL } from '../../lib/statusChamado';
+import { formatarDataHora } from '../../../../utils/formatters';
 
 /**
  * O que está por trás do número "Vencidos agora".
@@ -14,9 +15,7 @@ import { STATUS_LABEL } from '../../lib/statusChamado';
  * Recebe a lista que o painel já calculou: nenhuma consulta nova.
  */
 
-const dataHora = (iso) => (iso
-  ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
-  : '—');
+const dataHora = (iso) => formatarDataHora(iso, '—');
 
 /** Há quanto tempo estourou — o dado que ordena a ação, mais que a data em si. */
 function atrasoEmTexto(slaVenceEm, agora) {

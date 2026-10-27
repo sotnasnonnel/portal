@@ -353,7 +353,7 @@ export default function NovoChamadoAdm() {
               <ul>
                 {sucesso.filhos.map((f) => (
                   <li key={f.numero}>
-                    #{f.numero} — {getServico(f.classe, f.servico)?.label || f.servico}
+                    #{f.numero} — {f.rotulo || getServico(f.classe, f.servico)?.label || f.servico}
                   </li>
                 ))}
               </ul>

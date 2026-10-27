@@ -7,8 +7,8 @@
  * ela foi "realizada". Só entram as finalizadas — cancelada não mobilizou
  * ninguém, e a em andamento ainda não tem tempo total.
  *
- * O tempo é o mesmo da lista de processos (tempoProcesso.js: dias úteis, as
- * duas pontas contadas), e a média usa a mesma regra de arredondamento dos
+ * O tempo é o mesmo da lista de processos (tempoProcesso.js: dias úteis, sem
+ * o dia da abertura), e a média usa a mesma regra de arredondamento dos
  * indicadores (para cima). Duas contas diferentes para o mesmo número fariam o
  * resumo e a lista discordarem.
  *

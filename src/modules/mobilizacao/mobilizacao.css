@@ -162,6 +162,14 @@
   font-size: var(--table-head-fs); font-weight: var(--fw-bold);
   text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap;
 }
+/* Cabeçalho que ordena: parece o texto do th, com a seta ao lado. */
+.mob-th-ordena {
+  display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0;
+  background: none; font: inherit; text-transform: inherit; letter-spacing: inherit;
+  color: inherit; cursor: pointer;
+}
+.mob-th-ordena:hover, .mob-th-ordena.is-active { color: var(--mod-accent); }
+.mob-th-ordena:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 4px; }
 .mob-tabela td { padding: var(--table-cell-pad); border-bottom: 1px solid var(--m-gray-100); color: var(--m-gray-600); }
 .mob-tabela tbody tr:last-child td { border-bottom: none; }
 .mob-tabela tbody tr:hover { background: var(--m-gray-50); }
@@ -800,3 +808,13 @@ button.mob-conta:focus-visible { outline: 2px solid var(--m-primary); outline-of
 .mob-resumo-grupo .mob-tabela tfoot td { border-top: 2px solid var(--m-border); font-weight: 600; padding-top: 8px; }
 .mob-tabela tr.is-selecionado td { background: var(--m-primary-soft); }
 .mob-link-btn { border: none; background: none; padding: 0; font: inherit; cursor: pointer; }
+
+/* Contato do cliente no resumo: uma informação por linha, sem quebrar. */
+.mob-contato { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mob-contato > * {
+  display: block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mob-contato strong { font-weight: var(--fw-semibold); color: var(--m-ink); }
+/* Sem isto a coluna da grade cresce até caber o e-mail inteiro e as
+   reticências nunca aparecem. */
+.mob-grid2 > .mob-campo { min-width: 0; }

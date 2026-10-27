@@ -12,6 +12,7 @@
  */
 import { STATUS_ENCERRADOS, ehEncerrada } from './statusEtapa.js';
 import { hojeIso } from '../../../utils/diasUteis.js';
+import { mascaraTelefone } from '../../../utils/phoneMask.js';
 
 /**
  * As duas perguntas de prazo que o quadro e a fila fazem o tempo todo.
@@ -195,4 +196,58 @@ export function filtrarProcessos(processos = [], f = {}, hoje = hojeIso()) {
     if (f.atrasados && !processoAtrasado(p, hoje)) return false;
     return true;
   });
+}
+
+/**
+ * Código CT do processo, como o time fala: o código COMPLETO do projeto
+ * ("GERD-CT14-PIND"), que mora em `cod_phd`. `cod_ct` guarda só o prefixo
+ * ("GERD-CT14") e serve de reserva quando o projeto não veio — mas só se tiver
+ * cara de CT: até 06/10/2026 o centro de custo ia para ele, e três processos
+ * ficaram com "Equipe PAULO CEZAR…" ali.
+ */
+const PARECE_CT = /^[A-Za-z0-9]+-CT[0-9]+/;
+
+export function codigoCt(p) {
+  if (p?.cod_phd) return p.cod_phd;
+  return PARECE_CT.test(p?.cod_ct || '') ? p.cod_ct : '';
+}
+
+/**
+ * Separa o contato antigo, texto livre, em nome, telefone e e-mail. Cada um
+ * escrevia de um jeito ("31 7264-8251 - Rejane", "Sucely … - smoreira@…;
+ * sebastiaos.neto@…", só o e-mail, só o nome): acha os e-mails e o primeiro
+ * telefone, e o que sobra, sem os separadores, é o nome.
+ */
+const RE_EMAIL = /[^\s@;,<>()]+@[^\s@;,<>()]+\.[^\s@;,<>()]+/g;
+const RE_TELEFONE = /\(?\b\d{2}\)?[\s.-]*\d{4,5}[\s.-]?\d{4}\b/;
+const SEPARADORES_NAS_PONTAS = /^[\s\-–—;,|/.:]+|[\s\-–—;,|/.:]+$/g;
+
+export function separarContatoLivre(texto) {
+  let resto = String(texto || '');
+  const emails = [...new Set((resto.match(RE_EMAIL) || []).map((e) => e.toLowerCase()))];
+  resto = resto.replace(RE_EMAIL, ' ');
+  const tel = RE_TELEFONE.exec(resto);
+  if (tel) resto = resto.replace(tel[0], ' ');
+  return {
+    nome: resto.replace(/\s*[;,|]\s*/g, ' ').replace(/\s+/g, ' ').replace(SEPARADORES_NAS_PONTAS, '').trim(),
+    telefone: tel ? mascaraTelefone(tel[0]) : '',
+    email: emails.join(', '),
+  };
+}
+
+/**
+ * Contato do setor do cliente. Desde 27/10/2026 o chamado manda nome, telefone
+ * e e-mail separados; os de antes têm um texto livre só (`contato_cliente`),
+ * que é quebrado nos três para cada pedaço cair no lugar certo.
+ */
+export function contatoDoCliente(p) {
+  const c = p?.campos || {};
+  if (c.contato_nome || c.contato_telefone || c.contato_email) {
+    return {
+      nome: c.contato_nome || '',
+      telefone: c.contato_telefone || '',
+      email: c.contato_email || '',
+    };
+  }
+  return separarContatoLivre(c.contato_cliente);
 }

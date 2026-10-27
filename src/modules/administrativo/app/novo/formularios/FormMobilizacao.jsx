@@ -1,12 +1,15 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import SearchSelect from '../../../../../components/UI/SearchSelect';
 import Marcador from './Marcador';
 import CampoCentroCusto from '../CampoCentroCusto';
 import {
-  MOVIMENTOS, OUTRO_PROJETO, eDesmobilizacao, eInclusaoTreinamento, aoTrocarMovimento, codCt,
+  MOVIMENTOS, OUTRO_PROJETO, eDesmobilizacao, eInclusaoTreinamento, eMovimentacao,
+  aoTrocarMovimento, codCt,
 } from './mobilizacao';
-import { dadosDaUltimaMobilizacao } from '../../../lib/chamados';
+import { dadosDaUltimaMobilizacao, ondeEstaHoje } from '../../../lib/chamados';
+import { codigoCt, contatoDoCliente } from '../../../../mobilizacao/lib/painelEtapas';
 import { OPCOES_EQUIPAMENTO, OPCOES_SOFTWARE, OPCOES_EPI } from './opcoes';
+import { mascaraTelefone } from '../../../../../utils/phoneMask';
 
 export default function FormMobilizacao({
   valores, onChange, pessoas = [], projetos = [], opcoesCc = [],
@@ -17,6 +20,21 @@ export default function FormMobilizacao({
   // Inclusão de treinamento: a pessoa já está mobilizada, então projeto, data
   // de início e adicionais não se aplicam — só quem, onde e quais treinamentos.
   const treino = eInclusaoTreinamento(valores);
+  const movimentacao = eMovimentacao(valores);
+
+  // Movimentação: de onde a pessoa sai. undefined = carregando; null = sem
+  // mobilização finalizada registrada.
+  // Guarda junto o id consultado: trocar de profissional volta a "carregando"
+  // sem setState no corpo do efeito.
+  const [consulta, setConsulta] = useState({ id: null, dados: null });
+  useEffect(() => {
+    if (!movimentacao || !valores.profissional_id) return undefined;
+    let vivo = true;
+    const id = valores.profissional_id;
+    ondeEstaHoje(id).then((dados) => { if (vivo) setConsulta({ id, dados }); });
+    return () => { vivo = false; };
+  }, [movimentacao, valores.profissional_id]);
+  const origem = consulta.id === valores.profissional_id ? consulta.dados : undefined;
 
   // Escolher o profissional já traz o gestor do organograma — é o mesmo dado
   // que decide quem aprova o chamado, então digitar à mão só criaria divergência.
@@ -102,6 +120,79 @@ export default function FormMobilizacao({
         </span>
       </div>
 
+      {movimentacao && valores.profissional_id && <OndeEstaHoje origem={origem} />}
+
+      {movimentacao && valores.profissional_id && (
+        <>
+          <div className="adm-campo">
+            <label>Precisa de processo de desmobilização?<span className="req">*</span></label>
+            <SimNao valor={valores.precisa_desmob} onChange={(v) => mexer({ precisa_desmob: v })} />
+            <span className="adm-campo-dica">
+              Se sim, um chamado de Desmobilização é aberto junto, para a obra de onde ele sai.
+            </span>
+          </div>
+
+          {valores.precisa_desmob === 'sim' && (
+            <>
+              <div className="adm-campo">
+                <label htmlFor="mob-desmob-data">Data da desmobilização<span className="req">*</span></label>
+                <input id="mob-desmob-data" type="date" className="adm-input" value={valores.desmob_data}
+                  onChange={(e) => mexer({ desmob_data: e.target.value })} />
+              </div>
+
+              <div className="adm-campo">
+                <label>Possui crachá?<span className="req">*</span></label>
+                <SimNao valor={valores.desmob_possui_cracha}
+                  onChange={(v) => mexer({ desmob_possui_cracha: v, desmob_cracha_entregue: v === 'sim' ? valores.desmob_cracha_entregue : '' })} />
+              </div>
+
+              {valores.desmob_possui_cracha === 'sim' && (
+                <div className="adm-campo">
+                  <label>O crachá foi entregue ao cliente?<span className="req">*</span></label>
+                  <SimNao valor={valores.desmob_cracha_entregue}
+                    onChange={(v) => mexer({ desmob_cracha_entregue: v })} />
+                </div>
+              )}
+            </>
+          )}
+        </>
+      )}
+
+      {/* Projeto logo depois do profissional (pedido de 27/10/2026): é dele que
+          sai o Código CT do processo, e escolhê-lo cedo já preenche obra e
+          cliente pela última mobilização do mesmo CT. */}
+      {!desmob && !treino && (
+        <>
+          <div className="adm-campo">
+            <label>Projeto<span className="req">*</span></label>
+            <SearchSelect
+              value={valores.projeto_id}
+              onChange={escolherProjeto}
+              options={opcoesProjetos}
+              placeholder="Busque pelo projeto ou cliente…"
+              ariaLabel="Projeto em que o profissional será alocado"
+            />
+            <span className="adm-campo-dica">
+              {!valores.projeto
+                ? 'Onde o profissional vai trabalhar. É dele que sai o Código CT do processo.'
+                : codCt(valores.projeto)
+                  ? <>Código CT do processo: <strong>{valores.projeto}</strong></>
+                  : 'Este projeto não tem Código CT no nome (ex.: GERD-CT14-PIND): o processo nasce sem ele.'}
+            </span>
+          </div>
+
+          {projetoForaDaLista && (
+            <div className="adm-campo">
+              <label htmlFor="mob-projeto-nome">Nome do projeto<span className="req">*</span></label>
+              <input id="mob-projeto-nome" className="adm-input" value={valores.projeto}
+                onChange={(e) => mexer({ projeto: e.target.value })}
+                onBlur={() => preencherPeloCt(valores, valores.projeto)}
+                placeholder="Ex.: GERD-CT14-PIND" />
+            </div>
+          )}
+        </>
+      )}
+
       {/* Desmobilização pede só quem sai e o que devolve — o resto (obra, CC,
           data, adicionais) não se aplica e sumir é melhor que desabilitar. */}
       {desmob && (
@@ -186,33 +277,6 @@ export default function FormMobilizacao({
         </div>
       )}
 
-      {!treino && (
-        <>
-      <div className="adm-campo">
-        <label>Projeto<span className="req">*</span></label>
-        <SearchSelect
-          value={valores.projeto_id}
-          onChange={escolherProjeto}
-          options={opcoesProjetos}
-          placeholder="Busque pelo projeto ou cliente…"
-          ariaLabel="Projeto em que o profissional será alocado"
-        />
-        <span className="adm-campo-dica">
-          Onde o profissional vai trabalhar. A lista é a mesma dos projetos do portal.
-        </span>
-      </div>
-
-      {projetoForaDaLista && (
-        <div className="adm-campo">
-          <label htmlFor="mob-projeto-nome">Nome do projeto<span className="req">*</span></label>
-          <input id="mob-projeto-nome" className="adm-input" value={valores.projeto}
-            onChange={(e) => mexer({ projeto: e.target.value })}
-            onBlur={() => preencherPeloCt(valores, valores.projeto)} />
-        </div>
-      )}
-
-        </>
-      )}
 
       <div className="adm-campo">
         <label htmlFor="mob-obra">Local da obra{!treino && <span className="req">*</span>}</label>
@@ -258,13 +322,81 @@ export default function FormMobilizacao({
         </>
       )}
 
+      {/* Contato do setor do cliente: quem o Adm procura na obra. */}
       <div className="adm-campo">
-        <label htmlFor="mob-contato">Contato do setor do cliente</label>
-        <input id="mob-contato" className="adm-input" value={valores.contato_cliente}
-          onChange={(e) => mexer({ contato_cliente: e.target.value })} />
+        <label htmlFor="mob-contato-nome">Nome do contato no cliente<span className="req">*</span></label>
+        <input id="mob-contato-nome" className="adm-input" value={valores.contato_nome}
+          onChange={(e) => mexer({ contato_nome: e.target.value })} />
+      </div>
+
+      <div className="adm-campo">
+        <label htmlFor="mob-contato-tel">Telefone do contato<span className="req">*</span></label>
+        <input id="mob-contato-tel" className="adm-input" type="tel" inputMode="tel"
+          value={valores.contato_telefone} placeholder="(31) 9 9999-9999"
+          onChange={(e) => mexer({ contato_telefone: mascaraTelefone(e.target.value) })} />
+      </div>
+
+      <div className="adm-campo">
+        <label htmlFor="mob-contato-email">E-mail do contato<span className="req">*</span></label>
+        <input id="mob-contato-email" className="adm-input" type="email" inputMode="email"
+          value={valores.contato_email} placeholder="nome@cliente.com.br"
+          onChange={(e) => mexer({ contato_email: e.target.value })} />
       </div>
         </>
       )}
     </>
+  );
+}
+
+// Sim/Não em botões, como o seletor de movimento: duas opções não pedem lista.
+function SimNao({ valor, onChange }) {
+  return (
+    <div className="adm-radios">
+      {[['sim', 'Sim'], ['nao', 'Não']].map(([v, rotulo]) => (
+        <button key={v} type="button" className={`adm-chip ${valor === v ? 'is-on' : ''}`}
+          aria-pressed={valor === v} onClick={() => onChange(v)}>
+          {rotulo}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// De onde a pessoa sai, só para leitura: é o que a desmobilização vai herdar.
+function OndeEstaHoje({ origem }) {
+  if (origem === undefined) {
+    return <div className="adm-campo"><span className="adm-campo-dica">Buscando onde ele está hoje…</span></div>;
+  }
+  if (!origem) {
+    return (
+      <div className="adm-campo">
+        <label>Onde está hoje</label>
+        <span className="adm-campo-dica">Nenhuma mobilização finalizada registrada para este profissional.</span>
+      </div>
+    );
+  }
+  const contato = contatoDoCliente(origem);
+  const linhas = [
+    ['Cliente', [origem.cliente_phd, origem.cliente_final !== origem.cliente_phd && origem.cliente_final]
+      .filter(Boolean).join(' · ')],
+    ['Local da obra', origem.local_obra],
+    ['Código CT', codigoCt(origem)],
+    ['Contato no cliente', (contato.nome || contato.telefone || contato.email) && (
+      <span className="adm-onde-esta-contato">
+        {[contato.nome, contato.telefone, contato.email].filter(Boolean)
+          .map((linha) => <span key={linha} title={linha}>{linha}</span>)}
+      </span>
+    )],
+  ];
+  return (
+    <div className="adm-campo">
+      <label>Onde está hoje</label>
+      <dl className="adm-onde-esta">
+        {linhas.map(([rot, val]) => (
+          <div key={rot}><dt>{rot}</dt><dd>{val || '—'}</dd></div>
+        ))}
+      </dl>
+      <span className="adm-campo-dica">Da mobilização #{origem.numero}. É daqui que ele sai.</span>
+    </div>
   );
 }

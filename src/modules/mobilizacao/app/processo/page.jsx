@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import {
-  ehTimeMobilizacao, rotuloFluxo, STATUS_PROCESSO,
+  ehTimeMobilizacao, rotuloFluxo, STATUS_PROCESSO, MOSTRAR_RESPONSAVEL,
 } from '../../../../config/mobilizacao';
 import { semaforoDias } from '../../../../utils/semaforo';
 import {
@@ -16,14 +16,15 @@ import {
 } from '../../lib/mobilizacao';
 import { descreverAusencia } from '../../../../utils/ausenciaColaborador';
 import ComentariosEtapa from '../components/ComentariosEtapa';
-import { podeMover, podeEditar, progresso } from '../../lib/painelEtapas';
+import {
+  podeMover, podeEditar, progresso, codigoCt, contatoDoCliente,
+} from '../../lib/painelEtapas';
 import { rotuloStatus, ehEncerrada } from '../../lib/statusEtapa';
 import { tempoTotalTexto, estaConcluido } from '../../lib/tempoProcesso';
+import { formatarDataHora } from '../../../../utils/formatters';
 
 const dataBr = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : '—');
-const dataHora = (iso) => (iso
-  ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
-  : '');
+const dataHora = (iso) => formatarDataHora(iso, '');
 
 const TEXTO_EVENTO = {
   criado: 'Processo aberto',
@@ -127,6 +128,7 @@ export default function ProcessoMob() {
   }
 
   const pr = progresso(processo);
+  const contato = contatoDoCliente(processo);
   const encerrado = processo.status !== 'em_andamento';
 
   return (
@@ -174,14 +176,17 @@ export default function ProcessoMob() {
           <Campo rot="Cliente final" val={processo.cliente_final} />
           <Campo rot="Empresa PHD" val={processo.empresa_phd} />
           <Campo rot="Local da obra" val={processo.local_obra} />
-          <Campo rot="Cód. CT" val={processo.cod_ct} />
-          <Campo rot="Cód. PHD" val={processo.cod_phd} />
-          <Campo rot="Contrato" val={processo.contrato} />
+          <Campo rot="Código CT" val={codigoCt(processo)} />
+          {/* Quem o time procura na obra. Sempre à vista, mesmo vazio: o "—"
+              diz que falta pedir o contato. Chamado aberto antes de 27/10/2026
+              não tinha o campo obrigatório. Contrato saiu do resumo no mesmo
+              dia, a pedido: ninguém o preenche. */}
+          <Campo rot="Contato no cliente" val={<ContatoCliente contato={contato} />} />
           <Campo rot="COO PHD" val={processo.coo_phd} />
           <Campo rot="Gerente PHD" val={processo.ger_phd} />
-          <Campo rot="Responsável" val={processo.responsavelNome} />
+          {MOSTRAR_RESPONSAVEL && <Campo rot="Responsável" val={processo.responsavelNome} />}
           <Campo rot="Aberto em" val={dataHora(processo.criado_em)} />
-          {/* Tempo total: da data-base até a última etapa feita, ou até hoje
+          {/* Tempo total: da abertura até a última etapa feita, ou até hoje
               enquanto o processo corre. É o número que o time usa para cobrar
               prazo — por isso fica no resumo, e não escondido no passo a passo. */}
           <Campo
@@ -197,6 +202,18 @@ export default function ProcessoMob() {
           )}
           {processo.campos?.data_desmobilizacao && (
             <Campo rot="Saída da obra" val={dataBr(processo.campos.data_desmobilizacao)} />
+          )}
+          {/* Respostas do chamado de desmobilização (27/10/2026). São elas que
+              já marcaram as etapas de crachá ao nascer o processo. */}
+          {processo.campos?.possui_cracha && (
+            <Campo rot="Crachá" val={processo.campos.possui_cracha === 'nao'
+              ? 'Não possui'
+              : processo.campos.cracha_entregue === 'sim'
+                ? 'Já entregue ao cliente'
+                : 'Ainda não entregue ao cliente'} />
+          )}
+          {processo.campos?.movimentacao_numero && (
+            <Campo rot="Movimentação de origem" val={`Chamado #${processo.campos.movimentacao_numero}`} />
           )}
           {processo.campos?.treinamentos && (
             <Campo rot="Treinamentos" val={processo.campos.treinamentos} />
@@ -291,9 +308,9 @@ export default function ProcessoMob() {
                           {e.dias_atraso > 0 ? `${e.dias_atraso}d de atraso` : `${Math.abs(e.dias_atraso)}d de folga`}
                         </span>
                       )}
-                      {e.responsavelNome
+                      {MOSTRAR_RESPONSAVEL && (e.responsavelNome
                         ? <span title={e.responsavelNome}><User size={11} /> {e.responsavelNome}</span>
-                        : <span className="mob-cartao-sem-dono">sem responsável</span>}
+                        : <span className="mob-cartao-sem-dono">sem responsável</span>)}
                       {e.sla_dias_uteis !== null && <span>SLA {e.sla_dias_uteis} d.ú.</span>}
                     </div>
 
@@ -304,7 +321,7 @@ export default function ProcessoMob() {
                       onEnviado={carregar}
                     />
 
-                    {trocando === e.id && (
+                    {MOSTRAR_RESPONSAVEL && trocando === e.id && (
                       <div className="mob-campo" style={{ maxWidth: 280, marginTop: 8 }}>
                         <label htmlFor={`mob-resp-${e.id}`}>Responsável pela etapa</label>
                         <select id={`mob-resp-${e.id}`} defaultValue={e.responsavel_id || ''}
@@ -360,13 +377,14 @@ export default function ProcessoMob() {
                         style={{ height: 32, padding: '0 8px', border: '1px solid var(--m-border)', borderRadius: 8 }} />
                     )}
 
-                    {!encerrado && souTime && (
+                    {MOSTRAR_RESPONSAVEL && !encerrado && souTime && (
                       <button type="button" className="mob-btn mob-btn-ghost mob-btn-sm" disabled={!!ocupado}
                         onClick={() => setTrocando(trocando === e.id ? null : e.id)}>
                         Responsável
                       </button>
                     )}
-                    {!encerrado && !souTime && e.responsavel_id !== user?.id && !ehEncerrada(e.status) && (
+                    {MOSTRAR_RESPONSAVEL && !encerrado && !souTime && e.responsavel_id !== user?.id
+                      && !ehEncerrada(e.status) && (
                       <button type="button" className="mob-btn mob-btn-ghost mob-btn-sm" disabled={!!ocupado}
                         onClick={() => acao(`as-${e.id}`, () => assumirEtapa(e.id, user.id))}>
                         Assumir
@@ -417,6 +435,26 @@ export default function ProcessoMob() {
         )}
       </section>
     </div>
+  );
+}
+
+// Nome em cima, telefone e e-mail embaixo — cada um numa linha só, cortado com
+// reticências em vez de quebrar no meio (e-mail longo quebrava em três linhas).
+// O texto inteiro fica no title.
+function ContatoCliente({ contato }) {
+  if (!contato.nome && !contato.telefone && !contato.email) return '—';
+  return (
+    <span className="mob-contato">
+      {contato.nome && <strong title={contato.nome}>{contato.nome}</strong>}
+      {contato.telefone && (
+        <a className="mob-link" href={`tel:${contato.telefone.replace(/\D/g, '')}`} title={contato.telefone}>
+          {contato.telefone}
+        </a>
+      )}
+      {contato.email && (
+        <a className="mob-link" href={`mailto:${contato.email}`} title={contato.email}>{contato.email}</a>
+      )}
+    </span>
   );
 }
 

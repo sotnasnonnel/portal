@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { BarChart3, Loader2, AlertCircle, Info } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { ehTimeMobilizacao, rotuloFluxo } from '../../../../config/mobilizacao';
+import { ehTimeMobilizacao, rotuloFluxo, MOSTRAR_RESPONSAVEL } from '../../../../config/mobilizacao';
 import { listarParaIndicadores } from '../../lib/mobilizacao';
 import {
   resumoIndicadores, faixaPct, formatarPct, etapasVencidas, processosTravados,
@@ -95,6 +95,7 @@ export default function DashboardMob() {
           </span>
         </article>
 
+        {MOSTRAR_RESPONSAVEL && (
         <article className="mob-ind-tile">
           <span className="mob-ind-rot">Sem responsável</span>
           <span className={`mob-ind-num ${r.etapas.semDono ? 'tom-media' : 'tom-vazio'}`}>
@@ -102,6 +103,7 @@ export default function DashboardMob() {
           </span>
           <span className="mob-ind-pe">etapas que ninguém está olhando</span>
         </article>
+        )}
       </div>
 
       <ResumoMensal processos={dados.processos} />
@@ -162,6 +164,7 @@ export default function DashboardMob() {
         )}
       </section>
 
+      {MOSTRAR_RESPONSAVEL && (
       <section className="mob-card">
         <h2 className="mob-card-tit">Etapas vencidas por responsável</h2>
         {!r.atrasadasPorResponsavel.length ? (
@@ -181,6 +184,7 @@ export default function DashboardMob() {
           </div>
         )}
       </section>
+      )}
 
       {detalhe === 'processos' && (
         <DetalheIndicador

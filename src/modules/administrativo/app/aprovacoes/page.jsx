@@ -5,10 +5,9 @@ import { getClasse, getServico } from '../../../../config/administrativo';
 import { rotuloDoCampo, formatarValorCampo } from '../novo/formularios/schemas';
 import { contextoDoChamado } from '../../lib/rotulos';
 import { listarAprovacoesPendentes, decidirChamado } from '../../lib/chamados';
+import { formatarDataHora } from '../../../../utils/formatters';
 
-const dataHora = (iso) => (iso
-  ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
-  : '—');
+const dataHora = (iso) => formatarDataHora(iso, '—');
 
 export default function AprovacoesAdm() {
   const { user } = useAuth();

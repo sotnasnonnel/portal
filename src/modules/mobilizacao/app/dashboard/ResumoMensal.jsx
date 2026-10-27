@@ -31,8 +31,8 @@ export default function ResumoMensal({ processos }) {
         </label>
       </div>
       <p className="mob-campo-dica">
-        Mobilizações concluídas no mês (pela data real da última etapa). Tempo total da data-base até a
-        conclusão, em dias úteis, contando o primeiro e o último dia.
+        Mobilizações concluídas no mês (pela data real da última etapa). Tempo total da abertura até a
+        conclusão, em dias úteis, sem contar o dia da abertura.
       </p>
 
       <div className="mob-resumo-grupos">

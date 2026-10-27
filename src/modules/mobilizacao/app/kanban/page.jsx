@@ -5,7 +5,9 @@ import {
   LayoutGrid, Loader2, AlertCircle, Inbox, User, X, Lock, AlertTriangle, CalendarClock,
 } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { ehTimeMobilizacao, FLUXOS, rotuloFluxoCurto } from '../../../../config/mobilizacao';
+import {
+  ehTimeMobilizacao, FLUXOS, rotuloFluxoCurto, MOSTRAR_RESPONSAVEL,
+} from '../../../../config/mobilizacao';
 import { semaforoDias } from '../../../../utils/semaforo';
 import { listarEtapasDoQuadro, moverEtapa, listarEtapasDoProcesso } from '../../lib/mobilizacao';
 import {
@@ -32,7 +34,8 @@ export default function KanbanMob() {
   const [etapas, setEtapas] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
-  const [apenasMinhas, setApenasMinhas] = useState(!souTime);
+  // Sem responsável na tela, "Minhas etapas" seria sempre vazia: abre em Todas.
+  const [apenasMinhas, setApenasMinhas] = useState(MOSTRAR_RESPONSAVEL && !souTime);
   const [fFluxo, setFFluxo] = useState('');
   // '' | 'atrasadas' | 'hoje'. Os dois se excluem: uma etapa que ja venceu nao
   // vence hoje, entao liga-los juntos devolveria lista vazia sempre.
@@ -121,6 +124,7 @@ export default function KanbanMob() {
         você move os passos pelos quais responde.
       </p>
 
+      {MOSTRAR_RESPONSAVEL && (
       <div className="mob-tabs">
         <button type="button" className={`mob-tab ${!apenasMinhas ? 'is-active' : ''}`}
           onClick={() => setApenasMinhas(false)}>
@@ -131,6 +135,7 @@ export default function KanbanMob() {
           <User size={15} /> Minhas etapas
         </button>
       </div>
+      )}
 
       <div className="mob-filtros">
         <div className="mob-filtro">
@@ -238,13 +243,13 @@ export default function KanbanMob() {
                                     {/* Sem responsável é o estado que precisa
                                         saltar: é o passo que ninguém está
                                         olhando. */}
-                                    {e.responsavelNome ? (
+                                    {MOSTRAR_RESPONSAVEL && (e.responsavelNome ? (
                                       <span className="mob-cartao-dono" title={e.responsavelNome}>
                                         {iniciais(e.responsavelNome)}
                                       </span>
                                     ) : (
                                       <span className="mob-cartao-sem-dono">sem responsável</span>
-                                    )}
+                                    ))}
                                     <span className={`mob-prazo tom-${tom}`}>{textoPrazo(e)}</span>
                                   </div>
                                 </article>

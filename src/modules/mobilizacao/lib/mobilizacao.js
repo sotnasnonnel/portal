@@ -114,8 +114,17 @@ export async function desativarEtapaCatalogo(id) {
 // Processos
 // ---------------------------------------------------------------------------
 
+// Número que a tela mostra: o do chamado do Atendimento que abriu o processo,
+// para a pessoa ver o mesmo # nos dois módulos; sem chamado, P-61 (planilha) ou
+// E-145 (empresa aberta à mão). A regra é do banco (coluna gerada
+// numero_exibicao, supabase_migration_mobilizacao_numero_chamado.sql) porque as
+// notificações precisam do mesmo número.
+const numeroDoProcesso = (p) => p?.numero_exibicao ?? p?.numero;
+
+const comNumeroDoChamado = (p) => (p ? { ...p, numero: numeroDoProcesso(p) } : p);
+
 const CAMPOS_PROCESSO = `
-  id, numero, fluxo, titulo, status, profissional_id, profissional_nome,
+  id, numero, numero_exibicao, fluxo, titulo, status, profissional_id, profissional_nome,
   empresa_phd, cliente_phd, cliente_final, local_obra, cod_ct, cod_phd,
   coo_phd, ger_phd, contrato, data_base, observacoes, campos,
   solicitante_id, responsavel_id, origem, origem_chamado_id,
@@ -153,7 +162,7 @@ export async function listarProcessos({ apenasAbertos = true, fluxo = '' } = {})
 
   const lista = data || [];
   const nomes = await nomesDe(lista.map((p) => p.responsavel_id));
-  return lista.map((p) => ({ ...p, responsavelNome: nomes.get(p.responsavel_id) || '' }));
+  return lista.map((p) => ({ ...comNumeroDoChamado(p), responsavelNome: nomes.get(p.responsavel_id) || '' }));
 }
 
 export async function buscarProcesso(id) {
@@ -175,7 +184,7 @@ export async function buscarProcesso(id) {
       : Promise.resolve({ data: null }),
   ]);
   return {
-    ...data,
+    ...comNumeroDoChamado(data),
     responsavelNome: nomes.get(data.responsavel_id) || '',
     solicitanteNome: nomes.get(data.solicitante_id) || '',
     chamadoNumero: chamado?.data?.numero ?? null,
@@ -284,7 +293,7 @@ export async function listarEtapasDoQuadro({ diasConcluidas = 15, fluxo = '' } =
   const montar = () => {
     let q = supabase
       .from('mobilizacao_etapas')
-      .select(`${CAMPOS_ETAPA}, processo:mobilizacao_processos!inner(id, numero, fluxo, titulo, status, profissional_nome, cliente_phd, cod_ct, local_obra)`)
+      .select(`${CAMPOS_ETAPA}, processo:mobilizacao_processos!inner(id, numero, numero_exibicao, fluxo, titulo, status, profissional_nome, cliente_phd, cod_ct, local_obra)`)
       .neq('processo.status', 'cancelado')
       // O valor vai entre aspas porque o ISO tem pontos e dois-pontos, que são
       // separadores na sintaxe de filtro do PostgREST.
@@ -307,7 +316,7 @@ export async function listarEtapasDoQuadro({ diasConcluidas = 15, fluxo = '' } =
     responsavelNome: nomes.get(e.responsavel_id) || '',
     // Achatado no próprio objeto: os filtros e o cartão são código puro, e
     // fazê-los andar por `e.processo?.x` espalharia optional chaining por tudo.
-    numero: e.processo?.numero,
+    numero: numeroDoProcesso(e.processo),
     fluxo: e.processo?.fluxo,
     processoTitulo: e.processo?.titulo,
     processoStatus: e.processo?.status,
@@ -513,10 +522,10 @@ export async function listarParaIndicadores() {
   const [etapas, processos] = await Promise.all([
     supabase
       .from('mobilizacao_etapas')
-      .select('id, processo_id, codigo, titulo, status, dias_atraso, data_prevista, responsavel_id, processo:mobilizacao_processos!inner(numero, titulo, fluxo, status)'),
+      .select('id, processo_id, codigo, titulo, status, dias_atraso, data_prevista, responsavel_id, processo:mobilizacao_processos!inner(numero, numero_exibicao, titulo, fluxo, status)'),
     // Datas, nomes e códigos alimentam o resumo mensal (lib/resumoMensal.js).
     supabase.from('mobilizacao_processos').select(
-      'id, numero, titulo, fluxo, status, prazo_em, data_base, concluido_real, profissional_nome, cliente_phd, cod_ct, empresa_phd',
+      'id, numero, numero_exibicao, titulo, fluxo, status, prazo_em, data_base, criado_em, concluido_real, profissional_nome, cliente_phd, cod_ct, empresa_phd',
     ),
   ]);
   if (etapas.error) throw new Error(`Não foi possível carregar os indicadores: ${etapas.error.message}`);
@@ -527,8 +536,9 @@ export async function listarParaIndicadores() {
   return {
     etapas: lista.map((e) => ({
       ...e,
+      processo: comNumeroDoChamado(e.processo),
       fluxo: e.processo?.fluxo,
-      processoNumero: e.processo?.numero,
+      processoNumero: numeroDoProcesso(e.processo),
       processoTitulo: e.processo?.titulo,
       // Sem isto o indicador nao sabe distinguir etapa parada de etapa
       // abandonada: processo cancelado deixa passos pendentes com prazo no
@@ -536,7 +546,7 @@ export async function listarParaIndicadores() {
       processoStatus: e.processo?.status,
       responsavelNome: nomes.get(e.responsavel_id) || '',
     })),
-    processos: processos.data || [],
+    processos: (processos.data || []).map(comNumeroDoChamado),
   };
 }
 
@@ -575,9 +585,9 @@ export async function reprocessarChamado(chamadoId) {
 export async function processoDoChamado(chamadoId) {
   const { data, error } = await supabase
     .from('mobilizacao_processos')
-    .select('id, numero, fluxo, status, etapas_total, etapas_concluidas, prazo_em')
+    .select('id, numero, numero_exibicao, fluxo, status, etapas_total, etapas_concluidas, prazo_em')
     .eq('origem_chamado_id', chamadoId)
     .maybeSingle();
   if (error) return null;
-  return data || null;
+  return comNumeroDoChamado(data) || null;
 }

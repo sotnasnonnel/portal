@@ -36,6 +36,7 @@ import EtapasDoProcesso from './EtapasDoProcesso';
 // Consulta e catálogo vêm do módulo de Estoque — dependência de mão única.
 import ConsultaEstoque from '../../../estoque/app/components/ConsultaEstoque';
 import { listarPosicao, listarPessoasEstoque, movimentosDoChamado } from '../../../estoque/lib/estoque';
+import { formatarDataHora } from '../../../../utils/formatters';
 
 // Satisfação de 1 a 5 estrelas. Até 3 exige comentário — é onde mora a
 // informação útil de uma pesquisa; o banco também barra.
@@ -57,9 +58,7 @@ const ROTULO_STATUS = {
 // anterior — o mesmo erro que dataHora evita por já receber timestamp.
 const dataDia = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : '');
 
-const dataHora = (iso) => (iso
-  ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
-  : '—');
+const dataHora = (iso) => formatarDataHora(iso, '—');
 
 export default function ChamadoAdm() {
   const { id } = useParams();

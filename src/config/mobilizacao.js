@@ -76,6 +76,15 @@ export const podeAcessarMobilizacao = (user) => !MOBILIZACAO_EM_BREVE
 export const ehTimeMobilizacao = (modules) =>
   modules?.administrativo === 'admin' || modules?.administrativo === 'atendente';
 
+/**
+ * Responsável de etapa e de processo fora das telas, por enquanto (27/10/2026).
+ * O catálogo não tem responsável padrão e ninguém assume etapa pelo quadro:
+ * 0 de 71 etapas abertas tinham dono, e a tela inteira dizia "sem responsável".
+ * O time ainda vai alinhar quem cuida de cada área. Banco, gatilhos e
+ * notificações seguem como estão — voltar é trocar para true.
+ */
+export const MOSTRAR_RESPONSAVEL = false;
+
 /** Quem configura o catálogo de etapas e os SLAs. */
 export const ehAdminMobilizacao = (modules) => modules?.administrativo === 'admin';
 

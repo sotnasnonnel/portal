@@ -7,10 +7,9 @@ import {
   comentarEtapa, editarComentarioEtapa, listarVersoesComentario, urlDoAnexoMob,
 } from '../../lib/mobilizacao';
 import { formatarTamanho } from '../../../administrativo/lib/arquivo';
+import { formatarDataHora } from '../../../../utils/formatters';
 
-const dataHora = (iso) => (iso
-  ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
-  : '');
+const dataHora = (iso) => formatarDataHora(iso, '');
 
 /**
  * Comentários de uma etapa, com anexo.

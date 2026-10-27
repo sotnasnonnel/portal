@@ -62,6 +62,9 @@ export const CAMPOS_DO_CHAMADO = {
   // cod_ct, e o processo nascia com o coordenador no lugar do gerente.
   gestor: 'coo_phd',
   contato_cliente: 'contato_cliente',
+  contato_nome: 'contato_nome',
+  contato_telefone: 'contato_telefone',
+  contato_email: 'contato_email',
   cliente: 'cliente_phd',
   cliente_final: 'cliente_final',
   empresa_phd: 'empresa_phd',

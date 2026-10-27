@@ -11,6 +11,7 @@ import {
 } from '../../lib/painel';
 import { useEstadoPersistido } from '../../../../hooks/useEstadoPersistido';
 import { descreverAusencia } from '../../../../utils/ausenciaColaborador';
+import { formatarDataHora } from '../../../../utils/formatters';
 
 const FILTRO_VAZIO = {
   assunto: '', status: '', solicitanteId: '', atendenteId: '', atrasado: '', criadoDe: '', criadoAte: '',
@@ -19,9 +20,7 @@ const FILTRO_VAZIO = {
 
 
 const dataCurta = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR') : '—');
-const dataHora = (iso) => (iso
-  ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
-  : '—');
+const dataHora = (iso) => formatarDataHora(iso, '—');
 
 export default function FilaAdm() {
   const { user } = useAuth();

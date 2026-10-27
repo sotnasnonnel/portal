@@ -347,7 +347,14 @@ const ROTULOS_CODIFICADOS = {
   cc: 'Centro de custo', projeto: 'Projeto', local_obra: 'Local da obra',
   data_inicio_cliente: 'Data de início no cliente', equipamentos: 'Equipamento e acessórios',
   softwares: 'Software', epis: 'EPI', uniforme: 'Uniforme',
+  // contato_cliente fica pelos chamados de antes de 27/10/2026.
   contato_cliente: 'Contato do setor do cliente', devolucao: 'Há devolução',
+  contato_nome: 'Nome do contato no cliente', contato_telefone: 'Telefone do contato',
+  contato_email: 'E-mail do contato',
+  precisa_desmob: 'Precisa de desmobilização', desmob_data: 'Data da desmobilização',
+  desmob_possui_cracha: 'Possui crachá', desmob_cracha_entregue: 'Crachá entregue ao cliente',
+  possui_cracha: 'Possui crachá', cracha_entregue: 'Crachá entregue ao cliente',
+  movimentacao_numero: 'Movimentação de origem', data_desmobilizacao: 'Data da desmobilização',
   devolucao_descricao: 'O que será devolvido', treinamentos: 'Treinamentos',
   tipo: 'Tipo', tipo_livre: 'Peças e tamanhos', motivo: 'Motivo',
   observacao: 'Observação',
@@ -388,10 +395,19 @@ const dataBr = (v) => {
  * — não o formato do texto. Adivinhar pelo conteúdo erraria em campo de texto
  * que por acaso parece número (patrimônio, número de série).
  */
+// Sim/não dos formulários escritos em código, gravados como 'sim'/'nao' (é o
+// que o banco compara para ajustar as etapas de crachá). Sem esquema para
+// declarar o tipo, a lista é explícita.
+const SIM_NAO_CODIFICADOS = new Set([
+  'precisa_desmob', 'desmob_possui_cracha', 'desmob_cracha_entregue', 'possui_cracha', 'cracha_entregue',
+]);
+
 export function formatarValorCampo(classe, servico, chave, valor) {
   if (valor === null || valor === undefined || valor === '') return '';
   if (Array.isArray(valor)) return valor.join(', ');
   if (typeof valor === 'boolean') return valor ? 'Sim' : 'Não';
+  if (SIM_NAO_CODIFICADOS.has(chave)) return valor === 'sim' ? 'Sim' : valor === 'nao' ? 'Não' : String(valor);
+  if (chave === 'desmob_data') return dataBr(valor);
 
   const def = (schemaDoServico(classe, servico) || []).find((c) => c.chave === chave);
 

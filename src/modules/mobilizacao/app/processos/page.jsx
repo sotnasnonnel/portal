@@ -5,14 +5,34 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import {
-  ehTimeMobilizacao, FLUXOS, rotuloFluxoCurto, STATUS_PROCESSO,
+  ehTimeMobilizacao, FLUXOS, rotuloFluxoCurto, STATUS_PROCESSO, MOSTRAR_RESPONSAVEL,
 } from '../../../../config/mobilizacao';
 import { semaforoPrazo } from '../../../../utils/semaforo';
 import { listarProcessos } from '../../lib/mobilizacao';
-import { progresso, filtrarProcessos, processoAtrasado } from '../../lib/painelEtapas';
-import { tempoTotalTexto } from '../../lib/tempoProcesso';
+import {
+  progresso, filtrarProcessos, processoAtrasado, codigoCt,
+} from '../../lib/painelEtapas';
+import { tempoTotalDias, tempoTotalTexto } from '../../lib/tempoProcesso';
+import { ordenarLinhas } from '../../lib/ordenacao';
+import ThOrdena from '../components/ThOrdena';
 
 const dataBr = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : '—');
+
+const clienteObra = (p) => [p.cliente_phd, p.local_obra].filter(Boolean).join(' · ');
+
+// O que cada coluna mostra, para ordenar pelo mesmo valor que se lê.
+const COLUNAS = {
+  numero: (p) => p.numero,
+  processo: (p) => p.titulo,
+  ct: codigoCt,
+  fluxo: (p) => rotuloFluxoCurto(p.fluxo),
+  cliente: clienteObra,
+  progresso: (p) => progresso(p).pct,
+  tempo: (p) => tempoTotalDias(p),
+  responsavel: (p) => p.responsavelNome,
+  prazo: (p) => p.prazo_em,
+  situacao: (p) => STATUS_PROCESSO[p.status] || p.status,
+};
 
 export default function ProcessosMob() {
   const { modules } = useAuth();
@@ -25,6 +45,7 @@ export default function ProcessosMob() {
   const [apenasAbertos, setApenasAbertos] = useState(true);
   const [busca, setBusca] = useState('');
   const [atrasados, setAtrasados] = useState(false);
+  const [ordem, setOrdem] = useState(null);
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -42,7 +63,7 @@ export default function ProcessosMob() {
 
   // Busca e atraso filtram o que JA veio; fluxo e situacao vao na consulta,
   // porque mudam o RECORTE (encerrados sao muitos e nao se traz a toa).
-  const visiveis = filtrarProcessos(processos, { busca, atrasados });
+  const visiveis = ordenarLinhas(filtrarProcessos(processos, { busca, atrasados }), ordem, COLUNAS);
   const filtrando = !!busca || atrasados;
 
   return (
@@ -111,15 +132,18 @@ export default function ProcessosMob() {
           <table className="mob-tabela">
             <thead>
               <tr>
-                <th>#</th>
-                <th>Processo</th>
-                <th>Fluxo</th>
-                <th>Cliente / obra</th>
-                <th>Progresso</th>
-                <th>Tempo</th>
-                <th>Responsável</th>
-                <th>Prazo</th>
-                <th>Situação</th>
+                <ThOrdena coluna="numero" ordem={ordem} setOrdem={setOrdem}>#</ThOrdena>
+                <ThOrdena coluna="processo" ordem={ordem} setOrdem={setOrdem}>Processo</ThOrdena>
+                <ThOrdena coluna="ct" ordem={ordem} setOrdem={setOrdem}>Código CT</ThOrdena>
+                <ThOrdena coluna="fluxo" ordem={ordem} setOrdem={setOrdem}>Fluxo</ThOrdena>
+                <ThOrdena coluna="cliente" ordem={ordem} setOrdem={setOrdem}>Cliente / obra</ThOrdena>
+                <ThOrdena coluna="progresso" ordem={ordem} setOrdem={setOrdem}>Progresso</ThOrdena>
+                <ThOrdena coluna="tempo" ordem={ordem} setOrdem={setOrdem}>Tempo</ThOrdena>
+                {MOSTRAR_RESPONSAVEL && (
+                  <ThOrdena coluna="responsavel" ordem={ordem} setOrdem={setOrdem}>Responsável</ThOrdena>
+                )}
+                <ThOrdena coluna="prazo" ordem={ordem} setOrdem={setOrdem}>Prazo</ThOrdena>
+                <ThOrdena coluna="situacao" ordem={ordem} setOrdem={setOrdem}>Situação</ThOrdena>
               </tr>
             </thead>
             <tbody>
@@ -131,8 +155,9 @@ export default function ProcessosMob() {
                   <tr key={p.id}>
                     <td className="num">{p.numero}</td>
                     <td><Link to={`/mobilizacao/processo/${p.id}`}>{p.titulo}</Link></td>
+                    <td className="num">{codigoCt(p) || '—'}</td>
                     <td>{rotuloFluxoCurto(p.fluxo)}</td>
-                    <td>{[p.cliente_phd, p.local_obra].filter(Boolean).join(' · ') || '—'}</td>
+                    <td>{clienteObra(p) || '—'}</td>
                     <td>
                       <div className="mob-prog">
                         <div className="mob-prog-barra">
@@ -143,7 +168,9 @@ export default function ProcessosMob() {
                     </td>
                     {/* Dias corridos desde o começo — em andamento, conta até hoje. */}
                     <td className="num">{tempoTotalTexto(p)}</td>
-                    <td>{p.responsavelNome || <span className="mob-cartao-sem-dono">sem responsável</span>}</td>
+                    {MOSTRAR_RESPONSAVEL && (
+                      <td>{p.responsavelNome || <span className="mob-cartao-sem-dono">sem responsável</span>}</td>
+                    )}
                     <td className="num">
                       {p.prazo_em
                         ? <span className={`mob-prazo tom-${atrasado ? 'vencido' : tom}`}>{dataBr(p.prazo_em)}</span>

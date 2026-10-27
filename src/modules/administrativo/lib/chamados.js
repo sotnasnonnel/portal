@@ -15,6 +15,7 @@ import { temAvaliacao } from './satisfacao';
 import { desdobrarMobilizacao } from './desdobramento';
 import { getClasse, getServico } from '../../../config/administrativo';
 import { chavesDePessoa } from '../app/novo/formularios/schemas';
+import { precisaDesmob, desmobDaMovimentacao } from '../app/novo/formularios/mobilizacao';
 import { notificarChamadoAdm } from '../../../services/notificarChamadoAdm';
 // Baixa de estoque no fechamento. A dependência é de mão única — o
 // Atendimento importa do Estoque, nunca o contrário.
@@ -98,6 +99,20 @@ export async function listarProjetos() {
 export async function dadosDaUltimaMobilizacao(codCt) {
   if (!codCt) return null;
   const { data, error } = await supabase.rpc('mobilizacao_dados_do_ct', { p_cod_ct: codCt });
+  if (error) return null;
+  return data?.[0] ?? null;
+}
+
+/**
+ * Onde o profissional está hoje: cliente, obra, Código CT e contato da última
+ * mobilização FINALIZADA dele, para a movimentação mostrar de onde ele sai.
+ * Mesma regra da herança da desmobilização no banco. null quando não há
+ * mobilização finalizada, ou se a consulta falhar — é informação de apoio e
+ * não pode travar o chamado.
+ */
+export async function ondeEstaHoje(profissionalId) {
+  if (!profissionalId) return null;
+  const { data, error } = await supabase.rpc('mobilizacao_onde_esta', { p_profissional: profissionalId });
   if (error) return null;
   return data?.[0] ?? null;
 }
@@ -540,6 +555,23 @@ export async function criarMobilizacaoComAdicionais({
 }) {
   const filhos = desdobrarMobilizacao(campos);
 
+  // Movimentação com saída: a Desmobilização é um chamado PRÓPRIO, e não filho
+  // — o gatilho só abre processo para chamado sem origem, e a saída precisa do
+  // processo dela. O aprovador é o do serviço de mobilização, conferido aqui
+  // pelo mesmo motivo dos adicionais: antes de gravar qualquer coisa.
+  const comDesmob = precisaDesmob(campos);
+  let configDesmob = null;
+  if (comDesmob) {
+    configDesmob = config || await buscarConfigServico('mobilizacao', 'mobilizacao');
+    await resolverAprovadores({
+      classe: 'mobilizacao',
+      servico: 'mobilizacao',
+      campos: desmobDaMovimentacao(campos),
+      exigeAprovacao: configDesmob.exige_aprovacao === true,
+      solicitanteId,
+    });
+  }
+
   // Configuração de cada filho, buscada uma vez só e reaproveitada no insert.
   const preparados = [];
   for (const filho of filhos) {
@@ -590,6 +622,26 @@ export async function criarMobilizacaoComAdicionais({
       criados.push({ numero: chamado.numero, classe: filho.classe, servico: filho.servico });
     } catch (e) {
       falhas.push(`${rotuloDoServico(filho.classe, filho.servico)} (${e.message})`);
+    }
+  }
+
+  if (comDesmob) {
+    try {
+      const { chamado } = await criarChamado({
+        classe: 'mobilizacao',
+        servico: 'mobilizacao',
+        assunto: 'Desmobilização',
+        natureza,
+        descricao: `Saída da obra atual, pela movimentação #${pai.chamado.numero}.`,
+        campos: desmobDaMovimentacao(campos, pai.chamado.numero),
+        arquivos: [],
+        solicitanteId,
+        config: configDesmob,
+        colaboradorId,
+      });
+      criados.push({ numero: chamado.numero, classe: 'mobilizacao', servico: 'mobilizacao', rotulo: 'Desmobilização' });
+    } catch (e) {
+      falhas.push(`Desmobilização (${e.message})`);
     }
   }
 

@@ -30,8 +30,14 @@ type Evento = (typeof EVENTOS)[number];
 const escapeHtml = (s: string) =>
   String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
+// dd/mm/aaaa hh:mm. `dateStyle: "short"` escrevia o ano com dois dígitos.
 const dataHoraBr = (d: unknown) =>
-  (d ? new Date(String(d)).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" }) : null);
+  (d
+    ? new Date(String(d)).toLocaleString("pt-BR", {
+      day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
+      timeZone: "America/Sao_Paulo",
+    }).replace(",", "")
+    : null);
 
 async function graphToken(tenant: string, clientId: string, secret: string): Promise<string> {
   const res = await fetch(`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`, {

@@ -9,10 +9,9 @@ import {
 } from '../../lib/painel';
 import { useEstadoPersistido } from '../../../../hooks/useEstadoPersistido';
 import SearchSelect from '../../../../components/UI/SearchSelect';
+import { formatarDataHora } from '../../../../utils/formatters';
 
-const dataHora = (iso) => (iso
-  ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
-  : 'sem prazo');
+const dataHora = (iso) => formatarDataHora(iso, 'sem prazo');
 
 const QUADRO_VAZIO = { solicitanteId: '', cc: '', atrasado: '' };
 

@@ -2,13 +2,30 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ListChecks, Loader2, AlertCircle, X, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { ehTimeMobilizacao, FLUXOS, rotuloFluxoCurto } from '../../../../config/mobilizacao';
+import {
+  ehTimeMobilizacao, FLUXOS, rotuloFluxoCurto, MOSTRAR_RESPONSAVEL,
+} from '../../../../config/mobilizacao';
 import { semaforoDias } from '../../../../utils/semaforo';
 import { listarEtapasDoQuadro } from '../../lib/mobilizacao';
 import { filtrarFila, opcoesDaFila } from '../../lib/painelEtapas';
 import { rotuloStatus, STATUS_LABEL } from '../../lib/statusEtapa';
+import { ordenarLinhas } from '../../lib/ordenacao';
+import ThOrdena from '../components/ThOrdena';
 
 const dataBr = (iso) => (iso ? iso.split('-').reverse().join('/') : '—');
+
+// O que cada coluna mostra, para ordenar pelo mesmo valor que se lê.
+const COLUNAS = {
+  numero: (e) => e.numero,
+  etapa: (e) => e.titulo,
+  processo: (e) => e.processoTitulo,
+  fluxo: (e) => rotuloFluxoCurto(e.fluxo),
+  responsavel: (e) => e.responsavelNome,
+  situacao: (e) => rotuloStatus(e.status),
+  previsto: (e) => e.data_prevista,
+  real: (e) => e.data_real,
+  atraso: (e) => e.dias_atraso,
+};
 
 const FILTRO_VAZIO = {
   busca: '', fluxo: '', status: '', responsavelId: '', atrasadas: false, incluirEncerradas: false,
@@ -22,6 +39,7 @@ export default function FilaMob() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
   const [f, setF] = useState(FILTRO_VAZIO);
+  const [ordem, setOrdem] = useState(null);
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -38,7 +56,7 @@ export default function FilaMob() {
   useEffect(() => { carregar(); }, [carregar]);
 
   const opcoes = opcoesDaFila(etapas);
-  const visiveis = filtrarFila(etapas, f);
+  const visiveis = ordenarLinhas(filtrarFila(etapas, f), ordem, COLUNAS);
   const filtrando = JSON.stringify(f) !== JSON.stringify(FILTRO_VAZIO);
   const trocar = (campo) => (ev) => setF((a) => ({ ...a, [campo]: ev.target.value }));
 
@@ -73,6 +91,7 @@ export default function FilaMob() {
           </select>
         </div>
 
+        {MOSTRAR_RESPONSAVEL && (
         <div className="mob-filtro">
           <label htmlFor="mob-f-resp">Responsável</label>
           <select id="mob-f-resp" value={f.responsavelId} onChange={trocar('responsavelId')}>
@@ -82,6 +101,7 @@ export default function FilaMob() {
             {opcoes.responsaveis.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
           </select>
         </div>
+        )}
 
         <button type="button"
           className={`mob-btn mob-btn-sm mob-filtro-limpa ${f.atrasadas ? 'mob-btn-primary' : 'mob-btn-ghost'}`}
@@ -112,15 +132,17 @@ export default function FilaMob() {
           <table className="mob-tabela">
             <thead>
               <tr>
-                <th>#</th>
-                <th>Etapa</th>
-                <th>Processo</th>
-                <th>Fluxo</th>
-                <th>Responsável</th>
-                <th>Situação</th>
-                <th>Previsto</th>
-                <th>Real</th>
-                <th className="num">Atraso</th>
+                <ThOrdena coluna="numero" ordem={ordem} setOrdem={setOrdem}>#</ThOrdena>
+                <ThOrdena coluna="etapa" ordem={ordem} setOrdem={setOrdem}>Etapa</ThOrdena>
+                <ThOrdena coluna="processo" ordem={ordem} setOrdem={setOrdem}>Processo</ThOrdena>
+                <ThOrdena coluna="fluxo" ordem={ordem} setOrdem={setOrdem}>Fluxo</ThOrdena>
+                {MOSTRAR_RESPONSAVEL && (
+                  <ThOrdena coluna="responsavel" ordem={ordem} setOrdem={setOrdem}>Responsável</ThOrdena>
+                )}
+                <ThOrdena coluna="situacao" ordem={ordem} setOrdem={setOrdem}>Situação</ThOrdena>
+                <ThOrdena coluna="previsto" ordem={ordem} setOrdem={setOrdem}>Previsto</ThOrdena>
+                <ThOrdena coluna="real" ordem={ordem} setOrdem={setOrdem}>Real</ThOrdena>
+                <ThOrdena coluna="atraso" ordem={ordem} setOrdem={setOrdem} className="num">Atraso</ThOrdena>
               </tr>
             </thead>
             <tbody>
@@ -134,7 +156,9 @@ export default function FilaMob() {
                     </td>
                     <td>{e.processoTitulo}</td>
                     <td>{rotuloFluxoCurto(e.fluxo)}</td>
-                    <td>{e.responsavelNome || <span className="mob-cartao-sem-dono">sem responsável</span>}</td>
+                    {MOSTRAR_RESPONSAVEL && (
+                      <td>{e.responsavelNome || <span className="mob-cartao-sem-dono">sem responsável</span>}</td>
+                    )}
                     <td>{rotuloStatus(e.status)}</td>
                     <td className="num">{dataBr(e.data_prevista)}</td>
                     <td className="num">{dataBr(e.data_real)}</td>

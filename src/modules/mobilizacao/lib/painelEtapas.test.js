@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   COLUNAS_KANBAN, statusAoSoltar, agruparEmColunas, podeMover, podeEditar,
   progresso, iniciais, filtrarFila, opcoesDaFila,
-  estaAtrasada, venceHoje, processoAtrasado, filtrarProcessos,
+  estaAtrasada, venceHoje, processoAtrasado, filtrarProcessos, codigoCt, contatoDoCliente,
 } from './painelEtapas.js';
 
 const etapa = (over = {}) => ({
@@ -224,4 +224,38 @@ test('filtros de processo se somam', () => {
     filtrarProcessos(lista, { fluxo: 'mobilizacao_empresa' }, '2026-09-10').map((p) => p.id),
     ['c'],
   );
+});
+
+test('Código CT é o código completo do projeto', () => {
+  assert.equal(codigoCt({ cod_phd: 'GERD-CT14-PIND', cod_ct: 'GERD-CT14' }), 'GERD-CT14-PIND');
+  assert.equal(codigoCt({ cod_phd: null, cod_ct: 'ADMB-CT29' }), 'ADMB-CT29', 'sem projeto, vale o prefixo');
+  // Até 06/10/2026 o centro de custo ia para cod_ct.
+  assert.equal(codigoCt({ cod_ct: 'Equipe PAULO CEZAR DE PAIVA NETO' }), '');
+  assert.equal(codigoCt(null), '');
+});
+
+test('contato do cliente: os campos novos valem mais que o texto antigo', () => {
+  assert.deepEqual(
+    contatoDoCliente({ campos: {
+      contato_nome: 'Rejane', contato_telefone: '(31) 7264-8251', contato_email: 'r@c.com', contato_cliente: 'velho',
+    } }),
+    { nome: 'Rejane', telefone: '(31) 7264-8251', email: 'r@c.com' },
+  );
+  assert.deepEqual(contatoDoCliente({}), { nome: '', telefone: '', email: '' });
+});
+
+// Os textos reais dos chamados de antes de 27/10/2026.
+test('o contato antigo, texto livre, é separado em nome, telefone e e-mail', () => {
+  const casos = [
+    ['31 7264-8251 - Rejane', { nome: 'Rejane', telefone: '(31) 7264-8251', email: '' }],
+    ['Daniel dos Anjos - (19) 99813.8142', { nome: 'Daniel dos Anjos', telefone: '(19) 9 9813-8142', email: '' }],
+    ['Daniel dos Anjos - (19) 99813 8142', { nome: 'Daniel dos Anjos', telefone: '(19) 9 9813-8142', email: '' }],
+    ['gustavo.schalch@auraminerals.com', { nome: '', telefone: '', email: 'gustavo.schalch@auraminerals.com' }],
+    ['MARIA CLARA', { nome: 'MARIA CLARA', telefone: '', email: '' }],
+    ['Sucely Janeth Moreira Molina - smoreira@auraminerals.com; sebastiaos.neto@auraminerals.com sebastiaos.neto@auraminerals.com',
+      { nome: 'Sucely Janeth Moreira Molina', telefone: '', email: 'smoreira@auraminerals.com, sebastiaos.neto@auraminerals.com' }],
+  ];
+  for (const [texto, esperado] of casos) {
+    assert.deepEqual(contatoDoCliente({ campos: { contato_cliente: texto } }), esperado, texto);
+  }
 });
