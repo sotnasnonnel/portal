@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  agruparComentarios, cursorDe, ehModeradorFeed, juntarPaginas, tempoRelativo, validarPost, FOTOS_MAX,
-  precisaAceitarTermos, TERMOS_FEED,
+  agruparComentarios, cursorDe, ehModeradorFeed, juntarPaginas, tempoRelativo, validarPost, MIDIAS_MAX,
+  precisaAceitarTermos, TERMOS_FEED, VIDEO_BYTES_MAX,
 } from './feed.js';
 
 test('termo do feed: pede aceite na primeira vez e quando a versão muda', () => {
@@ -12,13 +12,48 @@ test('termo do feed: pede aceite na primeira vez e quando a versão muda', () =>
   assert.equal(precisaAceitarTermos({ versao: 'antiga', em: '2026-10-23T12:00:00Z' }), true);
 });
 
-test('post vazio, texto longo e fotos demais não passam', () => {
+test('post vazio, texto longo e arquivos demais não passam', () => {
   assert.equal(validarPost({ texto: '  ' }).length, 1);
   assert.deepEqual(validarPost({ texto: 'oi' }), []);
-  assert.deepEqual(validarPost({ fotos: [{ type: 'image/jpeg' }] }), []);
+  assert.deepEqual(validarPost({ midias: [{ type: 'image/jpeg' }] }), []);
   assert.equal(validarPost({ texto: 'x'.repeat(3001) }).length, 1);
-  assert.equal(validarPost({ texto: 'oi', fotos: Array(FOTOS_MAX + 1).fill({ type: 'image/png' }) }).length, 1);
-  assert.equal(validarPost({ fotos: [{ type: 'application/pdf' }] }).length, 1);
+  assert.equal(validarPost({ texto: 'oi', midias: Array(MIDIAS_MAX + 1).fill({ type: 'image/png' }) }).length, 1);
+  assert.equal(validarPost({ midias: [{ type: 'application/pdf' }] }).length, 1);
+});
+
+test('vídeo: um por post, só os formatos do bucket e dentro do tamanho', () => {
+  const ok = { type: 'video/mp4', size: 1024 };
+  assert.deepEqual(validarPost({ midias: [ok] }), []);
+  // Vídeo junto de fotos passa, desde que caiba no total.
+  assert.deepEqual(validarPost({ midias: [ok, { type: 'image/jpeg' }, { type: 'image/png' }] }), []);
+  assert.equal(validarPost({ midias: [ok, { type: 'video/webm', size: 1024 }] }).length, 1);
+  assert.equal(validarPost({ midias: [{ type: 'video/avi', size: 1024 }] }).length, 1);
+  assert.equal(validarPost({ midias: [{ type: 'video/mp4', size: VIDEO_BYTES_MAX + 1 }] }).length, 1);
+  assert.deepEqual(validarPost({ midias: [{ type: 'video/quicktime', size: VIDEO_BYTES_MAX }] }), []);
+});
+
+test('"curtido por": dois nomes, eu na frente e o resto contado', async () => {
+  const { resumoCurtidas } = await import('./feed.js');
+  const quem = [
+    { colaborador_id: 'b', nome: 'ANA SOUZA' },
+    { colaborador_id: 'eu', nome: 'LENNON SANTOS' },
+    { colaborador_id: 'c', nome: 'LUCAS FERRAZ' },
+  ];
+  // Eu curti: venho primeiro, e sobram as outras 2 do total de 4.
+  const meu = resumoCurtidas(quem, 4, 'eu');
+  assert.deepEqual(meu.lista.map((p) => p.colaborador_id), ['eu', 'b']);
+  assert.equal(meu.lista[0].euAqui, true);
+  assert.equal(meu.resto, 2);
+  // Não curti: a ordem do banco, e o resto é o que o resumo não trouxe.
+  const alheio = resumoCurtidas(quem, 3, 'outro');
+  assert.deepEqual(alheio.lista.map((p) => p.colaborador_id), ['b', 'eu']);
+  assert.equal(alheio.resto, 1);
+  // Uma curtida só: um nome e nada sobrando.
+  assert.deepEqual(resumoCurtidas([quem[0]], 1, 'eu'), { lista: [{ ...quem[0], euAqui: false }], resto: 0 });
+  // Resumo ainda não chegou: nada a nomear, e o resto não inventa gente.
+  assert.deepEqual(resumoCurtidas([], 4, 'eu'), { lista: [], resto: 4 });
+  // Total atrasado em relação ao resumo não vira resto negativo.
+  assert.equal(resumoCurtidas(quem, 0, 'eu').resto, 0);
 });
 
 test('cursor ignora os fixados', () => {

@@ -81,7 +81,10 @@
 }
 .feed-chamada-pilula:hover { background: #f1f5f9; }
 .feed-chamada-pilula:focus-visible { box-shadow: var(--focus-ring); outline: none; }
-.feed-iconbtn.is-foto { width: var(--ctl-h-lg); height: var(--ctl-h-lg); border-radius: 10px; color: var(--blue); }
+.feed-iconbtn.is-foto,
+.feed-iconbtn.is-video { width: var(--ctl-h-lg); height: var(--ctl-h-lg); border-radius: 10px; color: var(--blue); }
+/* No celular a pílula aperta os dois ícones; o gap menor evita a quebra de linha. */
+@media (max-width: 420px) { .feed-chamada { gap: 6px; padding: 10px; } }
 
 .feed-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .feed-modal-fundo {
@@ -133,7 +136,14 @@
 }
 .feed-composer-fotos { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .feed-composer-foto { position: relative; width: 84px; height: 84px; }
-.feed-composer-foto img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+.feed-composer-foto img,
+.feed-composer-foto video { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; display: block; }
+.feed-composer-foto.is-video video { background: #0b1220; }
+/* Seta de "play" no meio da prévia: é o que diz que aquele quadro é um vídeo. */
+.feed-composer-foto.is-video > svg {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  color: #fff; filter: drop-shadow(0 1px 3px rgba(15, 23, 42, .8)); pointer-events: none;
+}
 .feed-composer-foto button {
   position: absolute; top: 4px; right: 4px; display: grid; place-items: center; width: 22px; height: 22px;
   border: 0; border-radius: 50%; background: rgba(15, 23, 42, .7); color: #fff; cursor: pointer;
@@ -207,6 +217,14 @@
 .feed-fotos.is-1 { display: flex; justify-content: center; margin: 12px 0 0; }
 .feed-fotos.is-1 .feed-foto { width: auto; height: auto; max-width: 100%; border-radius: 10px; background: none; }
 .feed-fotos.is-1 .feed-foto img { width: auto; height: auto; max-width: 100%; max-height: 560px; object-fit: contain; }
+.feed-fotos.is-1 .feed-video { border-radius: 10px; overflow: hidden; }
+
+/* Vídeo: toca no próprio card, com os controles do navegador. O fundo escuro
+   cobre a sobra do vídeo em pé, que não enche a largura do card. */
+.feed-video { display: block; width: 100%; background: #0b1220; }
+.feed-video video { display: block; width: 100%; max-height: 560px; background: #0b1220; }
+.feed-carrossel-trilho .feed-video { flex: 0 0 100%; height: 100%; scroll-snap-align: start; scroll-snap-stop: always; }
+.feed-carrossel-trilho .feed-video video { height: 100%; max-height: none; object-fit: contain; }
 
 /* Várias fotos: carrossel que sangra até a borda do card, como no LinkedIn.
    A foto aparece inteira (contain); a sobra fica no fundo do .feed-foto. */
@@ -247,6 +265,40 @@
 .feed-acao.is-on { color: #d6336c; }
 .feed-acao.is-aberto { color: var(--ink); font-weight: 600; }
 .feed-acao:focus-visible { box-shadow: var(--focus-ring); outline: none; }
+/* ---- "Curtido por Você, Ana e outras 2 pessoas" ---- */
+.feed-curtido {
+  display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 2px; padding: 4px 2px;
+  border: 0; border-radius: 8px; background: none; color: var(--ink-soft); font: inherit;
+  font-size: var(--font-size-sm); text-align: left; cursor: pointer;
+}
+.feed-curtido:hover { background: #f8fafc; }
+.feed-curtido:hover .feed-curtido-txt { text-decoration: underline; }
+.feed-curtido:focus-visible { box-shadow: var(--focus-ring); outline: none; }
+/* Nome longo não empurra o card: a linha corta com "…". */
+.feed-curtido-txt { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.feed-curtido-txt b { font-weight: 600; color: var(--ink); }
+/* Bolinhas sobrepostas, a primeira na frente — daí o z-index descendo. */
+.feed-curtido-bolinhas { display: flex; flex: none; }
+.feed-curtido-bolinhas .feed-av {
+  position: relative; width: 24px; height: 24px; font-size: var(--font-size-2xs); border: 2px solid #fff;
+}
+.feed-curtido-bolinhas .feed-av + .feed-av { margin-left: -8px; }
+.feed-curtido-bolinhas .feed-av:nth-child(1) { z-index: 3; }
+.feed-curtido-bolinhas .feed-av:nth-child(2) { z-index: 2; }
+.feed-curtido-bolinhas .feed-av:nth-child(3) { z-index: 1; }
+/* Selo e moldura da Personalização não cabem numa bolinha de 24px. */
+.feed-curtido-bolinhas .pts-selo { display: none; }
+
+/* ---- Quem curtiu, a lista inteira ---- */
+.feed-modal.is-curtidas { max-width: 420px; }
+.feed-curtidas-tit {
+  flex: 1; display: flex; align-items: center; gap: 8px; margin: 0;
+  font-size: var(--font-size-md); font-weight: 700; color: var(--ink);
+}
+.feed-curtidas-tit svg { color: #d6336c; }
+.feed-curtidas-lista { margin: 0; padding: 8px 18px 18px; list-style: none; max-height: 60vh; overflow-y: auto; }
+.feed-curtidas-lista li + li { margin-top: 10px; }
+.feed-curtidas-mais { font-size: var(--font-size-sm); color: var(--muted); }
 
 /* ---- Comentários ---- */
 .feed-coments { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }

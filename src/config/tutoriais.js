@@ -60,8 +60,8 @@ export const TUTORIAIS = {
       },
       {
         id: 'post-ferramentas', rota: '/feed', alvo: 'post-ferramentas', livre: true, seSumir: 'feed-chamada',
-        titulo: 'Fotos e emojis',
-        texto: 'Anexe até 5 fotos e escolha emojis aqui. Foto de obra, só com EPI e sem situação de risco.',
+        titulo: 'Fotos, vídeo e emojis',
+        texto: 'Anexe até 5 arquivos — fotos e um vídeo (até 50 MB e 3 min) — e escolha emojis aqui. Foto e vídeo de obra, só com EPI e sem situação de risco.',
       },
       {
         id: 'post-publicar', rota: '/feed', alvo: 'post-publicar', acao: 'clique', livre: true, seSumir: 'feed-chamada',

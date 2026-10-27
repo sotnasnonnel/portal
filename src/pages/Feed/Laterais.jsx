@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarDays, ClipboardCheck, Palette, Star, Heart, MessageCircle, Trophy, Image as ImageIcon } from 'lucide-react';
+import {
+  CalendarDays, ClipboardCheck, Palette, Star, Heart, MessageCircle, Trophy, Image as ImageIcon, Video,
+} from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePontos } from '../../contexts/PontosContext';
 import { COMO_GANHAR, NOME_TITULO } from '../../config/pontos';
@@ -65,7 +67,12 @@ function MaisCurtidos() {
             <button type="button" onClick={() => irPara(p.id)}>
               <b>{nomeProprio(p.autor_nome).split(' ').slice(0, 2).join(' ')}</b>
               <span className="feed-top-trecho">
-                {p.trecho || (p.fotos ? <><ImageIcon size={12} /> {p.fotos} foto{p.fotos === 1 ? '' : 's'}</> : '—')}
+                {/* Post sem texto: o que ele tem dentro. Vídeo vem primeiro —
+                    num post com os dois, é o vídeo que conta a história. */}
+                {p.trecho
+                  || (p.videos ? <><Video size={12} /> Vídeo</>
+                    : p.fotos ? <><ImageIcon size={12} /> {p.fotos} foto{p.fotos === 1 ? '' : 's'}</>
+                      : '—')}
               </span>
               <span className="feed-top-num">
                 <Heart size={12} /> {p.curtidas} · <MessageCircle size={12} /> {p.comentarios} · {tempoRelativo(p.criado_em)}

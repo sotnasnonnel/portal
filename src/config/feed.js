@@ -17,10 +17,31 @@ export const veFeed = (user) => FEED_LIBERADO || isSuperAdmin(user);
 
 export const TEXTO_MAX = 3000;
 export const COMENTARIO_MAX = 1000;
-export const FOTOS_MAX = 5;
-export const FOTO_BYTES_MAX = 8 * 1024 * 1024;   // mesmo limite do bucket feed-midia
+export const MIDIAS_MAX = 5;                      // fotos + vídeo, juntos
+export const FOTO_BYTES_MAX = 8 * 1024 * 1024;   // só do navegador: o bucket aceita até 50 MB
 export const FOTO_LADO_MAX = 1920;                // a foto é reduzida no navegador
 export const POR_PAGINA = 20;
+
+/**
+ * Vídeo no post (26/10/2026). Ao contrário da foto, o navegador NÃO recomprime
+ * vídeo (precisaria de ffmpeg): o arquivo sobe como veio, e por isso o limite é
+ * baixo e vale um vídeo por post. 50 MB é o teto do bucket feed-midia
+ * (supabase_migration_feed_video_curtidas.sql); a duração o navegador mede
+ * antes de subir, lendo os metadados.
+ *
+ * `video/quicktime` é o .mov que o iPhone grava — sem ele, metade da empresa
+ * não consegue postar do celular.
+ */
+export const VIDEOS_MAX = 1;
+export const VIDEO_BYTES_MAX = 50 * 1024 * 1024;
+export const VIDEO_SEG_MAX = 180;
+export const VIDEO_TIPOS = ['video/mp4', 'video/webm', 'video/quicktime'];
+export const VIDEO_ACCEPT = 'video/mp4,video/webm,video/quicktime';
+export const VIDEO_POSTER_LADO = 1280;            // a capa do vídeo, no tamanho do feed
+
+export const ehVideo = (file) => Boolean(file?.type?.startsWith('video/'));
+/** Item de `midia` que é vídeo. Item sem `tipo` é foto (posts antes de 26/10/2026). */
+export const midiaEhVideo = (m) => m?.tipo === 'video';
 
 /** Moderação: admin do portal ou super admin. Espelha app_private.feed_moderador(). */
 export const ehModeradorFeed = (user) => user?.perfil === 'admin' || isSuperAdmin(user);
@@ -58,14 +79,22 @@ export const TERMOS_FEED = {
 /** O termo cobre o feed até a pessoa aceitar a versão atual. `aceite`: { versao, em } ou null. */
 export const precisaAceitarTermos = (aceite) => !aceite?.em || aceite.versao !== TERMOS_FEED.versao;
 
-/** Erros que impedem publicar. `fotos` são os File escolhidos. */
-export function validarPost({ texto = '', fotos = [] } = {}) {
+/** Erros que impedem publicar. `midias` são os File escolhidos (foto ou vídeo). */
+export function validarPost({ texto = '', midias = [] } = {}) {
   const erros = [];
   const t = String(texto || '').trim();
-  if (!t && fotos.length === 0) erros.push('Escreva algo ou escolha uma foto.');
+  const videos = midias.filter(ehVideo);
+  if (!t && midias.length === 0) erros.push('Escreva algo ou escolha uma foto ou vídeo.');
   if (t.length > TEXTO_MAX) erros.push(`O texto passou de ${TEXTO_MAX.toLocaleString('pt-BR')} caracteres.`);
-  if (fotos.length > FOTOS_MAX) erros.push(`No máximo ${FOTOS_MAX} fotos por post.`);
-  if (fotos.some((f) => f?.type && !f.type.startsWith('image/'))) erros.push('Só dá para anexar fotos.');
+  if (midias.length > MIDIAS_MAX) erros.push(`No máximo ${MIDIAS_MAX} arquivos por post.`);
+  if (midias.some((f) => f?.type && !f.type.startsWith('image/') && !f.type.startsWith('video/'))) {
+    erros.push('Só dá para anexar fotos e vídeos.');
+  }
+  if (videos.length > VIDEOS_MAX) erros.push('Só um vídeo por post.');
+  if (videos.some((f) => f?.type && !VIDEO_TIPOS.includes(f.type))) erros.push('O vídeo precisa ser MP4, WebM ou MOV.');
+  if (videos.some((f) => f?.size > VIDEO_BYTES_MAX)) {
+    erros.push(`Vídeo acima de ${Math.round(VIDEO_BYTES_MAX / 1024 / 1024)} MB. Corte um trecho ou grave em qualidade menor.`);
+  }
   return erros;
 }
 
@@ -123,6 +152,26 @@ export function tempoRelativo(iso, agora = new Date()) {
 
 /** Contagem em texto: "1 curtida", "3 comentários". */
 export const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
+
+/**
+ * A linha "Curtido por…" embaixo do post, no molde do Instagram: dois nomes e
+ * o resto como "e outras N pessoas".
+ *
+ * `quem` é o resumo que o banco manda (3 por post, feed_curtidas_resumo), e
+ * `total` é o número do post — podem divergir, porque o resumo é cortado e o
+ * total conta todo mundo. Quem curtiu aparece primeiro como "Você": é o que
+ * faz a linha responder ao próprio clique no coração.
+ *
+ * Devolve { lista, resto }: `lista` são os curtidores a nomear (com `euAqui`
+ * marcando o "Você") e `resto` quantas pessoas ficaram de fora.
+ */
+export function resumoCurtidas(quem = [], total = 0, euId = null, max = 2) {
+  const eu = quem.filter((p) => p.colaborador_id === euId);
+  const outros = quem.filter((p) => p.colaborador_id !== euId);
+  const lista = [...eu, ...outros].slice(0, max).map((p) => ({ ...p, euAqui: p.colaborador_id === euId }));
+  // `total` é a verdade; o resumo nunca tem mais gente do que ele.
+  return { lista, resto: Math.max(0, Math.max(total, lista.length) - lista.length) };
+}
 
 // Links no texto: http(s)://… e www.…, até o primeiro espaço. Pontuação de fim
 // de frase (". , ; : ! ?" e o ")" que não abriu dentro do link) fica de fora.

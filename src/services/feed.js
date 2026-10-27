@@ -1,10 +1,13 @@
 import { supabase } from './supabase';
-import { FOTO_BYTES_MAX, FOTO_LADO_MAX, POR_PAGINA } from '../config/feed';
+import {
+  ehVideo, FOTO_BYTES_MAX, FOTO_LADO_MAX, POR_PAGINA,
+  VIDEO_BYTES_MAX, VIDEO_POSTER_LADO, VIDEO_SEG_MAX, VIDEO_TIPOS,
+} from '../config/feed';
 
 // Feed do portal. Tudo por RPC (supabase/supabase_migration_feed.sql): as
 // tabelas não têm policy, então o banco decide quem vê, posta e modera.
-// As fotos vão para o bucket privado feed-midia, na pasta de quem posta, e
-// são lidas por link assinado.
+// As fotos e os vídeos vão para o bucket privado feed-midia, na pasta de quem
+// posta, e são lidos por link assinado.
 
 const BUCKET = 'feed-midia';
 const VALIDADE_LINK = 60 * 60; // 1 h — a página recarrega o feed bem antes disso
@@ -44,6 +47,27 @@ export async function curtir(id) {
   const { data, error } = await supabase.rpc('feed_curtir', { p_id: id });
   checar(error);
   return data?.[0] || null;
+}
+
+/** Quem curtiu um post: [{ colaborador_id, nome, funcao, moldura, titulo }], 100 no máximo. */
+export async function listarCurtidas(postId) {
+  const { data, error } = await supabase.rpc('feed_curtidas_listar', { p_post: postId });
+  checar(error);
+  return data || [];
+}
+
+/**
+ * Os primeiros curtidores de vários posts de uma vez, para a linha
+ * "Curtido por…": { [postId]: [{ colaborador_id, nome, moldura }] }.
+ * Falha vira {} — a linha cai no número, que já vem no post.
+ */
+export async function resumoDasCurtidas(postIds = []) {
+  if (!postIds.length) return {};
+  const { data, error } = await supabase.rpc('feed_curtidas_resumo', { p_posts: postIds.slice(0, 50) });
+  if (error) return {};
+  const out = {};
+  for (const r of data || []) (out[r.post_id] ||= []).push(r);
+  return out;
 }
 
 export async function listarComentarios(postId) {
@@ -95,7 +119,7 @@ export async function descartarDenuncia(tipo, id) {
   checar(error);
 }
 
-// ---- Fotos --------------------------------------------------------------------
+// ---- Fotos e vídeos -----------------------------------------------------------
 
 function carregarImagem(file) {
   return new Promise((resolve, reject) => {
@@ -117,14 +141,15 @@ const CACHE_ARQUIVO = '31536000';
 /**
  * Redimensiona para `lado` no maior lado e regrava em WebP (bem menor que
  * JPEG). Navegador que não grava WebP (Safari antigo devolve PNG) cai para
- * JPEG.
+ * JPEG. `fonte` é um <img> ou um <video> parado no quadro da capa — daí as
+ * medidas virem de fora, que <video> não tem naturalWidth.
  */
-async function reduzir(img, lado, qualidade) {
-  const escala = Math.min(1, lado / Math.max(img.naturalWidth, img.naturalHeight));
+async function reduzir(fonte, lado, qualidade, larg = fonte.naturalWidth, alt = fonte.naturalHeight) {
+  const escala = Math.min(1, lado / Math.max(larg, alt));
   const canvas = document.createElement('canvas');
-  canvas.width = Math.max(1, Math.round(img.naturalWidth * escala));
-  canvas.height = Math.max(1, Math.round(img.naturalHeight * escala));
-  canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+  canvas.width = Math.max(1, Math.round(larg * escala));
+  canvas.height = Math.max(1, Math.round(alt * escala));
+  canvas.getContext('2d').drawImage(fonte, 0, 0, canvas.width, canvas.height);
   let blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/webp', qualidade));
   if (!blob || blob.type !== 'image/webp') {
     blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', qualidade));
@@ -150,6 +175,67 @@ async function prepararFoto(file) {
   return { grande, feed };
 }
 
+// ---- Vídeo --------------------------------------------------------------------
+// O vídeo sobe como veio: recomprimir no navegador pediria ffmpeg.wasm (uns
+// 30 MB de wasm e minutos de CPU). Por isso o limite é duro e o arquivo é só
+// medido — tamanho pelo File, duração e lados pelos metadados.
+
+const EXT_VIDEO = { 'video/mp4': 'mp4', 'video/webm': 'webm', 'video/quicktime': 'mov' };
+
+/** <video> com os metadados já lidos, e a URL local para liberar depois. */
+function carregarVideo(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const v = document.createElement('video');
+    v.preload = 'metadata';
+    v.muted = true;
+    v.onloadedmetadata = () => resolve({ v, url });
+    v.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Não foi possível ler o vídeo.')); };
+    v.src = url;
+  });
+}
+
+/**
+ * Capa do vídeo: um quadro perto do começo, regravado em WebP. Serve de
+ * `poster` no card e de miniatura no carrossel — sem ela, vídeo no meio das
+ * fotos é um retângulo preto. Falha aqui não impede o post: devolve null e o
+ * próprio <video> mostra o primeiro quadro que conseguir.
+ */
+async function posterDoVideo(v) {
+  await new Promise((resolve, reject) => {
+    // Com duração quebrada, o `currentTime` pode não mover nada e o `seeked`
+    // nunca chega. Sem este prazo o "Enviando o vídeo…" ficaria para sempre.
+    const prazo = setTimeout(() => reject(new Error('Demorou para ler o vídeo.')), 5000);
+    v.onseeked = () => { clearTimeout(prazo); resolve(); };
+    v.onerror = () => { clearTimeout(prazo); reject(new Error('Não foi possível ler o vídeo.')); };
+    // 0,5 s evita o quadro preto com que muita câmera começa.
+    v.currentTime = Math.min(0.5, (v.duration || 1) / 2);
+  });
+  return reduzir(v, VIDEO_POSTER_LADO, 0.8, v.videoWidth, v.videoHeight);
+}
+
+async function prepararVideo(file) {
+  if (!VIDEO_TIPOS.includes(file.type)) throw new Error('O vídeo precisa ser MP4, WebM ou MOV.');
+  if (file.size > VIDEO_BYTES_MAX) {
+    throw new Error(`Vídeo acima de ${Math.round(VIDEO_BYTES_MAX / 1024 / 1024)} MB. Corte um trecho ou grave em qualidade menor.`);
+  }
+  const { v, url } = await carregarVideo(file);
+  try {
+    const dur = Number.isFinite(v.duration) ? v.duration : 0;
+    if (dur > VIDEO_SEG_MAX) {
+      throw new Error(`Vídeo de mais de ${Math.round(VIDEO_SEG_MAX / 60)} min. Corte um trecho mais curto.`);
+    }
+    const poster = await posterDoVideo(v).catch(() => null);
+    return { width: v.videoWidth || 0, height: v.videoHeight || 0, dur: Math.round(dur), poster };
+  } finally {
+    URL.revokeObjectURL(url);
+    v.removeAttribute('src');
+    v.load();
+  }
+}
+
+// ---- Subida -------------------------------------------------------------------
+
 async function subir(path, f) {
   const { error } = await supabase.storage.from(BUCKET)
     .upload(path, f.blob, { contentType: f.type, cacheControl: CACHE_ARQUIVO });
@@ -157,17 +243,33 @@ async function subir(path, f) {
 }
 
 /**
- * Sobe as fotos para a pasta do colaborador e devolve o `midia` do post:
- * [{ path, thumb?, width, height }] — `thumb` é a versão do feed. Se uma
- * falhar, apaga as que já subiram.
+ * Sobe as fotos e o vídeo para a pasta do colaborador e devolve o `midia` do
+ * post, na ordem escolhida:
+ *   foto:  { path, thumb?, width, height }        — `thumb` é a versão do feed
+ *   vídeo: { tipo: 'video', path, poster?, width, height, dur }
+ * Item sem `tipo` é foto, como nos posts anteriores a 26/10/2026. Se um
+ * arquivo falhar, apaga os que já subiram.
  */
-export async function subirFotos(colaboradorId, files = []) {
+export async function subirMidias(colaboradorId, files = []) {
   const midia = [];
   const arquivos = []; // o que já subiu, para desfazer se algo falhar
   try {
     for (const file of files) {
-      const { grande, feed } = await prepararFoto(file);
       const base = `${colaboradorId}/${crypto.randomUUID()}`;
+      if (ehVideo(file)) {
+        const { width, height, dur, poster } = await prepararVideo(file);
+        const item = { tipo: 'video', path: `${base}.${EXT_VIDEO[file.type]}`, width, height, dur };
+        await subir(item.path, { blob: file, type: file.type });
+        arquivos.push(item.path);
+        if (poster) {
+          item.poster = `${base}-poster.${poster.ext}`;
+          await subir(item.poster, poster);
+          arquivos.push(item.poster);
+        }
+        midia.push(item);
+        continue;
+      }
+      const { grande, feed } = await prepararFoto(file);
       const item = { path: `${base}.${grande.ext}`, width: grande.width, height: grande.height };
       await subir(item.path, grande);
       arquivos.push(item.path);
@@ -185,15 +287,16 @@ export async function subirFotos(colaboradorId, files = []) {
   }
 }
 
-/** Todos os arquivos de um `midia` (as duas versões de cada foto). */
-export const arquivosDaMidia = (midia = []) => midia.flatMap((m) => [m.path, m.thumb].filter(Boolean));
+/** Todos os arquivos de um `midia` (foto: as duas versões; vídeo: ele e a capa). */
+export const arquivosDaMidia = (midia = []) =>
+  midia.flatMap((m) => [m.path, m.thumb, m.poster].filter(Boolean));
 
-/** Apaga fotos que subiram mas não viraram post (o post falhou). */
-export async function apagarFotos(paths = []) {
+/** Apaga arquivos que subiram mas não viraram post (o post falhou). */
+export async function apagarMidia(paths = []) {
   if (paths.length) await supabase.storage.from(BUCKET).remove(paths);
 }
 
-// Links assinados guardados na sessão: a mesma foto mantém o MESMO endereço
+// Links assinados guardados na sessão: o mesmo arquivo mantém o MESMO endereço
 // enquanto o link vale, e o navegador reaproveita o que já baixou. Antes cada
 // carregamento gerava link novo e baixava tudo de novo.
 const CHAVE_LINKS = 'feed_links_v1';
@@ -208,8 +311,8 @@ function guardarLinks() {
   try { sessionStorage.setItem(CHAVE_LINKS, JSON.stringify(links)); } catch { /* sem espaço: segue só em memória */ }
 }
 
-/** Links assinados: { [path]: url }. Falha vira {} — o post mostra sem a foto. */
-export async function linksDasFotos(paths = []) {
+/** Links assinados: { [path]: url }. Falha vira {} — o post mostra sem a mídia. */
+export async function linksDaMidia(paths = []) {
   const agora = Date.now();
   const cache = cacheLinks();
   const out = {};

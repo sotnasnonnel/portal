@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { ImagePlus, Loader2, SendHorizontal, X } from 'lucide-react';
+import { ImagePlus, Loader2, Play, SendHorizontal, Video, X } from 'lucide-react';
 import { usePontos } from '../../contexts/PontosContext';
-import { FOTOS_MAX, mencoesNoTexto, TEXTO_MAX, validarPost } from '../../config/feed';
+import {
+  ehVideo, mencoesNoTexto, MIDIAS_MAX, TEXTO_MAX, validarPost, VIDEO_ACCEPT, VIDEOS_MAX,
+} from '../../config/feed';
 import * as api from '../../services/feed';
 import { nomeProprio } from '../../utils/pessoas';
 import { AvatarFeed } from './Autor';
@@ -17,26 +19,30 @@ function MeuAvatar({ user, grande = false }) {
   return <AvatarFeed id={user?.id} nome={user?.nome} moldura={perfil?.moldura} className={grande ? 'is-grande' : ''} />;
 }
 
-function ModalPublicar({ user, fotosIniciais = false, onFechar, onPublicado, onErro }) {
+function ModalPublicar({ user, abrirCom = null, onFechar, onPublicado, onErro }) {
   const { recarregar } = usePontos();
   const [texto, setTexto] = useState('');
   const [mencoes, setMencoes] = useState([]); // [{ id, nome }] escolhidas no "@"
-  const [fotos, setFotos] = useState([]); // [{ file, url }]
+  const [midias, setMidias] = useState([]); // [{ file, url, video }], na ordem escolhida
   const [enviando, setEnviando] = useState(false);
   const textoRef = useRef(null);
-  const inputRef = useRef(null);
-  const fotosRef = useRef(fotos);
-  useEffect(() => { fotosRef.current = fotos; }, [fotos]);
+  const fotoRef = useRef(null);
+  const videoRef = useRef(null);
+  const midiasRef = useRef(midias);
+  useEffect(() => { midiasRef.current = midias; }, [midias]);
+
+  const videos = midias.filter((m) => m.video).length;
 
   // Prévias locais soltas ao fechar; foco no texto ao abrir (ou no seletor,
-  // se a pessoa veio pelo ícone de foto).
+  // se a pessoa veio pelo ícone de foto ou de vídeo).
   useEffect(() => {
-    if (fotosIniciais) inputRef.current?.click();
+    if (abrirCom === 'foto') fotoRef.current?.click();
+    else if (abrirCom === 'video') videoRef.current?.click();
     else textoRef.current?.focus();
-    return () => fotosRef.current.forEach((f) => URL.revokeObjectURL(f.url));
-  }, [fotosIniciais]);
+    return () => midiasRef.current.forEach((m) => URL.revokeObjectURL(m.url));
+  }, [abrirCom]);
 
-  const temConteudo = texto.trim() !== '' || fotos.length > 0;
+  const temConteudo = texto.trim() !== '' || midias.length > 0;
   const fechar = () => {
     if (enviando) return;
     if (temConteudo && !window.confirm('Descartar esta publicação?')) return;
@@ -49,32 +55,41 @@ function ModalPublicar({ user, fotosIniciais = false, onFechar, onPublicado, onE
     return () => window.removeEventListener('keydown', esc);
   });
 
+  // Um seletor para foto e outro para vídeo, mas uma lista só: a ordem de
+  // escolha é a ordem do carrossel. O que não cabe fica de fora, com aviso.
   const escolher = (e) => {
-    const novos = [...e.target.files].filter((f) => f.type.startsWith('image/'));
+    const escolhidos = [...e.target.files].filter((f) => f.type.startsWith('image/') || ehVideo(f));
     e.target.value = '';
-    const cabem = FOTOS_MAX - fotos.length;
-    if (novos.length > cabem) onErro(`No máximo ${FOTOS_MAX} fotos por post.`);
-    setFotos((v) => [...v, ...novos.slice(0, cabem).map((file) => ({ file, url: URL.createObjectURL(file) }))]);
+    const aceitos = [];
+    let jaVideos = videos;
+    for (const file of escolhidos) {
+      if (midias.length + aceitos.length >= MIDIAS_MAX) { onErro(`No máximo ${MIDIAS_MAX} arquivos por post.`); break; }
+      const video = ehVideo(file);
+      if (video && jaVideos >= VIDEOS_MAX) { onErro('Só um vídeo por post.'); continue; }
+      if (video) jaVideos += 1;
+      aceitos.push({ file, url: URL.createObjectURL(file), video });
+    }
+    if (aceitos.length) setMidias((v) => [...v, ...aceitos]);
   };
 
   const tirar = (i) => {
-    URL.revokeObjectURL(fotos[i].url);
-    setFotos((v) => v.filter((_, j) => j !== i));
+    URL.revokeObjectURL(midias[i].url);
+    setMidias((v) => v.filter((_, j) => j !== i));
   };
 
   const publicar = async () => {
-    const erros = validarPost({ texto, fotos: fotos.map((f) => f.file) });
+    const erros = validarPost({ texto, midias: midias.map((m) => m.file) });
     if (erros.length) { onErro(erros[0]); return; }
     setEnviando(true);
     let midia = [];
     try {
-      midia = await api.subirFotos(user.id, fotos.map((f) => f.file));
+      midia = await api.subirMidias(user.id, midias.map((m) => m.file));
       await api.postar(texto, midia, mencoesNoTexto(texto, mencoes));
       recarregar(); // o primeiro post do dia paga 25 (o "+25" voa até o saldo)
       onPublicado();
       onFechar();
     } catch (e) {
-      await api.apagarFotos(api.arquivosDaMidia(midia));
+      await api.apagarMidia(api.arquivosDaMidia(midia));
       onErro(e.message);
       setEnviando(false);
     }
@@ -117,12 +132,18 @@ function ModalPublicar({ user, fotosIniciais = false, onFechar, onPublicado, onE
           <CampoMencoes inputRef={textoRef} value={texto} onChange={setTexto} mencoes={mencoes} onMencoes={setMencoes}
             rows={7} maxLength={TEXTO_MAX} disabled={enviando}
             placeholder="Sobre o que você quer falar? Use @ para marcar alguém." aria-label="Texto da publicação" />
-          {fotos.length > 0 && (
+          {midias.length > 0 && (
             <div className="feed-composer-fotos">
-              {fotos.map((f, i) => (
-                <span key={f.url} className="feed-composer-foto">
-                  <img src={f.url} alt="" />
-                  {!enviando && <button type="button" aria-label="Tirar foto" onClick={() => tirar(i)}><X size={14} /></button>}
+              {midias.map((m, i) => (
+                <span key={m.url} className={`feed-composer-foto ${m.video ? 'is-video' : ''}`}>
+                  {m.video
+                    ? <><video src={m.url} muted playsInline preload="metadata" /><Play size={18} /></>
+                    : <img src={m.url} alt="" />}
+                  {!enviando && (
+                    <button type="button" aria-label={m.video ? 'Tirar vídeo' : 'Tirar foto'} onClick={() => tirar(i)}>
+                      <X size={14} />
+                    </button>
+                  )}
                 </span>
               ))}
             </div>
@@ -130,10 +151,16 @@ function ModalPublicar({ user, fotosIniciais = false, onFechar, onPublicado, onE
         </div>
 
         <div className="feed-modal-ferramentas" data-tour="post-ferramentas">
-          <input ref={inputRef} type="file" accept="image/*" multiple hidden onChange={escolher} />
-          <button type="button" className="feed-ferramenta" onClick={() => inputRef.current?.click()}
-            disabled={fotos.length >= FOTOS_MAX || enviando} title="Adicionar fotos">
-            <ImagePlus size={20} /> Foto{fotos.length ? ` (${fotos.length}/${FOTOS_MAX})` : ''}
+          <input ref={fotoRef} type="file" accept="image/*" multiple hidden onChange={escolher} />
+          <input ref={videoRef} type="file" accept={VIDEO_ACCEPT} hidden onChange={escolher} />
+          <button type="button" className="feed-ferramenta" onClick={() => fotoRef.current?.click()}
+            disabled={midias.length >= MIDIAS_MAX || enviando} title="Adicionar fotos">
+            <ImagePlus size={20} /> Foto{midias.length ? ` (${midias.length}/${MIDIAS_MAX})` : ''}
+          </button>
+          <button type="button" className="feed-ferramenta" onClick={() => videoRef.current?.click()}
+            disabled={midias.length >= MIDIAS_MAX || videos >= VIDEOS_MAX || enviando}
+            title={videos >= VIDEOS_MAX ? 'Só um vídeo por post' : 'Adicionar vídeo (até 50 MB, 3 min)'}>
+            <Video size={20} /> Vídeo
           </button>
           <EmojiPicker onEscolher={inserirEmoji} desabilitado={enviando} />
         </div>
@@ -145,7 +172,8 @@ function ModalPublicar({ user, fotosIniciais = false, onFechar, onPublicado, onE
           <button type="button" className="feed-btn-publicar" onClick={publicar} disabled={enviando || !temConteudo}
             aria-busy={enviando} data-tour="post-publicar">
             {enviando
-              ? <><Loader2 size={16} className="feed-spin" /> Publicando…</>
+              // Vídeo é arquivo grande e sobe como veio: o aviso explica a espera.
+              ? <><Loader2 size={16} className="feed-spin" /> {videos ? 'Enviando o vídeo…' : 'Publicando…'}</>
               : <><SendHorizontal size={16} /> Publicar</>}
           </button>
         </div>
@@ -154,9 +182,9 @@ function ModalPublicar({ user, fotosIniciais = false, onFechar, onPublicado, onE
   );
 }
 
-/** A chamada no topo do feed: avatar, "Sobre o que você quer falar?" e foto. */
+/** A chamada no topo do feed: avatar, "Sobre o que você quer falar?", foto e vídeo. */
 export default function Composer({ user, onPublicado, onErro }) {
-  const [aberto, setAberto] = useState(null); // null | 'texto' | 'foto'
+  const [aberto, setAberto] = useState(null); // null | 'texto' | 'foto' | 'video'
   return (
     <>
       <section className="feed-chamada">
@@ -168,9 +196,13 @@ export default function Composer({ user, onPublicado, onErro }) {
           onClick={() => setAberto('foto')}>
           <ImagePlus size={20} />
         </button>
+        <button type="button" className="feed-iconbtn is-video" aria-label="Criar publicação com vídeo" title="Vídeo"
+          onClick={() => setAberto('video')}>
+          <Video size={20} />
+        </button>
       </section>
       {aberto && (
-        <ModalPublicar user={user} fotosIniciais={aberto === 'foto'} onFechar={() => setAberto(null)}
+        <ModalPublicar user={user} abrirCom={aberto === 'texto' ? null : aberto} onFechar={() => setAberto(null)}
           onPublicado={onPublicado} onErro={onErro} />
       )}
     </>

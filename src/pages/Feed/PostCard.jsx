@@ -1,11 +1,13 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  AtSign, Heart, MessageCircle, MoreHorizontal, Pin, PinOff, Pencil, Trash2, Flag, EyeOff, Eye, X, ChevronLeft, ChevronRight,
+  AtSign, Heart, MessageCircle, MoreHorizontal, Pin, PinOff, Pencil, Trash2, Flag, EyeOff, Eye, X,
+  ChevronLeft, ChevronRight, Loader2,
 } from 'lucide-react';
-import { MENCAO_TODOS, plural, tempoRelativo, TEXTO_MAX } from '../../config/feed';
+import { MENCAO_TODOS, midiaEhVideo, plural, resumoCurtidas, tempoRelativo, TEXTO_MAX } from '../../config/feed';
 import { usePontos } from '../../contexts/PontosContext';
 import * as api from '../../services/feed';
-import Autor from './Autor';
+import { nomeProprio } from '../../utils/pessoas';
+import Autor, { AvatarFeed } from './Autor';
 import Comentarios from './Comentarios';
 import TextoComLinks from './TextoComLinks';
 
@@ -39,8 +41,8 @@ function Visualizador({ fotos, inicio, onFechar }) {
 const TEXTO_LONGO = 320;
 
 /**
- * Mais de uma foto: uma por vez, com setas e o contador "2/5". O trilho rola
- * com scroll-snap, então no celular arrastar com o dedo também passa a foto.
+ * Mais de uma mídia: uma por vez, com setas e o contador "2/5". O trilho rola
+ * com scroll-snap, então no celular arrastar com o dedo também passa a mídia.
  */
 function Carrossel({ n, children }) {
   const trilho = useRef(null);
@@ -56,12 +58,12 @@ function Carrossel({ n, children }) {
         {children}
       </div>
       {i > 0 && (
-        <button type="button" className="feed-carrossel-seta is-esq" aria-label="Foto anterior" onClick={() => ir(-1)}>
+        <button type="button" className="feed-carrossel-seta is-esq" aria-label="Anterior" onClick={() => ir(-1)}>
           <ChevronLeft size={20} />
         </button>
       )}
       {i < n - 1 && (
-        <button type="button" className="feed-carrossel-seta is-dir" aria-label="Próxima foto" onClick={() => ir(1)}>
+        <button type="button" className="feed-carrossel-seta is-dir" aria-label="Próximo" onClick={() => ir(1)}>
           <ChevronRight size={20} />
         </button>
       )}
@@ -70,18 +72,126 @@ function Carrossel({ n, children }) {
   );
 }
 
-function FotosDoPost({ midias, links, onAbrir }) {
+/**
+ * A mídia do post: fotos e, quando tem, o vídeo — na ordem em que foram
+ * escolhidas. A foto abre em tela cheia; o vídeo toca ali mesmo, com os
+ * controles do navegador (a tela cheia dele é a do próprio player).
+ *
+ * `onAbrir` recebe a posição da foto ENTRE AS FOTOS, não entre as mídias: o
+ * visualizador só navega por fotos, então um vídeo no meio não pode deslocar
+ * o índice.
+ */
+function MidiasDoPost({ midias, links, onAbrir }) {
   const n = midias.length;
   if (!n) return null;
-  const foto = (m, i) => (
-    <button key={m.path} type="button" className="feed-foto" onClick={() => onAbrir(i)} aria-label={`Abrir foto ${i + 1} de ${n}`}>
-      <img src={links[m.thumb] || links[m.path]} alt="" loading="lazy" decoding="async" />
+  let posFoto = -1;
+  const item = (m) => {
+    if (midiaEhVideo(m)) {
+      return (
+        <div key={m.path} className="feed-video">
+          <video src={links[m.path]} poster={links[m.poster] || undefined} controls preload="metadata"
+            playsInline controlsList="nodownload" />
+        </div>
+      );
+    }
+    posFoto += 1;
+    const alvo = posFoto;
+    return (
+      <button key={m.path} type="button" className="feed-foto" onClick={() => onAbrir(alvo)}
+        aria-label={`Abrir foto ${alvo + 1}`}>
+        <img src={links[m.thumb] || links[m.path]} alt="" loading="lazy" decoding="async" />
+      </button>
+    );
+  };
+  // Uma mídia só: inteira e centralizada no card (com o feed na largura da
+  // tela, esticá-la de ponta a ponta cortava a imagem).
+  if (n === 1) return <div className="feed-fotos is-1">{item(midias[0])}</div>;
+  return <Carrossel n={n}>{midias.map(item)}</Carrossel>;
+}
+
+/**
+ * "Curtido por Você, Ana Souza e outras 2 pessoas" — a linha embaixo do post,
+ * no molde do Instagram, com as bolinhas de quem curtiu e clique para abrir a
+ * lista inteira. Enquanto o resumo não chega (ou se ele falhar), fica só a
+ * contagem, que já vem no post.
+ */
+function CurtidoPor({ quem, total, eu, onAbrir }) {
+  if (!total) return null;
+  const { lista, resto } = resumoCurtidas(quem || [], total, eu);
+  return (
+    <button type="button" className="feed-curtido" onClick={onAbrir}
+      aria-label={`Ver quem curtiu (${plural(total, 'curtida', 'curtidas')})`}>
+      {lista.length > 0 && (
+        <span className="feed-curtido-bolinhas" aria-hidden="true">
+          {lista.map((p) => (
+            <AvatarFeed key={p.colaborador_id} id={p.colaborador_id} nome={p.nome} moldura={p.moldura} />
+          ))}
+        </span>
+      )}
+      <span className="feed-curtido-txt">
+        {lista.length === 0
+          ? plural(total, 'curtida', 'curtidas')
+          : <>
+              Curtido por {lista.map((p, i) => (
+                <span key={p.colaborador_id}>
+                  {i > 0 && (i === lista.length - 1 && !resto ? ' e ' : ', ')}
+                  <b>{p.euAqui ? 'Você' : nomeProprio(p.nome)}</b>
+                </span>
+              ))}
+              {resto > 0 && (resto === 1 ? ' e outra pessoa' : ` e outras ${resto} pessoas`)}
+            </>}
+      </span>
     </button>
   );
-  // Uma foto só: inteira e centralizada no card (com o feed na largura da
-  // tela, esticá-la de ponta a ponta cortava a imagem).
-  if (n === 1) return <div className="feed-fotos is-1">{foto(midias[0], 0)}</div>;
-  return <Carrossel n={n}>{midias.map(foto)}</Carrossel>;
+}
+
+/** Quem curtiu o post, inteiro, na lista que a linha de cima abre. */
+function QuemCurtiu({ postId, total, onFechar, onErro }) {
+  const [lista, setLista] = useState(null);
+  useEffect(() => {
+    let vivo = true;
+    api.listarCurtidas(postId).then(
+      (l) => { if (vivo) setLista(l); },
+      (e) => { if (vivo) { setLista([]); onErro(e.message); } },
+    );
+    return () => { vivo = false; };
+  }, [postId, onErro]);
+
+  useEffect(() => {
+    const esc = (e) => { if (e.key === 'Escape') onFechar(); };
+    window.addEventListener('keydown', esc);
+    return () => window.removeEventListener('keydown', esc);
+  }, [onFechar]);
+
+  // A RPC devolve no máximo 100; o resto sai como "e mais N".
+  const sobrando = lista ? total - lista.length : 0;
+  return (
+    <div className="feed-modal-fundo" onMouseDown={(e) => { if (e.target === e.currentTarget) onFechar(); }}>
+      <div className="feed-modal is-curtidas" role="dialog" aria-modal="true" aria-labelledby="feed-curtidas-tit">
+        <div className="feed-modal-cab">
+          <h2 id="feed-curtidas-tit" className="feed-curtidas-tit">
+            <Heart size={18} fill="currentColor" /> {plural(total, 'curtida', 'curtidas')}
+          </h2>
+          <button type="button" className="feed-iconbtn" aria-label="Fechar" onClick={onFechar}><X size={20} /></button>
+        </div>
+        {lista === null ? (
+          <div className="feed-vazio"><Loader2 size={18} className="feed-spin" /> Carregando…</div>
+        ) : lista.length === 0 ? (
+          <div className="feed-vazio">Ninguém curtiu ainda.</div>
+        ) : (
+          <ul className="feed-curtidas-lista">
+            {lista.map((p) => (
+              <li key={p.colaborador_id}>
+                <Autor id={p.colaborador_id} nome={p.nome} funcao={p.funcao} moldura={p.moldura} titulo={p.titulo}
+                  quando={tempoRelativo(p.criado_em)} />
+              </li>
+            ))}
+            {sobrando > 0 && <li className="feed-curtidas-mais">e mais {sobrando}</li>}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
 }
 
 /**
@@ -89,21 +199,30 @@ function FotosDoPost({ midias, links, onAbrir }) {
  * mudam o post avisam a página por `onMudou(postAtualizado)` ou
  * `onSumiu(id)`; erros sobem por `onErro`.
  */
-export default function PostCard({ post, links, eu, moderador, destaque = false, onMudou, onAjustar, onSumiu, onErro }) {
+export default function PostCard({
+  post, links, eu, moderador, quemCurtiu, destaque = false,
+  onMudou, onAjustar, onSumiu, onErro, onCurtidasMudaram,
+}) {
   const { recarregar } = usePontos();
   const [menu, setMenu] = useState(false);
   const [editando, setEditando] = useState(false);
   const [textoEd, setTextoEd] = useState(post.texto);
   const [verComents, setVerComents] = useState(destaque);
   const [foto, setFoto] = useState(null);
+  const [verCurtidas, setVerCurtidas] = useState(false);
   const [expandido, setExpandido] = useState(false);
   const meu = post.autor_id === eu;
-  // No card vai a versão leve (`thumb`); a tela cheia abre a grande.
-  const midias = (post.midia || []).filter((m) => links[m.thumb] || links[m.path]);
-  const fotos = midias.map((m) => links[m.path] || links[m.thumb]);
+  // Só o que tem link assinado: link vencido não deixa quadro vazio no card.
+  // Na foto, o card usa a versão leve (`thumb`) e a tela cheia a grande; no
+  // vídeo o que importa é o próprio arquivo (a capa é um extra).
+  const midias = (post.midia || []).filter((m) => (midiaEhVideo(m) ? links[m.path] : links[m.thumb] || links[m.path]));
+  const fotos = midias.filter((m) => !midiaEhVideo(m)).map((m) => links[m.path] || links[m.thumb]);
   const longo = (post.texto || '').length > TEXTO_LONGO || (post.texto || '').split('\n').length > 6;
 
   const erro = (e) => onErro(e?.message || String(e));
+  // Estável: o QuemCurtiu usa isto num efeito (o Esc), e a cada render novo
+  // ele religaria o atalho.
+  const fecharCurtidas = useCallback(() => setVerCurtidas(false), []);
   const atualizarTotal = useCallback(
     (n) => onAjustar(post.id, (p) => (p.comentarios === n ? p : { ...p, comentarios: n })),
     [onAjustar, post.id],
@@ -116,6 +235,8 @@ export default function PostCard({ post, links, eu, moderador, destaque = false,
     try {
       const r = await api.curtir(post.id);
       if (r) onMudou({ ...antes, curti: r.curti, curtidas: r.curtidas });
+      // A linha "Curtido por…" tem de ganhar (ou perder) o meu nome.
+      onCurtidasMudaram?.(post.id);
     } catch (e) {
       onMudou(antes);
       erro(e);
@@ -230,7 +351,7 @@ export default function PostCard({ post, links, eu, moderador, destaque = false,
         )
       )}
 
-      {!editando && <FotosDoPost midias={midias} links={links} onAbrir={setFoto} />}
+      {!editando && <MidiasDoPost midias={midias} links={links} onAbrir={setFoto} />}
 
       {/* data-tour: o passo a passo do feed aponta as ações do primeiro post. */}
       <div className="feed-post-acoes" data-tour="post-acoes">
@@ -246,12 +367,18 @@ export default function PostCard({ post, links, eu, moderador, destaque = false,
         </button>
       </div>
 
+      <CurtidoPor quem={quemCurtiu} total={post.curtidas} eu={eu} onAbrir={() => setVerCurtidas(true)} />
+
       {verComents && (
         <Comentarios postId={post.id} eu={eu} moderador={moderador} podeComentar={!post.oculto}
           onTotal={atualizarTotal} onErro={onErro} />
       )}
 
       {foto !== null && <Visualizador fotos={fotos} inicio={foto} onFechar={() => setFoto(null)} />}
+
+      {verCurtidas && (
+        <QuemCurtiu postId={post.id} total={post.curtidas} onFechar={fecharCurtidas} onErro={onErro} />
+      )}
     </article>
   );
 }

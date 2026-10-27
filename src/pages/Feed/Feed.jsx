@@ -60,13 +60,17 @@ function Denuncias({ onErro, onMudou }) {
   );
 }
 
-// Feed do portal (fase 1): posts com texto e fotos, curtidas e comentários.
+// Feed do portal: posts com texto, fotos e vídeo, curtidas (com a lista de quem
+// curtiu) e comentários.
 // Desenho trazido do feed do selink; regras no banco (supabase_migration_feed.sql).
 function PaginaFeed() {
   const { user } = useAuth();
   const moderador = ehModeradorFeed(user);
   const [posts, setPosts] = useState([]);
   const [links, setLinks] = useState({});
+  // Primeiros curtidores de cada post, para a linha "Curtido por…" dos cards:
+  // { [postId]: [{ colaborador_id, nome, moldura }] }.
+  const [curtidores, setCurtidores] = useState({});
   const [cursor, setCursor] = useState(null);
   const [temMais, setTemMais] = useState(false);
   const [carregando, setCarregando] = useState(true);
@@ -107,8 +111,23 @@ function PaginaFeed() {
 
   const comLinks = useCallback(async (lista) => {
     const paths = lista.flatMap((p) => api.arquivosDaMidia(p.midia || []));
-    const novos = await api.linksDasFotos(paths);
+    const novos = await api.linksDaMidia(paths);
     setLinks((v) => ({ ...v, ...novos }));
+  }, []);
+
+  // Os curtidores da página inteira numa chamada só — post por post seriam 21.
+  const comCurtidores = useCallback(async (lista) => {
+    const ids = lista.filter((p) => p.curtidas > 0).map((p) => p.id);
+    if (!ids.length) return;
+    const novos = await api.resumoDasCurtidas(ids);
+    setCurtidores((v) => ({ ...v, ...novos }));
+  }, []);
+
+  // Curti ou descurti: o nome entra ou sai da linha. É um post só, e refazer a
+  // busca é mais simples (e sempre certo) do que remendar a lista na mão.
+  const recarregarCurtidores = useCallback(async (postId) => {
+    const novos = await api.resumoDasCurtidas([postId]);
+    setCurtidores((v) => ({ ...v, [postId]: novos[postId] || [] }));
   }, []);
 
   const carregar = useCallback(async () => {
@@ -119,7 +138,7 @@ function PaginaFeed() {
         postAlvo ? api.listarFeed({ post: postAlvo, limite: 1 }).catch(() => []) : [],
       ]);
       const topo = alvo.map((p) => ({ ...p, _alvo: true }));
-      await comLinks([...topo, ...lista]);
+      await Promise.all([comLinks([...topo, ...lista]), comCurtidores([...topo, ...lista])]);
       setPosts(juntarPaginas(topo, lista));
       setCursor(cursorDe(lista));
       setTemMais(lista.length >= POR_PAGINA);
@@ -128,7 +147,7 @@ function PaginaFeed() {
     } finally {
       setCarregando(false);
     }
-  }, [comLinks, postAlvo]);
+  }, [comLinks, comCurtidores, postAlvo]);
 
   useEffect(() => { carregar(); }, [carregar]);
 
@@ -137,7 +156,7 @@ function PaginaFeed() {
     setMaisCarregando(true);
     try {
       const lista = await api.listarFeed({ cursor });
-      await comLinks(lista);
+      await Promise.all([comLinks(lista), comCurtidores(lista)]);
       setPosts((v) => juntarPaginas(v, lista));
       setCursor(cursorDe(lista) || cursor);
       setTemMais(lista.length >= POR_PAGINA);
@@ -220,6 +239,7 @@ function PaginaFeed() {
                   <>
                     {posts.map((p) => (
                       <PostCard key={p.id} post={p} links={links} eu={user?.id} moderador={moderador}
+                        quemCurtiu={curtidores[p.id]} onCurtidasMudaram={recarregarCurtidores}
                         destaque={p._alvo} onMudou={mudou} onAjustar={ajustar} onSumiu={sumiu} onErro={mostrarErro} />
                     ))}
                     {temMais && (
