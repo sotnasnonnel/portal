@@ -40,6 +40,27 @@ export const PROGRAMAS_LIBERADOS = [
 export const podeAcessarProgramas = (user) => !PROGRAMAS_EM_BREVE
   || PROGRAMAS_LIBERADOS.includes((user?.email || '').trim().toLowerCase());
 
+/**
+ * Ficha de ROI e Ranking do Programa de Inovação: por enquanto só para este
+ * grupo (os 4 do projeto + a diretoria). Fora dele, a coluna da ficha, o aviso
+ * no Campo de Ideias e o item Ranking do menu não aparecem, e as duas rotas
+ * devolvem para o Campo de Ideias.
+ *
+ * Por e-mail, como a PROGRAMAS_LIBERADOS: diretor novo não entra sozinho.
+ * Trava de tela — a tabela programas_roi segue com a RLS de antes.
+ */
+export const ROI_LIBERADOS = [
+  'marcus.guimaraes@phdengenharia.eng.br',
+  'andre.guimaraes@phdengenharia.eng.br',
+  'vinicius.costa@phdengenharia.eng.br',
+  'lennon.santos@phdengenharia.eng.br',
+  'pedro.nery@phdengenharia.eng.br',
+  'henrique.santos@phdengenharia.eng.br',
+  'pedro.morais@phdengenharia.eng.br',
+];
+
+export const podeVerRoi = (user) => ROI_LIBERADOS.includes((user?.email || '').trim().toLowerCase());
+
 /** Time comercial: único papel que avalia indicação da Alavanca. */
 export const ehComercial = (modules) => modules?.programas === 'comercial' || modules?.programas === 'admin';
 export const ehAdminProgramas = (modules) => modules?.programas === 'admin';

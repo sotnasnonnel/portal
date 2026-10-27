@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import {
-  CATEGORIA_LABEL, SITUACOES, ehAdminProgramas,
+  CATEGORIA_LABEL, SITUACOES, ehAdminProgramas, podeVerRoi,
 } from '../../../../config/programas';
 import {
   listarIdeias, atualizarSituacao, atualizarIdeia, excluirIdeia,
@@ -37,6 +37,7 @@ export default function CampoDeIdeias() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
   const [salvando, setSalvando] = useState('');
+  const veRoi = podeVerRoi(user);
   const [detalhe, setDetalhe] = useState(null);
   // Ficha de ROI por registro. `null` = não deu para carregar: a coluna some e
   // o resto da tela segue — a ficha não pode derrubar o Campo de Ideias.
@@ -46,7 +47,11 @@ export default function CampoDeIdeias() {
     setCarregando(true);
     setErro('');
     try {
-      const [ideias, roi] = await Promise.all([listarIdeias(), listarFichas().catch(() => null)]);
+      // Fora do grupo da ficha (podeVerRoi), nem busca: a coluna não aparece.
+      const [ideias, roi] = await Promise.all([
+        listarIdeias(),
+        veRoi ? listarFichas().catch(() => null) : null,
+      ]);
       setLinhas(ideias);
       setFichas(roi && new Map(roi.map((f) => [f.ideia_id, f])));
     } catch (e) {
@@ -54,7 +59,7 @@ export default function CampoDeIdeias() {
     } finally {
       setCarregando(false);
     }
-  }, []);
+  }, [veRoi]);
 
   useEffect(() => { carregar(); }, [carregar]);
 

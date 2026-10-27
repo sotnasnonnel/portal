@@ -19,7 +19,8 @@ const PROGRAMA_NAV = {
     // O Ranking sai das fichas de ROI de cada registro; é leitura, como o painel.
     painel: [
       { label: 'Painel da Inovação', href: '/programas/dashboard', Icon: LayoutDashboard },
-      { label: 'Ranking', href: '/programas/ranking', Icon: Trophy },
+      // Só para o grupo de ROI_LIBERADOS (config/programas.js).
+      { label: 'Ranking', href: '/programas/ranking', Icon: Trophy, soRoi: true },
     ],
   },
   // Consulta, não participação: por isso entra sem painel — os números dela
@@ -57,7 +58,7 @@ export function programaDaRota(pathname = '') {
   return null;
 }
 
-export function navSections({ ehComercial = false, ehAdmin = false, programa = null } = {}) {
+export function navSections({ ehComercial = false, ehAdmin = false, veRoi = false, programa = null } = {}) {
   // Fora de um programa (a tela de escolha), o menu lista os dois: é o único
   // momento em que não dá para saber para onde a pessoa vai.
   const chaves = programa ? [programa] : Object.keys(PROGRAMA_NAV);
@@ -70,7 +71,8 @@ export function navSections({ ehComercial = false, ehAdmin = false, programa = n
   const paineis = chaves
     .filter((k) => PROGRAMA_NAV[k].painel)
     .filter((k) => !PROGRAMA_NAV[k].soComercial || ehComercial)
-    .flatMap((k) => PROGRAMA_NAV[k].painel);
+    .flatMap((k) => PROGRAMA_NAV[k].painel)
+    .filter((item) => !item.soRoi || veRoi);
 
   const secoes = [
     {

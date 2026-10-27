@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import {
   AlertCircle, ArrowLeft, Calculator, CheckCircle2, Circle, Loader2, Save,
 } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
+import { podeVerRoi } from '../../../../config/programas';
 import { buscarIdeia } from '../../lib/ideias';
 import {
   FACILIDADE, PRAZO_RELATORIO, UNIDADES, VALIDACAO_LABEL,
@@ -46,7 +47,15 @@ const SELO = {
   ok: { label: 'A validar', tom: 'tom-andamento' },
 };
 
+// Ficha e Ranking são só do grupo de ROI_LIBERADOS por enquanto: link
+// guardado de quem está fora volta para o Campo de Ideias.
 export default function FichaRoi() {
+  const { user } = useAuth();
+  if (!podeVerRoi(user)) return <Navigate to="/programas/ideias" replace />;
+  return <FichaRoiConteudo />;
+}
+
+function FichaRoiConteudo() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { AlertCircle, ClipboardCheck, Loader2, Trophy } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { ehAdminProgramas } from '../../../../config/programas';
+import { ehAdminProgramas, podeVerRoi } from '../../../../config/programas';
 import { listarIdeias } from '../../lib/ideias';
 import {
   PRAZO_RELATORIO, calcularFinanceiro, calcularTempo, listarFichas, montarRanking,
@@ -38,7 +38,15 @@ function Criterio({ valor, pos, pontos }) {
   );
 }
 
+// Ficha e Ranking são só do grupo de ROI_LIBERADOS por enquanto: link
+// guardado de quem está fora volta para o Campo de Ideias.
 export default function Ranking() {
+  const { user } = useAuth();
+  if (!podeVerRoi(user)) return <Navigate to="/programas/ideias" replace />;
+  return <RankingConteudo />;
+}
+
+function RankingConteudo() {
   const { user, modules } = useAuth();
   const [registros, setRegistros] = useState([]);
   const [fichas, setFichas] = useState([]);
