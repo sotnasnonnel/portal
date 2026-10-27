@@ -351,7 +351,7 @@ const ROTULOS_CODIFICADOS = {
   contato_cliente: 'Contato do setor do cliente', devolucao: 'Há devolução',
   contato_nome: 'Nome do contato no cliente', contato_telefone: 'Telefone do contato',
   contato_email: 'E-mail do contato',
-  precisa_desmob: 'Precisa de desmobilização', desmob_data: 'Data da desmobilização',
+  desmob_data: 'Data da desmobilização',
   desmob_possui_cracha: 'Possui crachá', desmob_cracha_entregue: 'Crachá entregue ao cliente',
   possui_cracha: 'Possui crachá', cracha_entregue: 'Crachá entregue ao cliente',
   movimentacao_numero: 'Movimentação de origem', data_desmobilizacao: 'Data da desmobilização',
@@ -399,7 +399,7 @@ const dataBr = (v) => {
 // que o banco compara para ajustar as etapas de crachá). Sem esquema para
 // declarar o tipo, a lista é explícita.
 const SIM_NAO_CODIFICADOS = new Set([
-  'precisa_desmob', 'desmob_possui_cracha', 'desmob_cracha_entregue', 'possui_cracha', 'cracha_entregue',
+  'desmob_possui_cracha', 'desmob_cracha_entregue', 'possui_cracha', 'cracha_entregue',
 ]);
 
 export function formatarValorCampo(classe, servico, chave, valor) {

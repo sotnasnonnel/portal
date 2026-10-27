@@ -125,35 +125,27 @@ export default function FormMobilizacao({
       {movimentacao && valores.profissional_id && (
         <>
           <div className="adm-campo">
-            <label>Precisa de processo de desmobilização?<span className="req">*</span></label>
-            <SimNao valor={valores.precisa_desmob} onChange={(v) => mexer({ precisa_desmob: v })} />
+            <label htmlFor="mob-desmob-data">Data da desmobilização<span className="req">*</span></label>
+            <input id="mob-desmob-data" type="date" className="adm-input" value={valores.desmob_data}
+              onChange={(e) => mexer({ desmob_data: e.target.value })} />
             <span className="adm-campo-dica">
-              Se sim, um chamado de Desmobilização é aberto junto, para a obra de onde ele sai.
+              A movimentação abre dois processos: a desmobilização da obra de onde ele sai e a
+              mobilização na obra nova.
             </span>
           </div>
 
-          {valores.precisa_desmob === 'sim' && (
-            <>
-              <div className="adm-campo">
-                <label htmlFor="mob-desmob-data">Data da desmobilização<span className="req">*</span></label>
-                <input id="mob-desmob-data" type="date" className="adm-input" value={valores.desmob_data}
-                  onChange={(e) => mexer({ desmob_data: e.target.value })} />
-              </div>
+          <div className="adm-campo">
+            <label>Possui crachá?<span className="req">*</span></label>
+            <SimNao valor={valores.desmob_possui_cracha}
+              onChange={(v) => mexer({ desmob_possui_cracha: v, desmob_cracha_entregue: v === 'sim' ? valores.desmob_cracha_entregue : '' })} />
+          </div>
 
-              <div className="adm-campo">
-                <label>Possui crachá?<span className="req">*</span></label>
-                <SimNao valor={valores.desmob_possui_cracha}
-                  onChange={(v) => mexer({ desmob_possui_cracha: v, desmob_cracha_entregue: v === 'sim' ? valores.desmob_cracha_entregue : '' })} />
-              </div>
-
-              {valores.desmob_possui_cracha === 'sim' && (
-                <div className="adm-campo">
-                  <label>O crachá foi entregue ao cliente?<span className="req">*</span></label>
-                  <SimNao valor={valores.desmob_cracha_entregue}
-                    onChange={(v) => mexer({ desmob_cracha_entregue: v })} />
-                </div>
-              )}
-            </>
+          {valores.desmob_possui_cracha === 'sim' && (
+            <div className="adm-campo">
+              <label>O crachá foi entregue ao cliente?<span className="req">*</span></label>
+              <SimNao valor={valores.desmob_cracha_entregue}
+                onChange={(v) => mexer({ desmob_cracha_entregue: v })} />
+            </div>
           )}
         </>
       )}

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   MOVIMENTOS, eDesmobilizacao, inicialMobilizacao, aoTrocarMovimento, validarMobilizacao,
-  desmobDaMovimentacao,
+  desmobDaMovimentacao, precisaDesmob,
 } from './mobilizacao.js';
 
 const mobilizacaoCheia = () => ({
@@ -80,8 +80,8 @@ test('mobilização exige profissional, projeto, cliente, CC, obra e data', () =
 // Nome, telefone e e-mail do contato no cliente: os três obrigatórios (27/10/2026).
 test('mobilização e movimentação cobram o contato completo no cliente', () => {
   for (const movimento of ['Nova mobilização', 'Movimentação de profissional']) {
-    // precisa_desmob: a movimentação também pergunta da saída (27/10/2026).
-    const v = { ...mobilizacaoCheia(), movimento, precisa_desmob: 'nao' };
+    // A movimentação também pede a saída (27/10/2026).
+    const v = { ...mobilizacaoCheia(), movimento, desmob_data: '2026-11-03', desmob_possui_cracha: 'nao' };
     assert.equal(validarMobilizacao(v), '');
     assert.match(validarMobilizacao({ ...v, contato_nome: ' ' }), /nome do contato/i);
     assert.match(validarMobilizacao({ ...v, contato_telefone: '(31) 9999' }), /telefone/i, 'sem DDD ou incompleto');
@@ -156,20 +156,17 @@ test('trocar para inclusão de treinamento limpa projeto, data e adicionais', ()
 // Movimentação com saída (27/10/2026).
 const movimentacaoCheia = () => ({ ...mobilizacaoCheia(), movimento: 'Movimentação de profissional' });
 
-test('movimentação pergunta se precisa de desmobilização, e só então data e crachá', () => {
+test('movimentação sempre abre a desmobilização: pede data e crachá', () => {
   const v = movimentacaoCheia();
-  assert.match(validarMobilizacao(v), /desmobiliza/i);
-  assert.equal(validarMobilizacao({ ...v, precisa_desmob: 'nao' }), '');
-  const sim = { ...v, precisa_desmob: 'sim' };
-  assert.match(validarMobilizacao(sim), /data da desmobiliza/i);
-  assert.match(validarMobilizacao({ ...sim, desmob_data: '2026-11-03' }), /possui crachá/i);
-  assert.equal(validarMobilizacao({ ...sim, desmob_data: '2026-11-03', desmob_possui_cracha: 'nao' }), '');
-  assert.match(
-    validarMobilizacao({ ...sim, desmob_data: '2026-11-03', desmob_possui_cracha: 'sim' }),
-    /entregue ao cliente/i,
-  );
+  assert.equal(precisaDesmob(v), true);
+  assert.equal(precisaDesmob(mobilizacaoCheia()), false);
+  assert.match(validarMobilizacao(v), /data da desmobiliza/i);
+  const comData = { ...v, desmob_data: '2026-11-03' };
+  assert.match(validarMobilizacao(comData), /possui crachá/i);
+  assert.equal(validarMobilizacao({ ...comData, desmob_possui_cracha: 'nao' }), '');
+  assert.match(validarMobilizacao({ ...comData, desmob_possui_cracha: 'sim' }), /entregue ao cliente/i);
   assert.equal(
-    validarMobilizacao({ ...sim, desmob_data: '2026-11-03', desmob_possui_cracha: 'sim', desmob_cracha_entregue: 'nao' }),
+    validarMobilizacao({ ...comData, desmob_possui_cracha: 'sim', desmob_cracha_entregue: 'nao' }),
     '',
   );
 });
@@ -179,9 +176,8 @@ test('nova mobilização não pergunta sobre desmobilização', () => {
 });
 
 test('sair da movimentação limpa as respostas da desmobilização', () => {
-  const v = { ...movimentacaoCheia(), precisa_desmob: 'sim', desmob_data: '2026-11-03', desmob_possui_cracha: 'sim' };
+  const v = { ...movimentacaoCheia(), desmob_data: '2026-11-03', desmob_possui_cracha: 'sim' };
   const nova = aoTrocarMovimento(v, 'Nova mobilização');
-  assert.equal(nova.precisa_desmob, '');
   assert.equal(nova.desmob_data, '');
   assert.equal(nova.desmob_possui_cracha, '');
   assert.equal(aoTrocarMovimento(v, 'Movimentação de profissional').desmob_data, '2026-11-03', 'ficar não apaga');
@@ -190,7 +186,7 @@ test('sair da movimentação limpa as respostas da desmobilização', () => {
 // Obra, cliente e contato NÃO vão: o banco herda da obra de onde a pessoa sai.
 test('o chamado de desmobilização leva só quem sai, quando e o crachá', () => {
   const v = {
-    ...movimentacaoCheia(), precisa_desmob: 'sim', desmob_data: '2026-11-03',
+    ...movimentacaoCheia(), desmob_data: '2026-11-03',
     desmob_possui_cracha: 'nao', desmob_cracha_entregue: 'sim',
   };
   const d = desmobDaMovimentacao(v, 401);

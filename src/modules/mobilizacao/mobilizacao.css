@@ -809,12 +809,11 @@ button.mob-conta:focus-visible { outline: 2px solid var(--m-primary); outline-of
 .mob-tabela tr.is-selecionado td { background: var(--m-primary-soft); }
 .mob-link-btn { border: none; background: none; padding: 0; font: inherit; cursor: pointer; }
 
-/* Contato do cliente no resumo: uma informação por linha, sem quebrar. */
-.mob-contato { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.mob-contato > * {
+/* Contato do cliente no resumo: cada valor numa linha, sem quebrar. */
+.mob-cortado {
   display: block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.mob-contato strong { font-weight: var(--fw-semibold); color: var(--m-ink); }
+strong.mob-cortado { font-weight: var(--fw-semibold); color: var(--m-ink); }
 /* Sem isto a coluna da grade cresce até caber o e-mail inteiro e as
    reticências nunca aparecem. */
 .mob-grid2 > .mob-campo { min-width: 0; }

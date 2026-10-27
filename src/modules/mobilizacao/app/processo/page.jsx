@@ -177,11 +177,19 @@ export default function ProcessoMob() {
           <Campo rot="Empresa PHD" val={processo.empresa_phd} />
           <Campo rot="Local da obra" val={processo.local_obra} />
           <Campo rot="Código CT" val={codigoCt(processo)} />
-          {/* Quem o time procura na obra. Sempre à vista, mesmo vazio: o "—"
-              diz que falta pedir o contato. Chamado aberto antes de 27/10/2026
-              não tinha o campo obrigatório. Contrato saiu do resumo no mesmo
-              dia, a pedido: ninguém o preenche. */}
-          <Campo rot="Contato no cliente" val={<ContatoCliente contato={contato} />} />
+          {/* Quem o time procura na obra, em três campos sempre à vista, mesmo
+              vazios: o "—" diz o que falta pedir. Chamado aberto antes de
+              27/10/2026 tinha um texto livre só, quase sempre só o nome.
+              Contrato saiu do resumo no mesmo dia, a pedido: ninguém o preenche. */}
+          <Campo rot="Contato no cliente" val={contato.nome && <Cortado texto={contato.nome} forte />} />
+          <Campo rot="Telefone do contato" val={contato.telefone && (
+            <a className="mob-link mob-cortado" href={`tel:${contato.telefone.replace(/\D/g, '')}`} title={contato.telefone}>
+              {contato.telefone}
+            </a>
+          )} />
+          <Campo rot="E-mail do contato" val={contato.email && (
+            <a className="mob-link mob-cortado" href={`mailto:${contato.email}`} title={contato.email}>{contato.email}</a>
+          )} />
           <Campo rot="COO PHD" val={processo.coo_phd} />
           <Campo rot="Gerente PHD" val={processo.ger_phd} />
           {MOSTRAR_RESPONSAVEL && <Campo rot="Responsável" val={processo.responsavelNome} />}
@@ -438,24 +446,11 @@ export default function ProcessoMob() {
   );
 }
 
-// Nome em cima, telefone e e-mail embaixo — cada um numa linha só, cortado com
-// reticências em vez de quebrar no meio (e-mail longo quebrava em três linhas).
-// O texto inteiro fica no title.
-function ContatoCliente({ contato }) {
-  if (!contato.nome && !contato.telefone && !contato.email) return '—';
-  return (
-    <span className="mob-contato">
-      {contato.nome && <strong title={contato.nome}>{contato.nome}</strong>}
-      {contato.telefone && (
-        <a className="mob-link" href={`tel:${contato.telefone.replace(/\D/g, '')}`} title={contato.telefone}>
-          {contato.telefone}
-        </a>
-      )}
-      {contato.email && (
-        <a className="mob-link" href={`mailto:${contato.email}`} title={contato.email}>{contato.email}</a>
-      )}
-    </span>
-  );
+// Uma linha só, cortada com reticências em vez de quebrar no meio (e-mail longo
+// quebrava em três linhas). O texto inteiro fica no title.
+function Cortado({ texto, forte }) {
+  const Tag = forte ? 'strong' : 'span';
+  return <Tag className="mob-cortado" title={texto}>{texto}</Tag>;
 }
 
 function Campo({ rot, val }) {

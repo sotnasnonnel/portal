@@ -35,15 +35,16 @@ export const eDesmobilizacao = (v) => v?.movimento === DESMOBILIZACAO;
 
 /**
  * Movimentação: a pessoa sai de uma obra e vai para outra. Desde 27/10/2026 o
- * formulário mostra de onde ela sai e pergunta se a saída precisa de processo
- * de desmobilização — se sim, abre um chamado de Desmobilização junto.
+ * formulário mostra de onde ela sai, e a movimentação abre SEMPRE os dois
+ * processos: a mobilização na obra nova (o próprio chamado) e a desmobilização
+ * da obra de onde ela sai (um chamado de Desmobilização aberto junto).
  */
 export const MOVIMENTACAO = 'Movimentação de profissional';
 export const eMovimentacao = (v) => v?.movimento === MOVIMENTACAO;
-export const precisaDesmob = (v) => eMovimentacao(v) && v?.precisa_desmob === 'sim';
+export const precisaDesmob = eMovimentacao;
 
 const CAMPOS_DESMOB_DA_MOVIMENTACAO = {
-  precisa_desmob: '', desmob_data: '', desmob_possui_cracha: '', desmob_cracha_entregue: '',
+  desmob_data: '', desmob_possui_cracha: '', desmob_cracha_entregue: '',
 };
 
 export const inicialMobilizacao = () => ({
@@ -164,8 +165,6 @@ export function validarMobilizacao(v) {
 
 function validarDesmobDaMovimentacao(v) {
   if (!eMovimentacao(v)) return '';
-  if (!['sim', 'nao'].includes(v.precisa_desmob)) return 'Diga se a saída precisa de processo de desmobilização.';
-  if (v.precisa_desmob !== 'sim') return '';
   if (!v.desmob_data) return 'Informe a data da desmobilização.';
   if (!['sim', 'nao'].includes(v.desmob_possui_cracha)) return 'Diga se o profissional possui crachá.';
   if (v.desmob_possui_cracha === 'sim' && !['sim', 'nao'].includes(v.desmob_cracha_entregue)) {
