@@ -83,6 +83,23 @@ const documentosDoCondutor = () => [
   { chave: 'condutor_telefone', rotulo: 'Telefone do condutor', tipo: 'texto', obrigatorio: true, grupo: 'condutor' },
 ];
 
+/**
+ * Dias entre a retirada e a devolução, ou null enquanto falta uma das duas.
+ * As datas vêm do <input type="datetime-local"> sem fuso, e as duas são lidas
+ * no mesmo fuso, então a diferença não escorrega.
+ */
+export function diasDaReserva(valores = {}) {
+  const ini = new Date(valores.retirada_em);
+  const fim = new Date(valores.devolucao_em);
+  if (!valores.retirada_em || !valores.devolucao_em || Number.isNaN(ini.getTime()) || Number.isNaN(fim.getTime())) return null;
+  return (fim - ini) / 86400000;
+}
+
+// Abaixo de 29 dias a locadora cobra diária com KM livre; a franquia mensal só
+// existe no contrato mensal, e é aí que o Adm precisa saber qual pedir.
+export const DIAS_LOCACAO_MENSAL = 29;
+const reservaMensal = (valores) => (diasDaReserva(valores) ?? 0) >= DIAS_LOCACAO_MENSAL;
+
 // Passagem e hospedagem repetem o bloco de identificação do viajante.
 const viajante = (rotuloPessoa) => [
   { chave: 'pessoa_id', rotulo: rotuloPessoa, tipo: 'pessoa', obrigatorio: true },
@@ -136,6 +153,13 @@ export const SCHEMAS = {
     { chave: 'retirada_em', rotulo: 'Data e horário de retirada', tipo: 'datahora', obrigatorio: true },
     { chave: 'local_devolucao', rotulo: 'Local da devolução', tipo: 'texto', obrigatorio: true },
     { chave: 'devolucao_em', rotulo: 'Data e horário da devolução', tipo: 'datahora', obrigatorio: true },
+    // Só aparece (e só é exigido) na locação mensal: `aplica` esconde o campo
+    // e o tira da validação enquanto a reserva tiver menos de 29 dias.
+    {
+      chave: 'km_mensal', rotulo: 'KM mensal', tipo: 'selecao', obrigatorio: true,
+      opcoes: ['1.000 km/mês', '2.000 km/mês', '3.000 km/mês', '4.000 km/mês', '5.000 km/mês'],
+      aplica: reservaMensal,
+    },
     ...documentosDoCondutor(),
     observacao(),
   ],

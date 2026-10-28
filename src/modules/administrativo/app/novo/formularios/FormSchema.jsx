@@ -2,6 +2,7 @@ import { Fragment } from 'react';
 import CampoExtra from '../CampoExtra';
 import CampoCentroCusto from '../CampoCentroCusto';
 import { schemaDoServico } from './schemas';
+import { campoAplica } from '../../../lib/camposExtras';
 
 /**
  * Desenha o formulário de um serviço a partir do esquema declarado em
@@ -26,7 +27,16 @@ export default function FormSchema({
   valores, onChange, pessoas = [], classe, servico, opcoesCc = [],
 }) {
   const schema = schemaDoServico(classe, servico) || [];
-  const mexer = (chave, valor) => onChange({ ...valores, [chave]: valor });
+  // O formulário grava `valores` como está, então um campo que deixou de valer
+  // (a reserva encurtou para menos de 29 dias) tem de sair daqui também — senão
+  // o KM escolhido antes iria para o chamado sem aparecer na tela.
+  const mexer = (chave, valor) => {
+    const novo = { ...valores, [chave]: valor };
+    for (const c of schema) {
+      if (!campoAplica(c, novo) && novo[c.chave]) novo[c.chave] = '';
+    }
+    onChange(novo);
+  };
   // Forma de FUNÇÃO, e não `{ ...valores, ...patch }` como em `mexer`: o patch
   // do CEP chega depois da consulta, quando `valores` desta renderização já é
   // passado — espalhá-lo apagaria o que foi digitado enquanto a rede respondia
@@ -34,6 +44,7 @@ export default function FormSchema({
   const remendar = (patch) => onChange((atual) => ({ ...atual, ...patch }));
 
   return schema.map((campo, i) => {
+    if (!campoAplica(campo, valores)) return null;
     // Cabeçalho no PRIMEIRO campo do grupo: o esquema é uma lista plana, e
     // aninhar os campos só para desenhar um título tornaria o dado mais
     // complicado do que a tela que ele descreve.

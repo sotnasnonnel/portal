@@ -52,11 +52,19 @@ const vazio = (v) => v === undefined || v === null
   || (Array.isArray(v) && v.length === 0);
 
 /**
+ * Campo com `aplica(valores)` só vale quando a função diz que sim (ex.: o KM
+ * mensal da reserva, que só existe a partir de 29 dias). Fora disso ele não
+ * aparece, não é exigido e não é gravado.
+ */
+export const campoAplica = (campo, valores = {}) => !campo.aplica || campo.aplica(valores);
+
+/**
  * Valida o preenchimento contra a definição cadastrada.
  * Devolve '' quando está tudo certo, ou a mensagem do primeiro problema.
  */
 export function validarCamposExtras(definicao = [], valores = {}) {
   for (const campo of definicao) {
+    if (!campoAplica(campo, valores)) continue;
     const v = valores[campo.chave];
     if (campo.obrigatorio && vazio(v)) {
       return `Preencha o campo "${campo.rotulo}".`;
@@ -81,7 +89,7 @@ export function limparValores(definicao = [], valores = {}) {
   const saida = {};
   for (const campo of definicao) {
     const v = valores[campo.chave];
-    if (vazio(v)) continue;
+    if (vazio(v) || !campoAplica(campo, valores)) continue;
     saida[campo.chave] = campo.tipo === 'numero' ? Number(v) : v;
   }
   return saida;

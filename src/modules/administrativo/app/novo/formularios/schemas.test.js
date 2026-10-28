@@ -2,8 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   SCHEMAS, schemaDoServico, inicialDoSchema, schemaUsaPessoa, usaDescricao, usaAnexo,
-  formatarValorCampo,
+  formatarValorCampo, diasDaReserva,
 } from './schemas.js';
+import { validarCamposExtras, campoAplica } from '../../../lib/camposExtras.js';
 import { TODOS_SERVICOS } from '../../../../../config/administrativo.js';
 
 // Serviços que NÃO usam esquema declarativo. Lista explícita para que um serviço
@@ -201,4 +202,23 @@ test('múltipla escolha começa como lista vazia', () => {
   const inicial = inicialDoSchema(SCHEMAS['ti/solicitacao-equipamentos']);
   assert.deepEqual(inicial.tipo, []);
   assert.equal(inicial.cep, '');
+});
+
+// Menos de 29 dias é KM livre: o campo some e não trava o envio.
+test('KM mensal só vale na reserva de 29 dias ou mais', () => {
+  const schema = schemaDoServico('frota', 'reserva-veiculos');
+  const km = schema.find((c) => c.chave === 'km_mensal');
+  const curta = { retirada_em: '2026-11-01T08:00', devolucao_em: '2026-11-20T08:00' };
+  const mensal = { retirada_em: '2026-11-01T08:00', devolucao_em: '2026-11-30T08:00' };
+
+  assert.equal(diasDaReserva(mensal), 29);
+  assert.equal(diasDaReserva({ retirada_em: '2026-11-01T08:00' }), null);
+  assert.equal(campoAplica(km, {}), false);
+  assert.equal(campoAplica(km, curta), false);
+  assert.equal(campoAplica(km, mensal), true);
+
+  const preenchido = Object.fromEntries(schema.map((c) => [c.chave, c.tipo === 'pessoa' ? 'id' : 'x']));
+  delete preenchido.km_mensal;
+  assert.equal(validarCamposExtras(schema, { ...preenchido, ...curta }), '');
+  assert.match(validarCamposExtras(schema, { ...preenchido, ...mensal }), /KM mensal/);
 });
