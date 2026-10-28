@@ -43,7 +43,7 @@ function Leitura({ id }) {
   }, [id]);
 
   const apagar = async () => {
-    if (!window.confirm('Apagar este aviso? Ele sai do ar para todo mundo.')) return;
+    if (!window.confirm('Excluir este aviso? Ele sai do ar para todo mundo e não dá para desfazer.')) return;
     setApagando(true);
     try {
       await excluirAviso(id);
@@ -77,8 +77,8 @@ function Leitura({ id }) {
               {aviso.pode_editar && (
                 <span className="aviso-acoes">
                   <Link to={`${ROTA_AVISOS}/${aviso.id}/editar`} className="btn btn-outline btn-sm"><Pencil size={14} /> Editar</Link>
-                  <button type="button" className="btn btn-outline btn-sm" onClick={apagar} disabled={apagando}>
-                    <Trash2 size={14} /> Apagar
+                  <button type="button" className="btn btn-outline btn-sm aviso-excluir" onClick={apagar} disabled={apagando}>
+                    {apagando ? <Loader2 size={14} className="aviso-spin" /> : <Trash2 size={14} />} Excluir aviso
                   </button>
                 </span>
               )}

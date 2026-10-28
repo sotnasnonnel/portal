@@ -11,14 +11,15 @@
 --     imagem, botão com link e anexo. Os blocos são DADO (jsonb), não HTML:
 --     o front desenha cada tipo, e nenhum texto vira marcação crua.
 --
--- Decisões (28/10/2026): publica direto, sem aprovação; autor e moderação
--- (admin do portal ou super admin) editam e apagam.
+-- Decisões (28/10/2026): publica direto, sem aprovação. Editam e excluem só o
+-- autor e o super admin (app_private.avisos_moderador) — pedido do usuário:
+-- "quem tiver publicado, e eu posso excluir todos". Os admins do DP não.
 --
 -- Acesso:
 --   - A tabela fica com RLS ligada e SEM policy: tudo passa pelas RPCs abaixo
 --     (security definer), como no Feed.
---   - Quem é quem: app_private.feed_eu() (colaborador ativo logado) e
---     app_private.feed_moderador() — as mesmas regras do Feed, sem repetir.
+--   - Quem é quem: app_private.feed_eu() (colaborador ativo logado, a mesma
+--     regra do Feed) e app_private.avisos_moderador() (só o super admin).
 --   - Excluir é lógico (excluido = true). Os arquivos ficam no bucket.
 --   - Arquivos: bucket privado `avisos-midia`, pasta = id de quem subiu. Lê o
 --     dono da pasta, a moderação, ou qualquer ativo quando o arquivo está num
@@ -54,6 +55,15 @@ create index if not exists avisos_linha_idx on public.avisos (criado_em desc, id
 
 alter table public.avisos enable row level security;
 revoke all on public.avisos from anon, authenticated;
+
+-- Moderação dos avisos: só o super admin (diferente do Feed, onde o admin do
+-- DP também modera).
+create or replace function app_private.avisos_moderador()
+ returns boolean language sql stable security definer set search_path to ''
+as $$
+  select app_private.is_portal_super_admin()
+$$;
+grant execute on function app_private.avisos_moderador() to authenticated;
 
 -- ---- Arquivos de um aviso -----------------------------------------------------
 
@@ -113,18 +123,21 @@ create or replace function public.avisos_listar(
   p_cursor_em timestamptz default null, p_cursor_id uuid default null, p_limite integer default 12)
  returns table(
   id uuid, autor_id uuid, autor_nome text, manchete text, subtitulo text, fundo text,
-  foto_path text, resumo text, editado_em timestamptz, criado_em timestamptz)
+  foto_path text, resumo text, pode_editar boolean, editado_em timestamptz, criado_em timestamptz)
  language plpgsql stable security definer set search_path to ''
 as $$
+declare
+  v_eu  uuid := app_private.feed_eu();
+  v_mod boolean := app_private.avisos_moderador();
 begin
-  if app_private.feed_eu() is null then
+  if v_eu is null then
     raise exception 'Só colaboradores ativos veem os avisos.' using errcode = 'insufficient_privilege';
   end if;
   return query
   select a.id, a.autor_id, c.nome, a.manchete, a.subtitulo, a.fundo, a.foto_path,
          left((select b->>'texto' from jsonb_array_elements(a.blocos) b
                 where b->>'tipo' = 'texto' and btrim(b->>'texto') <> '' limit 1), 240),
-         a.editado_em, a.criado_em
+         (a.autor_id = v_eu or v_mod), a.editado_em, a.criado_em
     from public.avisos a
     join public.colaboradores c on c.id = a.autor_id
    where not a.excluido
@@ -141,7 +154,7 @@ create or replace function public.avisos_obter(p_id uuid)
 as $$
 declare
   v_eu  uuid := app_private.feed_eu();
-  v_mod boolean := app_private.feed_moderador();
+  v_mod boolean := app_private.avisos_moderador();
 begin
   if v_eu is null then
     raise exception 'Só colaboradores ativos veem os avisos.' using errcode = 'insufficient_privilege';
@@ -165,7 +178,7 @@ create or replace function public.avisos_salvar(
 as $$
 declare
   v_eu     uuid := app_private.feed_eu();
-  v_mod    boolean := app_private.feed_moderador();
+  v_mod    boolean := app_private.avisos_moderador();
   v_antigo public.avisos%rowtype;
   v_ja     text[] := '{}';
   v_path   text;
@@ -194,7 +207,7 @@ begin
       raise exception 'Aviso não encontrado.' using errcode = 'no_data_found';
     end if;
     if v_antigo.autor_id <> v_eu and not v_mod then
-      raise exception 'Só quem publicou (ou a moderação) edita este aviso.' using errcode = 'insufficient_privilege';
+      raise exception 'Só quem publicou edita este aviso.' using errcode = 'insufficient_privilege';
     end if;
     v_ja := app_private.avisos_arquivos(v_antigo.foto_path, v_antigo.blocos);
   else
@@ -230,12 +243,12 @@ create or replace function public.avisos_excluir(p_id uuid)
 as $$
 declare
   v_eu  uuid := app_private.feed_eu();
-  v_mod boolean := app_private.feed_moderador();
+  v_mod boolean := app_private.avisos_moderador();
 begin
   update public.avisos a set excluido = true
    where a.id = p_id and not a.excluido and (a.autor_id = v_eu or v_mod);
   if not found then
-    raise exception 'Só quem publicou (ou a moderação) apaga este aviso.' using errcode = 'insufficient_privilege';
+    raise exception 'Só quem publicou pode excluir este aviso.' using errcode = 'insufficient_privilege';
   end if;
 end $$;
 
@@ -272,7 +285,7 @@ create or replace function app_private.avisos_midia_visivel(p_name text)
 as $$
   select app_private.feed_eu() is not null and (
        split_part(p_name, '/', 1) = app_private.feed_eu()::text
-    or app_private.feed_moderador()
+    or app_private.avisos_moderador()
     or exists (select 1 from public.avisos a
                 where not a.excluido and p_name = any (app_private.avisos_arquivos(a.foto_path, a.blocos))))
 $$;

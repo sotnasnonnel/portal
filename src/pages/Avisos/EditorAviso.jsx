@@ -159,7 +159,7 @@ export default function EditorAviso() {
       .then(async (a) => {
         if (!vivo) return;
         if (!a) { setErro('Este aviso não existe mais.'); setBloqueado(true); return; }
-        if (!a.pode_editar) { setErro('Só quem publicou (ou a moderação) edita este aviso.'); setBloqueado(true); return; }
+        if (!a.pode_editar) { setErro('Só quem publicou edita este aviso.'); setBloqueado(true); return; }
         setManchete(a.manchete);
         setSubtitulo(a.subtitulo || '');
         setFundo(a.fundo);

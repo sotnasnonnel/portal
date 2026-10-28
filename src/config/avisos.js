@@ -17,8 +17,9 @@ export const BLOCOS_MAX = 40;
 export const ANEXO_BYTES_MAX = 20 * 1024 * 1024;
 export const POR_PAGINA = 12;
 
-// Mesmas regras do moderador do Feed: o banco usa app_private.feed_moderador().
-export const ehModeradorAvisos = (user) => user?.perfil === 'admin' || isSuperAdmin(user);
+// Quem edita e exclui aviso dos outros: só o super admin (o banco usa
+// app_private.avisos_moderador()). O autor sempre pode mexer no próprio.
+export const ehModeradorAvisos = (user) => isSuperAdmin(user);
 
 export const FUNDOS = [
   { valor: 'laranja', rotulo: 'Laranja' },

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Loader2, Megaphone, Plus } from 'lucide-react';
+import { ArrowLeft, Loader2, Megaphone, Plus, Trash2 } from 'lucide-react';
 import { POR_PAGINA, ROTA_AVISOS, semMarcas } from '../../config/avisos';
-import { listarAvisos, linksDosArquivos } from '../../services/avisos';
+import { excluirAviso, listarAvisos, linksDosArquivos } from '../../services/avisos';
 import { nomeProprio } from '../../utils/pessoas';
 import { dataDoAviso } from './datas';
 import BannerAviso from './BannerAviso';
@@ -39,6 +39,22 @@ export default function Avisos() {
 
   useEffect(() => { carregar(); }, [carregar]);
 
+  // Só aparece para quem publicou e para o super admin (pode_editar vem do banco).
+  const [excluindo, setExcluindo] = useState(null);
+  const excluir = async (a) => {
+    if (!window.confirm(`Excluir o aviso "${semMarcas(a.manchete)}"? Ele sai do ar para todo mundo e não dá para desfazer.`)) return;
+    setExcluindo(a.id);
+    setErro('');
+    try {
+      await excluirAviso(a.id);
+      setAvisos((lista) => lista.filter((x) => x.id !== a.id));
+    } catch (e) {
+      setErro(e.message);
+    } finally {
+      setExcluindo(null);
+    }
+  };
+
   return (
     <div className="avisos-page">
       <Link to="/home" className="avisos-voltar"><ArrowLeft size={16} /> Voltar ao início</Link>
@@ -60,14 +76,23 @@ export default function Avisos() {
 
       <div className="avisos-grade">
         {avisos.map((a) => (
-          <Link key={a.id} to={`${ROTA_AVISOS}/${a.id}`} className="avisos-card">
-            <BannerAviso manchete={a.manchete} subtitulo={a.subtitulo} fundo={a.fundo} fotoUrl={links[a.foto_path]} />
-            <div className="avisos-card-txt">
-              <h2>{semMarcas(a.manchete)}</h2>
-              {a.resumo && <p>{semMarcas(a.resumo)}</p>}
-              <span className="avisos-meta">{nomeProprio(a.autor_nome || '')} · {dataDoAviso(a.criado_em)}</span>
-            </div>
-          </Link>
+          <div key={a.id} className="avisos-card-caixa">
+            <Link to={`${ROTA_AVISOS}/${a.id}`} className="avisos-card">
+              <BannerAviso manchete={a.manchete} subtitulo={a.subtitulo} fundo={a.fundo} fotoUrl={links[a.foto_path]} />
+              <div className="avisos-card-txt">
+                <h2>{semMarcas(a.manchete)}</h2>
+                {a.resumo && <p>{semMarcas(a.resumo)}</p>}
+                <span className="avisos-meta">{nomeProprio(a.autor_nome || '')} · {dataDoAviso(a.criado_em)}</span>
+              </div>
+            </Link>
+            {/* Fora do <Link>: botão dentro de link abriria o aviso ao clicar. */}
+            {a.pode_editar && (
+              <button type="button" className="avisos-card-excluir" onClick={() => excluir(a)} disabled={excluindo === a.id}
+                aria-label={`Excluir o aviso "${semMarcas(a.manchete)}"`} title="Excluir aviso">
+                {excluindo === a.id ? <Loader2 size={16} className="aviso-spin" /> : <Trash2 size={16} />}
+              </button>
+            )}
+          </div>
         ))}
       </div>
 
