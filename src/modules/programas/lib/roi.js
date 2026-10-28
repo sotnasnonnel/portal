@@ -204,7 +204,8 @@ function posicoes(itens, valor) {
  * `fichas` = linhas de programas_roi.
  */
 export function montarRanking(registros, fichas) {
-  const porIdeia = new Map(registros.map((r) => [r.id, r]));
+  // Só INICIATIVA concorre: ideia não tem antes e depois para medir.
+  const porIdeia = new Map(registros.filter((r) => r.tipo === 'iniciativa').map((r) => [r.id, r]));
   const registrosPorAutor = registros.reduce((m, r) => m.set(r.autor_id, (m.get(r.autor_id) || 0) + 1), new Map());
 
   const itens = fichas

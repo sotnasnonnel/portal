@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-  AlertCircle, Calculator, Lightbulb, Loader2, Wrench,
+  AlertCircle, Calculator, CheckCircle2, Lightbulb, Loader2, Wrench,
 } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import {
-  CATEGORIA_LABEL, SITUACOES, ehAdminProgramas, podeVerRoi,
+  CATEGORIA_LABEL, SITUACOES, ehAdminProgramas,
 } from '../../../../config/programas';
 import {
   listarIdeias, atualizarSituacao, atualizarIdeia, excluirIdeia,
@@ -37,7 +37,14 @@ export default function CampoDeIdeias() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
   const [salvando, setSalvando] = useState('');
-  const veRoi = podeVerRoi(user);
+  // Confirmação que a ficha de ROI manda ao salvar e voltar para cá. Limpa o
+  // state da rota para o aviso não reaparecer num F5.
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [aviso] = useState(location.state?.aviso || '');
+  useEffect(() => {
+    if (location.state?.aviso) navigate(location.pathname, { replace: true, state: null });
+  }, [location.state, location.pathname, navigate]);
   const [detalhe, setDetalhe] = useState(null);
   // Ficha de ROI por registro. `null` = não deu para carregar: a coluna some e
   // o resto da tela segue — a ficha não pode derrubar o Campo de Ideias.
@@ -47,10 +54,9 @@ export default function CampoDeIdeias() {
     setCarregando(true);
     setErro('');
     try {
-      // Fora do grupo da ficha (podeVerRoi), nem busca: a coluna não aparece.
       const [ideias, roi] = await Promise.all([
         listarIdeias(),
-        veRoi ? listarFichas().catch(() => null) : null,
+        listarFichas().catch(() => null),
       ]);
       setLinhas(ideias);
       setFichas(roi && new Map(roi.map((f) => [f.ideia_id, f])));
@@ -59,7 +65,7 @@ export default function CampoDeIdeias() {
     } finally {
       setCarregando(false);
     }
-  }, [veRoi]);
+  }, []);
 
   useEffect(() => { carregar(); }, [carregar]);
 
@@ -68,7 +74,11 @@ export default function CampoDeIdeias() {
     [linhas, user?.id]
   );
   const souAdmin = ehAdminProgramas(modules);
-  const semFicha = fichas ? minhas.filter((l) => !fichas.has(l.id)).length : 0;
+  // Só INICIATIVA tem ficha: ideia é o que ainda não existe, e não há antes e
+  // depois para medir.
+  const semFicha = fichas
+    ? minhas.filter((l) => l.tipo === 'iniciativa' && !fichas.has(l.id)).length
+    : 0;
 
   const salvarEdicao = async (registro, valores) => {
     const atualizado = await atualizarIdeia(registro, valores, user.id);
@@ -126,6 +136,7 @@ export default function CampoDeIdeias() {
       </div>
 
       {erro && <div className="pg-aviso tom-erro"><AlertCircle size={16} /> {erro}</div>}
+      {aviso && <div className="pg-aviso tom-ok" role="status"><CheckCircle2 size={16} /> {aviso}</div>}
 
       <h2 className="pg-secao">O que você registrou</h2>
 
@@ -133,7 +144,7 @@ export default function CampoDeIdeias() {
         <div className="pg-aviso tom-atencao">
           <Calculator size={16} />
           <span>
-            {semFicha === 1 ? 'Falta 1 ficha de ROI' : `Faltam ${semFicha} fichas de ROI`}. Todo registro precisa
+            {semFicha === 1 ? 'Falta 1 ficha de ROI' : `Faltam ${semFicha} fichas de ROI`}. Toda iniciativa precisa
             dela para o Programa de Inovação 2026 — prazo até {PRAZO_RELATORIO}. Preencha pela coluna
             “Ficha de ROI” abaixo.
           </span>
@@ -196,10 +207,16 @@ export default function CampoDeIdeias() {
                   </td>
                   {fichas && (
                     <td>
-                      <Link className="pg-link" to={`/programas/ideias/${l.id}/roi`}>
-                        {fichas.has(l.id) ? 'Abrir ficha' : 'Preencher ficha'}
-                      </Link>
-                      <span className="pg-motivo">{situacaoFicha(fichas.get(l.id)).label}</span>
+                      {l.tipo === 'iniciativa' ? (
+                        <>
+                          <Link className="pg-link" to={`/programas/ideias/${l.id}/roi`}>
+                            {fichas.has(l.id) ? 'Abrir ficha' : 'Preencher ficha'}
+                          </Link>
+                          <span className="pg-motivo">{situacaoFicha(fichas.get(l.id)).label}</span>
+                        </>
+                      ) : (
+                        <span className="pg-motivo">Não se aplica a ideia</span>
+                      )}
                     </td>
                   )}
                 </tr>

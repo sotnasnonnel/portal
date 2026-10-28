@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { AlertCircle, ClipboardCheck, Loader2, Trophy } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { ehAdminProgramas, podeVerRoi } from '../../../../config/programas';
+import { ehAdminProgramas } from '../../../../config/programas';
 import { listarIdeias } from '../../lib/ideias';
 import {
   PRAZO_RELATORIO, calcularFinanceiro, calcularTempo, listarFichas, montarRanking,
@@ -17,7 +17,7 @@ import ValidarFichaModal from '../components/ValidarFichaModal';
  * perguntas diferentes:
  *   classificação     -> quem está ganhando (só ficha validada e elegível)
  *   fora do ranking   -> o que ainda falta para cada ficha entrar
- *   sem ficha         -> quem registrou e ainda não preencheu (é obrigatório)
+ *   sem ficha         -> iniciativa ainda sem ficha (é obrigatória; ideia não tem)
  *
  * A equipe de Inovação (admin do módulo) valida pelas duas primeiras tabelas.
  */
@@ -38,15 +38,7 @@ function Criterio({ valor, pos, pontos }) {
   );
 }
 
-// Ficha e Ranking são só do grupo de ROI_LIBERADOS por enquanto: link
-// guardado de quem está fora volta para o Campo de Ideias.
 export default function Ranking() {
-  const { user } = useAuth();
-  if (!podeVerRoi(user)) return <Navigate to="/programas/ideias" replace />;
-  return <RankingConteudo />;
-}
-
-function RankingConteudo() {
   const { user, modules } = useAuth();
   const [registros, setRegistros] = useState([]);
   const [fichas, setFichas] = useState([]);
@@ -74,7 +66,11 @@ function RankingConteudo() {
 
   const ranking = useMemo(() => montarRanking(registros, fichas), [registros, fichas]);
 
-  const porIdeia = useMemo(() => new Map(registros.map((r) => [r.id, r])), [registros]);
+  // Só iniciativa tem ficha (ver lib/roi.js); uma ficha antiga de ideia não aparece.
+  const porIdeia = useMemo(
+    () => new Map(registros.filter((r) => r.tipo === 'iniciativa').map((r) => [r.id, r])),
+    [registros]
+  );
   const noRanking = useMemo(() => new Set(ranking.map((i) => i.id)), [ranking]);
 
   const foraDoRanking = useMemo(() => fichas
@@ -86,7 +82,9 @@ function RankingConteudo() {
 
   const semFicha = useMemo(() => {
     const comFicha = new Set(fichas.map((f) => f.ideia_id));
-    return registros.filter((r) => !comFicha.has(r.id)).sort((a, b) => a.numero - b.numero);
+    return registros
+      .filter((r) => r.tipo === 'iniciativa' && !comFicha.has(r.id))
+      .sort((a, b) => a.numero - b.numero);
   }, [registros, fichas]);
 
   const aguardando = foraDoRanking.filter((i) => i.situacao.valor === 'pendente').length;
@@ -124,7 +122,7 @@ function RankingConteudo() {
         <>
           <p className="pg-resumo pg-roi-resumo">
             <strong>{ranking.length}</strong> no ranking
-            <span> · {aguardando} aguardando validação · {semFicha.length} registro(s) sem ficha</span>
+            <span> · {aguardando} aguardando validação · {semFicha.length} iniciativa(s) sem ficha</span>
           </p>
 
           <div className="pg-card">
@@ -244,16 +242,15 @@ function RankingConteudo() {
 
           {semFicha.length > 0 && (
             <div className="pg-card">
-              <h2 className="pg-card-tit">Registros sem ficha de ROI</h2>
+              <h2 className="pg-card-tit">Iniciativas sem ficha de ROI</h2>
               <p className="pg-campo-dica">
-                Todo registro do Campo de Ideias precisa da ficha preenchida por quem o registrou.
+                Toda iniciativa do Campo de Ideias precisa da ficha preenchida por quem a registrou.
               </p>
               <div className="pg-tabela-scroll is-alta">
                 <table className="pg-tabela">
                   <thead>
                     <tr>
                       <th className="col-titulo">Solução</th>
-                      <th className="col-curta">Forma</th>
                       <th>Autor · setor</th>
                       <th className="col-curta">Registro</th>
                       <th className="col-acoes" aria-label="Ação" />
@@ -263,7 +260,6 @@ function RankingConteudo() {
                     {semFicha.map((r) => (
                       <tr key={r.id}>
                         <td className="col-titulo">#{r.numero} — {r.titulo}</td>
-                        <td className="col-curta">{r.tipo === 'ideia' ? 'Ideia' : 'Iniciativa'}</td>
                         <td>{r.autorNome || '—'} · {r.setor}</td>
                         <td className="num">{data(r.criado_em)}</td>
                         <td className="col-acoes">

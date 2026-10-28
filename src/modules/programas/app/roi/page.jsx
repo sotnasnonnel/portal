@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   AlertCircle, ArrowLeft, Calculator, CheckCircle2, Circle, Loader2, Save,
 } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { podeVerRoi } from '../../../../config/programas';
 import { buscarIdeia } from '../../lib/ideias';
 import {
   FACILIDADE, PRAZO_RELATORIO, UNIDADES, VALIDACAO_LABEL,
@@ -47,15 +46,7 @@ const SELO = {
   ok: { label: 'A validar', tom: 'tom-andamento' },
 };
 
-// Ficha e Ranking são só do grupo de ROI_LIBERADOS por enquanto: link
-// guardado de quem está fora volta para o Campo de Ideias.
 export default function FichaRoi() {
-  const { user } = useAuth();
-  if (!podeVerRoi(user)) return <Navigate to="/programas/ideias" replace />;
-  return <FichaRoiConteudo />;
-}
-
-function FichaRoiConteudo() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -66,7 +57,6 @@ function FichaRoiConteudo() {
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
-  const [salvo, setSalvo] = useState(false);
   const avisoRef = useRef(null);
 
   const carregar = useCallback(async () => {
@@ -89,11 +79,9 @@ function FichaRoiConteudo() {
   const podeEditar = Boolean(registro) && registro.autor_id === user?.id;
 
   const set = (campo) => (e) => {
-    setSalvo(false);
     setV((a) => ({ ...a, [campo]: e.target.value }));
   };
   const escolher = (campo, valor) => {
-    setSalvo(false);
     setV((a) => ({ ...a, [campo]: valor }));
   };
 
@@ -109,13 +97,19 @@ function FichaRoiConteudo() {
     setSalvando(true);
     setErro('');
     try {
-      const nova = await salvarFicha(id, ficha, v, user.id);
-      setFicha(nova);
-      setSalvo(true);
+      await salvarFicha(id, ficha, v, user.id);
+      // Salvou, fecha: ficar na mesma tela com os campos preenchidos parecia que
+      // nada tinha acontecido. A confirmação aparece no Campo de Ideias.
+      navigate('/programas/ideias', {
+        state: {
+          aviso: faltam
+            ? `Ficha de ROI de "${registro.titulo}" salva. Faltam ${faltam} item(ns) para ela ir à validação.`
+            : `Ficha de ROI de "${registro.titulo}" salva e completa. Agora é com a equipe de Inovação.`,
+        },
+      });
     } catch (err) {
       setErro(err.message);
       avisoRef.current?.focus();
-    } finally {
       setSalvando(false);
     }
   };
@@ -130,6 +124,20 @@ function FichaRoiConteudo() {
         {erro && <div className="pg-aviso tom-erro"><AlertCircle size={16} /> {erro}</div>}
         <div className="pg-vazio">
           Registro não encontrado. <Link className="pg-link" to="/programas/ideias">Voltar ao Campo de Ideias</Link>.
+        </div>
+      </div>
+    );
+  }
+
+  // Ficha é só de INICIATIVA: ideia é o que ainda não existe, e não tem antes e
+  // depois para medir. O banco recusa também (programas_roi_insert).
+  if (registro.tipo !== 'iniciativa') {
+    return (
+      <div className="pg-page">
+        <div className="pg-vazio">
+          A ficha de ROI é só para iniciativas — <strong>#{registro.numero} — {registro.titulo}</strong> é
+          uma ideia, e ainda não há resultado para medir.{' '}
+          <Link className="pg-link" to="/programas/ideias">Voltar ao Campo de Ideias</Link>.
         </div>
       </div>
     );
@@ -404,17 +412,9 @@ function FichaRoiConteudo() {
 
         {podeEditar && (
           <>
-            {salvo && (
-              <div className="pg-aviso tom-ok">
-                <CheckCircle2 size={16} />
-                {faltam
-                  ? `Ficha salva. Faltam ${faltam} item(ns) para ela ir à validação.`
-                  : 'Ficha salva e completa. Agora é com a equipe de Inovação.'}
-              </div>
-            )}
             <div className="pg-acoes">
               <button type="button" className="pg-btn pg-btn-ghost" onClick={() => navigate('/programas/ideias')}>
-                Voltar ao Campo de Ideias
+                Cancelar
               </button>
               <button type="submit" className="pg-btn pg-btn-primary" disabled={salvando}>
                 {salvando ? <><Loader2 size={16} className="pg-spin" /> Salvando…</> : <><Save size={16} /> Salvar ficha</>}
