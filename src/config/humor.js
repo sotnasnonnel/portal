@@ -9,7 +9,7 @@
 //   - o que foi respondido antes da mudança continua só nos números: a tela
 //     dizia "Só você vê a sua resposta".
 
-import { isAusenciaRh, veAusenciaTodos } from './ausenciaProgramada.js';
+import { veAusenciaTodos } from './ausenciaProgramada.js';
 
 export const MINIMO_ANONIMATO = 3;
 export const COMENTARIO_MAX = 500;   // mesmo limite do banco
@@ -29,9 +29,9 @@ export const HUMORES = [
 
 export const humorPorValor = (v) => HUMORES.find((h) => h.valor === Number(v)) || null;
 
-/** Quem vê o resumo: gestão (a equipe) e o RH (a empresa). */
+/** Quem vê o resumo: gestão (a equipe), o RH e quem tem ve_ausencia_humor (a empresa). */
 export const veResumoHumor = (user) => ['gestor', 'coordenador', 'admin'].includes(user?.perfil)
-  || isAusenciaRh(user);
+  || veAusenciaTodos(user);
 export const veResumoEmpresa = (user) => veAusenciaTodos(user);
 /** Resposta e comentário por pessoa: o RH e quem tem ve_ausencia_humor. Espelha humor_respostas no banco. */
 export const veRespostasHumor = (user) => veAusenciaTodos(user);

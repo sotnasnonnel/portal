@@ -36,6 +36,8 @@ test('só gestão e RH veem o resumo', () => {
   assert.equal(veResumoHumor({ perfil: 'gestor' }), true);
   assert.equal(veResumoHumor({ perfil: 'usuario' }), false);
   assert.equal(veResumoHumor({ perfil: 'usuario', rhDp: true }), true);
+  // Leitor sem perfil de gestão (ve_ausencia_humor): sem isso a tela o devolvia para a Home.
+  assert.equal(veResumoHumor({ perfil: null, veAusenciaHumor: true }), true);
   assert.equal(humorPorValor(3).rotulo, 'Ok');
 });
 

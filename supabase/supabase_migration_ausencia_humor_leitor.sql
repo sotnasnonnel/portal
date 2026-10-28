@@ -250,3 +250,8 @@ alter policy ausencia_solic_select on public.ausencia_solicitacoes
 -- ---- Quem recebe ------------------------------------------------------------
 update public.colaboradores set ve_ausencia_humor = true
  where email = 'lucas.ferraz@phdengenharia.eng.br';
+
+-- 28/10/2026, pedido do Lennon: a Tamiris Machado (RH) passa a ver o humor da
+-- empresa; leva junto a leitura da Ausência Programada. Já aplicado.
+update public.colaboradores set ve_ausencia_humor = true
+ where email = 'tamiris.machado@phdengenharia.eng.br';
