@@ -1,6 +1,6 @@
 import {
-  Aperture, AtSign, Award, Cake, ClipboardCheck, Fingerprint, HardHat, Heart, ImagePlus, Laugh, LayoutDashboard,
-  MessageCircle, MessageSquareHeart, Newspaper, Palette, Ruler, Smile, Star,
+  Aperture, AtSign, Award, BellRing, Cake, ClipboardCheck, Fingerprint, HardHat, Heart, ImagePlus, Laugh,
+  LayoutDashboard, Link2, MessageCircle, MessageSquareHeart, Newspaper, Palette, Paperclip, Ruler, Smile, Star, Type,
 } from 'lucide-react';
 import { COMO_GANHAR } from './pontos.js';
 
@@ -47,6 +47,28 @@ const PONTOS_POST = COMO_GANHAR.find((g) => g.o === 'Postar no feed')?.p;
  * Serve para a novidade que só se entende vendo onde clicar.
  */
 export const NOVIDADES = [
+  {
+    // Avisos do portal (pages/Avisos): qualquer colaborador publica, com o
+    // banner no template de manchete da Comunicação. Depende da migração
+    // supabase_migration_avisos.sql estar aplicada.
+    id: '2026-10-28-avisos',
+    data: '2026-10-28',
+    itens: [
+      {
+        icon: BellRing,
+        modulo: 'Portal',
+        marca: 'Novidade',
+        titulo: 'Publicar avisos',
+        texto: 'Qualquer um publica um aviso para a empresa: o banner sai no padrão da Comunicação e aparece na Home.',
+        opcoes: [
+          { icon: Type, label: 'Texto formatado' },
+          { icon: ImagePlus, label: 'Imagens' },
+          { icon: Link2, label: 'Botão com link' },
+          { icon: Paperclip, label: 'Anexos' },
+        ],
+      },
+    ],
+  },
   {
     // Lançamento do feed para todo mundo (config/feed.js) e os títulos novos
     // da Personalização: fechar o aviso já cai no passo a passo do feed, que
