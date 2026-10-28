@@ -121,7 +121,7 @@ export async function descartarDenuncia(tipo, id) {
 
 // ---- Fotos e vídeos -----------------------------------------------------------
 
-function carregarImagem(file) {
+export function carregarImagem(file) {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
     const img = new Image();
@@ -144,7 +144,7 @@ const CACHE_ARQUIVO = '31536000';
  * JPEG. `fonte` é um <img> ou um <video> parado no quadro da capa — daí as
  * medidas virem de fora, que <video> não tem naturalWidth.
  */
-async function reduzir(fonte, lado, qualidade, larg = fonte.naturalWidth, alt = fonte.naturalHeight) {
+export async function reduzir(fonte, lado, qualidade, larg = fonte.naturalWidth, alt = fonte.naturalHeight) {
   const escala = Math.min(1, lado / Math.max(larg, alt));
   const canvas = document.createElement('canvas');
   canvas.width = Math.max(1, Math.round(larg * escala));

@@ -44,6 +44,9 @@ const CentralAprovacoes = lazyPagina(() => import('../modules/aprovacoes/app/pag
 const PainelHumor = lazyPagina(() => import('../pages/Humor/PainelHumor'));
 const Pontos = lazyPagina(() => import('../pages/Pontos/Pontos'));
 const Feed = lazyPagina(() => import('../pages/Feed/Feed'));
+const Avisos = lazyPagina(() => import('../pages/Avisos/Avisos'));
+const AvisoPagina = lazyPagina(() => import('../pages/Avisos/AvisoPagina'));
+const EditorAviso = lazyPagina(() => import('../pages/Avisos/EditorAviso'));
 const AdminCadastro = lazyPagina(() => import('../pages/Admin/AdminCadastro'));
 const AdminListagem = lazyPagina(() => import('../pages/Admin/AdminListagem'));
 const AdminCandidatos = lazyPagina(() => import('../pages/Admin/AdminCandidatos'));
@@ -430,6 +433,13 @@ export default function AppRoutes() {
               </ProtectedRoute>
             }
           />
+
+          {/* Avisos: todo logado lê e publica; as RPCs barram quem está inativo
+              e só deixam o autor (ou a moderação) editar e apagar. */}
+          <Route path="/avisos" element={<ProtectedRoute><LazyPage><Avisos /></LazyPage></ProtectedRoute>} />
+          <Route path="/avisos/novo" element={<ProtectedRoute><LazyPage><EditorAviso /></LazyPage></ProtectedRoute>} />
+          <Route path="/avisos/:id" element={<ProtectedRoute><LazyPage><AvisoPagina /></LazyPage></ProtectedRoute>} />
+          <Route path="/avisos/:id/editar" element={<ProtectedRoute><LazyPage><EditorAviso /></LazyPage></ProtectedRoute>} />
 
           {/* Personalização: moldura, título, tema do mês e enfeite dos recados,
               tudo de graça; o RH modera o título personalizado. Aberta a todo

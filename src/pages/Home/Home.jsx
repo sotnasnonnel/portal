@@ -26,6 +26,7 @@ import HumorDoDia from './HumorDoDia';
 import AniversariantesMes from './AniversariantesMes';
 import DestaqueDoDia from './DestaqueDoDia';
 import AprovacoesHome from './AprovacoesHome';
+import AvisosHome from '../Avisos/AvisosHome';
 import { iniciais, nomeProprio } from '../../utils/pessoas';
 import { areasGestaoPessoas } from '../../components/Layout/nav';
 import NovidadesModal from '../../components/Novidades/NovidadesModal';
@@ -296,6 +297,9 @@ export default function Home() {
           {/* A Central de Aprovações deixou de ser card: é a única coisa da
               Home que pede ação, então vem antes dos módulos. */}
           <AprovacoesHome />
+
+          {/* Avisos da empresa (pages/Avisos): os mais recentes, um banner por vez. */}
+          <AvisosHome />
 
           <h2 className="home-mods-tit">Seus módulos</h2>
           <div className="home-cards">
