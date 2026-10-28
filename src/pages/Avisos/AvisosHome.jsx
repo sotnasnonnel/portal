@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { ROTA_AVISOS, semMarcas } from '../../config/avisos';
 import { listarAvisos, linksDosArquivos } from '../../services/avisos';
+import { nomeProprio } from '../../utils/pessoas';
+import { dataDoAviso } from './datas';
 import BannerAviso from './BannerAviso';
 import './Avisos.css';
 
@@ -67,22 +69,27 @@ export default function AvisosHome() {
       ) : (
         <>
           <div className="home-avisos-palco" onMouseEnter={() => setParado(true)} onMouseLeave={() => setParado(false)}>
-            <Link to={`${ROTA_AVISOS}/${a.id}`} className="home-avisos-slide" aria-label={`Abrir o aviso: ${semMarcas(a.manchete)}`}>
+            {/* Cartão compacto: o banner pequeno ao lado da manchete. Na largura
+                toda da Home ele passava de 500px de altura e empurrava os módulos. */}
+            <Link to={`${ROTA_AVISOS}/${a.id}`} className="home-avisos-slide">
               <BannerAviso manchete={a.manchete} subtitulo={a.subtitulo} fundo={a.fundo} fotoUrl={links[a.foto_path]} />
+              <div className="home-avisos-txt">
+                <b>{semMarcas(a.manchete)}</b>
+                {a.resumo && <p>{semMarcas(a.resumo)}</p>}
+                <span>{nomeProprio(a.autor_nome || '')} · {dataDoAviso(a.criado_em)}</span>
+              </div>
             </Link>
-            {total > 1 && (
-              <>
-                <button type="button" className="home-avisos-seta is-esq" onClick={() => ir(-1)} aria-label="Aviso anterior"><ChevronLeft size={18} /></button>
-                <button type="button" className="home-avisos-seta is-dir" onClick={() => ir(1)} aria-label="Próximo aviso"><ChevronRight size={18} /></button>
-              </>
-            )}
           </div>
+          {/* Setas embaixo, junto dos pontos: em cima do banner pequeno elas
+              cobriam o quadrado do PHD. */}
           {total > 1 && (
             <div className="home-avisos-pontos">
+              <button type="button" className="home-avisos-seta" onClick={() => ir(-1)} aria-label="Aviso anterior"><ChevronLeft size={16} /></button>
               {avisos.map((x, i) => (
-                <button key={x.id} type="button" className={i === atual ? 'is-on' : ''}
+                <button key={x.id} type="button" className={`home-avisos-ponto${i === atual ? ' is-on' : ''}`}
                   onClick={() => setAtual(i)} aria-label={`Aviso ${i + 1} de ${total}`} aria-current={i === atual} />
               ))}
+              <button type="button" className="home-avisos-seta" onClick={() => ir(1)} aria-label="Próximo aviso"><ChevronRight size={16} /></button>
             </div>
           )}
         </>
