@@ -8,7 +8,7 @@ incluindo Fechamento PJ em `src/modules/fechamentoPj`), **Gestão de Horas**
 (`src/modules/horas`), **Dados** (`src/modules/solic`, antigo PMO),
 **Administrativo** (`src/modules/administrativo`), **Estoque**
 (`src/modules/estoque`), **Mobilização** (`src/modules/mobilizacao`),
-**Torre de Controle** (`src/modules/torre`), **Financeiro**
+**Torre de Controle** (`src/modules/torre`), **PLR** (`src/modules/plr`), **Financeiro**
 (`src/modules/financeiro`) e **Programas** (`src/modules/programas`).
 Reembolso ainda não (ver §9).
 
@@ -43,6 +43,7 @@ O antigo "branco gelo" #f2f2f2 foi aposentado. O fundo agora é `--neutral-bg` (
 | Estoque           | `.estRoot`      | #6d28d9  |
 | Mobilização       | `.mobRoot`      | #4338ca  |
 | Torre de Controle | `.mobRoot.torRoot` | #334155 |
+| PLR               | `.plrRoot`      | #0369a1  |
 
 ## 1. Neutros
 

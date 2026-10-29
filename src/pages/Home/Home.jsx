@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, BarChart3, Clock, CreditCard, Headset, Sparkles, ShieldCheck, LogOut, ArrowRight, Lock, Hourglass, Blocks, MessageSquarePlus, Megaphone, Radar, Star, Newspaper } from 'lucide-react';
+import { Users, BarChart3, Clock, CreditCard, Headset, Sparkles, ShieldCheck, LogOut, ArrowRight, Lock, Hourglass, Blocks, MessageSquarePlus, Megaphone, Radar, Star, Newspaper, Target } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePontos } from '../../contexts/PontosContext';
 import { novidadesDoFeed } from '../../services/feed';
@@ -11,6 +11,7 @@ import { isSuperAdmin } from '../../config/superAdmin';
 import { areasAdministrativoDe } from '../../config/administrativo';
 import { podeAcessarProgramas } from '../../config/programas';
 import { podeVerTorre } from '../../config/torre';
+import { podeVerPlr, veTodosSetoresPlr } from '../../config/plr';
 import { areasFinanceiroDe } from '../../config/financeiro';
 import { FALE_CONOSCO_ATIVO, FALE_CONOSCO_OPEN_EVENT, SLA_HORAS, MSG_FALE_CONOSCO_TRAVADO, faleConoscoTravado } from '../../config/suporte';
 import { NOVIDADES, ULTIMA_NOVIDADE, novidadesNaoVistas, tutorialDasNovidades } from '../../config/novidades';
@@ -168,6 +169,18 @@ export default function Home() {
       desc: 'Status dos seus chamados e mobilizações, num quadro só',
       locked: !podeVerTorre(user, modules),
       emBreve: !podeVerTorre(user, modules),
+    },
+    // PLR: só para quem tem setor pelo organograma ou papel no módulo. Quem
+    // não tem não vê o card nem com cadeado — PLR não é módulo "em breve", e
+    // o cadeado faria a pessoa perguntar por um acesso que não vai ganhar.
+    podeVerPlr(modules) && {
+      to: '/plr/setores',
+      icon: Target,
+      tone: 'blue',
+      title: 'PLR',
+      desc: veTodosSetoresPlr(modules)
+        ? 'Metas e resultados de todos os setores'
+        : 'Metas e resultados do seu setor',
     },
     {
       // Cartões e Reembolso são duas rotinas sem relação uma com a outra, então

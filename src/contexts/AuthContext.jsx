@@ -6,6 +6,7 @@ import { resetPreload } from '../modules/reembolso/services/dataPreload.js';
 import { clearSolicIdentity } from '../modules/solic/lib/identity.ts';
 import { clearSupabaseCache as clearSolicCache } from '../modules/solic/lib/supabaseCache.ts';
 import { carregarFotoMicrosoft, fotoEmCache, limparFotoMicrosoft } from '../services/fotoMicrosoft';
+import { PLR_ANO } from '../config/plr';
 
 const AuthContext = createContext(null);
 
@@ -116,10 +117,13 @@ export function AuthProvider({ children }) {
     (async () => {
       setLoading(true);
       const authUser = session.user;
-      const [colabRes, reemRes, solic] = await Promise.all([
+      const [colabRes, reemRes, solic, plrRes] = await Promise.all([
         resolveColaborador(authUser),
         supabase.from('reembolso_profiles').select('*').eq('id', authUser.id).maybeSingle(),
         resolveSolicProfile(authUser),
+        // PLR: o acesso depende do organograma (setor do responsável mais
+        // próximo), então vem pronto do banco. Erro aqui só tira o card.
+        supabase.rpc('plr_acesso', { p_ano: PLR_ANO }),
       ]);
       if (cancelled) return;
       if (colabRes.error) {
@@ -170,6 +174,8 @@ export function AuthProvider({ children }) {
         // Idem para a tela de Ajustes de Valores — só que esta abre ESCRITA, e
         // a mesma regra está na RLS de precos_itens (ver config/valores.js).
         valoresAjuste: colab.valores_ajuste === true,
+        // 'admin' | 'visualizador' | 'setor' | null (ver config/plr.js).
+        plrAcesso: plrRes?.error ? null : (plrRes?.data ?? null),
         authId: authUser.id,
       });
       setReembolsoProfile(reemRes.data ?? null);
@@ -298,6 +304,9 @@ export function AuthProvider({ children }) {
     // indica oportunidade. 'comercial'/'admin' são quem avalia a Alavanca e
     // enxerga o painel dela; vêm de programas_role (Gerenciar acessos).
     programas: user ? (user.programasRole || 'user') : null,
+    // PLR: fechado. Entra quem é de um setor da planilha pelo organograma
+    // ('setor') ou tem papel em Gerenciar acessos ('visualizador'/'admin').
+    plr: user?.plrAcesso ?? null,
   }), [user, reembolsoProfile, solicProfile]);
 
   const value = useMemo(() => ({

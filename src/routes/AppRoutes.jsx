@@ -22,6 +22,8 @@ import MobilizacaoShell from '../modules/mobilizacao/app/components/AppShell';
 import { podeAcessarMobilizacao } from '../config/mobilizacao';
 import TorreShell from '../modules/torre/app/components/AppShell';
 import { podeVerTorre } from '../config/torre';
+import PlrShell from '../modules/plr/app/components/AppShell';
+import { podeVerPlr, podeEditarPlr } from '../config/plr';
 import { podeAcessarFechamentoPj } from '../config/fechamentoPj';
 import { isAusenciaRh, veAprovacoes, veAusenciaTodos } from '../config/ausenciaProgramada';
 import { veFeed } from '../config/feed';
@@ -157,6 +159,9 @@ const MapaTorre = lazyPagina(() => import('../modules/torre/app/mapa/page'));
 const QuadroTorre = lazyPagina(() => import('../modules/torre/app/quadro/page'));
 const EtapasTorre = lazyPagina(() => import('../modules/torre/app/etapas/page'));
 
+const SetoresPlr = lazyPagina(() => import('../modules/plr/app/setores/page'));
+const EditarPlr = lazyPagina(() => import('../modules/plr/app/editar/page'));
+
 function RouteFallback() {
   return <div style={{ padding: 'var(--space-3xl)', textAlign: 'center' }}>Carregando...</div>;
 }
@@ -251,6 +256,21 @@ function EstoqueEmBreveRoute({ children }) {
 function TorreRoute({ children }) {
   const { user, modules } = useAuth();
   if (!podeVerTorre(user, modules)) return <Navigate to="/home" replace />;
+  return children;
+}
+
+// PLR: quem tem setor pelo organograma ou papel em Gerenciar acessos
+// (config/plr.js). A edição é só do admin. Gate de UI — quem filtra os setores
+// e barra a escrita são as RPCs plr_*.
+function PlrRoute({ children }) {
+  const { modules } = useAuth();
+  if (!podeVerPlr(modules)) return <Navigate to="/home" replace />;
+  return children;
+}
+
+function PlrEdicaoRoute({ children }) {
+  const { modules } = useAuth();
+  if (!podeEditarPlr(modules)) return <Navigate to="/plr/setores" replace />;
   return children;
 }
 
@@ -1004,6 +1024,27 @@ export default function AppRoutes() {
             <Route path="mapa" element={<LazyPage><MapaTorre /></LazyPage>} />
             <Route path="quadro" element={<LazyPage><QuadroTorre /></LazyPage>} />
             <Route path="etapas" element={<LazyPage><EtapasTorre /></LazyPage>} />
+          </Route>
+
+          {/* PLR: metas e resultados por setor (aba SETORES da plr.xlsx).
+              Cada um vê o setor do responsável mais próximo no organograma;
+              a edição é do admin. */}
+          <Route
+            path="/plr"
+            element={(
+              <ProtectedRoute>
+                <PlrRoute>
+                  <PlrShell />
+                </PlrRoute>
+              </ProtectedRoute>
+            )}
+          >
+            <Route index element={<Navigate to="/plr/setores" replace />} />
+            <Route path="setores" element={<LazyPage><SetoresPlr /></LazyPage>} />
+            <Route
+              path="editar"
+              element={<PlrEdicaoRoute><LazyPage><EditarPlr /></LazyPage></PlrEdicaoRoute>}
+            />
           </Route>
 
           {/* Programas: os programas internos da PHD (Campo de Ideias e Alavanca).

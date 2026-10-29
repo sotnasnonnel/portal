@@ -50,6 +50,14 @@ const PROGRAMAS_ROLES = [
   ["comercial", "Time comercial"],
   ["admin", "Admin"],
 ];
+// PLR: quem não tem papel vê o setor dele pelo organograma (ou nada, se não
+// estiver abaixo de nenhum responsável). O papel só AMPLIA: ver todos os
+// setores, ou ver todos e editar. O super admin é admin sempre, pelo banco.
+const PLR_ROLES = [
+  ["", "Pelo setor"],
+  ["visualizador", "Vê todos os setores"],
+  ["admin", "Admin (edita)"],
+];
 // Gestão de Horas: o papel BASE deriva da hierarquia da Gestão de Pessoas
 // (perfil + superior_id) — gestor/coordenador enxergam a própria equipe, o
 // resto vê só o próprio tempo. O que se edita aqui é a ELEVAÇÃO (horas_role),
@@ -75,7 +83,7 @@ export default function PortalAdmin() {
     setLoading(true);
     setErr("");
     const [colab, reemb, solic] = await Promise.all([
-      supabase.from("colaboradores").select("id, nome, email, perfil, rh_dp, organograma_consulta, valores_ajuste, horas_role, financeiro_role, administrativo_role, programas_role, auth_id, ativo").order("nome"),
+      supabase.from("colaboradores").select("id, nome, email, perfil, rh_dp, organograma_consulta, valores_ajuste, horas_role, financeiro_role, administrativo_role, programas_role, plr_role, auth_id, ativo").order("nome"),
       supabase.from("reembolso_profiles").select("id, email, role"),
       supabase.from("solic_profiles").select("id, email, role"),
     ]);
@@ -109,6 +117,7 @@ export default function PortalAdmin() {
         finRole: c.financeiro_role ?? null,
         admRole: c.administrativo_role ?? null,
         progRole: c.programas_role ?? null,
+        plrRole: c.plr_role ?? null,
         reembId: r?.id ?? null,
         reembRole: r?.role ?? null,
         solicId: s?.id ?? null,
@@ -172,6 +181,11 @@ export default function PortalAdmin() {
       const stored = value === "" ? null : value;
       res = await supabase.from("colaboradores").update({ programas_role: stored }).eq("id", row.colabId);
       patch = { progRole: stored };
+    } else if (app === "plr") {
+      // "" (Pelo setor) vira NULL — a pessoa volta a ver só o setor dela.
+      const stored = value === "" ? null : value;
+      res = await supabase.from("colaboradores").update({ plr_role: stored }).eq("id", row.colabId);
+      patch = { plrRole: stored };
     } else {
       res = await supabase.from("solic_profiles").update({ role: value }).eq("id", row.solicId);
       patch = { solicRole: value };
@@ -345,6 +359,7 @@ export default function PortalAdmin() {
                 <th>Financeiro</th>
                 <th>Atendimento</th>
                 <th>Programas</th>
+                <th>PLR</th>
               </tr>
             </thead>
             <tbody>
@@ -424,11 +439,14 @@ export default function PortalAdmin() {
                   <td>
                     <RoleSelect row={row} app="programas" value={row.progRole ?? ""} options={PROGRAMAS_ROLES} hasAccess />
                   </td>
+                  <td>
+                    <RoleSelect row={row} app="plr" value={row.plrRole ?? ""} options={PLR_ROLES} hasAccess />
+                  </td>
                 </tr>
               ))}
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="pa-empty-cell">
+                  <td colSpan={10} className="pa-empty-cell">
                     Ninguém encontrado.
                   </td>
                 </tr>

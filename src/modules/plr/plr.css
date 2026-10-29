@@ -1,0 +1,242 @@
+/* ==========================================================================
+   Módulo PLR — estilos escopados em .plrRoot. A sidebar é a compartilhada
+   (components/Layout/ModuleSidebar); daqui sai só o acento. Escala, alturas de
+   controle e neutros vêm de styles/ui.css — nenhum valor solto.
+
+   Acento azul-céu: o verde e o vermelho ficam livres para a aderência (bateu /
+   zerou), que é a leitura principal da tela. Os outros azuis do portal são o
+   marinho (Adm) e o índigo (Mobilização).
+   ========================================================================== */
+.plrRoot {
+  --mod-accent: #0369a1;
+  --mod-accent-soft: #f0f9ff;
+  --mod-accent-ink: #075985;
+
+  --p-primary: #0369a1;
+  --p-primary-soft: #f0f9ff;
+  --p-primary-line: #bae6fd;
+  --p-ink: var(--neutral-ink);
+  --p-muted: var(--neutral-muted);
+  --p-border: var(--neutral-border);
+  --p-bg: var(--neutral-bg);
+  --p-gray-50: #f8fafc;
+  --p-gray-100: #f1f5f9;
+  --p-gray-600: #475569;
+
+  display: flex;
+  min-height: 100vh;
+  background: var(--p-bg);
+  color: var(--p-ink);
+  font-size: var(--font-size-md);
+}
+.plrRoot * { box-sizing: border-box; }
+
+.plrCol { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.plrMain { flex: 1; min-width: 0; padding: var(--shell-main-pad-y) var(--shell-main-pad-x) var(--shell-main-pad-bottom); width: 100%; }
+
+/* ======================= página ======================= */
+.plr-page { animation: plrFade 0.25s ease; max-width: var(--shell-page-max); }
+.plr-page-wide { max-width: var(--shell-page-max-wide); }
+@keyframes plrFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+.plr-cab { margin-bottom: 20px; }
+.plr-title {
+  display: flex; align-items: center; gap: 10px;
+  font-size: var(--font-size-3xl); font-weight: var(--fw-bold); letter-spacing: var(--ls-tight); margin: 0 0 4px;
+}
+.plr-title svg { color: var(--p-primary); }
+.plr-sub { font-size: var(--font-size-md); color: var(--p-muted); line-height: var(--lh-normal); margin: 0; }
+
+.plr-card {
+  background: var(--neutral-surface); border: 1px solid var(--p-border);
+  border-radius: var(--card-radius); padding: var(--card-pad); margin-bottom: 16px;
+}
+.plr-card-tit {
+  font-size: var(--font-size-2xs); font-weight: var(--fw-bold); letter-spacing: var(--ls-wide);
+  text-transform: uppercase; color: var(--p-primary); margin: 0 0 12px;
+}
+
+.plr-vazio {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  border: 1px dashed var(--p-border); border-radius: var(--card-radius);
+  padding: 44px 24px; text-align: center; color: var(--p-muted); background: var(--neutral-surface);
+}
+.plr-erro { color: #b91c1c; border-color: #fecaca; }
+.plr-spin { animation: plrGira 0.9s linear infinite; }
+@keyframes plrGira { to { transform: rotate(360deg); } }
+
+/* ======================= resumo (quem vê vários setores) ======================= */
+.plr-resumo { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.plr-resumo-item {
+  display: grid; grid-template-columns: minmax(160px, 260px) 1fr 72px; align-items: center; gap: 14px;
+  width: 100%; padding: 8px 10px; border: none; border-radius: var(--ctl-radius-sm);
+  background: none; font-family: inherit; text-align: left; cursor: pointer; color: inherit;
+}
+.plr-resumo-item:hover { background: var(--p-primary-soft); }
+.plr-resumo-nome { display: flex; flex-direction: column; min-width: 0; }
+.plr-resumo-nome b { font-size: var(--font-size-md); font-weight: var(--fw-semibold); }
+.plr-resumo-nome small { font-size: var(--font-size-xs); color: var(--p-muted); }
+.plr-resumo-pct {
+  text-align: right; font-weight: var(--fw-bold); font-variant-numeric: tabular-nums;
+  font-size: var(--font-size-md);
+}
+
+/* ======================= cartão do setor ======================= */
+.plr-setor { scroll-margin-top: 16px; }
+.plr-setor-cab { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.plr-setor-tit h2 { font-size: var(--font-size-xl); font-weight: var(--fw-bold); margin: 0 0 4px; }
+.plr-setor-tit p {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+  margin: 0; font-size: var(--font-size-sm); color: var(--p-muted);
+}
+.plr-setor-tit b { color: var(--p-ink); font-weight: var(--fw-semibold); }
+.plr-chip {
+  display: inline-block; padding: 1px 8px; border-radius: 999px;
+  background: var(--p-primary-soft); color: var(--mod-accent-ink);
+  font-size: var(--font-size-2xs); font-weight: var(--fw-semibold);
+}
+.plr-setor-total { display: flex; flex-direction: column; align-items: flex-end; }
+.plr-setor-total strong {
+  font-size: var(--font-size-4xl); font-weight: var(--fw-bold); line-height: var(--lh-tight);
+  color: var(--p-primary); font-variant-numeric: tabular-nums;
+}
+.plr-setor-total span { font-size: var(--font-size-xs); color: var(--p-muted); }
+
+.plr-barra { height: 8px; border-radius: 999px; background: var(--p-gray-100); overflow: hidden; }
+.plr-barra > span { display: block; height: 100%; border-radius: inherit; background: var(--p-primary); }
+.plr-setor > .plr-barra { margin: 12px 0 16px; }
+
+.plr-aviso {
+  display: flex; align-items: center; gap: 6px;
+  margin: 0 0 12px; font-size: var(--font-size-xs); color: #92400e;
+}
+.plr-rodape { margin: 12px 0 0; font-size: var(--font-size-xs); color: var(--p-muted); }
+
+/* ======================= tabela ======================= */
+.plr-tabela-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.plr-tabela { width: 100%; min-width: 720px; border-collapse: collapse; font-size: var(--table-fs); }
+.plr-tabela th {
+  padding: var(--table-cell-pad); text-align: left; white-space: nowrap;
+  font-size: var(--table-head-fs); font-weight: var(--fw-bold); letter-spacing: var(--ls-wide);
+  text-transform: uppercase; color: var(--p-muted); border-bottom: 1px solid var(--p-border);
+}
+.plr-tabela td { padding: var(--table-cell-pad); border-bottom: 1px solid var(--p-gray-100); color: var(--p-gray-600); vertical-align: middle; }
+.plr-tabela .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* Colunas numéricas com largura fixa: cada setor é uma tabela, e sem isso as
+   colunas mudavam de lugar de um cartão para o outro, atrapalhando comparar. */
+.plr-tabela:not(.plr-tabela-edicao) .num { width: 108px; }
+.plr-tabela tfoot td {
+  border-bottom: none; border-top: 1px solid var(--p-border);
+  font-weight: var(--fw-bold); color: var(--p-ink);
+}
+.plr-tabela td.is-alerta { color: #b45309; }
+
+.plr-ind { min-width: 260px; }
+.plr-ind-nome { display: block; color: var(--p-ink); font-weight: var(--fw-semibold); line-height: var(--lh-normal); }
+.plr-ind-regra {
+  display: inline-block; margin-top: 2px; font-size: var(--font-size-2xs); color: var(--p-muted);
+  border-bottom: 1px dotted var(--p-border); cursor: help;
+}
+.plr-contrib { color: var(--p-ink); font-weight: var(--fw-semibold); }
+
+/* Aderência: bateu (95% ou mais), metade, zerou, ou ainda sem resultado. */
+.plr-pill {
+  display: inline-block; min-width: 64px; padding: 2px 8px; border-radius: 999px;
+  text-align: center; font-size: var(--font-size-xs); font-weight: var(--fw-bold);
+}
+.plr-pill.is-ok { background: #dcfce7; color: #166534; }
+.plr-pill.is-parcial { background: #fef3c7; color: #92400e; }
+.plr-pill.is-zero { background: #fee2e2; color: #b91c1c; }
+.plr-pill.is-pendente { background: var(--p-gray-100); color: var(--p-muted); }
+
+/* ======================= legenda ======================= */
+.plr-legenda p, .plr-legenda li { font-size: var(--font-size-sm); color: var(--p-gray-600); line-height: var(--lh-relaxed); }
+.plr-legenda p { margin: 0 0 8px; }
+.plr-legenda ul { margin: 0 0 8px; padding-left: 20px; }
+.plr-legenda b { color: var(--p-ink); }
+
+/* ======================= edição ======================= */
+.plr-linha { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.plr-linha > .plr-campo { flex: 1 1 260px; }
+.plr-campo { display: flex; flex-direction: column; gap: 6px; }
+.plr-campo label { font-size: var(--font-size-xs); font-weight: var(--fw-semibold); color: var(--p-gray-600); }
+
+.plr-input, .plr-select {
+  width: 100%; height: var(--ctl-h); padding: var(--ctl-pad-y) var(--ctl-pad-x); font-family: inherit;
+  font-size: var(--font-size-md); color: var(--p-ink);
+  background: var(--neutral-surface); border: var(--ctl-border) solid var(--p-border); border-radius: var(--ctl-radius);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.plr-input:focus, .plr-select:focus { outline: none; border-color: var(--p-primary); box-shadow: 0 0 0 3px rgba(3, 105, 161, 0.14); }
+.plr-select {
+  appearance: none; padding-right: 34px;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center;
+}
+.plr-input-num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Na tabela de edição os campos encolhem para a linha caber. */
+.plr-tabela-edicao { min-width: 1080px; }
+.plr-tabela-edicao .plr-input, .plr-tabela-edicao .plr-select {
+  height: var(--ctl-h-sm); padding: 4px 8px; font-size: var(--font-size-sm);
+}
+.plr-tabela-edicao .plr-select { padding-right: 28px; background-position: right 6px center; }
+.plr-tabela-edicao .plr-col-nome { min-width: 300px; }
+.plr-tabela-edicao .plr-input-num { width: 84px; }
+.plr-input-sufixo { display: inline-flex; align-items: center; gap: 6px; }
+.plr-input-sufixo small { min-width: 34px; text-align: left; font-size: var(--font-size-2xs); color: var(--p-muted); }
+
+.plr-problemas {
+  margin: 12px 0 0; padding: 10px 14px 10px 30px; border-radius: var(--ctl-radius);
+  background: #fef2f2; color: #b91c1c; font-size: var(--font-size-sm); line-height: var(--lh-normal);
+}
+.plr-msg { display: flex; align-items: center; gap: 6px; margin: 12px 0 0; font-size: var(--font-size-sm); }
+.plr-msg.is-ok { color: #166534; }
+.plr-msg.is-erro { color: #b91c1c; }
+
+.plr-acoes { display: flex; align-items: center; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+.plr-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: var(--ctl-h); padding: 0 16px; border-radius: var(--ctl-radius);
+  font-family: inherit; font-size: var(--font-size-md); font-weight: var(--fw-semibold); cursor: pointer;
+  border: 1px solid transparent; transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.plr-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.plr-btn-primary { background: var(--p-primary); color: #fff; }
+.plr-btn-primary:hover:not(:disabled) { background: var(--mod-accent-ink); }
+.plr-btn-ghost { background: #fff; border-color: var(--p-border); color: var(--p-gray-600); }
+.plr-btn-ghost:hover:not(:disabled) { border-color: var(--p-primary-line); color: var(--p-ink); }
+
+/* ======================= mobile ======================= */
+@media (max-width: 768px) {
+  .plrMain { padding: var(--shell-main-pad-mobile); }
+  .plr-btn { min-height: var(--touch-min); }
+}
+@media (max-width: 620px) {
+  .plr-resumo-item { grid-template-columns: 1fr 64px; }
+  .plr-resumo-item .plr-barra { grid-column: 1 / -1; grid-row: 2; }
+  .plr-setor-total { align-items: flex-start; }
+
+  /* No celular a tabela de consulta vira um bloco por indicador: na rolagem
+     lateral, a aderência e a contribuição — o que a pessoa veio ver — ficavam
+     fora da tela. O rótulo de cada número vem do data-rot da célula. */
+  .plr-tabela:not(.plr-tabela-edicao) { min-width: 0; }
+  .plr-tabela:not(.plr-tabela-edicao) thead { display: none; }
+  .plr-tabela:not(.plr-tabela-edicao) tr {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px;
+    padding: 12px 0; border-bottom: 1px solid var(--p-gray-100);
+  }
+  .plr-tabela:not(.plr-tabela-edicao) tfoot tr { border-bottom: none; border-top: 1px solid var(--p-border); }
+  .plr-tabela:not(.plr-tabela-edicao) td {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 0; border: none;
+  }
+  .plr-tabela:not(.plr-tabela-edicao) td.num { width: auto; }
+  .plr-tabela:not(.plr-tabela-edicao) td.plr-ind,
+  .plr-tabela:not(.plr-tabela-edicao) tfoot td:first-child { grid-column: 1 / -1; display: block; }
+  .plr-tabela:not(.plr-tabela-edicao) td[data-rot]::before {
+    content: attr(data-rot);
+    font-size: var(--font-size-2xs); font-weight: var(--fw-semibold); color: var(--p-muted);
+  }
+  .plr-tabela:not(.plr-tabela-edicao) td.plr-cel-vazia { display: none; }
+}
