@@ -46,6 +46,30 @@ alter table public.colaboradores drop constraint if exists colaboradores_plr_rol
 alter table public.colaboradores add constraint colaboradores_plr_role_check
   check (plr_role is null or plr_role in ('visualizador', 'admin'));
 
+-- A policy colaboradores_admin_write deixa o admin do DP gravar qualquer linha
+-- de colaboradores, e com ela ele poderia se dar plr_role pela API. O PLR é só
+-- de quem o super admin escolher: pela API (anon/authenticated), só ele muda
+-- plr_role. SQL editor e service role passam.
+create or replace function app_private.plr_role_so_super_admin()
+ returns trigger language plpgsql security definer set search_path to ''
+as $$
+begin
+  if coalesce((select auth.jwt() ->> 'role'), '') in ('anon', 'authenticated')
+     and new.plr_role is distinct from (case when tg_op = 'UPDATE' then old.plr_role end)
+     and not app_private.is_portal_super_admin() then
+    raise exception 'Só o super admin muda o papel no PLR.' using errcode = '42501';
+  end if;
+  return new;
+end
+$$;
+
+revoke all on function app_private.plr_role_so_super_admin() from public;
+
+drop trigger if exists colaboradores_plr_role_guard on public.colaboradores;
+create trigger colaboradores_plr_role_guard
+  before insert or update of plr_role on public.colaboradores
+  for each row execute function app_private.plr_role_so_super_admin();
+
 -- ---- Tabelas ------------------------------------------------------------------
 
 create table if not exists public.plr_setores (
