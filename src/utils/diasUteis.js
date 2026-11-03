@@ -5,10 +5,13 @@
  * domingo, sem ninguém ter trabalhado — o indicador acusava atraso que não
  * existiu. Aqui sábado e domingo não contam.
  *
- * NÃO trata feriados: o portal não tem calendário de feriados. Um prazo que
- * cruze feriado fica mais curto do que deveria — é uma limitação conhecida, não
- * um esquecimento. Quando existir a tabela, é só filtrar aqui E no espelho
- * plpgsql `app_private.mob_dias_uteis_apos` (supabase_migration_mobilizacao.sql).
+ * NÃO trata feriados: um prazo que cruze feriado fica mais curto do que
+ * deveria — é uma limitação conhecida, não um esquecimento. O calendário já
+ * existe desde 03/11/2026 (src/utils/feriados.js, com espelho em
+ * `app_private.feriado`), mas ligar ele AQUI move todo vencimento já gravado no
+ * banco e os indicadores de atraso de chamado fechado junto. Quando for a hora,
+ * é filtrar em `ehDiaUtil` E no espelho plpgsql `app_private.mob_dias_uteis_apos`
+ * (supabase_migration_mobilizacao.sql) na mesma leva.
  *
  * Duas famílias de função, porque os dois módulos guardam tempo de jeitos
  * diferentes e misturá-los é como se erra fuso horário:

@@ -12,10 +12,11 @@
 -- Vale para a lista da Home, para o e-mail que monta o link do Teams, para o
 -- mural de parabéns e para os 10 pontos do recado.
 --
--- Feriado NÃO entra: o portal não tem calendário de feriados — a mesma
--- limitação conhecida de src/utils/diasUteis.js. Quando existir a tabela, é só
--- filtrar em app_private.inicio_janela_parabens E no espelho do front
--- (src/pages/Home/comemoracao.js, função diasEmCartaz).
+-- Feriado NÃO entrava aqui: o portal não tinha calendário de feriados.
+-- RESOLVIDO em 03/11/2026 por supabase_migration_parabens_feriado.sql, que
+-- troca app_private.inicio_janela_parabens por uma que anda para trás enquanto
+-- não houve expediente. Leia aquele arquivo: a janela descrita abaixo é a
+-- antiga.
 --
 -- Sem dependência de deploy, nas duas ordens:
 --   - banco novo + front antigo: as colunas que o front lê continuam lá (as

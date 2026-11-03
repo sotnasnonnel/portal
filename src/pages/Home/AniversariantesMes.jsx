@@ -38,8 +38,9 @@ function linkParabens(p) {
 }
 
 // Quem ainda está "em cartaz": a RPC manda o dia da comemoração em celebra_em
-// (null = fora da janela do fim de semana — ver comemoracao.js). Com o banco
-// antigo, que não tem a coluna, vale a regra velha de só o próprio dia.
+// (null = fora da janela do fim de semana e do feriado — ver comemoracao.js).
+// Com o banco antigo, que não tem a coluna, vale a regra velha de só o próprio
+// dia; com o banco sem a migration do feriado, a janela ainda para no sábado.
 const emCartaz = (p, hoje) => (p.celebra_em === undefined ? p.dia === hoje : Boolean(p.celebra_em));
 // A janela cruza o mês (sábado 31/10 visto na segunda 02/11), então a lista
 // pode trazer linha de outro mês: ela entra no cartão de parabéns, nunca na
@@ -81,8 +82,8 @@ const diaDeHoje = () => new Date().toDateString();
 
 // Coluna de pessoas da Home: quem está em cartaz para receber parabéns em
 // destaque, depois o mês. O banco devolve só o DIA do aniversário: nem ano, nem
-// idade. "Em cartaz" é quem faz hoje e, na segunda, quem fez no fim de semana —
-// a janela está em comemoracao.js e no espelho SQL da RPC.
+// idade. "Em cartaz" é quem faz hoje e, no primeiro dia útil, quem fez no fim de
+// semana ou no feriado — a janela está em comemoracao.js e no espelho SQL da RPC.
 export default function AniversariantesMes() {
   const { user } = useAuth();
   const { perfil } = usePontos();
@@ -137,12 +138,12 @@ export default function AniversariantesMes() {
   const mes = MESES[agora.getMonth()];
   const mesAtual = agora.getMonth() + 1;
   const cartaz = (p) => emCartaz(p, hoje);
-  // Como falar do dia da pessoa: 'hoje', 'no sábado' ou 'no domingo'.
+  // Como falar do dia da pessoa: 'hoje', 'no sábado', 'na segunda-feira'.
   const quandoDe = (p) => (p.celebra_em ? rotuloCartaz(deIso(p.celebra_em), agora) : 'hoje');
 
   const aniv = lista.filter((p) => p.tipo === 'aniversario');
-  // Quem recebe parabéns agora: quem faz hoje e, na segunda, quem comemorou no
-  // fim de semana sem ninguém no portal.
+  // Quem recebe parabéns agora: quem faz hoje e, no primeiro dia útil, quem
+  // comemorou no fim de semana ou no feriado sem ninguém no portal.
   const celebrando = aniv.filter(cartaz);
   const doMesAniv = aniv.filter((p) => !cartaz(p) && doMes(p, mesAtual));
   // Os que ainda vêm primeiro; os que já passaram ficam no fim, esmaecidos.
@@ -201,8 +202,8 @@ export default function AniversariantesMes() {
                 <Avatar p={p} foto={fotos[p.colaborador_id]} visual={visualDe(p)} t="t1" />
                 <span className="home-festa-nome">
                   {nomeProprio(p.nome)}
-                  {/* Na segunda o cargo dá lugar ao dia: é a informação que
-                      explica por que a pessoa ainda está aqui. */}
+                  {/* Fora do próprio dia o cargo dá lugar ao dia: é a
+                      informação que explica por que a pessoa ainda está aqui. */}
                   {quandoDe(p) !== 'hoje'
                     ? <small>fez aniversário {quandoDe(p)}</small>
                     : p.funcao && <small>{cargo(p.funcao)}</small>}

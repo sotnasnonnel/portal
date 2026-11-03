@@ -77,6 +77,55 @@ test('quem faz no próprio dia é sempre "hoje"', () => {
   assert.equal(rotuloCartaz(null, SEGUNDA), 'hoje');
 });
 
+// ---------------------------------------------------------------------------
+// O feriado na janela
+// ---------------------------------------------------------------------------
+
+// Novembro de 2026: 31/10 sábado, 01/11 domingo, 02/11 segunda de Finados,
+// 03/11 terça — o caso do pedido.
+const FINADOS = dia(2026, 11, 2);
+const POS_FINADOS = dia(2026, 11, 3);
+
+test('a terça depois do feriado enxerga o feriado e o fim de semana', () => {
+  assert.deepEqual(diasEmCartaz(POS_FINADOS).map((d) => d.getDate()), [31, 1, 2, 3]);
+});
+
+test('aniversário no feriado segue em cartaz no dia útil seguinte (o caso da Ana)', () => {
+  const ana = { dataNascimento: '1990-11-02' };
+  assert.equal(comemoracoesEmCartaz(ana, FINADOS)[0].quando, 'hoje');
+  const r = comemoracoesEmCartaz(ana, POS_FINADOS);
+  assert.deepEqual(tipos(r), ['aniversario']);
+  assert.equal(r[0].quando, 'na segunda-feira');
+});
+
+test('o feriado também puxa o fim de semana anterior para o dia útil', () => {
+  // Sábado 31/10/2026 ainda aparece na terça, porque a segunda não teve ninguém.
+  assert.equal(comemoracoesEmCartaz({ dataNascimento: '1980-10-31' }, POS_FINADOS)[0].quando, 'no sábado');
+  // E a quarta 04/11 já não mostra nada disso.
+  assert.deepEqual(tipos(comemoracoesEmCartaz({ dataNascimento: '1990-11-02' }, dia(2026, 11, 4))), []);
+});
+
+test('feriado no meio da semana: a quinta-feira de Corpus Christi vista na sexta', () => {
+  // Páscoa de 2026 em 05/04, logo Corpus Christi na quinta 04/06.
+  assert.deepEqual(diasEmCartaz(dia(2026, 6, 5)).map((d) => d.getDate()), [4, 5]);
+  assert.equal(comemoracoesEmCartaz({ dataNascimento: '1975-06-04' }, dia(2026, 6, 5))[0].quando,
+    'na quinta-feira');
+});
+
+test('o Carnaval inteiro cabe na janela da quarta de cinzas', () => {
+  // Sábado 14, domingo 15, segunda 16 e terça 17/02/2026 — quarta 18 tem expediente.
+  assert.deepEqual(diasEmCartaz(dia(2026, 2, 18)).map((d) => d.getDate()), [14, 15, 16, 17, 18]);
+  assert.equal(comemoracoesEmCartaz({ dataNascimento: '1988-02-17' }, dia(2026, 2, 18))[0].quando,
+    'na terça-feira');
+});
+
+test('o ano de casa sai do dia da comemoração, mesmo quando é feriado', () => {
+  // Quem entrou num 01/01 completa os anos no feriado, não no dia útil seguinte:
+  // 01/01/2027 é sexta, então a segunda 04/01 ainda mostra.
+  const r = comemoracoesEmCartaz({ dataAdmissao: '2020-01-01' }, dia(2027, 1, 4));
+  assert.deepEqual(r.map((x) => [x.tipo, x.anos, x.quando]), [['tempo_casa', 7, 'na sexta-feira']]);
+});
+
 test('a janela cruza o mês e o ano', () => {
   // Segunda 02/11/2026 enxerga o sábado 31/10.
   const r = comemoracoesEmCartaz({ dataNascimento: '1980-10-31' }, dia(2026, 11, 2));

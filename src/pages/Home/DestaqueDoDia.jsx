@@ -4,8 +4,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import { comemoracoesEmCartaz } from './comemoracao';
 import './DestaqueDoDia.css';
 
-// Fechar vale só para o dia: quem fecha no sábado volta a ver na segunda, que é
-// quando o resto da empresa está olhando (ver a janela em comemoracao.js).
+// Fechar vale só para o dia: quem fecha no sábado (ou no feriado) volta a ver no
+// dia útil seguinte, que é quando o resto da empresa está olhando (ver a janela
+// em comemoracao.js).
 const CHAVE = 'home-destaque-fechado';
 const hojeIso = () => new Date().toLocaleDateString('sv-SE');
 const lerFechado = () => {
@@ -14,8 +15,8 @@ const lerFechado = () => {
 
 // Destaque no topo da Home no aniversário e no aniversário de empresa — só
 // para a própria pessoa: sai das datas dela no perfil carregado, nada de lista.
-// Na segunda ele ainda aparece para quem comemorou no fim de semana, com o
-// texto falando do dia certo em vez de "hoje".
+// No primeiro dia útil ele ainda aparece para quem comemorou no fim de semana
+// ou no feriado, com o texto falando do dia certo em vez de "hoje".
 export default function DestaqueDoDia() {
   const { user } = useAuth();
   const [fechado, setFechado] = useState(lerFechado);
@@ -34,12 +35,16 @@ export default function DestaqueDoDia() {
   let titulo;
   let texto;
   if (aniversario && casa) {
-    // As duas datas podem cair em dias diferentes do mesmo fim de semana.
-    const quando = aniversario.quando === casa.quando ? aniversario.quando : 'neste fim de semana';
     titulo = `Dia duplo, ${nome}! 🎉`;
-    texto = quando === 'hoje'
-      ? `Hoje é o seu aniversário e você completa ${anos} de PHD. Parabéns e obrigado por fazer parte do time!`
-      : `Seu aniversário e seus ${anos} de PHD foram ${quando}. Parabéns e obrigado por fazer parte do time!`;
+    if (aniversario.quando !== casa.quando) {
+      // Dias diferentes da mesma janela — cada um com o seu nome, que é melhor
+      // do que um "neste fim de semana" que a emenda do feriado desmente.
+      texto = `Seu aniversário foi ${aniversario.quando} e seus ${anos} de PHD, ${casa.quando}. Parabéns e obrigado por fazer parte do time!`;
+    } else {
+      texto = aniversario.quando === 'hoje'
+        ? `Hoje é o seu aniversário e você completa ${anos} de PHD. Parabéns e obrigado por fazer parte do time!`
+        : `Seu aniversário e seus ${anos} de PHD foram ${aniversario.quando}. Parabéns e obrigado por fazer parte do time!`;
+    }
   } else if (aniversario) {
     titulo = aniversario.quando === 'hoje'
       ? `Feliz aniversário, ${nome}! 🎂`

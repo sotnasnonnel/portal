@@ -6,14 +6,21 @@
 // A JANELA (pedido do usuário, 19/10/2026): o aniversário do Paulo Paiva caiu
 // num domingo, ninguém abriu o portal no fim de semana e na segunda a
 // comemoração já tinha sumido — ninguém deu os parabéns. Então o aniversário
-// que cai no fim de semana fica em cartaz até o primeiro dia útil seguinte:
-// domingo mostra o sábado, e a segunda mostra o fim de semana inteiro.
+// que cai num dia sem expediente fica em cartaz até o primeiro dia útil
+// seguinte: domingo mostra o sábado, e a segunda mostra o fim de semana inteiro.
 //
-// Feriado NÃO entra: o portal não tem calendário de feriados, a mesma limitação
-// conhecida de src/utils/diasUteis.js.
+// FERIADO entra na mesma conta desde 03/11/2026 (pedido do usuário): a Ana fez
+// aniversário na segunda 02/11, Finados, e a terça abriu sem a comemoração.
+// Agora a janela volta por quantos dias parados houver — fim de semana, feriado
+// ou feriado emendado no fim de semana — e o calendário está em
+// src/utils/feriados.js.
 //
-// Espelho em SQL: app_private.dias_em_cartaz e app_private.comemora_em
-// (supabase/supabase_migration_parabens_fim_de_semana.sql).
+// Espelho em SQL: app_private.dias_em_cartaz, app_private.comemora_em e
+// app_private.sem_expediente (supabase/supabase_migration_parabens_fim_de_semana.sql
+// e supabase/supabase_migration_parabens_feriado.sql).
+
+// Com extensão: `node --test` resolve este módulo direto, sem o alias do Vite.
+import { semExpediente } from '../../utils/feriados.js';
 
 export const SEMANA = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira',
   'quinta-feira', 'sexta-feira', 'sábado'];
@@ -38,24 +45,37 @@ function caiEm([, mes, dia], d) {
 const mesmoDia = (a, b) => a.getFullYear() === b.getFullYear()
   && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
+// Quantos dias a janela pode voltar. Sete dias em cartaz é o teto, e não um
+// palpite: no oitavo, dois dias da janela teriam o mesmo nome e "na terça-feira"
+// ficaria ambíguo. Serve também de trava — calendário torto não vira laço
+// infinito. O Carnaval, que é a emenda mais longa do ano, usa quatro.
+const MAX_VOLTA = 6;
+
 /**
  * Os dias cujo aniversário ainda está em cartaz hoje, do mais antigo ao atual.
- * Segunda e domingo voltam até o sábado; os outros dias são só eles mesmos.
+ *
+ * Hoje sempre entra; antes dele, entram os dias parados que vêm emendados —
+ * fim de semana, feriado, ou os dois juntos. A terça depois de Finados numa
+ * segunda enxerga sábado, domingo e a própria segunda; uma terça comum é só
+ * ela mesma.
  */
 export function diasEmCartaz(hoje = new Date()) {
-  const dow = hoje.getDay();
-  const volta = dow === 1 ? 2 : (dow === 0 ? 1 : 0);
+  const atras = (n) => new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() - n, 12);
+  let volta = 0;
+  while (volta < MAX_VOLTA && semExpediente(atras(volta + 1))) volta += 1;
   const dias = [];
-  for (let i = volta; i >= 0; i -= 1) {
-    dias.push(new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() - i, 12));
-  }
+  for (let i = volta; i >= 0; i -= 1) dias.push(atras(i));
   return dias;
 }
 
-/** Como falar do dia em cartaz: 'hoje', 'no sábado' ou 'no domingo'. */
+/**
+ * Como falar do dia em cartaz: 'hoje', 'no sábado', 'na segunda-feira'.
+ * O artigo segue o gênero do dia — domingo e sábado são "no", o resto é "na".
+ */
 export function rotuloCartaz(dia, hoje = new Date()) {
   if (!dia || mesmoDia(dia, hoje)) return 'hoje';
-  return `no ${SEMANA[dia.getDay()]}`;
+  const dow = dia.getDay();
+  return `${dow === 0 || dow === 6 ? 'no' : 'na'} ${SEMANA[dow]}`;
 }
 
 /**
