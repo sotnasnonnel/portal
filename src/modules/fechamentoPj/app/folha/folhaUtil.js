@@ -1,4 +1,4 @@
-import { normalizar, digitos, partesCompetencia } from '../../lib/formato.js';
+import { normalizar, digitos, partesCompetencia, round2 } from '../../lib/formato.js';
 
 // Apoio da tela Folha do mês: dados de exibição da linha, busca e datas de
 // formulário. Sem React, para o fast refresh não reclamar de export misto.
@@ -117,6 +117,35 @@ export const TOMADORES = {
 };
 
 export const tomadorDaEmpresa = (empresa) => TOMADORES[normalizar(empresa)] || TOMADORES['PHD ASSESSORIA'];
+
+// Coligada: a sigla que o RM usa para cada empresa do grupo. Vem da mesma
+// `empresa` do cadastro que decide o tomador do termo. Empresa não reconhecida
+// fica em branco em vez de cair na Assessoria: numa planilha de conferência,
+// célula vazia avisa que falta cadastro; chute silencioso não.
+export const COLIGADAS = { 'PHD ASSESSORIA': 'PHDA', 'PHD ENGENHARIA': 'PHDE' };
+
+export const coligadaDaEmpresa = (empresa) => COLIGADAS[normalizar(empresa)] || '';
+
+/**
+ * Planilha Coligada / Nome / Função / Salário Bruto da folha em exibição.
+ *
+ * Recebe as linhas já montadas pela tela, então segue a mesma regra de quem
+ * está na folha e o mesmo cadastro (congelado no mês fechado, vivo no aberto).
+ * O bruto é o do envelope — o que a pessoa recebe na competência, já com
+ * proporcional —, igual à coluna Bruto da grade, e não o valor contratual.
+ * Ordena por coligada e nome para PHDA e PHDE saírem agrupados.
+ */
+export function planilhaColigada(linhas) {
+  return (linhas || [])
+    .map((l) => ({
+      coligada: coligadaDaEmpresa(l.pessoa.empresa),
+      nome: l.pessoa.nome,
+      funcao: l.pessoa.funcao || '',
+      bruto: round2(l.envelope.bruto),
+    }))
+    .sort((a, b) => a.coligada.localeCompare(b.coligada)
+      || normalizar(a.nome).localeCompare(normalizar(b.nome)));
+}
 
 export const emailValido = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v || '').trim());
 

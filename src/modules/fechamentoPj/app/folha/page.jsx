@@ -3,7 +3,7 @@ import {
 } from 'react';
 import {
   Users, Calculator, CheckCircle2, AlertTriangle, FileCheck, Wallet, MinusCircle, Banknote, Search, Upload, Send,
-  UserPlus, Lock, Unlock, CalendarPlus, ChevronDown, FileText, Eye, CalendarDays, X,
+  UserPlus, Lock, Unlock, CalendarPlus, ChevronDown, FileText, Eye, CalendarDays, X, FileSpreadsheet,
 } from 'lucide-react';
 import { useFechamentoPj } from '../components/contexto';
 import {
@@ -12,9 +12,10 @@ import {
 import { listarEnvelopes, gravarEnvelopes, marcarTermo, auditar, nomesColaboradores } from '../../lib/dados';
 import { indexar, loteCalculo } from '../../lib/lote';
 import {
-  competenciaRotulo, dataBr, dataHoraBr, fmtBRL, somar,
+  competenciaRotulo, dataBr, dataHoraBr, fmtBRL, partesCompetencia, somar,
 } from '../../lib/formato';
-import { pessoaDoEnvelope, combinaBusca, naFolhaDaCompetencia } from './folhaUtil';
+import { gravarXlsx } from '../../lib/arquivos';
+import { pessoaDoEnvelope, combinaBusca, naFolhaDaCompetencia, planilhaColigada } from './folhaUtil';
 import Envelope from './Envelope';
 import InputFolha from './InputFolha';
 import { ModalTermo, DialogoEnvio } from './Termo';
@@ -211,6 +212,31 @@ export default function Pagina() {
     if (abrir && n === 1) setTermoId(aptos[0].envelope.id);
   }
 
+  // Planilha enxuta da folha: coligada, nome, função e bruto do mês. Sai a
+  // folha inteira da competência, não o resultado da busca ou do filtro da
+  // tela — planilha de conferência pela metade passa por completa.
+  async function exportarPlanilha() {
+    const dados = planilhaColigada(linhas);
+    if (!dados.length) {
+      notificar('Nenhum envelope nesta competência para exportar.', 'alerta');
+      return;
+    }
+    const p = partesCompetencia(competencia);
+    await gravarXlsx([{
+      nome: 'Folha PJ',
+      cabecalho: ['Coligada', 'Nome', 'Função', 'Salário Bruto'],
+      linhas: dados.map((d) => [d.coligada, d.nome, d.funcao, d.bruto]),
+      moeda: [3],
+      larguras: [12, 40, 34, 16],
+    }], `Folha PJ ${p.mm}-${p.aaaa}.xlsx`);
+    await auditar('Relatório exportado', `Planilha da folha (coligada) • ${competenciaRotulo(competencia)}`, { competencia });
+    const semColigada = dados.filter((d) => !d.coligada).length;
+    notificar(
+      `Planilha gerada com ${dados.length} prestador(es)${semColigada ? `; ${semColigada} sem coligada no cadastro` : ''}.`,
+      semColigada ? 'alerta' : 'sucesso',
+    );
+  }
+
   const abrirEnvelope = (l, aba) => setEnvelopeAberto({ id: l.envelope.id, aba: aba || (l.envelope.conferencia === 'divergente' ? 'conferencia' : 'eventos') });
 
   async function aposCompetencia(msg) {
@@ -394,6 +420,12 @@ export default function Pagina() {
         </button>
         <button type="button" className="btn btn-outline" onClick={() => setDialogo('incluir')} disabled={!aberta || semAcao} title={dicaFechada}>
           <UserPlus size={16} /> Incluir prestador
+        </button>
+        {/* Exportar é só leitura: vale também na competência fechada. */}
+        <button type="button" className="btn btn-outline" disabled={semAcao || !linhas.length}
+          title="Excel com coligada (PHDA/PHDE), nome, função e salário bruto de toda a folha do mês"
+          onClick={() => executar('planilha', exportarPlanilha)}>
+          <FileSpreadsheet size={16} /> {ocupado === 'planilha' ? 'Gerando…' : 'Exportar planilha'}
         </button>
         <div className="pj-toolbar-direita">
           {aberta && (
