@@ -11,7 +11,7 @@ import { isSuperAdmin } from '../../config/superAdmin';
 import { areasAdministrativoDe } from '../../config/administrativo';
 import { podeAcessarProgramas } from '../../config/programas';
 import { podeVerTorre } from '../../config/torre';
-import { podeVerPlr, veTodosSetoresPlr } from '../../config/plr';
+import { podeVerPlr, rotaInicialPlr, veSetoresPlr, veTodosSetoresPlr } from '../../config/plr';
 import { areasFinanceiroDe } from '../../config/financeiro';
 import { FALE_CONOSCO_ATIVO, FALE_CONOSCO_OPEN_EVENT, SLA_HORAS, MSG_FALE_CONOSCO_TRAVADO, faleConoscoTravado } from '../../config/suporte';
 import { NOVIDADES, ULTIMA_NOVIDADE, novidadesNaoVistas, tutorialDasNovidades } from '../../config/novidades';
@@ -170,17 +170,19 @@ export default function Home() {
       locked: !podeVerTorre(user, modules),
       emBreve: !podeVerTorre(user, modules),
     },
-    // PLR: só para quem tem setor pelo organograma ou papel no módulo. Quem
-    // não tem não vê o card nem com cadeado — PLR não é módulo "em breve", e
+    // PLR: só para quem tem setor pelo organograma, papel no módulo ou linha no
+    // cálculo por pessoa. Quem não tem não vê o card nem com cadeado — PLR não é módulo "em breve", e
     // o cadeado faria a pessoa perguntar por um acesso que não vai ganhar.
     podeVerPlr(modules) && {
-      to: '/plr/setores',
+      to: rotaInicialPlr(modules),
       icon: Target,
       tone: 'blue',
       title: 'PLR',
       desc: veTodosSetoresPlr(modules)
         ? 'Metas e resultados de todos os setores'
-        : 'Metas e resultados do seu setor',
+        : veSetoresPlr(modules)
+          ? 'Metas e resultados do seu setor'
+          : 'O seu resultado de PLR',
     },
     {
       // Cartões e Reembolso são duas rotinas sem relação uma com a outra, então

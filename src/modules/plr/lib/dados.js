@@ -11,6 +11,17 @@ export async function carregarPainel(ano) {
   return { papel: data?.papel ?? null, setores: data?.setores ?? [] };
 }
 
+/**
+ * O PLR por pessoa, já calculado com o que o HUB diz na hora e só com as linhas
+ * que a pessoa pode ver. Forma da resposta: montarResultado, na Edge Function
+ * plr-calculo.
+ */
+export async function carregarCalculo(ano) {
+  const { data, error } = await supabase.functions.invoke('plr-calculo', { body: { ano } });
+  if (error) throw error;
+  return data;
+}
+
 /** Grava a referência e os indicadores de um setor (só admin; o banco confere). */
 export async function salvarSetor(setorId, referencia, indicadores) {
   const { error } = await supabase.rpc('plr_salvar_setor', {

@@ -127,6 +127,48 @@ export function formatarPct(fracao, casas = 2) {
 }
 
 /**
+ * Multiplicador em número, como a coluna da planilha: "0,6", "1,15". O final e o
+ * de tempo usam 4 casas: com 2, "0,84 × salário" não fecha com o valor da tela.
+ */
+export function formatarMult(valor, casas = 2) {
+  const v = num(valor);
+  return v === null || Number.isNaN(v) ? '—' : (casas === 2 ? FMT2 : fmt(casas)).format(v);
+}
+
+const MESES_CURTOS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+
+/** "202610" (o mês até onde vai o YTD no HUB) → "out/26". */
+export function rotuloMes(aaaamm) {
+  const m = /^\d{2}(\d{2})(\d{2})$/.exec(String(aaaamm ?? ''));
+  const nome = m && MESES_CURTOS[Number(m[2]) - 1];
+  return nome ? `${nome}/${m[1]}` : '';
+}
+
+/** "YTD · Até out/26", ou só "YTD" se o HUB ainda não disse até que mês vai. */
+export function rotuloYtd(ytdAte) {
+  const mes = rotuloMes(ytdAte);
+  return mes ? `YTD · Até ${mes}` : 'YTD';
+}
+
+// De onde vem o Fator PLR corporativo, com as palavras da tela do HUB.
+export const BASE_DO_FATOR = 'Painel com as metas individuais pela planilha · base projeção de fechamento 2026';
+
+// A aba "Multiplic. Cargo" escreve os cargos colados; na tela, por extenso.
+const ROTULO_CARGO = {
+  DIRETOR: 'Diretor',
+  'GER EXEC': 'Gerente executivo',
+  GERENTE: 'Gerente',
+  'COORDENAÇÃO CORPORATIVA': 'Coordenação corporativa',
+  HEAD: 'Head',
+  ESPECIALISTA: 'Especialista',
+  LIDER: 'Líder',
+  'OPERAÇÃO PJ/Cotista': 'Operação PJ/Cotista',
+  OPERAÇÃOCLT: 'Operação CLT',
+};
+
+export const rotuloCargo = (cargo) => ROTULO_CARGO[cargo] ?? cargo ?? '—';
+
+/**
  * O que impede salvar a edição de um setor, uma frase por problema. Recebe as
  * linhas como estão nos campos (texto) e devolve [] quando está tudo certo.
  */

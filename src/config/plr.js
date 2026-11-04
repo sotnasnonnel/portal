@@ -9,9 +9,14 @@
  *   - 'visualizador' → todos os setores (Gerenciar acessos).
  *   - 'admin'        → todos os setores e a tela de edição. O super admin é
  *                      admin sempre; os demais, por Gerenciar acessos.
- *   - null           → sem setor no organograma: o card nem aparece.
+ *   - 'proprio'      → sem setor, mas com linha no cálculo por pessoa: vê só o
+ *                      próprio PLR (chave plr_aberto_a_cada_um, no banco).
+ *   - null           → nada disso: o card nem aparece.
  *
- * O gate daqui só controla a tela; quem filtra os setores é a RPC.
+ * 'admin' e 'visualizador' também veem o resultado por pessoa de todo mundo, com
+ * salário; os demais, só a própria linha.
+ *
+ * O gate daqui só controla a tela; quem filtra setores e pessoas é o banco.
  */
 
 // Ano exibido. As tabelas já guardam o ano: a aba "SETORES - 2027" entra como
@@ -24,8 +29,14 @@ export const podeEditarPlr = (modules) => modules?.plr === 'admin';
 
 export const veTodosSetoresPlr = (modules) => modules?.plr === 'admin' || modules?.plr === 'visualizador';
 
+export const veSetoresPlr = (modules) => !!modules?.plr && modules.plr !== 'proprio';
+
+// Onde o módulo abre: quem só tem a própria linha não tem setor para ver.
+export const rotaInicialPlr = (modules) => (veSetoresPlr(modules) ? '/plr/setores' : '/plr/resultado');
+
 export const PAPEL_PLR_LABEL = {
   admin: 'Admin',
-  visualizador: 'Todos os setores',
+  visualizador: 'Vê tudo',
   setor: 'Meu setor',
+  proprio: 'Meu PLR',
 };

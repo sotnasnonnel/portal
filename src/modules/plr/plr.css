@@ -207,6 +207,69 @@
 .plr-btn-ghost { background: #fff; border-color: var(--p-border); color: var(--p-gray-600); }
 .plr-btn-ghost:hover:not(:disabled) { border-color: var(--p-primary-line); color: var(--p-ink); }
 
+/* ======================= resultado por pessoa ======================= */
+.plr-alerta {
+  display: flex; align-items: flex-start; gap: 8px;
+  margin: 0 0 16px; padding: 10px 14px; border-radius: var(--ctl-radius);
+  border: 1px solid #fde68a; background: #fffbeb; color: #92400e;
+  font-size: var(--font-size-sm); line-height: var(--lh-normal);
+}
+.plr-alerta svg { flex-shrink: 0; margin-top: 2px; }
+
+.plr-calc-resumo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 40px; }
+.plr-calc-rotulo { display: block; margin-bottom: 4px; font-size: var(--font-size-xs); color: var(--p-muted); }
+.plr-base-total {
+  display: block; font-size: var(--font-size-3xl); font-weight: var(--fw-bold); line-height: var(--lh-tight);
+  color: var(--p-primary); font-variant-numeric: tabular-nums;
+}
+.plr-base-linhas { margin: 12px 0 0; }
+.plr-base-linhas > div {
+  display: flex; justify-content: space-between; gap: 12px; padding: 4px 0;
+  font-size: var(--font-size-sm); color: var(--p-gray-600);
+}
+.plr-base-linhas dt { font-weight: var(--fw-regular); }
+.plr-base-linhas dd { margin: 0; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.plr-base-linhas .is-forte { color: var(--p-ink); font-weight: var(--fw-semibold); }
+.plr-base-linhas .is-forte dt { font-weight: inherit; }
+
+.plr-link {
+  padding: 0; border: none; background: none; cursor: pointer; font-family: inherit; text-align: left;
+  font-size: var(--table-fs); font-weight: var(--fw-semibold); color: var(--p-primary);
+}
+.plr-link:hover { text-decoration: underline; }
+.plr-pessoa-sub { display: block; margin-top: 2px; font-size: var(--font-size-2xs); color: var(--p-muted); }
+
+.plr-calc-cab { margin-bottom: 12px; }
+.plr-calc-mult { display: flex; gap: 24px; margin: 0; }
+.plr-calc-mult > div { display: flex; flex-direction: column; align-items: flex-end; }
+.plr-calc-mult dt { font-size: var(--font-size-2xs); color: var(--p-muted); }
+.plr-calc-mult dd {
+  margin: 0; font-size: var(--font-size-xl); font-weight: var(--fw-bold);
+  color: var(--p-primary); font-variant-numeric: tabular-nums;
+}
+.plr-calc-mult small { font-size: var(--font-size-2xs); color: var(--p-muted); font-variant-numeric: tabular-nums; }
+
+/* Layout fixo: cada setor é uma tabela, e o conteúdo não pode mudar as colunas de
+   lugar de um cartão para o outro. O seletor do .num perde para o `width: auto` do
+   celular, onde a tabela vira um bloco por pessoa. */
+.plr-tabela-calc { min-width: 880px; table-layout: fixed; }
+.plr-tabela.plr-tabela-calc .num { width: 124px; }
+.plr-tabela-calc th.num { white-space: normal; vertical-align: bottom; }
+.plr-fator { display: block; font-size: var(--font-size-2xs); color: var(--p-muted); }
+
+.plr-conta { width: 100%; border-collapse: collapse; font-size: var(--table-fs); }
+.plr-conta th {
+  padding: var(--table-cell-pad); font-size: var(--table-head-fs); font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-wide); text-transform: uppercase; color: var(--p-muted);
+  border-bottom: 1px solid var(--p-border);
+}
+.plr-conta td { padding: var(--table-cell-pad); border-bottom: 1px solid var(--p-gray-100); color: var(--p-gray-600); }
+.plr-conta .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.plr-conta .is-forte td { color: var(--p-ink); font-weight: var(--fw-semibold); }
+
+.plr-problemas-cartao .plr-card-tit { display: flex; align-items: center; gap: 6px; color: #92400e; }
+.plr-problemas-cartao .plr-problemas { margin: 0; }
+
 /* ======================= mobile ======================= */
 @media (max-width: 768px) {
   .plrMain { padding: var(--shell-main-pad-mobile); }
@@ -216,6 +279,8 @@
   .plr-resumo-item { grid-template-columns: 1fr 64px; }
   .plr-resumo-item .plr-barra { grid-column: 1 / -1; grid-row: 2; }
   .plr-setor-total { align-items: flex-start; }
+  .plr-calc-resumo { grid-template-columns: minmax(0, 1fr); }
+  .plr-calc-mult > div { align-items: flex-start; }
 
   /* No celular a tabela de consulta vira um bloco por indicador: na rolagem
      lateral, a aderência e a contribuição — o que a pessoa veio ver — ficavam
@@ -239,4 +304,9 @@
     font-size: var(--font-size-2xs); font-weight: var(--fw-semibold); color: var(--p-muted);
   }
   .plr-tabela:not(.plr-tabela-edicao) td.plr-cel-vazia { display: none; }
+
+  /* No resultado por pessoa os valores em reais não cabem ao lado do rótulo. */
+  .plr-tabela.plr-tabela-calc tr { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .plr-tabela.plr-tabela-calc td { flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 0; }
+  .plr-tabela.plr-tabela-calc td.plr-ind { display: block; }
 }

@@ -44,6 +44,9 @@ supabase/.temp/
 supabase/supabase_import_fechamento_pj.sql
 /pj_fechamento.html
 
+# Carga do PLR por pessoa: tem salários (gerada por docs/gerar_carga_plr_pessoas.cjs)
+supabase/supabase_import_plr_pessoas.sql
+
 # Lock de sessão do Claude Code
 .claude/scheduled_tasks.lock
 

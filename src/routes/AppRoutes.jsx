@@ -23,7 +23,7 @@ import { podeAcessarMobilizacao } from '../config/mobilizacao';
 import TorreShell from '../modules/torre/app/components/AppShell';
 import { podeVerTorre } from '../config/torre';
 import PlrShell from '../modules/plr/app/components/AppShell';
-import { podeVerPlr, podeEditarPlr } from '../config/plr';
+import { podeVerPlr, podeEditarPlr, rotaInicialPlr, veSetoresPlr } from '../config/plr';
 import { podeAcessarFechamentoPj } from '../config/fechamentoPj';
 import { isAusenciaRh, veAprovacoes, veAusenciaTodos } from '../config/ausenciaProgramada';
 import { veFeed } from '../config/feed';
@@ -161,6 +161,7 @@ const EtapasTorre = lazyPagina(() => import('../modules/torre/app/etapas/page'))
 
 const SetoresPlr = lazyPagina(() => import('../modules/plr/app/setores/page'));
 const EditarPlr = lazyPagina(() => import('../modules/plr/app/editar/page'));
+const ResultadoPlr = lazyPagina(() => import('../modules/plr/app/resultado/page'));
 
 function RouteFallback() {
   return <div style={{ padding: 'var(--space-3xl)', textAlign: 'center' }}>Carregando...</div>;
@@ -259,9 +260,9 @@ function TorreRoute({ children }) {
   return children;
 }
 
-// PLR: quem tem setor pelo organograma ou papel em Gerenciar acessos
-// (config/plr.js). A edição é só do admin. Gate de UI — quem filtra os setores
-// e barra a escrita são as RPCs plr_*.
+// PLR: quem tem setor pelo organograma, papel em Gerenciar acessos ou linha no
+// cálculo por pessoa (config/plr.js). A edição é só do admin. Gate de UI — quem
+// filtra setores e pessoas e barra a escrita são as RPCs plr_*.
 function PlrRoute({ children }) {
   const { modules } = useAuth();
   if (!podeVerPlr(modules)) return <Navigate to="/home" replace />;
@@ -270,8 +271,19 @@ function PlrRoute({ children }) {
 
 function PlrEdicaoRoute({ children }) {
   const { modules } = useAuth();
-  if (!podeEditarPlr(modules)) return <Navigate to="/plr/setores" replace />;
+  if (!podeEditarPlr(modules)) return <Navigate to={rotaInicialPlr(modules)} replace />;
   return children;
+}
+
+function PlrSetoresRoute({ children }) {
+  const { modules } = useAuth();
+  if (!veSetoresPlr(modules)) return <Navigate to={rotaInicialPlr(modules)} replace />;
+  return children;
+}
+
+function PlrInicio() {
+  const { modules } = useAuth();
+  return <Navigate to={rotaInicialPlr(modules)} replace />;
 }
 
 function MobilizacaoEmBreveRoute({ children }) {
@@ -1026,9 +1038,10 @@ export default function AppRoutes() {
             <Route path="etapas" element={<LazyPage><EtapasTorre /></LazyPage>} />
           </Route>
 
-          {/* PLR: metas e resultados por setor (aba SETORES da plr.xlsx).
-              Cada um vê o setor do responsável mais próximo no organograma;
-              a edição é do admin. */}
+          {/* PLR: metas e resultados por setor (aba SETORES da plr.xlsx) e o
+              resultado por pessoa (aba CALCULO PLR, com os números do HUB).
+              Cada um vê o setor do responsável mais próximo no organograma e a
+              própria linha; a edição é do admin. */}
           <Route
             path="/plr"
             element={(
@@ -1039,8 +1052,9 @@ export default function AppRoutes() {
               </ProtectedRoute>
             )}
           >
-            <Route index element={<Navigate to="/plr/setores" replace />} />
-            <Route path="setores" element={<LazyPage><SetoresPlr /></LazyPage>} />
+            <Route index element={<PlrInicio />} />
+            <Route path="setores" element={<PlrSetoresRoute><LazyPage><SetoresPlr /></LazyPage></PlrSetoresRoute>} />
+            <Route path="resultado" element={<LazyPage><ResultadoPlr /></LazyPage>} />
             <Route
               path="editar"
               element={<PlrEdicaoRoute><LazyPage><EditarPlr /></LazyPage></PlrEdicaoRoute>}

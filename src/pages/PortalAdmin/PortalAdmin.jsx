@@ -50,13 +50,14 @@ const PROGRAMAS_ROLES = [
   ["comercial", "Time comercial"],
   ["admin", "Admin"],
 ];
-// PLR: quem não tem papel vê o setor dele pelo organograma (ou nada, se não
-// estiver abaixo de nenhum responsável). O papel só AMPLIA: ver todos os
-// setores, ou ver todos e editar. O super admin é admin sempre, pelo banco.
+// PLR: quem não tem papel vê só o próprio PLR (e o setor, se a visão pelo
+// organograma estiver ligada). O papel só AMPLIA: ver todos os setores e o valor
+// de todas as pessoas, com salário, ou ver tudo e editar. O super admin é admin
+// sempre, pelo banco.
 const PLR_ROLES = [
-  ["", "Pelo setor"],
-  ["visualizador", "Vê todos os setores"],
-  ["admin", "Admin (edita)"],
+  ["", "Só o próprio"],
+  ["visualizador", "Vê tudo (com salários)"],
+  ["admin", "Admin (edita, com salários)"],
 ];
 // Gestão de Horas: o papel BASE deriva da hierarquia da Gestão de Pessoas
 // (perfil + superior_id) — gestor/coordenador enxergam a própria equipe, o

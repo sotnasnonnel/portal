@@ -122,7 +122,8 @@ export function AuthProvider({ children }) {
         supabase.from('reembolso_profiles').select('*').eq('id', authUser.id).maybeSingle(),
         resolveSolicProfile(authUser),
         // PLR: o acesso depende do organograma (setor do responsável mais
-        // próximo), então vem pronto do banco. Erro aqui só tira o card.
+        // próximo) e do cálculo por pessoa, então vem pronto do banco. Erro aqui
+        // só tira o card.
         supabase.rpc('plr_acesso', { p_ano: PLR_ANO }),
       ]);
       if (cancelled) return;
@@ -174,7 +175,7 @@ export function AuthProvider({ children }) {
         // Idem para a tela de Ajustes de Valores — só que esta abre ESCRITA, e
         // a mesma regra está na RLS de precos_itens (ver config/valores.js).
         valoresAjuste: colab.valores_ajuste === true,
-        // 'admin' | 'visualizador' | 'setor' | null (ver config/plr.js).
+        // 'admin' | 'visualizador' | 'setor' | 'proprio' | null (ver config/plr.js).
         plrAcesso: plrRes?.error ? null : (plrRes?.data ?? null),
         authId: authUser.id,
       });
@@ -305,7 +306,8 @@ export function AuthProvider({ children }) {
     // enxerga o painel dela; vêm de programas_role (Gerenciar acessos).
     programas: user ? (user.programasRole || 'user') : null,
     // PLR: fechado. Entra quem é de um setor da planilha pelo organograma
-    // ('setor') ou tem papel em Gerenciar acessos ('visualizador'/'admin').
+    // ('setor'), tem papel em Gerenciar acessos ('visualizador'/'admin') ou tem
+    // linha no cálculo por pessoa ('proprio').
     plr: user?.plrAcesso ?? null,
   }), [user, reembolsoProfile, solicProfile]);
 

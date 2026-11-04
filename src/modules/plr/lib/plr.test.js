@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   percentualDaMeta, aderencia, contribuicao, situacao, resumoSetor,
-  formatarValor, formatarPct, paraCampo, deCampo, problemasDaEdicao,
+  formatarValor, formatarPct, formatarMult, paraCampo, deCampo, problemasDaEdicao, rotuloCargo, rotuloMes, rotuloYtd,
 } from './plr.js';
 
 const ind = (meta, resultado, peso, regra = 'proporcional', unidade = 'percentual') =>
@@ -124,4 +124,25 @@ test('campos: ida e volta na unidade de quem digita', () => {
   assert.equal(deCampo('', 'numero'), null);
   assert.ok(Number.isNaN(deCampo('abc', 'numero')));
   assert.ok(Number.isNaN(deCampo('1,2,3', 'numero')));
+});
+
+test('multiplicador e mês do YTD', () => {
+  assert.equal(formatarMult(0.6), '0,6');
+  assert.equal(formatarMult(2.11249), '2,11');
+  assert.equal(formatarMult(0.83536, 4), '0,8354');
+  assert.equal(formatarMult(null), '—');
+  assert.equal(rotuloMes('202610'), 'out/26');
+  assert.equal(rotuloMes('202613'), '');
+  assert.equal(rotuloMes(null), '');
+});
+
+test('o rótulo do YTD diz até que mês vai, quando o HUB sabe', () => {
+  assert.equal(rotuloYtd('202610'), 'YTD · Até out/26');
+  assert.equal(rotuloYtd(null), 'YTD');
+});
+
+test('cargo da planilha por extenso, e o que não conhece passa como está', () => {
+  assert.equal(rotuloCargo('OPERAÇÃOCLT'), 'Operação CLT');
+  assert.equal(rotuloCargo('Gerente PMO e Inovação'), 'Gerente PMO e Inovação');
+  assert.equal(rotuloCargo(null), '—');
 });
