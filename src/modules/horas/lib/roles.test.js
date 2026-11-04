@@ -11,6 +11,9 @@ import {
   escopo,
   CONFIG_HORAS_EMAILS,
   podeConfigurarHoras,
+  podeConfigurarApontamento,
+  podeConfigurarCamposDaEquipe,
+  equipesConfiguraveis,
 } from './roles.js';
 import { SUPER_ADMIN_EMAIL } from '../../../config/superAdmin.js';
 
@@ -66,6 +69,31 @@ test('configurar o Horas centralmente: só a lista nominal, e não é o admin do
   assert.equal(podeConfigurarHoras({ perfil: 'gestor', horasRole: 'admin', email: 'outro@phdengenharia.eng.br' }), false);
   assert.equal(podeConfigurarHoras({}), false);
   assert.equal(podeConfigurarHoras(null), false);
+});
+
+test('Config. do Apontamento por equipe: só a equipe liberada, sem virar configurador central', () => {
+  const icaro = { email: 'Icaro.Bahia@phdengenharia.eng.br', horasRole: 'admin' };
+  const bruno = 'a905f944-a9e7-42e4-8302-c015752e714a';
+  const outra = '00000000-0000-0000-0000-000000000000';
+  const gerencias = [{ id: outra }, { id: bruno }];
+
+  assert.equal(podeConfigurarApontamento(icaro), true);
+  assert.equal(podeConfigurarCamposDaEquipe(icaro, bruno), true);
+  assert.equal(podeConfigurarCamposDaEquipe(icaro, outra), false);
+  assert.deepEqual(equipesConfiguraveis(icaro, gerencias), [{ id: bruno }]);
+  // "Acesso a Projetos" continua só com a lista central.
+  assert.equal(podeConfigurarHoras(icaro), false);
+
+  // A lista central segue com todas as equipes.
+  const central = { email: CONFIG_HORAS_EMAILS[0] };
+  assert.equal(podeConfigurarApontamento(central), true);
+  assert.deepEqual(equipesConfiguraveis(central, gerencias), gerencias);
+
+  // Quem não está em lista nenhuma não vê nada.
+  const outro = { email: 'outro@phdengenharia.eng.br', horasRole: 'admin' };
+  assert.equal(podeConfigurarApontamento(outro), false);
+  assert.deepEqual(equipesConfiguraveis(outro, gerencias), []);
+  assert.equal(podeConfigurarApontamento(null), false);
 });
 
 test('valor desconhecido cai no papel mais restrito', () => {

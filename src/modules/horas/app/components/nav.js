@@ -11,7 +11,7 @@ import {
   CheckSquare,
   UserCog,
 } from 'lucide-react';
-import { isGestao, podeConfigurarHoras } from '../../lib/roles';
+import { isGestao, podeConfigurarApontamento, podeConfigurarHoras } from '../../lib/roles';
 
 // Navegação por papel, na mesma divisão dos outros módulos (padrão do
 // Financeiro): grupos colapsáveis para as rotinas do dia a dia e uma seção
@@ -55,13 +55,16 @@ export function navSections(role, user, area = null) {
     extras.push({ label: 'Solicitações Pendentes', href: '/horas/extras/aprovacoes', Icon: CheckSquare });
   }
 
-  // As duas telas de curadoria central do módulo, restritas à lista nominal.
-  const configHoras = podeConfigurarHoras(user)
-    ? [
-        { label: 'Config. do Apontamento', href: '/horas/config/apontamento', Icon: SlidersHorizontal },
-        { label: 'Acesso a Projetos', href: '/horas/config/projetos', Icon: FolderLock },
-      ]
-    : [];
+  // As duas telas de curadoria do módulo, restritas a listas nominais. A do
+  // apontamento também abre para quem foi liberado em uma equipe específica.
+  const configHoras = [
+    ...(podeConfigurarApontamento(user)
+      ? [{ label: 'Config. do Apontamento', href: '/horas/config/apontamento', Icon: SlidersHorizontal }]
+      : []),
+    ...(podeConfigurarHoras(user)
+      ? [{ label: 'Acesso a Projetos', href: '/horas/config/projetos', Icon: FolderLock }]
+      : []),
+  ];
 
   const secoes = [];
 

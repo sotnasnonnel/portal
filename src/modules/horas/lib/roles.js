@@ -55,6 +55,31 @@ export const CONFIG_HORAS_EMAILS = [
 export const podeConfigurarHoras = (user) =>
   CONFIG_HORAS_EMAILS.includes((user?.email || '').toLowerCase());
 
+// Liberação POR EQUIPE de "Config. do Apontamento": a pessoa edita os campos só
+// das equipes listadas, e não ganha "Acesso a Projetos" (isso segue com a lista
+// central acima). E-mail -> ids de horas_gerencias.
+// Espelha app_private.pode_configurar_campos_equipe() no banco, que é quem
+// protege de verdade; mudar aqui é mudar nos dois lugares.
+export const CONFIG_APONTAMENTO_POR_EQUIPE = {
+  // Icaro Bahia -> Equipe BRUNO ALBERTO AZEVEDO
+  'icaro.bahia@phdengenharia.eng.br': ['a905f944-a9e7-42e4-8302-c015752e714a'],
+};
+
+const equipesLiberadas = (user) =>
+  CONFIG_APONTAMENTO_POR_EQUIPE[(user?.email || '').toLowerCase()] || [];
+
+// Vê a tela "Config. do Apontamento" (em qualquer escopo).
+export const podeConfigurarApontamento = (user) =>
+  podeConfigurarHoras(user) || equipesLiberadas(user).length > 0;
+
+// Pode editar os campos DESTA equipe.
+export const podeConfigurarCamposDaEquipe = (user, gerenciaId) =>
+  podeConfigurarHoras(user) || equipesLiberadas(user).includes(gerenciaId);
+
+// As equipes que a tela oferece a esta pessoa, dentre as cadastradas.
+export const equipesConfiguraveis = (user, gerencias = []) =>
+  gerencias.filter((g) => podeConfigurarCamposDaEquipe(user, g.id));
+
 // Todos apontam — o antigo papel supervisor "diretoria" (que não apontava)
 // deixou de existir.
 export const podeApontar = () => true;

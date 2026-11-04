@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Plus, Trash2, ChevronUp, ChevronDown, Sparkles } from 'lucide-react';
 import { useAuth } from '../../../../../contexts/AuthContext';
@@ -11,7 +11,7 @@ import {
   reordenarCamposEquipe,
   criarCamposEmLote,
 } from '../../../lib/data';
-import { podeConfigurarHoras } from '../../../lib/roles';
+import { equipesConfiguraveis, podeConfigurarApontamento } from '../../../lib/roles';
 import {
   TIPOS,
   campoNovo,
@@ -25,7 +25,8 @@ import ConfirmModal from '../../components/ConfirmModal';
 // Configuração do APONTAMENTO: os campos que cada equipe preenche antes de dar
 // play no cronômetro. Diferente da tela de projetos, esta é CENTRAL — a lista
 // nominal de podeConfigurarHoras edita TODAS as equipes, escolhendo uma
-// no seletor (a RLS repete a regra no banco).
+// no seletor. Quem foi liberado por equipe (CONFIG_APONTAMENTO_POR_EQUIPE) só
+// recebe a sua. A RLS repete as duas regras no banco.
 // Os projetos continuam em "Configuração" — aqui é só o formulário.
 export default function ConfigApontamentoPage() {
   const { user } = useAuth();
@@ -51,12 +52,17 @@ export default function ConfigApontamentoPage() {
     })();
   }, []);
 
+  const equipes = useMemo(() => equipesConfiguraveis(user, gerencias), [user, gerencias]);
+
   // Abre na própria equipe (o caso mais comum) e cai na primeira se quem
-  // configura não estiver vinculado a nenhuma.
+  // configura não estiver vinculado a nenhuma que possa editar.
   useEffect(() => {
-    if (!gerencias.length) return;
-    setSel((s) => (gerencias.some((g) => g.id === s) ? s : minhaGerencia || gerencias[0].id));
-  }, [gerencias, minhaGerencia]);
+    if (!equipes.length) return;
+    setSel((s) => {
+      if (equipes.some((g) => g.id === s)) return s;
+      return equipes.some((g) => g.id === minhaGerencia) ? minhaGerencia : equipes[0].id;
+    });
+  }, [equipes, minhaGerencia]);
 
   const carregar = useCallback(async () => {
     if (!sel) return;
@@ -73,7 +79,7 @@ export default function ConfigApontamentoPage() {
   }, [carregar]);
 
   // Gate de UI (a RLS é quem protege as escritas de verdade).
-  if (!podeConfigurarHoras(user)) return <Navigate to="/horas/apontar" replace />;
+  if (!podeConfigurarApontamento(user)) return <Navigate to="/horas/apontar" replace />;
 
   async function adicionar() {
     const campo = deRascunho(novo);
@@ -153,7 +159,7 @@ export default function ConfigApontamentoPage() {
     );
   }
 
-  if (!gerencias.length) {
+  if (!equipes.length) {
     return (
       <>
         <h1>Configuração do Apontamento</h1>
@@ -162,14 +168,15 @@ export default function ConfigApontamentoPage() {
     );
   }
 
-  const equipe = gerencias.find((g) => g.id === sel);
+  const equipe = equipes.find((g) => g.id === sel);
+  const variasEquipes = equipes.length > 1;
 
   return (
     <>
       <h1>Configuração do Apontamento</h1>
       <p className="horas-sub">
-        Escolha a equipe e defina os campos que ela preenche antes de iniciar o cronômetro — na
-        ordem em que aparecem na tela.
+        {variasEquipes ? 'Escolha a equipe e defina' : 'Defina'} os campos que ela preenche antes de
+        iniciar o cronômetro — na ordem em que aparecem na tela.
       </p>
 
       <div className="horas-hint">
@@ -183,9 +190,9 @@ export default function ConfigApontamentoPage() {
       <div className="horas-card">
         <div className="horas-toolbar" style={{ marginBottom: 0 }}>
           <div className="horas-fld" style={{ maxWidth: 420 }}>
-            <label>Equipe ({gerencias.length} no total)</label>
-            <select value={sel} onChange={(e) => setSel(e.target.value)}>
-              {gerencias.map((g) => (
+            <label>{variasEquipes ? `Equipe (${equipes.length} no total)` : 'Equipe'}</label>
+            <select value={sel} disabled={!variasEquipes} onChange={(e) => setSel(e.target.value)}>
+              {equipes.map((g) => (
                 <option key={g.id} value={g.id}>
                   {g.nome}
                 </option>

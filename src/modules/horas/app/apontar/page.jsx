@@ -17,7 +17,7 @@ import {
 } from '../../lib/data';
 import { fmtData, fmtDur, fmtHoras, startOfDay, startOfWeek, startOfMonth } from '../../lib/format';
 import { somaMs } from '../../lib/aggregate';
-import { isGestao, podeApontar, podeConfigurarHoras } from '../../lib/roles';
+import { isGestao, podeApontar, podeConfigurarCamposDaEquipe } from '../../lib/roles';
 import { lookupProjetos } from '../../lib/lookups';
 import { faltando, paraPersistencia, valoresIniciais } from '../../lib/camposEquipe';
 import ApontamentosTable from '../components/ApontamentosTable';
@@ -301,14 +301,14 @@ export default function ApontarPage() {
       {/* Equipe sem campos configurados não fica travada: aponta com projeto e
           descrição. O aviso só vai para quem pode fazer algo a respeito — quem
           configura resolve na hora; a liderança sabe a quem pedir. */}
-      {!campos.length && podeConfigurarHoras(user) ? (
+      {!campos.length && podeConfigurarCamposDaEquipe(user, gerenciaId) ? (
         <div className="horas-hint">
           A sua equipe ainda não tem campos de apontamento configurados. Defina-os em{' '}
           <b>Config. do Apontamento</b> para pedir sigla, tarefa, frente de serviço — o que fizer
           sentido aqui — antes do cronômetro.
         </div>
       ) : null}
-      {!campos.length && isGestao(role) && !podeConfigurarHoras(user) ? (
+      {!campos.length && isGestao(role) && !podeConfigurarCamposDaEquipe(user, gerenciaId) ? (
         <div className="horas-hint">
           A sua equipe ainda não tem campos de apontamento configurados — dá para apontar só com
           projeto e descrição. Peça a configuração ao administrador da Gestão de Horas.
