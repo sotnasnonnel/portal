@@ -10,7 +10,9 @@
  *   - 'admin'        → todos os setores e a tela de edição. O super admin é
  *                      admin sempre; os demais, por Gerenciar acessos.
  *   - 'proprio'      → sem setor, mas com linha no cálculo por pessoa: vê só o
- *                      próprio PLR (chave plr_aberto_a_cada_um, no banco).
+ *                      próprio PLR. Vale para todos com a chave
+ *                      plr_aberto_a_cada_um, no banco, ou para uma pessoa por
+ *                      Gerenciar acessos.
  *   - null           → nada disso: o card nem aparece.
  *
  * 'admin' e 'visualizador' também veem o resultado por pessoa de todo mundo, com

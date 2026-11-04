@@ -50,12 +50,14 @@ const PROGRAMAS_ROLES = [
   ["comercial", "Time comercial"],
   ["admin", "Admin"],
 ];
-// PLR: quem não tem papel vê só o próprio PLR (e o setor, se a visão pelo
-// organograma estiver ligada). O papel só AMPLIA: ver todos os setores e o valor
-// de todas as pessoas, com salário, ou ver tudo e editar. O super admin é admin
-// sempre, pelo banco.
+// PLR: quem não tem papel segue as chaves gerais do banco (a própria linha e o
+// setor pelo organograma), hoje desligadas: fica sem a aba. "Só o próprio" libera
+// a própria linha para aquela pessoa, com as chaves desligadas ou não. Os outros
+// dois ampliam: ver todos os setores e o valor de todas as pessoas, com salário,
+// ou ver tudo e editar. O super admin é admin sempre, pelo banco.
 const PLR_ROLES = [
-  ["", "Só o próprio"],
+  ["", "Sem papel"],
+  ["proprio", "Só o próprio"],
   ["visualizador", "Vê tudo (com salários)"],
   ["admin", "Admin (edita, com salários)"],
 ];
@@ -183,7 +185,7 @@ export default function PortalAdmin() {
       res = await supabase.from("colaboradores").update({ programas_role: stored }).eq("id", row.colabId);
       patch = { progRole: stored };
     } else if (app === "plr") {
-      // "" (Pelo setor) vira NULL — a pessoa volta a ver só o setor dela.
+      // "" (Sem papel) vira NULL — a pessoa volta a seguir as chaves gerais.
       const stored = value === "" ? null : value;
       res = await supabase.from("colaboradores").update({ plr_role: stored }).eq("id", row.colabId);
       patch = { plrRole: stored };
