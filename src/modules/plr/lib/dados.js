@@ -22,6 +22,19 @@ export async function carregarCalculo(ano) {
   return data;
 }
 
+/** A parte da empresa no PLR dos colaboradores, em fração (0,75 = 75%). */
+export async function carregarMultEmpresa(ano) {
+  const { data, error } = await supabase.rpc('plr_mult_empresa', { p_ano: ano });
+  if (error) throw error;
+  return Number(data);
+}
+
+/** Muda a parte da empresa (só admin; o banco confere). */
+export async function salvarMultEmpresa(ano, valor) {
+  const { error } = await supabase.rpc('plr_salvar_mult_empresa', { p_ano: ano, p_valor: valor });
+  if (error) throw error;
+}
+
 /** Grava a referência e os indicadores de um setor (só admin; o banco confere). */
 export async function salvarSetor(setorId, referencia, indicadores) {
   const { error } = await supabase.rpc('plr_salvar_setor', {

@@ -184,6 +184,7 @@
 .plr-tabela-edicao .plr-col-nome { min-width: 300px; }
 .plr-tabela-edicao .plr-input-num { width: 84px; }
 .plr-input-sufixo { display: inline-flex; align-items: center; gap: 6px; }
+.plr-input-pct { width: 96px; }
 .plr-input-sufixo small { min-width: 34px; text-align: left; font-size: var(--font-size-2xs); color: var(--p-muted); }
 
 .plr-problemas {

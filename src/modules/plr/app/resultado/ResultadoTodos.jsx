@@ -9,7 +9,7 @@ const irPara = (id) => {
   document.getElementById(`plr-calc-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
 
-/** O total e como a empresa chegou no multiplicador dela. */
+/** O total e o multiplicador da empresa. */
 function CartaoResumo({ dados }) {
   return (
     <section className="plr-card plr-calc-resumo">
@@ -22,15 +22,13 @@ function CartaoResumo({ dados }) {
         </dl>
       </div>
       <dl className="plr-base-linhas">
-        <div>
+        <div className="is-forte">
           <dt>
-            Multiplicador PHD (Fator PLR corporativo)
-            <small className="plr-pessoa-sub">{BASE_DO_FATOR}</small>
+            Multiplicador empresa
+            <small className="plr-pessoa-sub">Igual para todos os colaboradores</small>
           </dt>
-          <dd>{formatarPct(dados.fator)}</dd>
+          <dd>{formatarPct(dados.multEmpresa)}</dd>
         </div>
-        <div><dt>Metas PHD</dt><dd>{formatarPct(dados.metasPhd, 0)}</dd></div>
-        <div className="is-forte"><dt>Multiplicador empresa</dt><dd>{formatarPct(dados.multEmpresa)}</dd></div>
       </dl>
     </section>
   );
@@ -214,7 +212,7 @@ export default function ResultadoTodos({ dados }) {
       <section className="plr-card plr-legenda">
         <h2 className="plr-card-tit">Como ler</h2>
         <ul>
-          <li><b>Multiplicador empresa</b> = Metas PHD ({formatarPct(dados.metasPhd, 0)}) × Multiplicador PHD.</li>
+          <li><b>Multiplicador empresa</b> = {formatarPct(dados.multEmpresa)}, igual para todos os colaboradores.</li>
           <li><b>Valor % setor</b> = % do setor no HUB × {formatarPct(dados.metasSetor, 0)}.</li>
           <li><b>Multiplicador total</b> = Multiplicador empresa + Valor % setor.</li>
           <li><b>Multiplicador final</b> = tempo × cargo × Multiplicador total.</li>

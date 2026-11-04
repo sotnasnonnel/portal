@@ -1,28 +1,28 @@
 // deno-lint-ignore-file no-explicit-any
 
 // O PLR de cada pessoa, pela regra da aba CALCULO PLR da planilha "Bônus 26.27
-// Análise final", com os dois pedaços da empresa e do setor vindos do HUB:
+// Análise final", com a % do setor vinda do HUB:
 //
-//   Multiplicador PHD     = Fator PLR corporativo do HUB
-//   Multiplicador empresa = Metas PHD (75%) × Multiplicador PHD
-//   Valor % setor         = % do setor no HUB × Metas setor (25%)
+//   Multiplicador empresa = o de Editar resultados (75% até alguém mudar), igual para todos
+//   Valor % setor        = % do setor no HUB × Metas setor (25%)
 //   Multiplicador total   = Multiplicador empresa + Valor % setor
 //   Multiplicador final   = tempo × cargo × Multiplicador total
 //   Valor final           = Multiplicador final × salário
 //
-// A gerência (quem tem hub_chave) não passa por esta conta: o valor dela vem
-// inteiro do HUB, como a tela de lá mostra.
+// O multiplicador da empresa não depende do Fator PLR corporativo (pedido do
+// usuário em 04/11/2026), nem do gatilho da margem, que só zera o fator.
 //
-// O total é um só, o YTD: a % do setor é o resultado acumulado do ano, e o fator
-// vem da base de projeção de fechamento do HUB, a que ele abre por padrão. O fator
-// da base YTD não entra (pedido do usuário em 04/11/2026): com a margem acumulada
-// abaixo do corte do gatilho, ele daria zero. A gerência segue a mesma base.
+// A gerência (quem tem hub_chave) não passa por esta conta: o valor dela vem
+// inteiro do HUB, como a tela de lá mostra, com o fator da base de projeção de
+// fechamento. O fator da base YTD não entra: com a margem acumulada abaixo do
+// corte do gatilho, ele daria zero.
 //
 // Sem dependência de Deno: calculo.test.ts roda no `node --test`.
 
 import { calc, corpFator, montarDados, respOf, setorScore, TRIGGER_CORTE, type Base } from "./motorHub.ts";
 
-export const METAS_PHD = 0.75;
+// Sem linha em plr_config para o ano. Mesmo valor do coalesce da RPC plr_mult_empresa.
+export const MULT_EMPRESA_PADRAO = 0.75;
 export const METAS_SETOR = 0.25;
 // Quem ficou menos que isto no ano não recebe (coluna TEMPO TR da planilha).
 export const MESES_MINIMOS = 4;
@@ -63,18 +63,31 @@ export function mesesNoAno(dataAdmissao: string, ano: number): number {
 
 /** A conta da planilha para um colaborador. Sem salário: valor null. */
 export function multiplicadores(
-  { fator, setorPct, meses, multCargo, salario }:
-  { fator: number; setorPct: number; meses: number; multCargo: number; salario: number | null },
+  { multEmpresa, setorPct, meses, multCargo, salario }:
+  { multEmpresa: number; setorPct: number; meses: number; multCargo: number; salario: number | null },
 ) {
-  const multPhd = fator;
-  const multEmpresa = METAS_PHD * multPhd;
   const valorSetor = setorPct * METAS_SETOR;
   const multTotal = multEmpresa + valorSetor;
   const multFinal = (meses / 12) * multCargo * multTotal;
-  return { multPhd, multEmpresa, valorSetor, multTotal, multFinal, valor: salario === null ? null : multFinal * salario };
+  return { multEmpresa, valorSetor, multTotal, multFinal, valor: salario === null ? null : multFinal * salario };
 }
 
 const soma = (itens: any[], f: (i: any) => number | null) => itens.reduce((a, i) => a + (f(i) ?? 0), 0);
+
+/** O mesmo corte de plr_pessoas_visiveis: só sai quem está desativado no cadastro. */
+export const soAtivas = (linhas: any[]) => linhas.filter((p) => p.colaboradores?.ativo !== false);
+
+/** O que o HUB recebe: só agregados, nunca nome ou salário de alguém. */
+export function resumoParaHub(r: ReturnType<typeof montarResultado>) {
+  return {
+    ano: r.ano,
+    total: r.totais.colaboradores,
+    pessoas: r.colaboradores.length,
+    multEmpresa: r.multEmpresa,
+    ytdAte: r.ytdAte,
+    foraDaConta: r.problemas.length,
+  };
+}
 
 /**
  * Junta as pessoas do portal (o que a pessoa logada pode ver, vindo da RPC
@@ -83,15 +96,14 @@ const soma = (itens: any[], f: (i: any) => number | null) => itens.reduce((a, i)
  * do HUB de quem não está na lista não saem daqui.
  */
 export function montarResultado(
-  { ano, papel, veTodos, pessoas, parametros, pessoasHub }:
-  { ano: number; papel: string; veTodos: boolean; pessoas: any[]; parametros: any[]; pessoasHub: any[] },
+  { ano, papel, veTodos, multEmpresa, pessoas, parametros, pessoasHub }:
+  { ano: number; papel: string; veTodos: boolean; multEmpresa: number; pessoas: any[]; parametros: any[]; pessoasHub: any[] },
 ) {
   const D = montarDados(parametros, pessoasHub);
   const problemas: string[] = [];
 
+  // Só a gerência depende do fator: daqui sai o aviso de gatilho dela.
   const cf = corpFator(D, BASE_DO_FATOR);
-  const fator = cf.pct;
-  const multEmpresa = METAS_PHD * fator;
 
   const setoresHub = new Map<string, any>(D.setores.map((s: any) => [s.id, s]));
   const pessoasDoHub = new Map<string, any>(D.pessoas.map((p: any) => [p.chave, p]));
@@ -147,7 +159,7 @@ export function montarResultado(
       meses,
       multTempo: meses / 12,
       multCargo,
-      ...multiplicadores({ fator, setorPct, meses, multCargo, salario }),
+      ...multiplicadores({ multEmpresa, setorPct, meses, multCargo, salario }),
     });
   }
 
@@ -182,12 +194,10 @@ export function montarResultado(
     ano,
     papel,
     veTodos,
-    metasPhd: METAS_PHD,
     metasSetor: METAS_SETOR,
     corteGatilho: TRIGGER_CORTE,
     ytdAte: D.automaticos?.ate ?? null,
     atualizadoEm: datas[datas.length - 1] ?? null,
-    fator,
     multEmpresa,
     gatilho: cf.trig,
     margemDaMeta: cf.mol?.ratio ?? null,

@@ -7,6 +7,7 @@ import {
   problemasDaEdicao, resumoSetor, situacao,
 } from '../../lib/plr';
 import { rotuloSetor } from '../components/rotulos';
+import CartaoMultEmpresa from './CartaoMultEmpresa';
 
 // O setor como os campos o mostram: números em texto, na unidade de quem digita.
 const formDoSetor = (setor) => ({
@@ -117,6 +118,8 @@ export default function EditarPlr() {
           Os números que cada setor vê no PLR {PLR_ANO}. Aderência e total são calculados a partir daqui.
         </p>
       </div>
+
+      <CartaoMultEmpresa />
 
       {carregando && !form ? (
         <div className="plr-vazio"><Loader2 size={22} className="plr-spin" /> Carregando…</div>

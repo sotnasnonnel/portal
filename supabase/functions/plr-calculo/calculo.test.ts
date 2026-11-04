@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { dias360, mesesNoAno, montarResultado, multiplicadores, MULT_CARGO } from './calculo.ts';
+import { dias360, mesesNoAno, montarResultado, multiplicadores, MULT_CARGO, resumoParaHub, soAtivas } from './calculo.ts';
 
 const proximo = (a: number, b: number, msg = '') => assert.ok(Math.abs(a - b) < 1e-9, `${msg} ${a} != ${b}`);
 
@@ -22,22 +22,20 @@ test('mesesNoAno zera quem fica menos de 4 meses', () => {
   assert.equal(mesesNoAno('2027-02-01', 2026), 0, 'admitido depois do ano');
 });
 
-test('multiplicadores: 60% do setor são 15% dos 25%', () => {
-  const m = multiplicadores({ fator: 0.8, setorPct: 0.6, meses: 12, multCargo: 0.6, salario: 1000 });
-  proximo(m.multPhd, 0.8);
-  proximo(m.multEmpresa, 0.6);
+test('multiplicadores: empresa em 75% e 60% do setor são 15% dos 25%', () => {
+  const m = multiplicadores({ multEmpresa: 0.75, setorPct: 0.6, meses: 12, multCargo: 0.6, salario: 1000 });
+  proximo(m.multEmpresa, 0.75);
   proximo(m.valorSetor, 0.15);
-  proximo(m.multTotal, 0.75);
-  proximo(m.multFinal, 0.45);
-  proximo(m.valor as number, 450);
+  proximo(m.multTotal, 0.9);
+  proximo(m.multFinal, 0.54);
+  proximo(m.valor as number, 540);
 });
 
-test('multiplicadores: tempo proporcional e fator zerado', () => {
-  const m = multiplicadores({ fator: 0, setorPct: 1, meses: 6, multCargo: 1, salario: 1000 });
-  proximo(m.multEmpresa, 0);
-  proximo(m.multTotal, 0.25, 'a parte do setor continua somando');
-  proximo(m.multFinal, 0.125);
-  proximo(m.valor as number, 125);
+test('multiplicadores: tempo proporcional e setor zerado', () => {
+  const m = multiplicadores({ multEmpresa: 0.75, setorPct: 0, meses: 6, multCargo: 1, salario: 1000 });
+  proximo(m.multTotal, 0.75, 'a parte da empresa continua somando');
+  proximo(m.multFinal, 0.375);
+  proximo(m.valor as number, 375);
 });
 
 test('a tabela de cargo tem os nove cargos da planilha', () => {
@@ -85,6 +83,7 @@ const resultado = (over = {}) => montarResultado({
   ano: 2026,
   papel: 'admin',
   veTodos: true,
+  multEmpresa: 0.75,
   pessoas: [colaborador, executivo],
   parametros: [painel(1, 1), setores, automaticos],
   pessoasHub: [executivoHub, outroHub],
@@ -92,34 +91,40 @@ const resultado = (over = {}) => montarResultado({
 });
 
 test('colaborador sai com o setor e a conta completa', () => {
-  // Margem a 80% paga 50% (régua 95/70) -> fator 0,25 + 0,5 = 0,75.
+  // Margem a 80% da meta: o fator do HUB seria 0,75, mas não entra na conta.
   const r = resultado({ parametros: [painel(0.8, 0.8), setores, automaticos] });
   const [c] = r.colaboradores;
   assert.equal(c.setorNome, 'Financeiro e Contratos');
   proximo(c.setorPct, 0.6);
-  proximo(r.fator, 0.75);
-  proximo(r.multEmpresa, 0.5625);
-  proximo(c.multEmpresa, 0.5625);
+  proximo(r.multEmpresa, 0.75);
+  proximo(c.multEmpresa, 0.75);
   proximo(c.valorSetor, 0.15);
-  proximo(c.multTotal, 0.7125);
-  proximo(c.valor, 0.7125 * 0.6 * 1000);
+  proximo(c.multTotal, 0.9);
+  proximo(c.valor, 0.9 * 0.6 * 1000);
 });
 
-test('o fator vem da projeção de fechamento, mesmo com o YTD do painel no gatilho', () => {
+test('o multiplicador da empresa editado vale nas pessoas, nos setores e nos totais', () => {
+  const r = resultado({ multEmpresa: 0.8 });
+  proximo(r.multEmpresa, 0.8);
+  proximo(r.colaboradores[0].multTotal, 0.95);
+  proximo(r.setores[0].multTotal, 0.95);
+  proximo(r.totais.colaboradores, 0.95 * 0.6 * 1000);
+  proximo(r.gerencia[0].plr, 200, 'a gerência não depende dele');
+});
+
+test('a gerência segue a projeção de fechamento, mesmo com o YTD do painel no gatilho', () => {
   // Margem do YTD a 60% da meta: naquela base o fator daria zero.
   const r = resultado({ parametros: [painel(1, 0.6), setores, automaticos] });
-  proximo(r.fator, 1);
   assert.equal(r.gatilho, false);
-  proximo(r.colaboradores[0].multTotal, 0.75 + 0.15, 'empresa inteira + setor');
-  assert.ok(r.gerencia[0].plr > 0, 'a gerência também segue a projeção');
+  proximo(r.gerencia[0].fator, 1);
+  assert.ok(r.gerencia[0].plr > 0);
 });
 
-test('gatilho acionado na própria projeção zera o fator: o colaborador fica com o setor', () => {
+test('gatilho acionado na projeção zera a gerência; o colaborador não muda', () => {
   const r = resultado({ parametros: [painel(0.6, 1), setores, automaticos] });
   assert.equal(r.gatilho, true);
-  assert.equal(r.fator, 0);
   proximo(r.margemDaMeta as number, 0.6);
-  proximo(r.colaboradores[0].multTotal, 0.15);
+  proximo(r.colaboradores[0].multTotal, 0.75 + 0.15);
   assert.equal(r.gerencia[0].plr, 0, 'a gerência zera o PLR, como no HUB');
 });
 
@@ -175,6 +180,30 @@ test('setor ou cargo que não existem viram problema, não zero silencioso', () 
   assert.match(r.problemas[0], /SEM SETOR/);
   assert.match(r.problemas[1], /SEM CARGO/);
   assert.match(r.problemas[2], /FORA DO HUB/);
+});
+
+test('o HUB recebe o total dos colaboradores, sem nome nem salário de ninguém', () => {
+  const r = resultado({
+    pessoas: [colaborador, { ...colaborador, id: 'c2', nome: 'BELTRANO', salario: '2000' }, { ...colaborador, id: 'c3', nome: 'SEM SETOR', setor_hub: 'xyz' }],
+  });
+  const resumo = resumoParaHub(r);
+  proximo(resumo.total, 0.9 * 0.6 * 3000);
+  assert.equal(resumo.total, r.totais.colaboradores, 'o mesmo número da tela do portal');
+  assert.equal(resumo.pessoas, 2);
+  assert.equal(resumo.foraDaConta, 1);
+  assert.equal(resumo.multEmpresa, 0.75);
+  assert.deepEqual(Object.keys(resumo).sort(), ['ano', 'foraDaConta', 'multEmpresa', 'pessoas', 'total', 'ytdAte']);
+  assert.doesNotMatch(JSON.stringify(resumo), /FULANO|BELTRANO|SEM SETOR/);
+});
+
+test('soAtivas tira só quem está desativado, como plr_pessoas_visiveis', () => {
+  const nomes = soAtivas([
+    { nome: 'ativo', colaboradores: { ativo: true } },
+    { nome: 'desativado', colaboradores: { ativo: false } },
+    { nome: 'ativo vazio', colaboradores: { ativo: null } },
+    { nome: 'sem login', colaboradores: null },
+  ]).map((p) => p.nome);
+  assert.deepEqual(nomes, ['ativo', 'ativo vazio', 'sem login']);
 });
 
 test('quem vê só a própria linha não recebe a lista de problemas', () => {

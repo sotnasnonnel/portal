@@ -1,5 +1,5 @@
 // O PLR por pessoa: junta as pessoas do portal (plr_pessoas) com o que o HUB
-// sabe (Fator PLR corporativo, % de cada setor e o valor da gerência).
+// sabe (% de cada setor e o valor da gerência).
 //
 // Fica em Edge Function por dois motivos: a chave do backoffice não pode ir para
 // o navegador, e a conta sai pronta, com só o que a pessoa pode ver. Quem decide
@@ -11,6 +11,7 @@
 // BACKOFFICE_SUPABASE_URL e BACKOFFICE_SERVICE_ROLE_KEY.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { montarResultado } from "./calculo.ts";
+import { carregarHub } from "./hub.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -21,8 +22,6 @@ function json(body: unknown, status = 200) {
   if (status >= 400) console.error("[plr-calculo]", status, JSON.stringify(body));
   return new Response(JSON.stringify(body), { status, headers: { ...CORS, "Content-Type": "application/json" } });
 }
-
-const CHAVES_HUB = ["painel", "setores", "premissas", "variavel", "automaticos"];
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
@@ -47,29 +46,26 @@ Deno.serve(async (req) => {
     if (eVis) return json({ error: eVis.message }, 500);
     if (!visiveis?.papel) return json({ error: "sem_acesso" }, 403);
 
+    // Sem cair num valor padrão aqui: errar a conta de todo mundo em silêncio é pior que a tela dar erro.
+    const { data: multEmpresa, error: eMult } = await comoUsuario.rpc("plr_mult_empresa", { p_ano: ano });
+    if (eMult) return json({ error: eMult.message }, 500);
+
     const backUrl = Deno.env.get("BACKOFFICE_SUPABASE_URL");
     const backKey = Deno.env.get("BACKOFFICE_SERVICE_ROLE_KEY");
     if (!backUrl || !backKey) return json({ error: "backoffice_nao_configurado" }, 500);
     const backoffice = createClient(backUrl, backKey, { auth: { persistSession: false } });
 
-    const [{ data: parametros, error: ePar }, { data: pessoasHub, error: ePes }] = await Promise.all([
-      backoffice.from("plr_parametro").select("chave, valor, atualizado_em").eq("ano", ano).in("chave", CHAVES_HUB),
-      backoffice.from("plr_pessoa")
-        .select("id, chave, nome, cargo, salario, mult_plr, mult_bonus, setores, setor, ind_setor, metas, bonus, over_mc, sup, variavel, ordem")
-        .eq("ano", ano),
-    ]);
-    if (ePar) return json({ error: `backoffice: ${ePar.message}` }, 502);
-    if (ePes) return json({ error: `backoffice: ${ePes.message}` }, 502);
-    const tem = (chave: string) => (parametros ?? []).some((p) => p.chave === chave);
-    if (!tem("painel") || !tem("setores")) return json({ error: "hub_sem_dados" }, 502);
+    const { erro: erroHub, parametros, pessoasHub } = await carregarHub(backoffice, ano);
+    if (erroHub) return json({ error: erroHub }, 502);
 
     return json(montarResultado({
       ano,
       papel: visiveis.papel,
       veTodos: !!visiveis.ve_todos,
+      multEmpresa: Number(multEmpresa),
       pessoas: visiveis.pessoas ?? [],
-      parametros: parametros ?? [],
-      pessoasHub: pessoasHub ?? [],
+      parametros,
+      pessoasHub,
     }));
   } catch (e) {
     console.error("[plr-calculo]", e);

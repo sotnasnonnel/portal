@@ -39,9 +39,7 @@ function ContaColaborador({ dados, c }) {
         <h2 className="plr-card-tit">Como a conta é feita</h2>
         <table className="plr-conta">
           <tbody>
-            <Linha rotulo="Multiplicador PHD (Fator PLR corporativo)" sub={BASE_DO_FATOR} valor={formatarPct(c.multPhd)} />
-            <Linha rotulo="Metas PHD" valor={formatarPct(dados.metasPhd, 0)} />
-            <Linha rotulo="Multiplicador empresa" valor={formatarPct(c.multEmpresa)} forte />
+            <Linha rotulo="Multiplicador empresa" sub="Igual para todos" valor={formatarPct(c.multEmpresa)} forte />
             <Linha rotulo={`% do setor ${c.setorNome}`} valor={formatarPct(c.setorPct)} />
             <Linha rotulo="Multiplicador do setor" valor={formatarPct(dados.metasSetor, 0)} />
             <Linha rotulo="Valor % setor" valor={formatarPct(c.valorSetor)} forte />
