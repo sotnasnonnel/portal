@@ -46,8 +46,9 @@
 }
 
 /* ============================ página ============================ */
-.frota-page { max-width: var(--shell-page-max); }
-.frota-page-wide { max-width: var(--shell-page-max-wide); }
+/* Sem teto de largura, como Financeiro e Gestão de Horas: a página ocupa o <main>
+   inteiro e a margem lateral é só a do shell (--shell-main-pad-x). */
+.frota-page, .frota-page-wide { min-width: 0; }
 .frota-stack { display: flex; flex-direction: column; gap: 16px; }
 .frota-grid.g2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
 .frota-mt { margin-top: 14px; }
@@ -179,7 +180,32 @@ button.frota-kpi:hover { border-color: var(--f-primary-line); }
 .frota-cellv { display: flex; align-items: center; gap: 10px; min-width: 0; }
 
 /* ============================ tabelas ============================ */
-.frota-tbl { background: var(--f-surface); border: 1px solid var(--f-border); border-radius: 12px; box-shadow: var(--f-shadow-sm); }
+/* overflow-x aqui, e não só na .table-scroll do TableScroll: aquela regra mora em
+   components/UI/Components.css, que a Frota não importa. Sem ela, tabela larga
+   vazava do cartão e empurrava a página inteira para o lado. */
+.frota-tbl { overflow: auto; max-height: max(320px, 62dvh); overscroll-behavior: contain; background: var(--f-surface); border: 1px solid var(--f-border); border-radius: 12px; box-shadow: var(--f-shadow-sm); }
+/* A lista rola dentro do cartão (a altura acima), então o cabeçalho e o total ficam
+   sempre à vista. A sombra faz o papel da borda: com border-collapse, a borda da
+   célula não acompanha o sticky. */
+.frota-tbl .frota-t th { position: sticky; top: 0; z-index: 2; box-shadow: inset 0 -1px 0 var(--f-border); }
+.frota-tbl .frota-t tfoot td { position: sticky; bottom: 0; z-index: 2; box-shadow: inset 0 1px 0 var(--f-border); }
+@media print { .frota-tbl { max-height: none; overflow: visible; } }
+.frotaRoot .table-scroll-top { overflow-x: auto; overflow-y: hidden; }
+.frotaRoot .table-scroll-top > div { height: 1px; }
+
+/* Ocorrências: texto de tamanho imprevisível (descrição, dois condutores), então
+   as células quebram linha e alinham pelo topo; a descrição para em duas linhas e
+   o texto inteiro fica no detalhe e no title. */
+.frota-t-oc { min-width: 920px; }
+.frota-t.frota-t-oc td { vertical-align: top; white-space: normal; }
+.frota-t.frota-t-oc td.nw { white-space: nowrap; }
+.frota-t-oc .frota-cellv { flex-direction: column; align-items: flex-start; gap: 3px; }
+.frota-oc-col { width: 42%; }
+.frota-oc-tit { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 2px; }
+.frota-oc-desc {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+  font-size: var(--font-size-xs); color: var(--f-muted); line-height: var(--lh-normal);
+}
 .frota-t, .frota-mini { width: 100%; border-collapse: collapse; font-size: var(--table-fs); }
 .frota-t th, .frota-mini th {
   text-align: left; white-space: nowrap; color: var(--f-muted);
@@ -217,9 +243,19 @@ button.frota-kpi:hover { border-color: var(--f-primary-line); }
 .frota-note .pre { white-space: pre-line; }
 
 /* ============================ painel ============================ */
-.frota-alerts { display: flex; flex-direction: column; gap: 6px; max-height: 560px; overflow: auto; }
+/* Duas colunas independentes, em vez de duas linhas: em linhas, a lista de
+   pontos de atenção empurrava a linha de baixo e abria um buraco sob os gráficos
+   mais baixos. As colunas terminam juntas porque os cartões .is-fill absorvem a
+   diferença: a lista mostra mais itens e o gráfico de evolução fica mais alto. */
+.frota-grid.g2.frota-painel { align-items: stretch; }
+.frota-card.is-fill { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+/* A base fixa impede que uma lista longa dite a altura da coluna: o que passar do
+   espaço do cartão rola dentro dele. */
+.frota-alerts { display: flex; flex-direction: column; gap: 6px; flex: 1 1 320px; min-height: 0; overflow: auto; }
+/* flex: none: a lista tem altura limitada e rola. Sem isto, no celular os itens
+   encolhiam até o alvo de toque e o texto vazava do botão. */
 .frota-al {
-  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  flex: none; display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
   background: none; border: 1px solid var(--f-border); border-radius: var(--ctl-radius);
   padding: 8px 10px; cursor: pointer; font-family: inherit; color: inherit;
 }
@@ -236,10 +272,17 @@ button.frota-kpi:hover { border-color: var(--f-primary-line); }
 .frota-legend i { width: 10px; height: 10px; border-radius: 3px; flex: none; }
 .frota-legend b { margin-left: auto; font-variant-numeric: tabular-nums; }
 
-.frota-cols { display: flex; align-items: flex-end; gap: 6px; overflow-x: auto; padding-top: 4px; }
-.frota-cols .c { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; flex: 1 0 52px; }
+/* O teto de largura mantém as colunas juntas quando há poucos meses; sem ele, três
+   competências ficavam espalhadas pelo cartão inteiro. "safe" evita cortar os
+   primeiros meses quando são tantos que a faixa precisa rolar. */
+.frota-cols { display: flex; justify-content: safe center; gap: 8px; flex: 1 1 auto; min-height: 170px; overflow-x: auto; padding-top: 4px; }
+.frota-cols .c { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1 1 52px; min-width: 52px; max-width: 96px; }
+/* Altura por proporção de flex (ver o JSX): a coluna acompanha a altura do cartão
+   e continua partindo do zero, então o tamanho da barra segue fiel ao valor. */
+.frota-cols .area { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1 1 auto; min-height: 0; width: 100%; }
+.frota-cols .folga, .frota-cols .bar { flex-basis: 0; }
 .frota-cols .val, .frota-cols .x { font-size: var(--font-size-2xs); color: var(--f-muted); white-space: nowrap; }
-.frota-cols .bar { width: 100%; max-width: 40px; border-radius: 4px 4px 0 0; background: var(--f-primary); }
+.frota-cols .bar { width: 100%; max-width: 40px; min-height: 2px; border-radius: 4px 4px 0 0; background: var(--f-primary); }
 .frota-cols .bar.apagada { opacity: 0.55; }
 
 .frota-hbars { display: flex; flex-direction: column; gap: 8px; }
@@ -324,6 +367,9 @@ button.frota-kpi:hover { border-color: var(--f-primary-line); }
 
 @media (max-width: 1024px) {
   .frota-grid.g2 { grid-template-columns: minmax(0, 1fr); }
+  /* Empilhado não há coluna vizinha para acompanhar: a lista fica do tamanho do
+     conteúdo, com teto para não empurrar os gráficos para longe. */
+  .frota-alerts { flex: none; max-height: 420px; }
 }
 @media (max-width: 768px) {
   .frotaMain { padding: var(--shell-main-pad-mobile); }

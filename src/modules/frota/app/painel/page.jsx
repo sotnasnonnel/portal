@@ -152,22 +152,28 @@ export default function PainelFrota() {
         <Kpi label="Revisões" valor={pendRev} sub={`${p.revV.length} vencida(s) · ${p.revP.length} a programar`} tone={p.revV.length ? 'crit' : (p.revP.length ? 'warn' : 'ok')} onClick={() => irPara('manutencao')} />
       </div>
 
-      <div className="frota-grid g2">
-        <Secao titulo="Pontos de atenção" contagem={p.al.length}>
-          {p.al.length ? (
-            <div className="frota-alerts">
-              {p.al.map((a) => (
-                <button key={a.id} type="button" className="frota-al" onClick={a.abrir}>
-                  <span className={`ic ${a.tone}`}><a.Icon size={16} aria-hidden="true" /></span>
-                  <span className="tx"><b>{a.t}</b><span>{a.s}</span></span>
-                  <Pill tone={TOM_ALERTA[a.tone] ? a.tone : 'info'}>{TOM_ALERTA[a.tone] || 'Info'}</Pill>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="frota-empty"><strong>Tudo em dia.</strong>Nenhuma pendência de documentos, revisão ou ocorrência.</div>
-          )}
-        </Secao>
+      <div className="frota-grid g2 frota-painel">
+        <div className="frota-stack">
+          <Secao className="is-fill" titulo="Pontos de atenção" contagem={p.al.length}>
+            {p.al.length ? (
+              <div className="frota-alerts">
+                {p.al.map((a) => (
+                  <button key={a.id} type="button" className="frota-al" onClick={a.abrir}>
+                    <span className={`ic ${a.tone}`}><a.Icon size={16} aria-hidden="true" /></span>
+                    <span className="tx"><b>{a.t}</b><span>{a.s}</span></span>
+                    <Pill tone={TOM_ALERTA[a.tone] ? a.tone : 'info'}>{TOM_ALERTA[a.tone] || 'Info'}</Pill>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="frota-empty"><strong>Tudo em dia.</strong>Nenhuma pendência de documentos, revisão ou ocorrência.</div>
+            )}
+          </Secao>
+          <Secao titulo={`Custo por centro de custo · ${compLabel(comp)}`}>
+            <p className="frota-card-s">Do maior para o menor; inclui locação, GPS e extras.</p>
+            <Hbars itens={groupSum(p.ms, (m) => m.ct, totalOf, 10)} />
+          </Secao>
+        </div>
         <div className="frota-stack">
           <Secao titulo={`Composição do custo · ${compLabel(comp)}`}>
             <div className="frota-stackbar" role="img" aria-label="Composição do custo">
@@ -181,13 +187,23 @@ export default function PainelFrota() {
               ))}
             </div>
           </Secao>
-          <Secao titulo="Evolução do custo mensal" nota="locação, GPS e extras">
+          <Secao titulo={`Custo por locadora · ${compLabel(comp)}`}>
+            <p className="frota-card-s">Quantidade de veículos e valor no mês.</p>
+            <Hbars itens={groupSum(p.ms, (m) => m.locadora, totalOf, 6).map((x) => ({
+              ...x, t: `${p.ms.filter((m) => (m.locadora || 'Não informado') === x.l).length} veículo(s)`,
+            }))}
+            />
+          </Secao>
+          <Secao className="is-fill" titulo="Evolução do custo mensal" nota="locação, GPS e extras">
             {p.evo.length ? (
               <div className="frota-cols">
                 {p.evo.map((e) => (
                   <div key={e.c} className="c" title={`${compLong(e.c)}\n${money(e.v)}`}>
-                    <span className="val">{money0(e.v)}</span>
-                    <div className={`bar ${e.c === comp ? '' : 'apagada'}`} style={{ height: Math.max(2, (e.v / maxE) * 120) }} />
+                    <div className="area">
+                      <span className="folga" style={{ flexGrow: 1 - e.v / maxE }} />
+                      <span className="val">{money0(e.v)}</span>
+                      <div className={`bar ${e.c === comp ? '' : 'apagada'}`} style={{ flexGrow: e.v / maxE }} />
+                    </div>
                     <span className="x">{compLabel(e.c)}</span>
                   </div>
                 ))}
@@ -195,20 +211,6 @@ export default function PainelFrota() {
             ) : <div className="frota-empty">Sem competências lançadas.</div>}
           </Secao>
         </div>
-      </div>
-
-      <div className="frota-grid g2">
-        <Secao titulo={`Custo por centro de custo · ${compLabel(comp)}`}>
-          <p className="frota-card-s">Do maior para o menor; inclui locação, GPS e extras.</p>
-          <Hbars itens={groupSum(p.ms, (m) => m.ct, totalOf, 10)} />
-        </Secao>
-        <Secao titulo={`Custo por locadora · ${compLabel(comp)}`}>
-          <p className="frota-card-s">Quantidade de veículos e valor no mês.</p>
-          <Hbars itens={groupSum(p.ms, (m) => m.locadora, totalOf, 6).map((x) => ({
-            ...x, t: `${p.ms.filter((m) => (m.locadora || 'Não informado') === x.l).length} veículo(s)`,
-          }))}
-          />
-        </Secao>
       </div>
     </div>
   );

@@ -109,27 +109,31 @@ export default function OcorrenciasFrota() {
       </div>
       {carregando ? <Esqueleto /> : (
         <TableScroll className="frota-tbl">
-          <table className="frota-t">
+          <table className="frota-t frota-t-oc">
             <thead>
               <tr>
-                <th>Data</th><th>Tipo</th><th>Veículo</th><th>Condutor</th><th>Infração / dano</th><th className="n">Valor</th><th>Pagamento</th><th>Status</th><th aria-label="Anexos" />
+                <th>Data</th><th>Veículo</th><th>Condutor</th><th className="frota-oc-col">Infração / dano</th><th className="n">Valor</th><th>Pagamento</th><th>Status</th><th aria-label="Anexos" />
               </tr>
             </thead>
             <tbody>
               {rows.length ? rows.map((o) => (
                 <tr key={o.id} className="frota-click" {...linhaClicavel(() => abrirDetalhe('ocorrencias', o.id))}>
-                  <td>{fmtDate(o.data)}<div className="s">{o.cidade || ''}</div></td>
-                  <td><Pill tone={o.tipo === 'Multa' ? 'brand' : 'info'}>{o.tipo || '—'}</Pill></td>
-                  <td><div className="frota-cellv"><Placa placa={o.placa} /><div className="s">{o.modelo || ''}</div></div></td>
-                  <td><div className="p">{o.condutor || '—'}</div>{o.gestor && <div className="s">Gestor: {o.gestor}</div>}</td>
-                  <td className="wrap">
-                    <div>{o.categoria || '—'}</div>
-                    <div className="s">
-                      {o.gravidade && <><Pill tone={gravTone(o.gravidade)}>{o.gravidade}</Pill>{' '}</>}
-                      {(o.descricao || '').slice(0, 90)}{(o.descricao || '').length > 90 ? '…' : ''}
-                    </div>
+                  <td className="nw">{fmtDate(o.data)}<div className="s">{o.cidade || ''}</div></td>
+                  <td className="nw"><div className="frota-cellv"><Placa placa={o.placa} /><div className="s">{o.modelo || ''}</div></div></td>
+                  <td>
+                    {/* Dois condutores, um por linha: lado a lado o nome ocupava a coluna inteira. */}
+                    {String(o.condutor || '—').split(' / ').map((c) => <div key={c} className="p">{c}</div>)}
+                    {o.gestor && <div className="s">Gestor: {o.gestor}</div>}
                   </td>
-                  <td className="n"><b>{money(o.valor)}</b></td>
+                  <td>
+                    <div className="frota-oc-tit">
+                      <Pill tone={o.tipo === 'Multa' ? 'brand' : 'info'}>{o.tipo || '—'}</Pill>
+                      <span>{o.categoria || '—'}</span>
+                      {o.gravidade && <Pill tone={gravTone(o.gravidade)}>{o.gravidade}</Pill>}
+                    </div>
+                    {o.descricao && <div className="frota-oc-desc" title={o.descricao}>{o.descricao}</div>}
+                  </td>
+                  <td className="n nw"><b>{money(o.valor)}</b></td>
                   <td>
                     {o.responsavel_pagamento || '—'}
                     <div className="s">
@@ -138,16 +142,16 @@ export default function OcorrenciasFrota() {
                         : (o.data_pagamento ? `Pago em ${fmtDate(o.data_pagamento)}` : '')}
                     </div>
                   </td>
-                  <td><Pill tone={ocTone(o.status || 'Aberta')}>{o.status || 'Aberta'}</Pill></td>
-                  <td>{(o.anexos || []).length > 0 && <Pill><Paperclip size={12} aria-label="Anexos" /> {o.anexos.length}</Pill>}</td>
+                  <td className="nw"><Pill tone={ocTone(o.status || 'Aberta')}>{o.status || 'Aberta'}</Pill></td>
+                  <td className="nw">{(o.anexos || []).length > 0 && <Pill><Paperclip size={12} aria-label="Anexos" /> {o.anexos.length}</Pill>}</td>
                 </tr>
-              )) : <LinhaVazia colunas={9} titulo="Nenhuma ocorrência encontrada" sub="Ajuste os filtros acima." />}
+              )) : <LinhaVazia colunas={8} titulo="Nenhuma ocorrência encontrada" sub="Ajuste os filtros acima." />}
             </tbody>
             {rows.length > 0 && (
               <tfoot>
                 <tr>
-                  <td colSpan={5}>{rows.length} ocorrência(s)</td>
-                  <td className="n">{money(sum(rows, 'valor'))}</td>
+                  <td colSpan={4}>{rows.length} ocorrência(s)</td>
+                  <td className="n nw">{money(sum(rows, 'valor'))}</td>
                   <td colSpan={3} />
                 </tr>
               </tfoot>

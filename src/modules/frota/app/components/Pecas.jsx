@@ -148,9 +148,9 @@ export function LinhaVazia({ colunas, titulo, sub }) {
   );
 }
 
-export function Secao({ titulo, contagem, nota, children }) {
+export function Secao({ titulo, contagem, nota, className = '', children }) {
   return (
-    <section className="frota-card">
+    <section className={`frota-card ${className}`.trim()}>
       <div className="frota-card-h">
         <h2>{titulo}</h2>
         {contagem != null && <span className="frota-count">{contagem}</span>}
