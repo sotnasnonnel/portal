@@ -217,22 +217,11 @@
 }
 .plr-alerta svg { flex-shrink: 0; margin-top: 2px; }
 
-.plr-calc-resumo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 40px; }
 .plr-calc-rotulo { display: block; margin-bottom: 4px; font-size: var(--font-size-xs); color: var(--p-muted); }
 .plr-base-total {
   display: block; font-size: var(--font-size-3xl); font-weight: var(--fw-bold); line-height: var(--lh-tight);
   color: var(--p-primary); font-variant-numeric: tabular-nums;
 }
-.plr-base-linhas { margin: 12px 0 0; }
-.plr-base-linhas > div {
-  display: flex; justify-content: space-between; gap: 12px; padding: 4px 0;
-  font-size: var(--font-size-sm); color: var(--p-gray-600);
-}
-.plr-base-linhas dt { font-weight: var(--fw-regular); }
-.plr-base-linhas dd { margin: 0; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.plr-base-linhas .is-forte { color: var(--p-ink); font-weight: var(--fw-semibold); }
-.plr-base-linhas .is-forte dt { font-weight: inherit; }
-
 .plr-link {
   padding: 0; border: none; background: none; cursor: pointer; font-family: inherit; text-align: left;
   font-size: var(--table-fs); font-weight: var(--fw-semibold); color: var(--p-primary);
@@ -288,7 +277,6 @@
   .plr-resumo-item { grid-template-columns: 1fr 64px; }
   .plr-resumo-item .plr-barra { grid-column: 1 / -1; grid-row: 2; }
   .plr-setor-total { align-items: flex-start; }
-  .plr-calc-resumo { grid-template-columns: minmax(0, 1fr); }
   .plr-calc-mult > div { align-items: flex-start; }
 
   /* No celular a tabela de consulta vira um bloco por indicador: na rolagem

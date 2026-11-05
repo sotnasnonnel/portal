@@ -94,14 +94,11 @@ export function resumoParaHub(r: ReturnType<typeof montarResultado>) {
  * plr_pessoas_visiveis) com os parâmetros e executivos do HUB, e devolve o que
  * a tela mostra. Quem chamou só recebe o que já estava em `pessoas`: os dados
  * do HUB de quem não está na lista não saem daqui.
- *
- * `pessoasDaEmpresa` é para o resumo do gestor, que é o da empresa inteira: os
- * totais saem dessa lista, e nada mais dela vai na resposta.
  */
 export function montarResultado(
-  { ano, papel, veTodos, multEmpresa, pessoas, parametros, pessoasHub, pessoasDaEmpresa }:
-  { ano: number; papel: string; veTodos: boolean; multEmpresa: number; pessoas: any[]; parametros: any[]; pessoasHub: any[]; pessoasDaEmpresa?: any[] },
-): any {
+  { ano, papel, veTodos, multEmpresa, pessoas, parametros, pessoasHub }:
+  { ano: number; papel: string; veTodos: boolean; multEmpresa: number; pessoas: any[]; parametros: any[]; pessoasHub: any[] },
+) {
   const D = montarDados(parametros, pessoasHub);
   const problemas: string[] = [];
 
@@ -186,9 +183,6 @@ export function montarResultado(
 
   const doTime = soma(colaboradores, (c) => c.valor);
   const daGerencia = soma(gerencia, (g) => g.total);
-  const totais = pessoasDaEmpresa
-    ? montarResultado({ ano, papel, veTodos, multEmpresa, pessoas: pessoasDaEmpresa, parametros, pessoasHub }).totais
-    : { colaboradores: doTime, gerencia: daGerencia, geral: doTime + daGerencia };
 
   const datas = parametros
     .filter((p) => p.chave === "painel" || p.chave === "setores")
@@ -210,7 +204,7 @@ export function montarResultado(
     setores,
     colaboradores,
     gerencia,
-    totais,
+    totais: { colaboradores: doTime, gerencia: daGerencia, geral: doTime + daGerencia },
     // Nome e motivo de quem ficou de fora: só quem vê todo mundo precisa saber.
     problemas: veTodos ? problemas : [],
   };

@@ -3,16 +3,14 @@
 //
 // Fica em Edge Function por dois motivos: a chave do backoffice não pode ir para
 // o navegador, e a conta sai pronta, com só o que a pessoa pode ver. Quem decide
-// quais linhas ela vê é a RPC plr_pessoas_visiveis, chamada com o token dela. A
-// exceção é o gestor: o resumo dele soma a empresa inteira, então as linhas de
-// todos vêm com a chave de serviço, e da conta só os totais saem na resposta.
+// quais linhas ela vê é a RPC plr_pessoas_visiveis, chamada com o token dela.
 //
 // Resposta: ver montarResultado em calculo.ts.
 //
 // DEPLOY: `supabase functions deploy plr-calculo`. Usa os secrets que já existem:
-// BACKOFFICE_SUPABASE_URL, BACKOFFICE_SERVICE_ROLE_KEY e SUPABASE_SERVICE_ROLE_KEY.
+// BACKOFFICE_SUPABASE_URL e BACKOFFICE_SERVICE_ROLE_KEY.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { montarResultado, soAtivas } from "./calculo.ts";
+import { montarResultado } from "./calculo.ts";
 import { carregarHub } from "./hub.ts";
 
 const CORS = {
@@ -60,18 +58,6 @@ Deno.serve(async (req) => {
     const { erro: erroHub, parametros, pessoasHub } = await carregarHub(backoffice, ano);
     if (erroHub) return json({ error: erroHub }, 502);
 
-    let pessoasDaEmpresa;
-    if (visiveis.papel === "gestor") {
-      const portal = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
-        auth: { persistSession: false },
-      });
-      const { data: todas, error: eTodas } = await portal.from("plr_pessoas")
-        .select("id, nome, cod_ct, setor_hub, cargo_plr, salario, data_admissao, hub_chave, colaboradores(ativo)")
-        .eq("ano", ano);
-      if (eTodas) return json({ error: eTodas.message }, 500);
-      pessoasDaEmpresa = soAtivas(todas ?? []);
-    }
-
     return json(montarResultado({
       ano,
       papel: visiveis.papel,
@@ -80,7 +66,6 @@ Deno.serve(async (req) => {
       pessoas: visiveis.pessoas ?? [],
       parametros,
       pessoasHub,
-      pessoasDaEmpresa,
     }));
   } catch (e) {
     console.error("[plr-calculo]", e);

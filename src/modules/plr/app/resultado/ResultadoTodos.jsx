@@ -2,31 +2,14 @@ import { useState } from 'react';
 import { AlertTriangle, Search } from 'lucide-react';
 import { formatarMoeda } from '../../../../utils/formatters';
 import { nomeProprio } from '../../../../utils/pessoas';
-import { BASE_DO_FATOR, formatarMult, formatarPct, nomeCasa, rotuloCargo, rotuloYtd } from '../../lib/plr';
+import { BASE_DO_FATOR, formatarMult, formatarPct, nomeCasa, rotuloCargo } from '../../lib/plr';
 import AvisoGatilho from './AvisoGatilho';
-import { CabecalhoSetor, MultiplicadorEmpresa } from './PartesSetor';
+import CabecalhoSetor from './CabecalhoSetor';
 
 // Rolagem por código, e não por âncora (#): o portal usa HashRouter.
 const irPara = (id) => {
   document.getElementById(`plr-calc-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
-
-/** O total e o multiplicador da empresa. */
-function CartaoResumo({ dados }) {
-  return (
-    <section className="plr-card plr-calc-resumo">
-      <div>
-        <h2 className="plr-card-tit">{rotuloYtd(dados.ytdAte)}</h2>
-        <strong className="plr-base-total">{formatarMoeda(dados.totais.geral)}</strong>
-        <dl className="plr-base-linhas">
-          <div><dt>Colaboradores</dt><dd>{formatarMoeda(dados.totais.colaboradores)}</dd></div>
-          <div><dt>Gerência</dt><dd>{formatarMoeda(dados.totais.gerencia)}</dd></div>
-        </dl>
-      </div>
-      <MultiplicadorEmpresa valor={dados.multEmpresa} />
-    </section>
-  );
-}
 
 function ResumoSetores({ dados }) {
   return (
@@ -176,9 +159,9 @@ function FiltroNome({ valor, onMudar }) {
   );
 }
 
-// Admin e gestor: o total da empresa, a quantidade de pessoas e o valor de cada
-// setor, a gerência e as pessoas, com filtro por nome. O admin recebe todo mundo; o
-// gestor, só as linhas do setor dele e a própria.
+// Admin e gestor: a quantidade de pessoas e o valor de cada setor, a gerência e as
+// pessoas, com filtro por nome. O admin recebe todo mundo; o gestor, só as linhas do
+// setor dele e a própria.
 export default function ResultadoTodos({ dados }) {
   const [busca, setBusca] = useState('');
   const semFiltro = busca.trim() === '';
@@ -203,8 +186,6 @@ export default function ResultadoTodos({ dados }) {
           </ul>
         </section>
       ) : null}
-
-      <CartaoResumo dados={dados} />
 
       <ResumoSetores dados={dados} />
 

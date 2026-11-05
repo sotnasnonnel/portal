@@ -7,9 +7,8 @@
  *                 escolha outro papel para si; os demais, por Gerenciar acessos.
  *   - 'gestor'  → quem está em plr_setor_gestores: Metas por setor só do setor
  *                 dele; Resultado por pessoa só das pessoas do setor dele, com
- *                 salário, e o resumo com os totais da empresa.
- *   - 'usuario' → só o Resultado por pessoa: a própria linha, o Multiplicador
- *                 empresa e o cabeçalho do setor, sem os totais da empresa.
+ *                 salário.
+ *   - 'usuario' → só o Resultado por pessoa: a própria linha e o cabeçalho do setor.
  *   - null      → nada disso: o card nem aparece.
  *
  * Gestor e usuário valem por chave geral, no banco, ou pessoa a pessoa em

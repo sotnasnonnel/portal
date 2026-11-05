@@ -2,7 +2,7 @@ import { formatarMoeda } from '../../../../utils/formatters';
 import { nomeProprio } from '../../../../utils/pessoas';
 import { BASE_DO_FATOR, formatarMult, formatarPct, rotuloCargo, rotuloYtd } from '../../lib/plr';
 import AvisoGatilho from './AvisoGatilho';
-import { CabecalhoSetor, MultiplicadorEmpresa } from './PartesSetor';
+import CabecalhoSetor from './CabecalhoSetor';
 
 function Linha({ rotulo, valor, forte = false, sub = null }) {
   return (
@@ -16,16 +16,13 @@ function Linha({ rotulo, valor, forte = false, sub = null }) {
   );
 }
 
-function QuantoRecebe({ dados, valor, rodape, multEmpresa = null }) {
+function QuantoRecebe({ dados, valor, rodape }) {
   return (
-    <section className={multEmpresa === null ? 'plr-card' : 'plr-card plr-calc-resumo'}>
-      <div>
-        <h2 className="plr-card-tit">Quanto você recebe</h2>
-        <span className="plr-calc-rotulo">{rotuloYtd(dados.ytdAte)}</span>
-        <strong className="plr-base-total">{formatarMoeda(valor)}</strong>
-        <p className="plr-rodape">{rodape}</p>
-      </div>
-      {multEmpresa === null ? null : <MultiplicadorEmpresa valor={multEmpresa} />}
+    <section className="plr-card">
+      <h2 className="plr-card-tit">Quanto você recebe</h2>
+      <span className="plr-calc-rotulo">{rotuloYtd(dados.ytdAte)}</span>
+      <strong className="plr-base-total">{formatarMoeda(valor)}</strong>
+      <p className="plr-rodape">{rodape}</p>
     </section>
   );
 }
@@ -39,7 +36,6 @@ function ContaColaborador({ dados, c }) {
         dados={dados}
         valor={c.valor}
         rodape={`${nomeProprio(c.nome)} · ${c.setorNome} · ${rotuloCargo(c.cargo)}`}
-        multEmpresa={c.multEmpresa}
       />
       <section className="plr-card">
         {setor ? <CabecalhoSetor setor={setor} multEmpresa={c.multEmpresa} /> : null}
@@ -86,8 +82,7 @@ function ContaGerencia({ dados, g }) {
   );
 }
 
-// O usuário: só a própria linha, que é tudo o que a resposta traz. Os totais da
-// empresa não aparecem aqui: `dados.totais` nem os traz para este papel.
+// O usuário: só a própria linha, que é tudo o que a resposta traz.
 export default function MinhaLinha({ dados }) {
   const colaborador = dados.colaboradores[0];
   const gerente = dados.gerencia[0];

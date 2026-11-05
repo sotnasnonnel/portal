@@ -1,22 +1,7 @@
 import { formatarPct } from '../../lib/plr';
 
-/** O Multiplicador empresa, como aparece nos cartões de resumo. */
-export function MultiplicadorEmpresa({ valor }) {
-  return (
-    <dl className="plr-base-linhas">
-      <div className="is-forte">
-        <dt>
-          Multiplicador empresa
-          <small className="plr-pessoa-sub">Igual para todos os colaboradores</small>
-        </dt>
-        <dd>{formatarPct(valor)}</dd>
-      </div>
-    </dl>
-  );
-}
-
 /** Nome, responsável, % e multiplicador total do setor. */
-export function CabecalhoSetor({ setor, multEmpresa }) {
+export default function CabecalhoSetor({ setor, multEmpresa }) {
   return (
     <header className="plr-setor-cab plr-calc-cab">
       <div className="plr-setor-tit">
