@@ -115,7 +115,7 @@ export default function EditarPlr() {
       <div className="plr-cab">
         <h1 className="plr-title"><PencilLine size={24} /> Editar resultados</h1>
         <p className="plr-sub">
-          Os números que cada setor vê no PLR {PLR_ANO}. Aderência e total são calculados a partir daqui.
+          Os números que cada setor vê nos Resultados {PLR_ANO}. Aderência e total são calculados a partir daqui.
         </p>
       </div>
 
@@ -124,7 +124,7 @@ export default function EditarPlr() {
       {carregando && !form ? (
         <div className="plr-vazio"><Loader2 size={22} className="plr-spin" /> Carregando…</div>
       ) : erroCarga ? (
-        <div className="plr-vazio plr-erro">Não foi possível carregar o PLR: {erroCarga}</div>
+        <div className="plr-vazio plr-erro">Não foi possível carregar os Resultados: {erroCarga}</div>
       ) : !form ? (
         <div className="plr-vazio">Nenhum setor cadastrado para {PLR_ANO}.</div>
       ) : (

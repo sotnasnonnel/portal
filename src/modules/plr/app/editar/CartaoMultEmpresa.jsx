@@ -38,7 +38,7 @@ export default function CartaoMultEmpresa() {
     try {
       await salvarMultEmpresa(PLR_ANO, valor);
       setSalvo(valor);
-      setMsg({ tipo: 'ok', texto: 'Salvo. O PLR dos colaboradores já usa o novo percentual.' });
+      setMsg({ tipo: 'ok', texto: 'Salvo. Os Resultados dos colaboradores já usa o novo percentual.' });
     } catch (e) {
       setMsg({ tipo: 'erro', texto: `Não foi possível salvar: ${e?.message || 'erro desconhecido'}` });
     } finally {
@@ -63,7 +63,7 @@ export default function CartaoMultEmpresa() {
           <small>%</small>
         </span>
       </div>
-      <p className="plr-rodape">Somado à parte do setor no PLR {PLR_ANO}. A gerência continua com o valor do HUB.</p>
+      <p className="plr-rodape">Somado à parte do setor nos Resultados {PLR_ANO}. A gerência continua com o valor do HUB.</p>
 
       {sujo && !valido ? <p className="plr-msg is-erro"><AlertTriangle size={15} /> Informe um número de 0 a 100.</p> : null}
       {msg ? (

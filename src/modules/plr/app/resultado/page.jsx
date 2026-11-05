@@ -40,7 +40,7 @@ export default function ResultadoPlr() {
       {carregando ? (
         <div className="plr-vazio"><Loader2 size={22} className="plr-spin" /> Carregando…</div>
       ) : erro ? (
-        <div className="plr-vazio plr-erro">Não foi possível calcular o PLR agora. Tente de novo em instantes.</div>
+        <div className="plr-vazio plr-erro">Não foi possível calcular os Resultados agora. Tente de novo em instantes.</div>
       ) : (
         <>
           {temValor ? (

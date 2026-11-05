@@ -29,7 +29,7 @@ export function modulosVisiveis(user, modules) {
   if (podeAcessarEstoque(user)) nomes.push('Estoque');
   if (podeAcessarMobilizacao(user)) nomes.push('Mobilização');
   if (podeVerTorre(user, modules)) nomes.push('Torre de Controle');
-  if (podeVerPlr(modules)) nomes.push('PLR');
+  if (podeVerPlr(modules)) nomes.push('Resultados');
 
   // O card "Financeiro" cobre duas rotinas sem relação uma com a outra, e quem
   // relata pensa em uma delas — não no card. Por isso entram separadas, e só a

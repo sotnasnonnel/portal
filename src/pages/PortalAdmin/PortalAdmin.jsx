@@ -362,7 +362,7 @@ export default function PortalAdmin() {
                 <th>Financeiro</th>
                 <th>Atendimento</th>
                 <th>Programas</th>
-                <th>PLR</th>
+                <th>Resultados</th>
               </tr>
             </thead>
             <tbody>

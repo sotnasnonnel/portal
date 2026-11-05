@@ -11,7 +11,7 @@ export default function AppShell() {
     <div className="plrRoot">
       <Sidebar aberto={aberto} onFechar={fechar} />
       <div className="plrCol">
-        <PortalHeader modulo="PLR" onMenuToggle={alternar} />
+        <PortalHeader modulo="Resultados" onMenuToggle={alternar} />
         <main className="plrMain">
           <Outlet />
         </main>

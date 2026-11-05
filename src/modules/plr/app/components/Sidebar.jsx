@@ -11,7 +11,7 @@ export default function Sidebar({ aberto = false, onFechar }) {
   return (
     <ModuleSidebar
       moduloKey="plr"
-      titulo="PLR"
+      titulo="Resultados"
       Icon={Target}
       secoes={navSections({
         podeEditar: podeEditarPlr(modules),

@@ -69,8 +69,8 @@ function ContaGerencia({ dados, g }) {
         <h2 className="plr-card-tit">De onde vem</h2>
         <table className="plr-conta">
           <tbody>
-            <Linha rotulo="Fator PLR" sub={BASE_DO_FATOR} valor={formatarPct(g.fator)} />
-            <Linha rotulo="PLR" valor={formatarMoeda(g.plr)} />
+            <Linha rotulo="Fator Resultados" sub={BASE_DO_FATOR} valor={formatarPct(g.fator)} />
+            <Linha rotulo="Resultados" valor={formatarMoeda(g.plr)} />
             <Linha rotulo="Bônus" valor={formatarMoeda(g.bonus)} />
             <Linha rotulo="Variável" valor={formatarMoeda(g.variavel)} />
             <Linha rotulo="Total" valor={formatarMoeda(g.total)} forte />
@@ -88,7 +88,7 @@ export default function MinhaLinha({ dados }) {
   const gerente = dados.gerencia[0];
 
   if (!colaborador && !gerente) {
-    return <div className="plr-vazio">Você não está na lista do PLR de {dados.ano}.</div>;
+    return <div className="plr-vazio">Você não está na lista dos Resultados de {dados.ano}.</div>;
   }
   return (
     <>

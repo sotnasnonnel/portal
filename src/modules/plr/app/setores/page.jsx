@@ -41,16 +41,16 @@ export default function SetoresPlr() {
   return (
     <div className="plr-page">
       <div className="plr-cab">
-        <h1 className="plr-title"><Target size={24} /> PLR {PLR_ANO}</h1>
+        <h1 className="plr-title"><Target size={24} /> Resultados {PLR_ANO}</h1>
         <p className="plr-sub">{sub}</p>
       </div>
 
       {carregando ? (
         <div className="plr-vazio"><Loader2 size={22} className="plr-spin" /> Carregando…</div>
       ) : erro ? (
-        <div className="plr-vazio plr-erro">Não foi possível carregar o PLR: {erro}</div>
+        <div className="plr-vazio plr-erro">Não foi possível carregar os Resultados: {erro}</div>
       ) : setores.length === 0 ? (
-        <div className="plr-vazio">Nenhum setor do PLR está ligado a você.</div>
+        <div className="plr-vazio">Nenhum setor dos Resultados está ligado a você.</div>
       ) : (
         <>
           {setores.length > 1 ? (

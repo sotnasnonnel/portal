@@ -35,7 +35,7 @@ export default function CartaoSetor({ setor }) {
         </div>
         <div className="plr-setor-total">
           <strong>{formatarPct(r.total)}</strong>
-          <span>do PLR do setor</span>
+          <span>dos Resultados do setor</span>
         </div>
       </header>
       <BarraTotal valor={r.total} />

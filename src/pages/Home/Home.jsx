@@ -189,12 +189,12 @@ export default function Home() {
       to: rotaInicialPlr(modules),
       icon: Target,
       tone: 'blue',
-      title: 'PLR',
+      title: 'Resultados',
       desc: veTodosSetoresPlr(modules)
         ? 'Metas e resultados de todos os setores'
         : veSetoresPlr(modules)
           ? 'Metas e resultados do seu setor'
-          : 'O seu resultado de PLR',
+          : 'Os seus Resultados',
     },
     {
       // Cartões e Reembolso são duas rotinas sem relação uma com a outra, então

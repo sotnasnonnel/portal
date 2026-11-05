@@ -13,8 +13,8 @@ export default function AvisoGatilho({ dados }) {
       <AlertTriangle size={16} aria-hidden="true" />
       <span>
         <b>Gatilho acionado.</b> A Margem Operacional Líquida está em {formatarPct(dados.margemDaMeta)} da
-        meta, abaixo do corte de {formatarPct(dados.corteGatilho)}. O Fator PLR corporativo fica em zero: a
-        gerência fica sem PLR. A conta dos colaboradores não muda.
+        meta, abaixo do corte de {formatarPct(dados.corteGatilho)}. O Fator Resultados corporativo fica em zero: a
+        gerência fica sem Resultados. A conta dos colaboradores não muda.
       </span>
     </p>
   );

@@ -64,7 +64,7 @@ function CartaoGerencia({ gerencia }) {
             <tr>
               <th>Pessoa</th>
               <th className="num">Salário</th>
-              <th className="num">PLR</th>
+              <th className="num">Resultados</th>
               <th className="num">Bônus</th>
               <th className="num">Variável</th>
               <th className="num">Total</th>
@@ -78,7 +78,7 @@ function CartaoGerencia({ gerencia }) {
                   <small className="plr-pessoa-sub">{g.cargo}</small>
                 </td>
                 <td className="num" data-rot="Salário">{formatarMoeda(g.salario)}</td>
-                <td className="num" data-rot="PLR">
+                <td className="num" data-rot="Resultados">
                   {formatarMoeda(g.plr)}
                   <small className="plr-fator">fator {formatarPct(g.fator)}</small>
                 </td>
