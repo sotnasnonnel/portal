@@ -141,7 +141,7 @@ test('gerência vem inteira do HUB, sem passar pela conta do colaborador', () =>
 });
 
 test('dados do HUB de quem não está na lista visível não saem na resposta', () => {
-  const r = resultado({ pessoas: [colaborador], veTodos: false, papel: 'proprio' });
+  const r = resultado({ pessoas: [colaborador], veTodos: false, papel: 'usuario' });
   assert.equal(r.gerencia.length, 0);
   const texto = JSON.stringify(r);
   assert.doesNotMatch(texto, /"salario":(100|999)[,}]/, 'salário de executivo vazou');
@@ -206,10 +206,47 @@ test('soAtivas tira só quem está desativado, como plr_pessoas_visiveis', () =>
   assert.deepEqual(nomes, ['ativo', 'ativo vazio', 'sem login']);
 });
 
+test('gestor: as linhas são só as dele, e o resumo é o da empresa', () => {
+  const deFora = { ...colaborador, id: 'c2', nome: 'DE FORA', setor_hub: 'pmo', salario: '5000' };
+  const r = resultado({
+    papel: 'gestor',
+    veTodos: false,
+    pessoas: [colaborador],
+    pessoasDaEmpresa: [colaborador, deFora, executivo],
+  });
+  assert.deepEqual(r.colaboradores.map((c: { nome: string }) => c.nome), ['FULANO']);
+  assert.equal(r.gerencia.length, 0);
+  assert.deepEqual(r.setores.map((s: { id: string }) => s.id), ['fin'], 'só o setor dele');
+  proximo(r.setores[0].valor, 0.9 * 0.6 * 1000, 'a soma do setor continua só do setor');
+  proximo(r.totais.colaboradores, 0.9 * 0.6 * 1000 + 1 * 0.6 * 5000);
+  proximo(r.totais.gerencia, 200);
+  proximo(r.totais.geral, 0.9 * 0.6 * 1000 + 1 * 0.6 * 5000 + 200);
+  const texto = JSON.stringify(r);
+  assert.doesNotMatch(texto, /DE FORA|CICLANA/, 'nome de fora do setor vazou');
+  assert.doesNotMatch(texto, /"salario":"?5000/, 'salário de fora do setor vazou');
+});
+
+test('gestor: quem fica fora da conta não aparece para ele, mas não entra na soma', () => {
+  const r = resultado({
+    papel: 'gestor',
+    veTodos: false,
+    pessoas: [colaborador],
+    pessoasDaEmpresa: [colaborador, { ...colaborador, id: 'c3', nome: 'SEM SETOR', setor_hub: 'xyz' }],
+  });
+  proximo(r.totais.colaboradores, 0.9 * 0.6 * 1000);
+  assert.deepEqual(r.problemas, []);
+});
+
+test('usuário: sem pessoasDaEmpresa os totais são só os da própria linha', () => {
+  const r = resultado({ papel: 'usuario', veTodos: false, pessoas: [colaborador] });
+  proximo(r.totais.geral, 0.9 * 0.6 * 1000);
+  assert.equal(r.totais.gerencia, 0);
+});
+
 test('quem vê só a própria linha não recebe a lista de problemas', () => {
   const r = resultado({
     veTodos: false,
-    papel: 'proprio',
+    papel: 'usuario',
     pessoas: [{ ...colaborador, setor_hub: 'xyz' }],
   });
   assert.deepEqual(r.problemas, []);

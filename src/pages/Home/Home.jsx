@@ -170,8 +170,7 @@ export default function Home() {
       locked: !podeVerTorre(user, modules),
       emBreve: !podeVerTorre(user, modules),
     },
-    // PLR: só para quem tem setor pelo organograma, papel no módulo ou linha no
-    // cálculo por pessoa. Quem não tem não vê o card nem com cadeado — PLR não é módulo "em breve", e
+    // PLR: só para admin, gestor ou usuário do módulo (config/plr.js). Quem não tem não vê o card nem com cadeado — PLR não é módulo "em breve", e
     // o cadeado faria a pessoa perguntar por um acesso que não vai ganhar.
     podeVerPlr(modules) && {
       to: rotaInicialPlr(modules),

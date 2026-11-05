@@ -168,6 +168,14 @@ const ROTULO_CARGO = {
 
 export const rotuloCargo = (cargo) => ROTULO_CARGO[cargo] ?? cargo ?? '—';
 
+const semAcento = (t) => String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+/** O filtro por nome: todas as palavras digitadas, em qualquer ordem. Vazio casa com todos. */
+export function nomeCasa(nome, busca) {
+  const alvo = semAcento(nome);
+  return semAcento(busca).split(/\s+/).filter(Boolean).every((palavra) => alvo.includes(palavra));
+}
+
 /**
  * O que impede salvar a edição de um setor, uma frase por problema. Recebe as
  * linhas como estão nos campos (texto) e devolve [] quando está tudo certo.

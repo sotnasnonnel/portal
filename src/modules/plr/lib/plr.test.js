@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   percentualDaMeta, aderencia, contribuicao, situacao, resumoSetor,
   formatarValor, formatarPct, formatarMult, paraCampo, deCampo, problemasDaEdicao, rotuloCargo, rotuloMes, rotuloYtd,
+  nomeCasa,
 } from './plr.js';
 
 const ind = (meta, resultado, peso, regra = 'proporcional', unidade = 'percentual') =>
@@ -145,4 +146,14 @@ test('cargo da planilha por extenso, e o que não conhece passa como está', () 
   assert.equal(rotuloCargo('OPERAÇÃOCLT'), 'Operação CLT');
   assert.equal(rotuloCargo('Gerente PMO e Inovação'), 'Gerente PMO e Inovação');
   assert.equal(rotuloCargo(null), '—');
+});
+
+test('nomeCasa: filtro por nome, sem ligar para acento nem caixa', () => {
+  assert.equal(nomeCasa('ANDRE LUIZ COSTA GUIMARAES', 'andré'), true);
+  assert.equal(nomeCasa('José da Conceição', 'CONCEICAO'), true);
+  assert.equal(nomeCasa('PEDRO HENRIQUE BRAGA DE MORAIS', 'pedro morais'), true, 'as palavras podem não ser vizinhas');
+  assert.equal(nomeCasa('PEDRO HENRIQUE BOSCO NERY', 'pedro morais'), false, 'todas as palavras precisam casar');
+  assert.equal(nomeCasa('FULANO', ''), true, 'sem filtro, todos');
+  assert.equal(nomeCasa('FULANO', '   '), true, 'só espaço é sem filtro');
+  assert.equal(nomeCasa('FULANO', 'beltrano'), false);
 });

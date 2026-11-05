@@ -260,9 +260,9 @@ function TorreRoute({ children }) {
   return children;
 }
 
-// PLR: quem tem setor pelo organograma, papel em Gerenciar acessos ou linha no
-// cálculo por pessoa (config/plr.js). A edição é só do admin. Gate de UI — quem
-// filtra setores e pessoas e barra a escrita são as RPCs plr_*.
+// PLR: admin, gestor ou usuário (config/plr.js). Metas por setor não é do usuário
+// e a edição é só do admin. Gate de UI — quem filtra setores e pessoas e barra a
+// escrita são as RPCs plr_*.
 function PlrRoute({ children }) {
   const { modules } = useAuth();
   if (!podeVerPlr(modules)) return <Navigate to="/home" replace />;
@@ -1040,8 +1040,8 @@ export default function AppRoutes() {
 
           {/* PLR: metas e resultados por setor (aba SETORES da plr.xlsx) e o
               resultado por pessoa (aba CALCULO PLR, com os números do HUB).
-              Cada um vê o setor do responsável mais próximo no organograma e a
-              própria linha; a edição é do admin. */}
+              O gestor vê o setor dele, o usuário só a própria linha, e a edição
+              é do admin. */}
           <Route
             path="/plr"
             element={(

@@ -50,16 +50,16 @@ const PROGRAMAS_ROLES = [
   ["comercial", "Time comercial"],
   ["admin", "Admin"],
 ];
-// PLR: quem não tem papel segue as chaves gerais do banco (a própria linha e o
-// setor pelo organograma), hoje desligadas: fica sem a aba. "Só o próprio" libera
-// a própria linha para aquela pessoa, com as chaves desligadas ou não. Os outros
-// dois ampliam: ver todos os setores e o valor de todas as pessoas, com salário,
-// ou ver tudo e editar. O super admin é admin sempre, pelo banco.
+// PLR: quem não tem papel segue as chaves gerais do banco, hoje desligadas: fica
+// sem a aba. Os papéis valem para aquela pessoa com as chaves ligadas ou não. O
+// setor do gestor vem de plr_setor_gestores, no banco: "Gestor" para quem não está
+// lá vê só a própria linha. O super admin é admin, a menos que escolha "Gestor" ou
+// "Usuário" para si, para ver como a tela fica; "Sem papel" ou "Admin" o traz de volta.
 const PLR_ROLES = [
   ["", "Sem papel"],
-  ["proprio", "Só o próprio"],
-  ["visualizador", "Vê tudo (com salários)"],
-  ["admin", "Admin (edita, com salários)"],
+  ["usuario", "Usuário (só o próprio)"],
+  ["gestor", "Gestor (o setor dele, com salários)"],
+  ["admin", "Admin (tudo, edita)"],
 ];
 // Gestão de Horas: o papel BASE deriva da hierarquia da Gestão de Pessoas
 // (perfil + superior_id) — gestor/coordenador enxergam a própria equipe, o

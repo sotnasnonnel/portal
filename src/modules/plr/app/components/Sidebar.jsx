@@ -1,7 +1,7 @@
 import { Target } from 'lucide-react';
 import ModuleSidebar from '../../../../components/Layout/ModuleSidebar';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { podeEditarPlr, veSetoresPlr, veTodosSetoresPlr, PAPEL_PLR_LABEL } from '../../../../config/plr';
+import { podeEditarPlr, veSetoresPlr, PAPEL_PLR_LABEL } from '../../../../config/plr';
 import { navSections } from './nav';
 
 // Sidebar do PLR — a estrutura vive no ModuleSidebar compartilhado, como nos
@@ -16,7 +16,6 @@ export default function Sidebar({ aberto = false, onFechar }) {
       secoes={navSections({
         podeEditar: podeEditarPlr(modules),
         veSetores: veSetoresPlr(modules),
-        veTodos: veTodosSetoresPlr(modules),
       })}
       papelLabel={PAPEL_PLR_LABEL[modules?.plr] || ''}
       aberto={aberto}

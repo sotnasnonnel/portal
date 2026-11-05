@@ -1,22 +1,19 @@
 /**
  * PLR — metas e resultados de cada setor (aba SETORES da plr.xlsx).
  *
- * Quem vê o quê é decidido no banco (supabase_migration_plr.sql), e chega aqui
- * pronto em `modules.plr`, que vem da RPC plr_acesso no login:
- *   - 'setor'        → o responsável do setor na planilha e a equipe dele pelo
- *                      organograma: cada um vê o setor do responsável mais
- *                      próximo acima de si (ou o próprio, se for o responsável).
- *   - 'visualizador' → todos os setores (Gerenciar acessos).
- *   - 'admin'        → todos os setores e a tela de edição. O super admin é
- *                      admin sempre; os demais, por Gerenciar acessos.
- *   - 'proprio'      → sem setor, mas com linha no cálculo por pessoa: vê só o
- *                      próprio PLR. Vale para todos com a chave
- *                      plr_aberto_a_cada_um, no banco, ou para uma pessoa por
- *                      Gerenciar acessos.
- *   - null           → nada disso: o card nem aparece.
+ * Quem vê o quê é decidido no banco (supabase_migration_plr_papeis.sql), e chega
+ * aqui pronto em `modules.plr`, que vem da RPC plr_acesso no login:
+ *   - 'admin'   → tudo, e a tela de edição. O super admin é admin, a menos que
+ *                 escolha outro papel para si; os demais, por Gerenciar acessos.
+ *   - 'gestor'  → quem está em plr_setor_gestores: Metas por setor só do setor
+ *                 dele; Resultado por pessoa só das pessoas do setor dele, com
+ *                 salário, e o resumo com os totais da empresa.
+ *   - 'usuario' → só o Resultado por pessoa: a própria linha, o Multiplicador
+ *                 empresa e o cabeçalho do setor, sem os totais da empresa.
+ *   - null      → nada disso: o card nem aparece.
  *
- * 'admin' e 'visualizador' também veem o resultado por pessoa de todo mundo, com
- * salário; os demais, só a própria linha.
+ * Gestor e usuário valem por chave geral, no banco, ou pessoa a pessoa em
+ * Gerenciar acessos.
  *
  * O gate daqui só controla a tela; quem filtra setores e pessoas é o banco.
  */
@@ -29,16 +26,15 @@ export const podeVerPlr = (modules) => !!modules?.plr;
 
 export const podeEditarPlr = (modules) => modules?.plr === 'admin';
 
-export const veTodosSetoresPlr = (modules) => modules?.plr === 'admin' || modules?.plr === 'visualizador';
+export const veTodosSetoresPlr = (modules) => modules?.plr === 'admin';
 
-export const veSetoresPlr = (modules) => !!modules?.plr && modules.plr !== 'proprio';
+export const veSetoresPlr = (modules) => modules?.plr === 'admin' || modules?.plr === 'gestor';
 
 // Onde o módulo abre: quem só tem a própria linha não tem setor para ver.
 export const rotaInicialPlr = (modules) => (veSetoresPlr(modules) ? '/plr/setores' : '/plr/resultado');
 
 export const PAPEL_PLR_LABEL = {
   admin: 'Admin',
-  visualizador: 'Vê tudo',
-  setor: 'Meu setor',
-  proprio: 'Meu PLR',
+  gestor: 'Gestor',
+  usuario: 'Usuário',
 };

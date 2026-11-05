@@ -1,8 +1,10 @@
-import { AlertTriangle } from 'lucide-react';
+import { useState } from 'react';
+import { AlertTriangle, Search } from 'lucide-react';
 import { formatarMoeda } from '../../../../utils/formatters';
 import { nomeProprio } from '../../../../utils/pessoas';
-import { BASE_DO_FATOR, formatarMult, formatarPct, rotuloCargo, rotuloYtd } from '../../lib/plr';
+import { BASE_DO_FATOR, formatarMult, formatarPct, nomeCasa, rotuloCargo, rotuloYtd } from '../../lib/plr';
 import AvisoGatilho from './AvisoGatilho';
+import { CabecalhoSetor, MultiplicadorEmpresa } from './PartesSetor';
 
 // Rolagem por código, e não por âncora (#): o portal usa HashRouter.
 const irPara = (id) => {
@@ -21,15 +23,7 @@ function CartaoResumo({ dados }) {
           <div><dt>Gerência</dt><dd>{formatarMoeda(dados.totais.gerencia)}</dd></div>
         </dl>
       </div>
-      <dl className="plr-base-linhas">
-        <div className="is-forte">
-          <dt>
-            Multiplicador empresa
-            <small className="plr-pessoa-sub">Igual para todos os colaboradores</small>
-          </dt>
-          <dd>{formatarPct(dados.multEmpresa)}</dd>
-        </div>
-      </dl>
+      <MultiplicadorEmpresa valor={dados.multEmpresa} />
     </section>
   );
 }
@@ -118,25 +112,10 @@ function CartaoGerencia({ gerencia }) {
   );
 }
 
-function CartaoSetorPessoas({ setor, pessoas, multEmpresa }) {
+function CartaoSetorPessoas({ setor, pessoas, multEmpresa, comTotal }) {
   return (
     <section className="plr-card plr-setor" id={`plr-calc-${setor.id}`}>
-      <header className="plr-setor-cab plr-calc-cab">
-        <div className="plr-setor-tit">
-          <h2>{setor.nome}</h2>
-          <p>
-            {setor.responsavel ? <>Responsável: <b>{setor.responsavel}</b></> : null}
-            <span className="plr-chip">{formatarPct(setor.pct)} do setor</span>
-          </p>
-        </div>
-        <dl className="plr-calc-mult">
-          <div>
-            <dt>Mult. total YTD</dt>
-            <dd>{formatarPct(setor.multTotal)}</dd>
-            <small>{formatarPct(multEmpresa)} + {formatarPct(setor.valorSetor)}</small>
-          </div>
-        </dl>
-      </header>
+      <CabecalhoSetor setor={setor} multEmpresa={multEmpresa} />
       <div className="plr-tabela-scroll">
         <table className="plr-tabela plr-tabela-calc">
           <thead>
@@ -166,21 +145,52 @@ function CartaoSetorPessoas({ setor, pessoas, multEmpresa }) {
               </tr>
             ))}
           </tbody>
-          <tfoot>
-            <tr>
-              <td>Total</td>
-              <td colSpan={5} className="plr-cel-vazia" />
-              <td className="num" data-rot="Valor YTD">{formatarMoeda(setor.valor)}</td>
-            </tr>
-          </tfoot>
+          {comTotal ? (
+            <tfoot>
+              <tr>
+                <td>Total</td>
+                <td colSpan={5} className="plr-cel-vazia" />
+                <td className="num" data-rot="Valor YTD">{formatarMoeda(setor.valor)}</td>
+              </tr>
+            </tfoot>
+          ) : null}
         </table>
       </div>
     </section>
   );
 }
 
-// Quem vê tudo: o total, o resumo por setor, a gerência e as pessoas de cada setor.
+function FiltroNome({ valor, onMudar }) {
+  return (
+    <div className="plr-filtro">
+      <Search size={16} aria-hidden="true" />
+      <input
+        type="search"
+        className="plr-input"
+        placeholder="Filtrar pelo nome da pessoa"
+        aria-label="Filtrar pelo nome da pessoa"
+        value={valor}
+        onChange={(e) => onMudar(e.target.value)}
+      />
+    </div>
+  );
+}
+
+// Admin e gestor: o total da empresa, a quantidade de pessoas e o valor de cada
+// setor, a gerência e as pessoas, com filtro por nome. O admin recebe todo mundo; o
+// gestor, só as linhas do setor dele e a própria.
 export default function ResultadoTodos({ dados }) {
+  const [busca, setBusca] = useState('');
+  const semFiltro = busca.trim() === '';
+
+  const gerencia = dados.gerencia.filter((g) => nomeCasa(g.nome, busca));
+  const setores = dados.setores
+    .map((setor) => ({
+      setor,
+      pessoas: dados.colaboradores.filter((c) => c.setorId === setor.id && nomeCasa(c.nome, busca)),
+    }))
+    .filter(({ pessoas }) => pessoas.length > 0);
+
   return (
     <>
       <AvisoGatilho dados={dados} />
@@ -198,16 +208,23 @@ export default function ResultadoTodos({ dados }) {
 
       <ResumoSetores dados={dados} />
 
-      {dados.gerencia.length > 0 ? <CartaoGerencia gerencia={dados.gerencia} /> : null}
+      <FiltroNome valor={busca} onMudar={setBusca} />
 
-      {dados.setores.map((s) => (
+      {gerencia.length > 0 ? <CartaoGerencia gerencia={gerencia} /> : null}
+
+      {setores.map(({ setor, pessoas }) => (
         <CartaoSetorPessoas
-          key={s.id}
-          setor={s}
+          key={setor.id}
+          setor={setor}
           multEmpresa={dados.multEmpresa}
-          pessoas={dados.colaboradores.filter((c) => c.setorId === s.id)}
+          pessoas={pessoas}
+          comTotal={semFiltro}
         />
       ))}
+
+      {gerencia.length === 0 && setores.length === 0 ? (
+        <div className="plr-vazio plr-vazio-filtro">Ninguém com esse nome.</div>
+      ) : null}
 
       <section className="plr-card plr-legenda">
         <h2 className="plr-card-tit">Como ler</h2>

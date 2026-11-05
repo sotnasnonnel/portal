@@ -250,6 +250,14 @@
 }
 .plr-calc-mult small { font-size: var(--font-size-2xs); color: var(--p-muted); font-variant-numeric: tabular-nums; }
 
+.plr-filtro { position: relative; max-width: 360px; margin-bottom: 16px; }
+.plr-filtro svg {
+  position: absolute; top: 50%; left: 10px; transform: translateY(-50%);
+  color: var(--p-muted); pointer-events: none;
+}
+.plr-filtro .plr-input { padding-left: 34px; }
+.plr-vazio-filtro { margin-bottom: 16px; }
+
 /* Layout fixo: cada setor é uma tabela, e o conteúdo não pode mudar as colunas de
    lugar de um cartão para o outro. O seletor do .num perde para o `width: auto` do
    celular, onde a tabela vira um bloco por pessoa. */

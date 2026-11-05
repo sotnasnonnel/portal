@@ -121,9 +121,8 @@ export function AuthProvider({ children }) {
         resolveColaborador(authUser),
         supabase.from('reembolso_profiles').select('*').eq('id', authUser.id).maybeSingle(),
         resolveSolicProfile(authUser),
-        // PLR: o acesso depende do organograma (setor do responsável mais
-        // próximo) e do cálculo por pessoa, então vem pronto do banco. Erro aqui
-        // só tira o card.
+        // PLR: o acesso depende de quem é gestor de cada setor e do cálculo por
+        // pessoa, então vem pronto do banco. Erro aqui só tira o card.
         supabase.rpc('plr_acesso', { p_ano: PLR_ANO }),
       ]);
       if (cancelled) return;
@@ -175,7 +174,7 @@ export function AuthProvider({ children }) {
         // Idem para a tela de Ajustes de Valores — só que esta abre ESCRITA, e
         // a mesma regra está na RLS de precos_itens (ver config/valores.js).
         valoresAjuste: colab.valores_ajuste === true,
-        // 'admin' | 'visualizador' | 'setor' | 'proprio' | null (ver config/plr.js).
+        // 'admin' | 'gestor' | 'usuario' | null (ver config/plr.js).
         plrAcesso: plrRes?.error ? null : (plrRes?.data ?? null),
         authId: authUser.id,
       });
@@ -305,9 +304,8 @@ export function AuthProvider({ children }) {
     // indica oportunidade. 'comercial'/'admin' são quem avalia a Alavanca e
     // enxerga o painel dela; vêm de programas_role (Gerenciar acessos).
     programas: user ? (user.programasRole || 'user') : null,
-    // PLR: fechado. Entra quem é de um setor da planilha pelo organograma
-    // ('setor'), tem papel em Gerenciar acessos ('visualizador'/'admin') ou tem
-    // linha no cálculo por pessoa ('proprio').
+    // PLR: fechado. O papel vem do banco: 'admin', 'gestor' (o setor dele) ou
+    // 'usuario' (a própria linha). Ver config/plr.js.
     plr: user?.plrAcesso ?? null,
   }), [user, reembolsoProfile, solicProfile]);
 

@@ -7,9 +7,9 @@ import { REGRAS, formatarPct, resumoSetor } from '../../lib/plr';
 import CartaoSetor, { BarraTotal } from '../components/CartaoSetor';
 import { nomeResponsavel } from '../components/rotulos';
 
-// Metas por setor: o que a aba SETORES mostrava, filtrado pelo banco. Quem é
-// de um setor vê só o dele; quem vê todos ganha um resumo no topo, que leva ao
-// cartão de cada um.
+// Metas por setor: o que a aba SETORES mostrava, filtrado pelo banco. O gestor vê
+// só o setor dele; quem vê mais de um ganha um resumo no topo, que leva ao cartão
+// de cada um.
 export default function SetoresPlr() {
   const { modules } = useAuth();
   const [estado, setEstado] = useState({ carregando: true, erro: '', setores: [] });
@@ -50,7 +50,7 @@ export default function SetoresPlr() {
       ) : erro ? (
         <div className="plr-vazio plr-erro">Não foi possível carregar o PLR: {erro}</div>
       ) : setores.length === 0 ? (
-        <div className="plr-vazio">Nenhum setor do PLR está ligado a você no organograma.</div>
+        <div className="plr-vazio">Nenhum setor do PLR está ligado a você.</div>
       ) : (
         <>
           {setores.length > 1 ? (

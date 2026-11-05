@@ -2,6 +2,7 @@ import { formatarMoeda } from '../../../../utils/formatters';
 import { nomeProprio } from '../../../../utils/pessoas';
 import { BASE_DO_FATOR, formatarMult, formatarPct, rotuloCargo, rotuloYtd } from '../../lib/plr';
 import AvisoGatilho from './AvisoGatilho';
+import { CabecalhoSetor, MultiplicadorEmpresa } from './PartesSetor';
 
 function Linha({ rotulo, valor, forte = false, sub = null }) {
   return (
@@ -15,27 +16,33 @@ function Linha({ rotulo, valor, forte = false, sub = null }) {
   );
 }
 
-function QuantoRecebe({ dados, valor, rodape }) {
+function QuantoRecebe({ dados, valor, rodape, multEmpresa = null }) {
   return (
-    <section className="plr-card">
-      <h2 className="plr-card-tit">Quanto você recebe</h2>
-      <span className="plr-calc-rotulo">{rotuloYtd(dados.ytdAte)}</span>
-      <strong className="plr-base-total">{formatarMoeda(valor)}</strong>
-      <p className="plr-rodape">{rodape}</p>
+    <section className={multEmpresa === null ? 'plr-card' : 'plr-card plr-calc-resumo'}>
+      <div>
+        <h2 className="plr-card-tit">Quanto você recebe</h2>
+        <span className="plr-calc-rotulo">{rotuloYtd(dados.ytdAte)}</span>
+        <strong className="plr-base-total">{formatarMoeda(valor)}</strong>
+        <p className="plr-rodape">{rodape}</p>
+      </div>
+      {multEmpresa === null ? null : <MultiplicadorEmpresa valor={multEmpresa} />}
     </section>
   );
 }
 
-/** A conta inteira, passo a passo. */
+/** O valor, o setor e a conta inteira, passo a passo. */
 function ContaColaborador({ dados, c }) {
+  const setor = dados.setores.find((s) => s.id === c.setorId);
   return (
     <>
       <QuantoRecebe
         dados={dados}
         valor={c.valor}
         rodape={`${nomeProprio(c.nome)} · ${c.setorNome} · ${rotuloCargo(c.cargo)}`}
+        multEmpresa={c.multEmpresa}
       />
       <section className="plr-card">
+        {setor ? <CabecalhoSetor setor={setor} multEmpresa={c.multEmpresa} /> : null}
         <h2 className="plr-card-tit">Como a conta é feita</h2>
         <table className="plr-conta">
           <tbody>
@@ -79,7 +86,8 @@ function ContaGerencia({ dados, g }) {
   );
 }
 
-// Quem não vê tudo: só a própria linha, que é tudo o que a resposta traz.
+// O usuário: só a própria linha, que é tudo o que a resposta traz. Os totais da
+// empresa não aparecem aqui: `dados.totais` nem os traz para este papel.
 export default function MinhaLinha({ dados }) {
   const colaborador = dados.colaboradores[0];
   const gerente = dados.gerencia[0];
@@ -91,9 +99,6 @@ export default function MinhaLinha({ dados }) {
     <>
       <AvisoGatilho dados={dados} />
       {gerente ? <ContaGerencia dados={dados} g={gerente} /> : <ContaColaborador dados={dados} c={colaborador} />}
-      <p className="plr-rodape">
-        Estimativa com os resultados atuais do HUB PHD: muda conforme os resultados são atualizados.
-      </p>
     </>
   );
 }
