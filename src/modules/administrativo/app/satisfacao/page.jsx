@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { Star, Loader2, AlertCircle, MessageSquareText } from 'lucide-react';
+import { Star, AlertCircle, MessageSquareText, ArrowRight, RotateCcw } from 'lucide-react';
+import FiltroArea from '../components/FiltroArea';
+import { CabecalhoPagina, Carregando, Vazio } from '../components/ui';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { getClasse, getServico } from '../../../../config/administrativo';
 import { listarAvaliacoes } from '../../lib/chamados';
@@ -8,7 +10,7 @@ import {
   resumoSatisfacao, faixaDaMedia, posicaoNaEscala, comentarios,
   MINIMO_CONFIAVEL, NOTA_MIN, NOTA_MAX, NOTA_BAIXA_ATE,
 } from '../../lib/satisfacao';
-import { filtrarPorArea, AREAS_INDICADORES } from '../../lib/indicadores';
+import { filtrarPorArea } from '../../lib/indicadores';
 
 const umaCasa = (n) => (n === null ? '—' : n.toFixed(1).replace('.', ','));
 const dataCurta = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR') : '—');
@@ -24,6 +26,7 @@ export default function SatisfacaoAdm() {
   const [soBaixas, setSoBaixas] = useState(false);
   // Total / ADM / TI — o mesmo recorte e a mesma regra dos Indicadores.
   const [area, setArea] = useState('todos');
+  const blocoObs = useRef(null);
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -52,38 +55,43 @@ export default function SatisfacaoAdm() {
   const { total, media, distribuicao, porServico } = resumoSatisfacao(daArea);
   const maiorNaDistribuicao = Math.max(1, ...distribuicao.map((d) => d.total));
 
+  // A nota baixa é o que pede ação nesta tela, e a lista dela fica no fim da
+  // página: o atalho marca o filtro e já leva até lá.
+  const verBaixas = () => {
+    setSoBaixas(true);
+    blocoObs.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   return (
     <div className="adm-page adm-page-wide">
-      <h1 className="adm-title"><Star size={24} /> Satisfação</h1>
-      <p className="adm-sub">Como os solicitantes avaliaram os chamados já concluídos.</p>
+      <CabecalhoPagina
+        Icon={Star}
+        titulo="Satisfação"
+        subtitulo="Como os solicitantes avaliaram os chamados já concluídos."
+      />
 
-      {erro && <div className="adm-aviso tom-erro"><AlertCircle size={16} /> {erro}</div>}
-
-      <div className="adm-radios" style={{ margin: '14px 0 4px' }}>
-        {AREAS_INDICADORES.map((a) => (
-          <button
-            key={a.chave}
-            type="button"
-            className={`adm-chip ${area === a.chave ? 'is-on' : ''}`}
-            aria-pressed={area === a.chave}
-            onClick={() => setArea(a.chave)}
-          >
-            {a.label}
+      {erro && (
+        <div className="adm-aviso tom-erro" role="alert">
+          <AlertCircle size={16} aria-hidden="true" />
+          <span>{erro}</span>
+          <button type="button" className="adm-btn adm-btn-ghost adm-btn-sm adm-aviso-acao" onClick={carregar}>
+            <RotateCcw size={14} aria-hidden="true" /> Tentar de novo
           </button>
-        ))}
-        <span className="adm-campo-dica" style={{ marginLeft: 8 }}>
-          TI são os sete serviços de Manutenção &amp; Instalação TI; ADM é o restante.
-        </span>
-      </div>
-
-      {carregando ? (
-        <div className="adm-vazio"><Loader2 size={20} className="adm-spin" /> Carregando…</div>
-      ) : total === 0 ? (
-        <div className="adm-vazio">
-          {avaliacoes.length === 0
-            ? 'Nenhuma avaliação registrada ainda. Elas aparecem aqui conforme os chamados são concluídos e avaliados.'
-            : 'Nenhuma avaliação desta área ainda.'}
         </div>
+      )}
+
+      <FiltroArea valor={area} onChange={setArea} />
+
+      {/* Com erro a lista está vazia por falha: dizer "nenhuma avaliação" ali
+          seria afirmar o que não se sabe. */}
+      {carregando ? (
+        <Carregando />
+      ) : erro ? null : total === 0 ? (
+        <Vazio Icon={Star} titulo={avaliacoes.length === 0 ? 'Nenhuma avaliação registrada ainda' : 'Nenhuma avaliação desta área ainda'}>
+          {avaliacoes.length === 0
+            ? 'Elas aparecem aqui conforme os chamados são concluídos e avaliados.'
+            : 'Troque a área acima para ver as demais.'}
+        </Vazio>
       ) : (
         <>
           {/* O número é o gráfico: a média geral não precisa de plotagem. */}
@@ -99,14 +107,20 @@ export default function SatisfacaoAdm() {
               <span className="adm-sat-pe">
                 {total} {total === 1 ? 'avaliação' : 'avaliações'}
               </span>
+              {quantasBaixas > 0 && (
+                <button type="button" className="adm-sat-atalho" onClick={verBaixas}>
+                  {quantasBaixas === 1 ? 'Ler 1 comentário' : `Ler ${quantasBaixas} comentários`} de nota
+                  até {NOTA_BAIXA_ATE} <ArrowRight size={13} aria-hidden="true" />
+                </button>
+              )}
             </div>
 
             <div className="adm-card adm-sat-dist">
               <h2 className="adm-card-tit">Distribuição das notas</h2>
               {distribuicao.map((d) => (
                 <div key={d.nota} className="adm-sat-linha">
-                  <span className="adm-sat-nota">{d.nota}<Star size={11} /></span>
-                  <span className="adm-sat-trilho">
+                  <span className="adm-sat-nota" aria-label={`Nota ${d.nota}`}>{d.nota}<Star size={11} aria-hidden="true" /></span>
+                  <span className="adm-sat-trilho" aria-hidden="true">
                     <span className="adm-sat-barra" style={{ width: `${(d.total / maiorNaDistribuicao) * 100}%` }} />
                   </span>
                   <span className="adm-sat-valor">{d.total}</span>
@@ -121,15 +135,20 @@ export default function SatisfacaoAdm() {
             <p className="adm-campo-dica">Do pior para o melhor — é onde está o que precisa de atenção.</p>
 
             {/* Oculto para leitor de tela: a tabela logo abaixo tem os mesmos
-                números, e ela lê bem melhor do que um gráfico narrado. */}
+                números, e ela lê bem melhor do que um gráfico narrado. O title
+                da linha é para quem passa o mouse no ponto. */}
             <div className="adm-graf" aria-hidden="true">
               {porServico.map((s) => {
                 const srv = getServico(s.classe, s.servico);
                 const faixa = faixaDaMedia(s.media);
                 const poucos = s.total < MINIMO_CONFIAVEL;
                 return (
-                  <div key={`${s.classe}/${s.servico}`} className="adm-graf-linha">
-                    <span className="adm-graf-rot" title={srv?.label || s.servico}>
+                  <div
+                    key={`${s.classe}/${s.servico}`}
+                    className="adm-graf-linha"
+                    title={`${srv?.label || s.servico}: média ${umaCasa(s.media)} em ${s.total} ${s.total === 1 ? 'avaliação' : 'avaliações'}`}
+                  >
+                    <span className="adm-graf-rot">
                       {srv?.label || s.servico}
                     </span>
                     <span className="adm-graf-trilho">
@@ -143,7 +162,7 @@ export default function SatisfacaoAdm() {
                       />
                     </span>
                     <span className={`adm-sat-media tom-${faixa}`}>{umaCasa(s.media)}</span>
-                    <span className={`adm-graf-n${poucos ? ' is-poucos' : ''}`}>n={s.total}</span>
+                    <span className={`adm-graf-n${poucos ? ' is-poucos' : ''}`}>{s.total} aval.</span>
                   </div>
                 );
               })}
@@ -168,39 +187,45 @@ export default function SatisfacaoAdm() {
               </span>
             </p>
 
-            <div className="adm-tabela-scroll">
-              <table className="adm-tabela">
-                <thead>
-                  <tr><th>Serviço</th><th>Classe</th><th>Avaliações</th><th>Média</th></tr>
-                </thead>
-                <tbody>
-                  {porServico.map((s) => {
-                    const cls = getClasse(s.classe);
-                    const srv = getServico(s.classe, s.servico);
-                    return (
-                      <tr key={`${s.classe}/${s.servico}`}>
-                        <td>{srv?.label || s.servico}</td>
-                        <td>{cls?.label || s.classe}</td>
-                        <td className="num">{s.total}</td>
-                        <td className="num">
-                          <span className={`adm-sat-media tom-${faixaDaMedia(s.media)}`}>
-                            {umaCasa(s.media)}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            {/* Fechada de saída: repete o gráfico de cima, e com vinte serviços
+                as duas juntas empurravam os comentários para longe. Continua
+                sendo a versão para leitor de tela: o <summary> é anunciado. */}
+            <details className="adm-sat-tabela">
+              <summary>Ver como tabela, com a classe de cada serviço</summary>
+              <div className="adm-tabela-scroll">
+                <table className="adm-tabela adm-tabela-direita">
+                  <thead>
+                    <tr><th>Serviço</th><th>Classe</th><th className="num">Avaliações</th><th className="num">Média</th></tr>
+                  </thead>
+                  <tbody>
+                    {porServico.map((s) => {
+                      const cls = getClasse(s.classe);
+                      const srv = getServico(s.classe, s.servico);
+                      return (
+                        <tr key={`${s.classe}/${s.servico}`}>
+                          <td>{srv?.label || s.servico}</td>
+                          <td>{cls?.label || s.classe}</td>
+                          <td className="num">{s.total}</td>
+                          <td className="num">
+                            <span className={`adm-sat-media tom-${faixaDaMedia(s.media)}`}>
+                              {umaCasa(s.media)}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </details>
           </div>
 
           {/* As observações são o que o gráfico não diz. Nota até 3 exige
               comentário (POP 9.2), então é aqui que está o motivo de cada nota
               baixa — e o link leva ao chamado, que é onde se atua. */}
-          <div className="adm-card">
+          <div className="adm-card adm-sat-obs-card" ref={blocoObs}>
             <div className="adm-sat-obs-cab">
-              <h2 className="adm-card-tit"><MessageSquareText size={18} /> Observações dos solicitantes</h2>
+              <h2 className="adm-card-tit"><MessageSquareText size={16} aria-hidden="true" /> Observações dos solicitantes</h2>
               <label className="adm-sat-obs-filtro">
                 <input
                   type="checkbox"
@@ -215,29 +240,37 @@ export default function SatisfacaoAdm() {
               escreveu algo — nelas o comentário é opcional.
             </p>
 
+            {/* "Comentário", e não "avaliação": pode haver nota baixa antiga sem
+                texto, e o gráfico acima a mostra. Dizer que não há nota nenhuma
+                contradiria a distribuição. */}
             {observacoes.length === 0 ? (
-              <div className="adm-vazio">
+              <Vazio>
                 {soBaixas
-                  ? `Nenhuma avaliação com nota até ${NOTA_BAIXA_ATE}.`
+                  ? `Nenhum comentário em notas até ${NOTA_BAIXA_ATE}.`
                   : 'Nenhuma observação registrada ainda.'}
-              </div>
+              </Vazio>
             ) : (
               <ul className="adm-sat-obs">
                 {observacoes.map((a) => {
                   const srv = getServico(a.classe, a.servico);
+                  // O assunto costuma ser o próprio nome do serviço: repetir o
+                  // mesmo texto duas vezes na linha só atrapalha a leitura.
+                  const nomeChamado = a.assunto && a.assunto !== srv?.label
+                    ? `#${a.numero} ${a.assunto}`
+                    : `#${a.numero}`;
                   return (
                     <li key={`${a.chamadoId || a.numero}-${a.avaliado_em}`} className="adm-sat-obs-item">
                       <div className="adm-sat-obs-topo">
-                        <span className={`adm-sat-obs-nota tom-${faixaDaMedia(Number(a.nota))}`}>
-                          {a.nota}<Star size={12} />
+                        <span className={`adm-sat-obs-nota tom-${faixaDaMedia(Number(a.nota))}`} aria-label={`Nota ${a.nota}`}>
+                          {a.nota}<Star size={12} aria-hidden="true" />
                         </span>
                         <span className="adm-sat-obs-srv">{srv?.label || a.servico}</span>
                         {a.chamadoId ? (
                           <Link className="adm-sat-obs-link" to={`/administrativo/chamado/${a.chamadoId}`}>
-                            #{a.numero} {a.assunto}
+                            {nomeChamado}
                           </Link>
                         ) : (
-                          <span className="adm-sat-obs-link">#{a.numero} {a.assunto}</span>
+                          <span className="adm-sat-obs-link">{nomeChamado}</span>
                         )}
                         <span className="adm-sat-obs-data">{dataCurta(a.avaliado_em)}</span>
                       </div>

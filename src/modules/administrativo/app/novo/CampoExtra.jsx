@@ -2,12 +2,20 @@ import { useState } from 'react';
 import { AlertCircle, Check, Loader2 } from 'lucide-react';
 import SearchSelect from '../../../../components/UI/SearchSelect';
 import { buscarCep, cepValido, mascaraCep, soDigitosCep } from '../../../../services/cep';
+import ErroCampo from './ErroCampo';
+import { ariaDoErro } from '../../lib/errosDeCampo';
 
 // Tipos com desenho próprio. O que não estiver aqui cai no input de texto, para
 // um tipo desconhecido (cadastro antigo, por exemplo) não sumir da tela.
 const COM_DESENHO_PROPRIO = [
   'texto_longo', 'numero', 'data', 'hora', 'datahora', 'selecao', 'selecao_multipla', 'sim_nao', 'pessoa', 'cep',
 ];
+
+// O esquema guarda estes como texto, e no celular o teclado de letras obrigava
+// a trocar de modo a cada dígito.
+const TECLADO_DO_CAMPO = {
+  condutor_cpf: 'numeric', condutor_cnh: 'numeric', condutor_telefone: 'tel', cpf: 'numeric',
+};
 
 /**
  * CEP que preenche o resto do endereço.
@@ -20,7 +28,7 @@ const COM_DESENHO_PROPRIO = [
  *
  * Falha na consulta é recado, não trava: o pedido segue com o endereço à mão.
  */
-function CampoCep({ campo, valor, onChange, onPatch }) {
+function CampoCep({ campo, valor, onChange, onPatch, erroCampo = '' }) {
   const id = `extra-${campo.chave}`;
   const [situacao, setSituacao] = useState('');   // '' | 'buscando' | 'ok'
   const [erro, setErro] = useState('');
@@ -62,7 +70,7 @@ function CampoCep({ campo, valor, onChange, onPatch }) {
   };
 
   return (
-    <div className="adm-campo">
+    <div className="adm-campo adm-campo-meia">
       <label htmlFor={id}>
         {campo.rotulo}
         {campo.obrigatorio && <span className="req">*</span>}
@@ -81,10 +89,13 @@ function CampoCep({ campo, valor, onChange, onPatch }) {
           // Rede de segurança para o CEP colado ou completado pelo navegador,
           // que nem sempre passa pelo onChange tecla a tecla.
           onBlur={(e) => consultar(e.target.value)}
+          aria-required={!!campo.obrigatorio}
+          {...ariaDoErro(campo.chave, erroCampo)}
         />
         {situacao === 'buscando' && <Loader2 size={15} className="adm-spin" aria-hidden="true" />}
         {situacao === 'ok' && <Check size={15} className="adm-cep-ok" aria-hidden="true" />}
       </span>
+      <ErroCampo chave={campo.chave} msg={erroCampo} />
       {/* role="status" para o leitor de tela anunciar que o endereço chegou —
           quem não vê a tela não percebe quatro campos se preenchendo sozinhos. */}
       <span className="adm-campo-dica" role="status">
@@ -111,18 +122,22 @@ function CampoCep({ campo, valor, onChange, onPatch }) {
  * `onPatch` troca VÁRIOS campos de uma vez — só o CEP precisa, por preencher os
  * irmãos dele. Quem renderiza um campo avulso pode não passar.
  */
-export default function CampoExtra({ campo, valor, onChange, onPatch, pessoas = [] }) {
+export default function CampoExtra({
+  campo, valor, onChange, onPatch, pessoas = [], erro = '',
+}) {
   const id = `extra-${campo.chave}`;
   const comum = {
     id,
     value: valor ?? '',
     onChange: (e) => onChange(campo.chave, e.target.value),
+    'aria-required': !!campo.obrigatorio,
+    ...ariaDoErro(campo.chave, erro),
   };
 
   // Componente à parte porque tem estado próprio (a consulta em curso), e um
   // hook não pode nascer dentro do `if` de um tipo.
   if (campo.tipo === 'cep') {
-    return <CampoCep campo={campo} valor={valor} onChange={onChange} onPatch={onPatch} />;
+    return <CampoCep campo={campo} valor={valor} onChange={onChange} onPatch={onPatch} erroCampo={erro} />;
   }
 
   // Múltipla escolha tem marcação própria: são vários botões, e um <label
@@ -150,19 +165,23 @@ export default function CampoExtra({ campo, valor, onChange, onPatch, pessoas = 
                 aria-pressed={marcado}
                 onClick={() => alternar(o)}
               >
-                {marcado && <Check size={13} />}
+                {marcado && <Check size={13} aria-hidden="true" />}
                 {o}
               </button>
             );
           })}
         </div>
+        <ErroCampo chave={campo.chave} msg={erro} />
         <span className="adm-campo-dica">Pode marcar mais de um.</span>
       </div>
     );
   }
 
+  // Texto longo ocupa a linha inteira; o resto divide a linha com o vizinho
+  // (`adm-campo-meia`). CPF, data e placa em 860px de largura só alongavam a
+  // tela e faziam parecer que se esperava um texto daquele tamanho.
   return (
-    <div className="adm-campo">
+    <div className={`adm-campo ${campo.tipo === 'texto_longo' ? '' : 'adm-campo-meia'}`}>
       <label htmlFor={id}>
         {campo.rotulo}
         {campo.obrigatorio && <span className="req">*</span>}
@@ -174,7 +193,7 @@ export default function CampoExtra({ campo, valor, onChange, onPatch, pessoas = 
         // leitura o valor já sai formatado como moeda.
         <span className="adm-prefixado">
           <span className="adm-prefixo">R$</span>
-          <input type="number" step="0.01" min="0" className="adm-input" {...comum} />
+          <input type="number" step="0.01" min="0" inputMode="decimal" className="adm-input" {...comum} />
         </span>
       ) : (
         <input type="number" className="adm-input" {...comum} />
@@ -210,8 +229,10 @@ export default function CampoExtra({ campo, valor, onChange, onPatch, pessoas = 
       )}
 
       {!COM_DESENHO_PROPRIO.includes(campo.tipo) && (
-        <input type="text" className="adm-input" {...comum} />
+        <input type="text" inputMode={TECLADO_DO_CAMPO[campo.chave]} className="adm-input" {...comum} />
       )}
+
+      <ErroCampo chave={campo.chave} msg={erro} />
     </div>
   );
 }

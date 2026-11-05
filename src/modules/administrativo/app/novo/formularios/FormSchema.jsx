@@ -24,9 +24,16 @@ const DICA_GRUPO = {
 };
 
 export default function FormSchema({
-  valores, onChange, pessoas = [], classe, servico, opcoesCc = [],
+  valores, onChange, pessoas = [], classe, servico, opcoesCc = [], erros = {},
 }) {
   const schema = schemaDoServico(classe, servico) || [];
+  // Observação por último na tela, onde quer que esteja na planilha: é o campo
+  // opcional e de texto livre, e em Liberação de acessos ele ficava antes de um
+  // obrigatório ("Sistema"), que passava despercebido abaixo da caixa grande.
+  const naTela = [
+    ...schema.filter((c) => c.chave !== 'observacao'),
+    ...schema.filter((c) => c.chave === 'observacao'),
+  ];
   // O formulário grava `valores` como está, então um campo que deixou de valer
   // (a reserva encurtou para menos de 29 dias) tem de sair daqui também — senão
   // o KM escolhido antes iria para o chamado sem aparecer na tela.
@@ -43,12 +50,12 @@ export default function FormSchema({
   // (os próprios dígitos do CEP, inclusive).
   const remendar = (patch) => onChange((atual) => ({ ...atual, ...patch }));
 
-  return schema.map((campo, i) => {
+  return naTela.map((campo, i) => {
     if (!campoAplica(campo, valores)) return null;
     // Cabeçalho no PRIMEIRO campo do grupo: o esquema é uma lista plana, e
     // aninhar os campos só para desenhar um título tornaria o dado mais
     // complicado do que a tela que ele descreve.
-    const abreGrupo = campo.grupo && campo.grupo !== schema[i - 1]?.grupo;
+    const abreGrupo = campo.grupo && campo.grupo !== naTela[i - 1]?.grupo;
 
     // Fragmento, e não <div> em volta: os campos são irmãos diretos do cartão
     // (é o que faz `.adm-campo:last-child` zerar a margem do último), e
@@ -70,6 +77,7 @@ export default function FormSchema({
             onChange={(v) => mexer('cc', v)}
             opcoes={opcoesCc}
             obrigatorio={campo.obrigatorio}
+            erro={erros.cc}
           />
         ) : (
           <CampoExtra
@@ -78,6 +86,7 @@ export default function FormSchema({
             onChange={mexer}
             onPatch={remendar}
             pessoas={pessoas}
+            erro={erros[campo.chave]}
           />
         )}
       </Fragment>

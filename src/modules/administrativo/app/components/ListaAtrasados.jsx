@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { X, ArrowRight, AlertTriangle } from 'lucide-react';
-import { STATUS_LABEL } from '../../lib/statusChamado';
+import { StatusBadge } from './ui';
+import { useFocoDialogo } from './useFocoDialogo';
 import { formatarDataHora } from '../../../../utils/formatters';
 
 /**
@@ -31,15 +31,14 @@ function atrasoEmTexto(slaVenceEm, agora) {
 // contar os vencidos, e ler o relógio aqui faria a lista e o número divergirem
 // (e o lint proíbe, com razão — Date.now() no render não é puro).
 export default function ListaAtrasados({ chamados, agora, souDoTime = false, onFechar }) {
-  useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') onFechar(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onFechar]);
+  // Foco nasce no X, não no primeiro link: ao abrir, ninguém quer um Enter sem
+  // querer levando para o primeiro chamado da lista.
+  const caixa = useFocoDialogo(true, onFechar, '.guia-close');
 
   return (
     <div className="guia-overlay" onClick={onFechar}>
       <div
+        ref={caixa}
         className="guia-modal adm-atrasados-modal"
         role="dialog"
         aria-modal="true"
@@ -48,62 +47,51 @@ export default function ListaAtrasados({ chamados, agora, souDoTime = false, onF
       >
         <div className="guia-head">
           <span className="guia-eyebrow">Vencidos agora</span>
-          <button className="guia-close" onClick={onFechar} aria-label="Fechar">
-            <X size={18} />
+          <button type="button" className="guia-close" onClick={onFechar} aria-label="Fechar">
+            <X size={18} aria-hidden="true" />
           </button>
         </div>
 
         <div className="adm-atrasados-corpo">
           <h3 id="adm-atrasados-tit">
-            <AlertTriangle size={18} /> Chamados que passaram do prazo
+            <AlertTriangle size={18} aria-hidden="true" />
+            {chamados.length === 1
+              ? '1 chamado passou do prazo'
+              : `${chamados.length} chamados passaram do prazo`}
           </h3>
           <p className="adm-campo-dica">
-            Só o que ainda está em jogo: fechado com atraso já entra no indicador de prazo
-            e contá-lo aqui seria o mesmo problema duas vezes. Do mais vencido para o menos.
+            Só os que ainda estão abertos, do mais atrasado para o menos.
           </p>
 
           {chamados.length === 0 ? (
             <p className="adm-prazos-vazio">Nenhum chamado vencido no momento.</p>
           ) : (
-            <div className="adm-tabela-scroll">
-              <table className="adm-tabela">
-                <thead>
-                  <tr>
-                    <th>ID</th><th>Assunto</th><th>Serviço</th>
-                    <th>Situação</th><th>Venceu em</th><th>Atraso</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {chamados.map((c) => (
-                    <tr key={c.id}>
-                      <td className="num">
-                        <Link className="adm-link" to={`/administrativo/chamado/${c.id}`} onClick={onFechar}>
-                          #{c.numero}
-                        </Link>
-                      </td>
-                      <td>
-                        <Link className="adm-link" to={`/administrativo/chamado/${c.id}`} onClick={onFechar}>
-                          {c.assunto}
-                        </Link>
-                      </td>
-                      <td>{c.servicoLabel || c.classeLabel || '—'}</td>
-                      <td>
-                        <span className={`adm-badge tom-${c.status}`}>
-                          {STATUS_LABEL[c.status] || c.status}
-                        </span>
-                      </td>
-                      <td className="num is-vencido">{dataHora(c.sla_vence_em)}</td>
-                      <td className="num is-vencido">{atrasoEmTexto(c.sla_vence_em, agora)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            // Lista, e não tabela: seis colunas no celular escondiam justamente
+            // situação e atraso atrás da rolagem lateral, e o que importa aqui é
+            // bater o olho em quanto cada um atrasou. A linha inteira é o link.
+            <ul className="adm-atr-lista">
+              {chamados.map((c) => (
+                <li key={c.id}>
+                  <Link className="adm-atr-item" to={`/administrativo/chamado/${c.id}`} onClick={onFechar}>
+                    <span className="adm-atr-txt">
+                      <strong>#{c.numero} · {c.assunto}</strong>
+                      {/* O assunto costuma repetir o nome do serviço. */}
+                      {(c.servicoLabel || c.classeLabel) !== c.assunto && <small>{c.servicoLabel || c.classeLabel || '—'}</small>}
+                      <StatusBadge status={c.status} />
+                    </span>
+                    <span className="adm-atr-prazo">
+                      <strong>{atrasoEmTexto(c.sla_vence_em, agora)}</strong>
+                      <small>venceu em {dataHora(c.sla_vence_em)}</small>
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
 
         <div className="guia-footer">
-          <button className="guia-skip" onClick={onFechar}>Fechar</button>
+          <button type="button" className="guia-skip" onClick={onFechar}>Fechar</button>
           {/* A fila é onde se assume e se atende — a ação que costuma vir
               depois de olhar esta lista. Só para quem atende: o solicitante não
               tem essa tela, e o atalho o levaria a uma porta fechada. */}
@@ -113,7 +101,7 @@ export default function ListaAtrasados({ chamados, agora, souDoTime = false, onF
               to="/administrativo/fila?atrasado=sim"
               onClick={onFechar}
             >
-              Abrir na fila <ArrowRight size={15} />
+              Abrir na fila <ArrowRight size={15} aria-hidden="true" />
             </Link>
           )}
         </div>

@@ -1,4 +1,6 @@
 import { Lock } from 'lucide-react';
+import ErroCampo from './ErroCampo';
+import { ariaDoErro } from '../../lib/errosDeCampo';
 
 /**
  * Centro de custo — o mesmo campo em TODO formulário do módulo.
@@ -18,9 +20,10 @@ import { Lock } from 'lucide-react';
  * isso do que um seletor vazio que impede abrir o chamado.
  */
 export default function CampoCentroCusto({
-  id = 'adm-cc', valor, onChange, opcoes = [], obrigatorio = true,
+  id = 'adm-cc', valor, onChange, opcoes = [], obrigatorio = true, erro = '',
 }) {
   const atual = valor ?? '';
+  const aria = ariaDoErro('cc', erro);
   const rotulo = (
     <label htmlFor={id}>
       Centro de custo
@@ -31,15 +34,16 @@ export default function CampoCentroCusto({
   if (!opcoes.length) {
     if (!atual) {
       return (
-        <div className="adm-campo">
+        <div className="adm-campo adm-campo-meia">
           {rotulo}
-          <input id={id} className="adm-input" value={atual}
+          <input id={id} className="adm-input" value={atual} aria-required={obrigatorio} {...aria}
             onChange={(e) => onChange(e.target.value)} />
+          <ErroCampo chave="cc" msg={erro} />
         </div>
       );
     }
     return (
-      <div className="adm-campo">
+      <div className="adm-campo adm-campo-meia">
         {rotulo}
         <div className="adm-travado">
           <input id={id} className="adm-input" value={atual} readOnly tabIndex={-1} />
@@ -55,13 +59,14 @@ export default function CampoCentroCusto({
   const lista = atual && !opcoes.includes(atual) ? [atual, ...opcoes] : opcoes;
 
   return (
-    <div className="adm-campo">
+    <div className="adm-campo adm-campo-meia">
       {rotulo}
-      <select id={id} className="adm-select" value={atual}
+      <select id={id} className="adm-select" value={atual} aria-required={obrigatorio} {...aria}
         onChange={(e) => onChange(e.target.value)}>
         <option value="">Selecione…</option>
         {lista.map((o) => <option key={o} value={o}>{o}</option>)}
       </select>
+      <ErroCampo chave="cc" msg={erro} />
       <span className="adm-campo-dica">
         Vem da sua gerência no organograma — troque se o gasto for de outra área.
       </span>

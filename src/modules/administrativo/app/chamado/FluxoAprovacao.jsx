@@ -34,7 +34,12 @@ function passoExecucao({ atendenteNome, status, fechadoEm }) {
   if (status === 'aguardando_aprovacao') {
     return { Icon: CircleDashed, tom: 'depois', label: 'Executa após a aprovação' };
   }
-  return { Icon: Wrench, tom: 'espera', label: 'Em atendimento', ehVez: true };
+  // A bola voltou para quem abriu: "em atendimento" aqui desmentiria o status
+  // mostrado no topo da tela.
+  if (status === 'aguardando_solicitante') {
+    return { Icon: Clock, tom: 'depois', label: 'Aguardando o solicitante' };
+  }
+  return { Icon: Wrench, tom: 'espera', label: status === 'aberto' ? 'Na fila de atendimento' : 'Em atendimento', ehVez: true };
 }
 
 export default function FluxoAprovacao({

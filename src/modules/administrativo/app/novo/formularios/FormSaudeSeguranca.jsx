@@ -1,6 +1,7 @@
 import { MOTIVOS } from './saudeSeguranca';
 import SeletorPedido from '../../../../estoque/app/components/SeletorPedido';
 import CampoCentroCusto from '../CampoCentroCusto';
+import ErroCampo from '../ErroCampo';
 
 /**
  * EPI, uniforme e outras demandas de Saúde e segurança. É o pedido AVULSO —
@@ -21,7 +22,9 @@ import CampoCentroCusto from '../CampoCentroCusto';
  *
  * Descrição e anexos não aparecem aqui: são os campos do chamado, logo abaixo.
  */
-export default function FormSaudeSeguranca({ valores, onChange, servico, opcoesCc = [] }) {
+export default function FormSaudeSeguranca({
+  valores, onChange, servico, opcoesCc = [], erros = {},
+}) {
   const mexer = (patch) => onChange({ ...valores, ...patch });
   const eEpi = servico === 'epi';
   const eUniforme = servico === 'uniforme';
@@ -29,17 +32,23 @@ export default function FormSaudeSeguranca({ valores, onChange, servico, opcoesC
   return (
     <>
       <CampoCentroCusto id="ss-cc" valor={valores.cc} opcoes={opcoesCc}
-        onChange={(v) => mexer({ cc: v })} />
+        onChange={(v) => mexer({ cc: v })} erro={erros.cc} />
 
       {(eEpi || eUniforme) && (
         <>
-          <div className="adm-campo">
-            <label>{eEpi ? 'EPIs do catálogo' : 'Peças do catálogo'}</label>
+          {/* Foco no bloco, e não na busca de dentro: focada, a busca abre a lista
+              de itens por cima da mensagem de erro que a pessoa precisa ler. */}
+          <div className="adm-campo" role="group" aria-labelledby="ss-itens-rot"
+            tabIndex={-1} data-foco-no-campo>
+            <span className="adm-campo-rotulo" id="ss-itens-rot">
+              {eEpi ? 'EPIs do catálogo' : 'Peças do catálogo'}
+            </span>
             <SeletorPedido
               itens={valores.itens || []}
               categoria={eEpi ? 'epi' : 'uniforme'}
               onMudar={(itens) => mexer({ itens })}
             />
+            <ErroCampo chave="itens" msg={erros.itens} />
             <span className="adm-campo-dica">
               A quantidade em estoque aparece ao lado de cada item — é só informação,
               não impede o pedido.
@@ -62,8 +71,8 @@ export default function FormSaudeSeguranca({ valores, onChange, servico, opcoesC
             </span>
           </div>
 
-          <div className="adm-campo">
-            <label>Motivo<span className="req">*</span></label>
+          <div className="adm-campo" role="group" aria-labelledby="ss-motivo-rot">
+            <span className="adm-campo-rotulo" id="ss-motivo-rot">Motivo<span className="req">*</span></span>
             <div className="adm-radios">
               {MOTIVOS.map((m) => (
                 <button key={m} type="button"
@@ -74,9 +83,10 @@ export default function FormSaudeSeguranca({ valores, onChange, servico, opcoesC
                 </button>
               ))}
             </div>
+            <ErroCampo chave="motivo" msg={erros.motivo} />
           </div>
 
-          <div className="adm-campo">
+          <div className="adm-campo adm-campo-meia">
             <label htmlFor="ss-local">Localização</label>
             <input id="ss-local" className="adm-input" value={valores.localizacao}
               onChange={(e) => mexer({ localizacao: e.target.value })}

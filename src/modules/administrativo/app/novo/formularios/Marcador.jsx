@@ -31,7 +31,7 @@ export default function Marcador({
         {!aberto && preenchido && (
           <span className="adm-marc-resumo">{textoLivre ? marcados : marcados.join(', ')}</span>
         )}
-        <ChevronDown className="adm-marc-chev" size={16} />
+        <ChevronDown className="adm-marc-chev" size={16} aria-hidden="true" />
       </button>
 
       {aberto && (
@@ -40,12 +40,13 @@ export default function Marcador({
           {textoLivre ? (
             <textarea
               className="adm-textarea adm-textarea-curto"
+              aria-label={titulo}
               value={marcados}
               placeholder={placeholder}
               onChange={(e) => onChange(e.target.value)}
             />
           ) : (
-            <div className="adm-marc-itens">
+            <div className="adm-marc-itens" role="group" aria-label={titulo}>
               {itens.map((item) => {
                 const marcado = marcados.includes(item);
                 return (
@@ -56,7 +57,7 @@ export default function Marcador({
                     onClick={() => alternarItem(item)}
                     aria-pressed={marcado}
                   >
-                    {marcado && <Check size={13} />}
+                    {marcado && <Check size={13} aria-hidden="true" />}
                     {item}
                   </button>
                 );
