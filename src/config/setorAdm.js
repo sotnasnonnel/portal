@@ -29,6 +29,7 @@ export const SETOR_ADM_EM_BREVE = true;
 export const SETOR_ADM_LIBERADOS = [
   'marcus.guimaraes@phdengenharia.eng.br',
   'lennon.santos@phdengenharia.eng.br',
+  'jarbas.junior@phdengenharia.eng.br',
 ];
 
 /**

@@ -5,7 +5,7 @@
 -- APLICAR PRIMEIRO, antes de supabase_migration_frota.sql e
 -- supabase_migration_alojamentos.sql: as policies deles chamam estes helpers.
 --
--- Enquanto os módulos estão em lançamento restrito, só as duas pessoas abaixo
+-- Enquanto os módulos estão em lançamento restrito, só as pessoas abaixo
 -- passam, mesmo que outras tenham administrativo_role. A lista repete
 -- SETOR_ADM_LIBERADOS (src/config/setorAdm.js) DE PROPÓSITO: aquela só controla o
 -- que a tela mostra, e quem protege CNH, custos e moradores é esta. Mesmo molde
@@ -27,7 +27,8 @@ create or replace function app_private.setor_adm_liberado()
 returns boolean language sql stable security definer set search_path = '' as $$
   select lower(coalesce((select auth.jwt() ->> 'email'), '')) in (
     'marcus.guimaraes@phdengenharia.eng.br',
-    'lennon.santos@phdengenharia.eng.br'
+    'lennon.santos@phdengenharia.eng.br',
+    'jarbas.junior@phdengenharia.eng.br'
   )
 $$;
 
