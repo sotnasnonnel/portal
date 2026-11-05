@@ -44,6 +44,8 @@ O antigo "branco gelo" #f2f2f2 foi aposentado. O fundo agora é `--neutral-bg` (
 | Mobilização       | `.mobRoot`      | #4338ca  |
 | Torre de Controle | `.mobRoot.torRoot` | #334155 |
 | PLR               | `.plrRoot`      | #0369a1  |
+| Frota             | `.frotaRoot`    | #1d4ed8  |
+| Alojamentos       | `.alojRoot`     | #15803d  |
 
 ## 1. Neutros
 

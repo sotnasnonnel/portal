@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, BarChart3, Clock, CreditCard, Headset, Sparkles, ShieldCheck, LogOut, ArrowRight, Lock, Hourglass, Blocks, MessageSquarePlus, Megaphone, Radar, Star, Newspaper, Target } from 'lucide-react';
+import { Users, BarChart3, Clock, CreditCard, Headset, Sparkles, ShieldCheck, LogOut, ArrowRight, Lock, Hourglass, Blocks, MessageSquarePlus, Megaphone, Radar, Star, Newspaper, Target, Building2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePontos } from '../../contexts/PontosContext';
 import { novidadesDoFeed } from '../../services/feed';
@@ -9,6 +9,7 @@ import Insignia from '../../components/Pontos/Insignia';
 import { NOME_TITULO } from '../../config/pontos';
 import { isSuperAdmin } from '../../config/superAdmin';
 import { areasAdministrativoDe } from '../../config/administrativo';
+import { podeAcessarSetorAdm } from '../../config/setorAdm';
 import { podeAcessarProgramas } from '../../config/programas';
 import { podeVerTorre } from '../../config/torre';
 import { podeVerPlr, rotaInicialPlr, veSetoresPlr, veTodosSetoresPlr } from '../../config/plr';
@@ -22,6 +23,7 @@ import ProgramasModal from './ProgramasModal';
 import FinanceiroModal from './FinanceiroModal';
 import HorasModal from './HorasModal';
 import AdministrativoModal from './AdministrativoModal';
+import SetorAdmModal from './SetorAdmModal';
 import GestaoPessoasModal from './GestaoPessoasModal';
 import HumorDoDia from './HumorDoDia';
 import AniversariantesMes from './AniversariantesMes';
@@ -61,6 +63,7 @@ export default function Home() {
   const [financeiroAberto, setFinanceiroAberto] = useState(false);
   const [horasAberto, setHorasAberto] = useState(false);
   const [admAberto, setAdmAberto] = useState(false);
+  const [setorAdmAberto, setSetorAdmAberto] = useState(false);
   const [gpAberto, setGpAberto] = useState(false);
 
   // "O que mudou na plataforma": a Home é a primeira tela depois do login, e é
@@ -145,6 +148,16 @@ export default function Home() {
       title: 'Atendimento',
       desc: 'Chamados, almoxarifado e mobilização',
       locked: areasAdm.length === 0,
+    },
+    // O SETOR administrativo: Frota e Alojamentos (config/setorAdm.js). É
+    // rotina interna do time, então quem não tem acesso nem vê o card, em vez
+    // de vê-lo com cadeado.
+    podeAcessarSetorAdm(user, modules) && {
+      acao: () => setSetorAdmAberto(true),
+      icon: Building2,
+      tone: 'blue',
+      title: 'Administrativo',
+      desc: 'Gestão de frota e de alojamentos',
     },
     {
       // Aberto a todos os logados, como a Gestão de Horas (lançado em
@@ -386,6 +399,7 @@ export default function Home() {
       {financeiroAberto && <FinanceiroModal onClose={() => setFinanceiroAberto(false)} />}
       {horasAberto && <HorasModal onClose={() => setHorasAberto(false)} />}
       {admAberto && <AdministrativoModal areas={areasAdm} onClose={() => setAdmAberto(false)} />}
+      {setorAdmAberto && <SetorAdmModal onClose={() => setSetorAdmAberto(false)} />}
       {gpAberto && <GestaoPessoasModal onClose={() => setGpAberto(false)} />}
       {novidades && (
         <NovidadesModal

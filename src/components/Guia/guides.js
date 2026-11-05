@@ -47,6 +47,10 @@ import {
   PackageCheck,
   FileSpreadsheet,
   Home,
+  Car,
+  Wrench,
+  BedDouble,
+  Sofa,
 } from "lucide-react";
 import {
   POLICY,
@@ -1063,5 +1067,113 @@ export const TORRE_GUIA = {
       NOTIFICACOES,
       TROCAR_APP,
     ],
+  },
+};
+
+// ============================ Frota (card Administrativo) ============================
+const FROTA_PASSOS = [
+  {
+    icon: LayoutDashboard,
+    titulo: "Painel",
+    texto:
+      "Resume o mês: custo, combustível, multas em aberto, condutores com pendência e revisões, com uma lista de pontos de atenção clicáveis.",
+  },
+  {
+    icon: Car,
+    titulo: "Veículos e controle mensal",
+    texto:
+      'Veículos guarda o contrato de locação e a alocação. O Controle mensal lança os custos por veículo, e o botão "Gerar" cria o mês seguinte copiando locação, GPS, centro de custo e limite de combustível.',
+  },
+  {
+    icon: Wrench,
+    titulo: "Combustível e manutenção",
+    texto:
+      "Mostram o consumo de cada veículo e a situação da revisão, que avisa antes de vencer, por km ou por data.",
+  },
+  {
+    icon: AlertTriangle,
+    titulo: "Multas e avarias",
+    texto:
+      "Cada ocorrência fica registrada com valores, quem paga, BO, laudo e comprovantes anexados.",
+  },
+  {
+    icon: ShieldCheck,
+    titulo: "Condutores e termos",
+    texto:
+      "Acompanha a CNH e o termo de responsabilidade de cada motorista, marcando Regular, Atenção ou Irregular.",
+  },
+  {
+    icon: FileSpreadsheet,
+    titulo: "Relatórios",
+    texto:
+      "Filtra, agrupa e exporta para Excel ou CSV exatamente o que está na tela.",
+  },
+];
+
+export const FROTA_GUIA = {
+  appName: "Frota",
+  fallbackRole: "atendente",
+  roleLabels: {
+    admin: "Administrador(a)",
+    atendente: "Time do administrativo",
+  },
+  contentByRole: {
+    atendente: FROTA_PASSOS,
+    admin: [
+      ...FROTA_PASSOS,
+      {
+        icon: Settings,
+        titulo: "Configurações",
+        texto:
+          "Só para administradores: define os prazos e limites dos alertas. Excluir veículo ou condutor também é só de quem administra.",
+      },
+    ],
+  },
+};
+
+// ============================ Alojamentos (card Administrativo) ============================
+const ALOJAMENTOS_PASSOS = [
+  {
+    icon: LayoutDashboard,
+    titulo: "Início",
+    texto:
+      "Reúne indicadores, alertas de contratos, chaves e contas a lançar, além de busca rápida por alojamento ou morador.",
+  },
+  {
+    icon: Building2,
+    titulo: "Alojamentos",
+    texto:
+      "Lista os imóveis com filtro por situação e abre a ficha de cada um, com as abas Visão geral, Ocupação, Pagamentos, Mobiliário e Ocorrências.",
+  },
+  {
+    icon: BedDouble,
+    titulo: "Ocupação",
+    texto:
+      "Mostra o mapa de quartos, quem mora em cada um e as chaves a recolher, e é onde se registram entradas e saídas.",
+  },
+  {
+    icon: Receipt,
+    titulo: "Pagamentos",
+    texto:
+      'Traz o quadro do mês, com "a lançar" para cada conta controlada que ainda não tem registro.',
+  },
+  {
+    icon: Sofa,
+    titulo: "Mobiliário",
+    texto:
+      "Inventário do que a PHD comprou para cada imóvel e o destino de cada item na devolução.",
+  },
+];
+
+export const ALOJAMENTOS_GUIA = {
+  appName: "Alojamentos",
+  fallbackRole: "atendente",
+  roleLabels: {
+    admin: "Administrador(a)",
+    atendente: "Time do administrativo",
+  },
+  contentByRole: {
+    atendente: ALOJAMENTOS_PASSOS,
+    admin: ALOJAMENTOS_PASSOS,
   },
 };

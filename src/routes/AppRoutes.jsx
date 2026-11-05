@@ -20,6 +20,9 @@ import EstoqueShell from '../modules/estoque/app/components/AppShell';
 import { podeAcessarEstoque } from '../config/estoque';
 import MobilizacaoShell from '../modules/mobilizacao/app/components/AppShell';
 import { podeAcessarMobilizacao } from '../config/mobilizacao';
+import FrotaShell from '../modules/frota/app/components/AppShell';
+import AlojamentosShell from '../modules/alojamentos/app/components/AppShell';
+import { podeAcessarSetorAdm } from '../config/setorAdm';
 import TorreShell from '../modules/torre/app/components/AppShell';
 import { podeVerTorre } from '../config/torre';
 import PlrShell from '../modules/plr/app/components/AppShell';
@@ -155,6 +158,23 @@ const NovaMob = lazyPagina(() => import('../modules/mobilizacao/app/nova/page'))
 const DashboardMob = lazyPagina(() => import('../modules/mobilizacao/app/dashboard/page'));
 const CatalogoMob = lazyPagina(() => import('../modules/mobilizacao/app/catalogo/page'));
 
+const PainelFrota = lazyPagina(() => import('../modules/frota/app/painel/page'));
+const VeiculosFrota = lazyPagina(() => import('../modules/frota/app/veiculos/page'));
+const MensalFrota = lazyPagina(() => import('../modules/frota/app/mensal/page'));
+const CombustivelFrota = lazyPagina(() => import('../modules/frota/app/combustivel/page'));
+const ManutencaoFrota = lazyPagina(() => import('../modules/frota/app/manutencao/page'));
+const OcorrenciasFrota = lazyPagina(() => import('../modules/frota/app/ocorrencias/page'));
+const CondutoresFrota = lazyPagina(() => import('../modules/frota/app/condutores/page'));
+const RelatoriosFrota = lazyPagina(() => import('../modules/frota/app/relatorios/page'));
+const ConfiguracoesFrota = lazyPagina(() => import('../modules/frota/app/configuracoes/page'));
+
+const InicioAloj = lazyPagina(() => import('../modules/alojamentos/app/inicio/page'));
+const ListaAloj = lazyPagina(() => import('../modules/alojamentos/app/lista/page'));
+const DetalheAloj = lazyPagina(() => import('../modules/alojamentos/app/detalhe/page'));
+const OcupacaoAloj = lazyPagina(() => import('../modules/alojamentos/app/ocupacao/page'));
+const PagamentosAloj = lazyPagina(() => import('../modules/alojamentos/app/pagamentos/page'));
+const MobiliarioAloj = lazyPagina(() => import('../modules/alojamentos/app/mobiliario/page'));
+
 const MapaTorre = lazyPagina(() => import('../modules/torre/app/mapa/page'));
 const QuadroTorre = lazyPagina(() => import('../modules/torre/app/quadro/page'));
 const EtapasTorre = lazyPagina(() => import('../modules/torre/app/etapas/page'));
@@ -289,6 +309,14 @@ function PlrInicio() {
 function MobilizacaoEmBreveRoute({ children }) {
   const { user } = useAuth();
   if (!podeAcessarMobilizacao(user)) return <Navigate to="/home" replace />;
+  return children;
+}
+
+// Frota e Alojamentos (card "Administrativo"). Gate de UI — quem protege o dado
+// é a RLS (app_private.setor_adm_time).
+function SetorAdmRoute({ children }) {
+  const { user, modules } = useAuth();
+  if (!podeAcessarSetorAdm(user, modules)) return <Navigate to="/home" replace />;
   return children;
 }
 
@@ -1016,6 +1044,48 @@ export default function AppRoutes() {
                 tirar de vez transformaria esses links em volta para a Home, sem
                 explicacao. */}
             <Route path="torre" element={<Navigate to="/torre/mapa" replace />} />
+          </Route>
+
+          {/* Card "Administrativo" da Home: as duas planilhas do setor viraram
+              módulos, em lançamento restrito e sem consulta geral (config/setorAdm.js). */}
+          <Route
+            path="/frota"
+            element={
+              <ProtectedRoute>
+                <SetorAdmRoute>
+                  <FrotaShell />
+                </SetorAdmRoute>
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Navigate to="/frota/painel" replace />} />
+            <Route path="painel" element={<LazyPage><PainelFrota /></LazyPage>} />
+            <Route path="veiculos" element={<LazyPage><VeiculosFrota /></LazyPage>} />
+            <Route path="mensal" element={<LazyPage><MensalFrota /></LazyPage>} />
+            <Route path="combustivel" element={<LazyPage><CombustivelFrota /></LazyPage>} />
+            <Route path="manutencao" element={<LazyPage><ManutencaoFrota /></LazyPage>} />
+            <Route path="ocorrencias" element={<LazyPage><OcorrenciasFrota /></LazyPage>} />
+            <Route path="condutores" element={<LazyPage><CondutoresFrota /></LazyPage>} />
+            <Route path="relatorios" element={<LazyPage><RelatoriosFrota /></LazyPage>} />
+            <Route path="configuracoes" element={<LazyPage><ConfiguracoesFrota /></LazyPage>} />
+          </Route>
+          <Route
+            path="/alojamentos"
+            element={
+              <ProtectedRoute>
+                <SetorAdmRoute>
+                  <AlojamentosShell />
+                </SetorAdmRoute>
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Navigate to="/alojamentos/inicio" replace />} />
+            <Route path="inicio" element={<LazyPage><InicioAloj /></LazyPage>} />
+            <Route path="lista" element={<LazyPage><ListaAloj /></LazyPage>} />
+            <Route path="imovel/:id" element={<LazyPage><DetalheAloj /></LazyPage>} />
+            <Route path="ocupacao" element={<LazyPage><OcupacaoAloj /></LazyPage>} />
+            <Route path="pagamentos" element={<LazyPage><PagamentosAloj /></LazyPage>} />
+            <Route path="mobiliario" element={<LazyPage><MobiliarioAloj /></LazyPage>} />
           </Route>
 
           {/* Torre de Controle: a mesma visão da torre da Mobilização, servida

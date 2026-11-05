@@ -17,6 +17,10 @@ arquivo guarda o que não é óbvio ao ler o código.
   escreva "Atendimento" — menos quando a frase fala do SETOR administrativo da
   empresa (categorias de despesa, setores de vaga, aviso de privacidade), que
   continua "Administrativo".
+- O card **"Administrativo"** da Home é outra coisa: o SETOR, com os módulos Frota
+  (`src/modules/frota`, `/frota/*`, `frota_*`) e Alojamentos (`src/modules/alojamentos`,
+  `/alojamentos/*`, `alojamentos*`). No código ele é `setorAdm` (`src/config/setorAdm.js`),
+  nunca `administrativo`.
 - Parte de `solic` é TypeScript (`.ts`/`.tsx`). O ESLint só cobre `.js`/`.jsx`.
 
 ## Acesso e perfis
