@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AlertTriangle, Search } from 'lucide-react';
-import { formatarMoeda } from '../../../../utils/formatters';
+import { formatarData, formatarMoeda } from '../../../../utils/formatters';
 import { nomeProprio } from '../../../../utils/pessoas';
 import { BASE_DO_FATOR, formatarMult, formatarPct, nomeCasa, rotuloCargo } from '../../lib/plr';
 import AvisoGatilho from './AvisoGatilho';
@@ -117,7 +117,10 @@ function CartaoSetorPessoas({ setor, pessoas, multEmpresa, comTotal }) {
               <tr key={p.id}>
                 <td className="plr-ind">
                   <span className="plr-ind-nome">{nomeProprio(p.nome)}</span>
-                  <small className="plr-pessoa-sub">{rotuloCargo(p.cargo)} · {p.cod_ct}</small>
+                  <small className="plr-pessoa-sub">
+                    {rotuloCargo(p.cargo)} · {p.cod_ct}
+                    {p.dataDemissao ? ` · Desligamento em ${formatarData(p.dataDemissao)}` : ''}
+                  </small>
                 </td>
                 <td className="num" data-rot="Salário">{formatarMoeda(p.salario)}</td>
                 <td className="num" data-rot="Tempo (meses)">{formatarMult(p.meses)}</td>
@@ -216,7 +219,10 @@ export default function ResultadoTodos({ dados }) {
           <li><b>Multiplicador final</b> = tempo × cargo × Multiplicador total.</li>
           <li><b>Valor</b> = Multiplicador final × salário.</li>
         </ul>
-        <p>O tempo é a parte do ano trabalhada (meses ÷ 12). Menos de 4 meses no ano contam como zero.</p>
+        <p>
+          O tempo é a parte do ano trabalhada (meses ÷ 12), até a data do desligamento para quem saiu.
+          Menos de 4 meses no ano contam como zero.
+        </p>
       </section>
     </>
   );

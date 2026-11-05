@@ -6,7 +6,8 @@
  * Uso: node docs/gerar_carga_plr_pessoas.cjs [caminho do xlsx]
  *
  * O QUE VAI PARA O BANCO (public.plr_pessoas, ver supabase_migration_plr_calculo.sql)
- *   * Só quem tem Status "Atual": desligado não entra em lugar nenhum.
+ *   * Quem tem Status "Atual" e os "Desligados" com valor (TEMPO TR maior que zero).
+ *     Desligado entra com a data de demissão e sem login: o cadastro está desativado.
  *   * Colaborador: COD CT (vira o setor do HUB), cargo, salário e admissão.
  *   * Gerência: só a chave do HUB, de onde o valor vem inteiro. O salário dela
  *     não entra.
@@ -15,8 +16,8 @@
  * MCP) e não versione.
  *
  * Idempotente: pessoa por (ano, nome). Quem saiu da planilha sai do banco. A
- * carga falha inteira se um nome não casar com um login ativo do portal, ou se
- * um COD CT ou cargo não estiver nos mapas abaixo.
+ * carga falha inteira se o nome de um "Atual" não casar com um login ativo do
+ * portal, ou se um COD CT ou cargo não estiver nos mapas abaixo.
  */
 const path = require('path');
 const fs = require('fs');
@@ -29,9 +30,11 @@ const ANO = 2026;
 
 // COD CT → setor do HUB (o `id` em plr_parametro 'setores').
 // Decisão do usuário em 04/11/2026: Qualidade é da gerência do Leonardo Drumond e
-// BIM é do time do Bruno Azevedo.
+// BIM é do time do Bruno Azevedo. Em 05/11/2026: GDB, a gerência do Diego Bernardes,
+// só tem desligados e não é setor no HUB; conta como Operação Leonardo.
 const SETOR_DO_CT = {
   'OPER>GLD': 'opleo', 'CSPI>GLD': 'opleo', 'CORP>QUAL': 'opleo', 'OPER>QUAL': 'opleo',
+  'OPER>GDB': 'opleo', 'CSPI>GDB': 'opleo',
   'OPER>GBA': 'opbru', 'CSPI>GBA': 'opbru', 'OPER>BIM': 'opbru', 'CSPI>BIM': 'opbru',
   'OPER>GEE': 'opedu', 'CSPI>GEE': 'opedu',
   'CORP>ADM': 'adm', 'CORP>TI': 'adm',
@@ -94,13 +97,17 @@ const linhas = [];
 const problemas = [];
 for (let n = 5; n <= fim; n += 1) {
   const nome = limpo(celula('D', n));
-  if (!nome || limpo(celula('C', n)) !== 'Atual') continue;
+  const status = limpo(celula('C', n));
+  const desligado = status === 'Desligados';
+  if (!nome || (status !== 'Atual' && !desligado)) continue;
+  // A coluna TEMPO TR já zera quem a regra deixa de fora: é ela que diz quem tem valor.
+  if (desligado && !(celula('K', n) > 0)) continue;
 
   const cod = limpo(celula('B', n));
-  const hub = GERENCIA[nome] ?? null;
+  const hub = desligado ? null : GERENCIA[nome] ?? null;
   const email = LOGIN_INFORMADO[nome] ?? null;
   if (hub) {
-    linhas.push({ nome, cod, setor: null, cargo: null, salario: null, admissao: null, hub, email });
+    linhas.push({ nome, cod, setor: null, cargo: null, salario: null, admissao: null, demissao: null, hub, email });
     continue;
   }
 
@@ -108,11 +115,13 @@ for (let n = 5; n <= fim; n += 1) {
   const cargo = limpo(celula('G', n));
   const salario = celula('E', n);
   const admissao = dataIso(celula('H', n));
+  const demissao = desligado ? dataIso(celula('I', n)) : null;
+  if (desligado && !demissao) problemas.push(`${nome}: desligado sem data de demissão.`);
   if (!setor) problemas.push(`${nome}: COD CT "${cod}" sem setor.`);
   if (!CARGOS.has(cargo)) problemas.push(`${nome}: cargo "${cargo}" sem multiplicador.`);
   if (typeof salario !== 'number') problemas.push(`${nome}: salário inválido.`);
   if (!admissao) problemas.push(`${nome}: sem data de admissão.`);
-  linhas.push({ nome, cod, setor, cargo, salario, admissao, hub: null, email });
+  linhas.push({ nome, cod, setor, cargo, salario, admissao, demissao, hub: null, email });
 }
 
 const faltando = Object.keys(GERENCIA).filter((nome) => !linhas.some((l) => l.nome === nome));
@@ -129,6 +138,7 @@ const valores = linhas.map((l) => `  (${[
   sql(l.nome), sql(l.email), sql(l.cod), sql(l.setor), sql(l.cargo),
   l.salario === null ? 'null::numeric' : l.salario,
   l.admissao === null ? 'null::date' : `${sql(l.admissao)}::date`,
+  l.demissao === null ? 'null::date' : `${sql(l.demissao)}::date`,
   sql(l.hub),
 ].join(', ')})`).join(',\n');
 
@@ -138,7 +148,7 @@ begin;
 
 create temporary table plr_carga (
   nome text, email text, cod_ct text, setor_hub text, cargo_plr text,
-  salario numeric, data_admissao date, hub_chave text
+  salario numeric, data_admissao date, data_demissao date, hub_chave text
 ) on commit drop;
 
 insert into plr_carga values
@@ -146,6 +156,7 @@ ${valores};
 
 -- Login ativo de cada um: pelo e-mail informado ou pelo nome, sem acento nem
 -- espaço sobrando. O cadastro tem nome repetido em linha desativada; só a ativa vale.
+-- Desligado não tem login: fica de fora daqui e entra com colaborador_id nulo.
 create temporary table plr_login on commit drop as
 select d.nome, (
          select array_agg(c.id)
@@ -154,7 +165,8 @@ select d.nome, (
             and (case when d.email is not null then lower(c.email) = d.email
                       else ${normal('c.nome')} = ${normal('d.nome')} end)
        ) as ids
-  from plr_carga d;
+  from plr_carga d
+ where d.data_demissao is null;
 
 do $$
 declare
@@ -173,10 +185,10 @@ delete from public.plr_pessoas p
    and not exists (select 1 from plr_carga d where d.nome = p.nome);
 
 insert into public.plr_pessoas
-  (ano, colaborador_id, nome, cod_ct, setor_hub, cargo_plr, salario, data_admissao, hub_chave)
-select ${ANO}, l.ids[1], d.nome, d.cod_ct, d.setor_hub, d.cargo_plr, d.salario, d.data_admissao, d.hub_chave
+  (ano, colaborador_id, nome, cod_ct, setor_hub, cargo_plr, salario, data_admissao, data_demissao, hub_chave)
+select ${ANO}, l.ids[1], d.nome, d.cod_ct, d.setor_hub, d.cargo_plr, d.salario, d.data_admissao, d.data_demissao, d.hub_chave
   from plr_carga d
-  join plr_login l on l.nome = d.nome
+  left join plr_login l on l.nome = d.nome
 on conflict (ano, nome) do update
    set colaborador_id = excluded.colaborador_id,
        cod_ct         = excluded.cod_ct,
@@ -184,6 +196,7 @@ on conflict (ano, nome) do update
        cargo_plr      = excluded.cargo_plr,
        salario        = excluded.salario,
        data_admissao  = excluded.data_admissao,
+       data_demissao  = excluded.data_demissao,
        hub_chave      = excluded.hub_chave,
        atualizado_em  = now();
 
@@ -191,4 +204,4 @@ commit;
 `;
 
 fs.writeFileSync(SAIDA, saida);
-console.log(`${linhas.length} pessoas (${linhas.filter((l) => l.hub).length} da gerência) em ${path.relative(RAIZ, SAIDA)}`);
+console.log(`${linhas.length} pessoas (${linhas.filter((l) => l.hub).length} da gerência, ${linhas.filter((l) => l.demissao).length} desligadas) em ${path.relative(RAIZ, SAIDA)}`);

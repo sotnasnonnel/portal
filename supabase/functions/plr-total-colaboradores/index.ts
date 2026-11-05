@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
     });
     const [{ data: pessoas, error: ePes }, { data: config, error: eCfg }] = await Promise.all([
       portal.from("plr_pessoas")
-        .select("id, nome, cod_ct, setor_hub, cargo_plr, salario, data_admissao, hub_chave, colaboradores(ativo)")
+        .select("id, nome, cod_ct, setor_hub, cargo_plr, salario, data_admissao, data_demissao, hub_chave, colaboradores(ativo)")
         .eq("ano", ano)
         .is("hub_chave", null),
       portal.from("plr_config").select("mult_empresa").eq("ano", ano).maybeSingle(),

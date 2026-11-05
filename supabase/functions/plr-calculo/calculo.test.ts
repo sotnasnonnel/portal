@@ -22,6 +22,32 @@ test('mesesNoAno zera quem fica menos de 4 meses', () => {
   assert.equal(mesesNoAno('2027-02-01', 2026), 0, 'admitido depois do ano');
 });
 
+test('mesesNoAno do desligado conta até o dia da demissão, como a coluna TEMPO TR', () => {
+  assert.equal(mesesNoAno('2026-06-01', 2026, '2026-09-30'), 4, 'admitido no ano');
+  assert.equal(mesesNoAno('2025-03-06', 2026, '2026-05-18'), 4.6);
+  assert.equal(mesesNoAno('2024-08-22', 2026, '2026-07-22'), 6.73);
+  assert.equal(mesesNoAno('2025-10-01', 2026, '2026-08-11'), 7.37);
+  assert.equal(mesesNoAno('2025-01-07', 2026, '2026-07-01'), 6.03);
+  assert.equal(mesesNoAno('2025-02-24', 2026, '2026-06-22'), 5.73);
+  assert.equal(mesesNoAno('2024-05-01', 2026, '2026-06-30'), 6, 'o dia seguinte vira o mês');
+  assert.equal(mesesNoAno('2022-08-18', 2026, '2026-07-24'), 6.8);
+  assert.equal(mesesNoAno('2026-02-02', 2026, '2026-08-24'), 6.77);
+  assert.equal(mesesNoAno('2022-08-01', 2026, '2026-05-07'), 4.23);
+  assert.equal(mesesNoAno('2025-08-19', 2026, '2026-08-04'), 7.13);
+});
+
+test('mesesNoAno zera o desligado com menos de 4 meses no ano', () => {
+  assert.equal(mesesNoAno('2026-06-01', 2026, '2026-09-03'), 0);
+  assert.equal(mesesNoAno('2022-11-01', 2026, '2026-01-05'), 0);
+});
+
+test('montarResultado usa a demissão no tempo e a devolve para a tela', () => {
+  const r = resultado({ pessoas: [{ ...colaborador, data_admissao: '2024-05-01', data_demissao: '2026-06-30' }] });
+  assert.equal(r.colaboradores[0].meses, 6);
+  assert.equal(r.colaboradores[0].dataDemissao, '2026-06-30');
+  assert.equal(resultado({ pessoas: [colaborador] }).colaboradores[0].dataDemissao, null);
+});
+
 test('multiplicadores: empresa em 75% e 60% do setor são 15% dos 25%', () => {
   const m = multiplicadores({ multEmpresa: 0.75, setorPct: 0.6, meses: 12, multCargo: 0.6, salario: 1000 });
   proximo(m.multEmpresa, 0.75);

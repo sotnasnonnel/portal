@@ -49,15 +49,23 @@ export function dias360(inicio: string, fim: string): number {
   return (a2 - a1) * 360 + (m2 - m1) * 30 + (Math.min(d2, 30) - Math.min(d1, 30));
 }
 
+/** A data seguinte, em 'AAAA-MM-DD'. Em UTC, para o fuso não mudar o dia. */
+function diaSeguinte(data: string): string {
+  const [a, m, d] = data.split("-").map(Number);
+  return new Date(Date.UTC(a, m - 1, d + 1)).toISOString().slice(0, 10);
+}
+
 /**
  * Meses que contam no ano (coluna TEMPO TR): de janeiro, ou da admissão, até o
- * fim do ano, em duas casas. Abaixo de 4 meses vira zero. A parte de desligados
- * da fórmula da planilha não está aqui porque eles não entram no cálculo.
+ * fim do ano ou, para o desligado, até o dia da demissão inclusive. Em duas casas.
+ * Abaixo de 4 meses vira zero. A parte da fórmula que zera quem saiu por iniciativa
+ * própria não está aqui porque esses não vêm na carga.
  */
-export function mesesNoAno(dataAdmissao: string, ano: number): number {
+export function mesesNoAno(dataAdmissao: string, ano: number, dataDemissao: string | null = null): number {
   const janeiro = `${ano}-01-01`;
   const inicio = dataAdmissao > janeiro ? dataAdmissao : janeiro;
-  const meses = Math.round((Math.max(0, dias360(inicio, `${ano + 1}-01-01`)) / 30) * 100) / 100;
+  const fim = dataDemissao ? diaSeguinte(dataDemissao) : `${ano + 1}-01-01`;
+  const meses = Math.round((Math.max(0, dias360(inicio, fim)) / 30) * 100) / 100;
   return meses < MESES_MINIMOS ? 0 : meses;
 }
 
@@ -145,13 +153,14 @@ export function montarResultado(
       continue;
     }
     const setorPct = setorScore(setor);
-    const meses = mesesNoAno(p.data_admissao, ano);
+    const meses = mesesNoAno(p.data_admissao, ano, p.data_demissao ?? null);
     const salario = p.salario === null || p.salario === undefined ? null : Number(p.salario);
     colaboradores.push({
       id: p.id,
       nome: p.nome,
       cod_ct: p.cod_ct,
       cargo: p.cargo_plr,
+      dataDemissao: p.data_demissao ?? null,
       setorId: setor.id,
       setorNome: setor.nome,
       setorPct,
