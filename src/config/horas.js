@@ -16,7 +16,15 @@ import { Clock, FileClock } from 'lucide-react';
  * papel é o que aparece DENTRO de cada área (ver navSections em
  * modules/horas/app/components/nav.js).
  */
-export const AREAS_HORAS = [
+/**
+ * Horas Extras está oculta (06/11/2026): some do card da Home e do menu da
+ * Gestão de Horas. As rotas /horas/extras/* continuam vivas — o link do e-mail
+ * de aprovação e o módulo Aprovações ainda chegam nelas. Para reexibir, é só
+ * voltar para `true`.
+ */
+export const HORAS_EXTRAS_VISIVEL = false;
+
+const TODAS_AREAS_HORAS = [
   {
     slug: 'apontamento',
     label: 'Apontamento',
@@ -34,5 +42,9 @@ export const AREAS_HORAS = [
     cta: 'Abrir horas extras',
   },
 ];
+
+export const AREAS_HORAS = TODAS_AREAS_HORAS.filter(
+  (a) => a.slug !== 'extras' || HORAS_EXTRAS_VISIVEL,
+);
 
 export const getAreaHoras = (slug) => AREAS_HORAS.find((a) => a.slug === slug);

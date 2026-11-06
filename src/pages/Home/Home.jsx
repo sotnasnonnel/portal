@@ -22,6 +22,7 @@ import SolucoesModal from './SolucoesModal';
 import ProgramasModal from './ProgramasModal';
 import FinanceiroModal from './FinanceiroModal';
 import HorasModal from './HorasModal';
+import { AREAS_HORAS } from '../../config/horas';
 import AdministrativoModal from './AdministrativoModal';
 import SetorAdmModal from './SetorAdmModal';
 import GestaoPessoasModal from './GestaoPessoasModal';
@@ -128,12 +129,17 @@ export default function Home() {
       // Módulo aberto a todos: card sempre visível, sem gate de permissão.
       // Apontamento e Horas Extras se resolvem em telas diferentes, então o
       // card abre a escolha em popup (ver AREAS_HORAS em config/horas.js) —
-      // mesmo desenho do card "Financeiro".
-      acao: () => setHorasAberto(true),
+      // mesmo desenho do card "Financeiro". Com Horas Extras oculta só sobra
+      // uma área, e um popup de um botão só não faz sentido: vai direto.
+      ...(AREAS_HORAS.length > 1
+        ? { acao: () => setHorasAberto(true) }
+        : { to: AREAS_HORAS[0].href }),
       icon: Clock,
       tone: 'teal',
       title: 'Gestão de Horas',
-      desc: 'Apontamento por projeto e solicitação de horas extras',
+      desc: AREAS_HORAS.length > 1
+        ? 'Apontamento por projeto e solicitação de horas extras'
+        : 'Apontamento de horas por projeto',
     },
     {
       // Card guarda-chuva do time do Adm: Chamados, Estoque e Mobilização (ver

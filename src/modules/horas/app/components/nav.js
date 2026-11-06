@@ -12,6 +12,7 @@ import {
   UserCog,
 } from 'lucide-react';
 import { isGestao, podeConfigurarApontamento, podeConfigurarHoras } from '../../lib/roles';
+import { HORAS_EXTRAS_VISIVEL } from '../../../../config/horas';
 
 // Navegação por papel, na mesma divisão dos outros módulos (padrão do
 // Financeiro): grupos colapsáveis para as rotinas do dia a dia e uma seção
@@ -100,7 +101,9 @@ export function navSections(role, user, area = null) {
     }
   }
 
-  if (mostra('extras')) {
+  // Oculta (HORAS_EXTRAS_VISIVEL): a seção só aparece para quem já está numa
+  // tela de hora extra — chegou pelo link do e-mail ou pelo módulo Aprovações.
+  if (HORAS_EXTRAS_VISIVEL ? mostra('extras') : area === 'extras') {
     secoes.push({
       label: 'Horas Extras',
       group: true,
