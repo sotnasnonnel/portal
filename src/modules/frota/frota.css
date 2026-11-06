@@ -242,6 +242,15 @@ button.frota-kpi:hover { border-color: var(--f-primary-line); }
 .frota-note.crit { background: var(--f-red-bg); color: var(--f-red); }
 .frota-note .pre { white-space: pre-line; }
 
+/* ============================ faturas ============================ */
+.frota-fat-resumo { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+.frota-fat-resumo .tx { flex: 1; min-width: 180px; display: flex; flex-direction: column; gap: 2px; }
+.frota-fat-resumo .v { font-size: var(--font-size-xl); font-weight: var(--fw-bold); font-variant-numeric: tabular-nums; }
+.frota-fat-resumo .s { font-size: var(--font-size-xs); color: var(--f-muted); }
+.frota-fat-resumo .st { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.frota-fat-resumo .dif, .frota-t .dif { color: var(--f-red); }
+.frota-chips .sep { width: 1px; align-self: stretch; background: var(--f-border); margin: 0 4px; }
+
 /* ============================ painel ============================ */
 /* Duas colunas independentes, em vez de duas linhas: em linhas, a lista de
    pontos de atenção empurrava a linha de baixo e abria um buraco sob os gráficos

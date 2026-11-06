@@ -1,10 +1,11 @@
-// Colunas de exportação e os seis relatórios da Frota. Sem React, sem Supabase.
+// Colunas de exportação e os sete relatórios da Frota. Sem React, sem Supabase.
 // Coluna: { k, l, t?, v? }. `v(r, ctx)` calcula quando o valor não é um campo;
 // ctx = { dados, cfg }.
 import {
   compLabel, extrasOf, totalOf, combOf, kmRodado, revisao, conformidade, termoValidade, placaAtualDe, ocsDe,
   norm, sum,
 } from './regras.js';
+import { fatDif, fatVenc } from './faturas.js';
 
 export const COLS_VEIC = [
   { k: 'placa', l: 'Placa' }, { k: 'modelo', l: 'Modelo' }, { k: 'cor', l: 'Cor' }, { k: 'status', l: 'Status' },
@@ -56,6 +57,21 @@ export const COLS_COND = [
   { k: '_oc', l: 'Ocorrências', t: 'int', v: (c, ctx) => ocsDe(c.nome, ctx.dados.ocorrencias).length },
   { k: '_ocv', l: 'Valor ocorrências', t: 'money', v: (c, ctx) => sum(ocsDe(c.nome, ctx.dados.ocorrencias), 'valor') },
   { k: 'obs', l: 'Observações' },
+];
+
+export const COLS_FAT = [
+  { k: 'competencia', l: 'Mês de referência', v: (f) => compLabel(f.competencia) }, { k: 'vencimento', l: 'Vencimento', t: 'date' },
+  { k: '_sv', l: 'Situação do vencimento', v: (f) => fatVenc(f).label }, { k: 'status', l: 'Conferência' },
+  { k: 'numero_fatura', l: 'Nº da fatura' }, { k: 'tipo', l: 'Tipo de cobrança' }, { k: 'placa', l: 'Placa' },
+  { k: '_mod', l: 'Modelo', v: (f, ctx) => (ctx.dados.veiculos.find((v) => v.placa === f.placa) || {}).modelo || '' },
+  { k: 'locadora', l: 'Locadora' }, { k: 'contrato', l: 'Nº contrato' }, { k: 'condutor', l: 'Condutor' }, { k: 'ct', l: 'CT / Centro de custo' },
+  { k: 'custo_resp', l: 'Custo por conta de' }, { k: 'emissao', l: 'Emissão', t: 'date' }, { k: 'valor', l: 'Valor da fatura', t: 'money' },
+  { k: 'valor_previsto', l: 'Valor previsto', t: 'money' }, { k: '_dif', l: 'Diferença', t: 'money', v: (f) => fatDif(f) },
+  { k: 'forma_pagamento', l: 'Forma de pagamento' }, { k: 'linha_digitavel', l: 'Linha digitável / chave PIX' },
+  { k: 'envio_financeiro', l: 'Enviada ao Financeiro', t: 'date' }, { k: 'conferido_por_nome', l: 'Conferido por' },
+  { k: '_confem', l: 'Conferido em', t: 'date', v: (f) => (f.conferido_em ? String(f.conferido_em).slice(0, 10) : '') },
+  { k: 'data_pagamento', l: 'Data de pagamento', t: 'date' }, { k: 'obs_conferencia', l: 'Observação da conferência' },
+  { k: '_anx', l: 'Anexos', v: (f) => (f.anexos || []).length || '' }, { k: 'obs', l: 'Observações' },
 ];
 
 export const REPORTS = {
@@ -113,11 +129,20 @@ export const REPORTS = {
     groups: { tipo: 'Serviço', placa: 'Placa', _mes: 'Mês' },
     sums: ['valor'],
   },
+  faturas: {
+    l: 'Faturas de veículos', d: 'Vencimentos, conferência e pagamento', fonte: 'faturas', date: 'vencimento', dateType: 'date', cols: COLS_FAT,
+    filters: ['status', 'locadora', 'tipo', 'placa', 'competencia', 'custo_resp'],
+    groups: {
+      competencia: 'Mês de referência', _mes: 'Mês de vencimento', locadora: 'Locadora', status: 'Conferência', placa: 'Placa', ct: 'CT', tipo: 'Tipo de cobrança',
+    },
+    sums: ['valor', 'valor_previsto'],
+  },
 };
 
 export const LBL = {
   locadora: 'Locadora', ct: 'CT / Centro de custo', custo_resp: 'Custo por conta de', condutor: 'Condutor', placa: 'Placa', status: 'Status', tipo: 'Tipo',
   categoria: 'Tipo de infração / dano', gravidade: 'Gravidade', modelo: 'Modelo', situacao: 'Situação', cnh_categoria: 'Categoria CNH',
+  competencia: 'Mês de referência',
 };
 
 export const colVal = (r, c, ctx) => (c.v ? c.v(r, ctx) : r[c.k]);

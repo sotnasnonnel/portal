@@ -1,17 +1,19 @@
-import { useCallback, useState } from 'react';
+import { createElement, useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { ehAdminSetorAdm } from '../../../../config/setorAdm';
 import {
   TABELAS as T, atualizar, criarAlojamento, excluir, inserir, salvarQuartos,
 } from '../../lib/alojamentos';
+import { removerAnexos } from '../../lib/anexos';
 import {
-  ALOJ_PADRAO, alojFields, contaFields, itemFields, ocorrenciaFields, pagamentoFields, saidaFields, stayFields,
+  ALOJ_PADRAO, alojFields, conferenciaFields, contaFields, itemFields, ocorrenciaFields, pagamentoFields, saidaFields, stayFields,
 } from '../../lib/formularios';
 import {
-  byId, compLong, doAloj, num, plural, quartoNome, staysOn, todayISO,
+  byId, compLong, confSt, doAloj, erroConferencia, num, plural, quartoNome, staysOn, todayISO, voltaParaConferir,
 } from '../../lib/regras';
 import { rotaFicha } from './nav';
+import { NotaConferencia, ResumoConferencia } from './Conferencia';
 
 /**
  * Tudo que uma tela do módulo pode abrir: os formulários, as confirmações e a
@@ -26,12 +28,14 @@ export function useAcoes({ base, recarregar }) {
   const [form, setForm] = useState(null);
   const [confirmacao, setConfirmacao] = useState(null);
   const [quartosDe, setQuartosDe] = useState(null);
+  const [lista, setLista] = useState(null);
   const [toast, setToast] = useState('');
 
   const fechar = useCallback(() => {
     setForm(null);
     setConfirmacao(null);
     setQuartosDe(null);
+    setLista(null);
   }, []);
   const limparToast = useCallback(() => setToast(''), []);
 
@@ -53,7 +57,10 @@ export function useAcoes({ base, recarregar }) {
       texto: `Isso apaga o cadastro e ${plural(n, 'registro vinculado', 'registros vinculados')} (moradores, pagamentos, mobiliário e ocorrências). Para manter o histórico, prefira mudar a situação para Inativo.`,
       ok: 'Excluir definitivamente',
       onOk: async () => {
+        // O cascade leva os lançamentos, mas o arquivo no bucket fica: pega antes.
+        const paths = doAloj(base.pagamentos, a.id).flatMap((p) => (p.anexos || []).map((f) => f.path));
         await excluir(T.alojamentos, a.id);
+        removerAnexos(paths);
         await concluir('Alojamento excluído');
         navigate('/alojamentos/lista');
       },
@@ -192,22 +199,30 @@ export function useAcoes({ base, recarregar }) {
     },
   });
 
-  /* ---------- pagamentos ---------- */
-  const excluirPagamento = (p) => confirmar({
-    titulo: 'Excluir pagamento?',
-    texto: `Excluir o lançamento de ${p.conta}?`,
-    onOk: async () => {
-      await excluir(T.pagamentos, p.id);
-      await concluir('Pagamento excluído');
-    },
-  });
+  /* ---------- pagamentos e faturas ---------- */
+  const excluirPagamento = (p) => {
+    const nf = (p.anexos || []).length;
+    confirmar({
+      titulo: 'Excluir lançamento?',
+      texto: `${p.conta} · ${compLong(p.competencia)} · ${byId(base, p.alojamento_id)?.nome || ''}${nf ? ` · ${plural(nf, 'fatura anexada será apagada', 'faturas anexadas serão apagadas')}` : ''}`,
+      onOk: async () => {
+        await excluir(T.pagamentos, p.id);
+        removerAnexos((p.anexos || []).map((f) => f.path));
+        await concluir('Lançamento excluído');
+      },
+    });
+  };
 
   const formPagamento = (p, preset = {}) => {
     const vals = p || { status: 'pago', ...preset };
     const a = byId(base, vals.alojamento_id);
+    const cs = p ? confSt(p) : 'pendente';
+    setLista(null);
     setForm({
-      titulo: p ? `Editar pagamento · ${p.conta}` : 'Lançar pagamento',
-      sub: a ? `${a.nome}${vals.competencia ? ` · ${compLong(vals.competencia)}` : ''}` : 'Conta fixa do alojamento',
+      titulo: p ? `Editar lançamento · ${p.conta}` : (preset.status === 'pendente' ? 'Lançar fatura' : 'Lançar pagamento'),
+      sub: a ? `${a.nome}${vals.competencia ? ` · ${compLong(vals.competencia)}` : ''}` : 'Conta do alojamento, com fatura anexada para o Contas a Pagar',
+      largo: true,
+      intro: p && cs !== 'pendente' ? createElement(NotaConferencia, { p }) : null,
       campos: pagamentoFields(base),
       valores: vals,
       rotulo: p ? 'Salvar' : 'Lançar',
@@ -216,9 +231,42 @@ export function useAcoes({ base, recarregar }) {
         if (v.status === 'pago' && !v.data_pagamento && num(v.valor) === null) {
           throw new Error('Para marcar como pago, informe o valor ou a data do pagamento.');
         }
-        if (p) await atualizar(T.pagamentos, p.id, v);
-        else await inserir(T.pagamentos, v);
-        await concluir(p ? 'Pagamento atualizado' : 'Pagamento lançado');
+        if (p) {
+          // Quem devolve para "A conferir" é o gatilho do banco; aqui só se avisa.
+          await atualizar(T.pagamentos, p.id, v);
+          await concluir(voltaParaConferir(p, v) ? 'Lançamento atualizado. Voltou para “A conferir”.' : 'Lançamento atualizado');
+        } else {
+          await inserir(T.pagamentos, v);
+          await concluir((v.anexos || []).length ? 'Lançamento salvo com a fatura' : 'Pagamento lançado');
+        }
+      },
+    });
+  };
+
+  const conferir = (p) => {
+    const cs = confSt(p);
+    const a = byId(base, p.alojamento_id);
+    setLista(null);
+    setForm({
+      titulo: `Conferir fatura · ${p.conta}`,
+      sub: `${a?.nome || ''} · ${compLong(p.competencia)}`,
+      largo: true,
+      intro: createElement(ResumoConferencia, { p, a, onErro: setToast }),
+      campos: conferenciaFields,
+      valores: {
+        conferencia_status: cs === 'pendente' ? 'conferida' : cs,
+        conferencia_obs: cs !== 'pendente' ? (p.conferencia_obs || '') : '',
+        status: p.status || 'pendente',
+        data_pagamento: p.data_pagamento || '',
+        forma: p.forma || '',
+      },
+      rotulo: 'Registrar conferência',
+      onSalvar: async (v) => {
+        const msg = erroConferencia(p, v);
+        if (msg) throw new Error(msg);
+        // conferido_por_nome e conferido_em quem grava é o gatilho do banco.
+        await atualizar(T.pagamentos, p.id, v);
+        await concluir({ conferida: 'Fatura conferida', divergencia: 'Divergência registrada' }[v.conferencia_status] || 'Conferência atualizada');
       },
     });
   };
@@ -280,10 +328,12 @@ export function useAcoes({ base, recarregar }) {
     form,
     confirmacao,
     quartosDe,
+    lista,
     toast,
     base,
     fechar,
     limparToast,
+    avisar: setToast,
     salvarListaQuartos,
     // ações das telas
     novoAlojamento,
@@ -300,8 +350,11 @@ export function useAcoes({ base, recarregar }) {
     editarEstadia,
     excluirEstadia,
     novoPagamento: (preset) => formPagamento(null, preset),
+    novaFatura: (preset) => formPagamento(null, { status: 'pendente', ...preset }),
     editarPagamento: (p) => formPagamento(p),
     excluirPagamento,
+    listarPagamentos: (aid, conta, comp) => setLista({ aid, conta, comp }),
+    conferir,
     novoItem: (aid) => formItem(null, aid),
     editarItem: (i) => formItem(i),
     excluirItem,

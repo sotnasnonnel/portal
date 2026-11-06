@@ -186,7 +186,7 @@ function Conteudo({ base }) {
   const modulos = [
     { to: 'lista', Icon: Building2, titulo: 'Alojamentos', desc: 'Cadastro, contratos, contatos e contas de consumo', chip: plural(todos.length, 'cadastro') },
     { to: 'ocupacao', Icon: BedDouble, titulo: 'Ocupação', desc: 'Quartos, moradores, entradas, saídas e status das chaves', chip: `${oc}/${vt} vagas` },
-    { to: 'pagamentos', Icon: Receipt, titulo: 'Pagamentos', desc: 'Contas fixas por competência: valor, data de pagamento e mês de referência', chip: `${lanc}/${exp} em ${mes}` },
+    { to: 'pagamentos', Icon: Receipt, titulo: 'Pagamentos', desc: 'Contas por competência, manutenção e faturas para conferência do Contas a Pagar', chip: `${lanc}/${exp} em ${mes}` },
     { to: 'mobiliario', Icon: Sofa, titulo: 'Mobiliário', desc: 'Itens comprados por alojamento e destino na devolução do imóvel', chip: money(inv) || 'R$ 0,00' },
   ];
 

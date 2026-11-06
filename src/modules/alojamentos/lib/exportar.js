@@ -1,9 +1,33 @@
 import {
-  alojs, byId, vagas, staysOn, invest, custoFixo, temCustoFixo, fdate, num, isOn, quartoNome, daysBetween,
-  compLabel, totalItem, todayISO, STATUS, CHAVE, PAG_ST,
+  alojs, byId, vagas, staysOn, invest, custoFixo, temCustoFixo, fdate, fdateTs, num, isOn, quartoNome, daysBetween,
+  compLabel, confSt, totalItem, todayISO, STATUS, CHAVE, CONF, PAG_ST,
 } from './regras.js';
 
 const nv = (v) => (num(v) === null ? '' : +num(v).toFixed(2));
+
+/** Uma linha de lançamento: a mesma na aba Pagamentos e na planilha de faturas. */
+export const linhaPagamento = (base, p) => {
+  const a = byId(base, p.alojamento_id);
+  return {
+    'Competência': compLabel(p.competencia),
+    Alojamento: a?.nome || p.alojamento_id,
+    'Centro de custo': a?.centro_custo || '',
+    Conta: p.conta,
+    Fornecedor: p.fornecedor || '',
+    'Nº documento': p.documento || '',
+    'Valor (R$)': nv(p.valor),
+    Vencimento: fdate(p.vencimento),
+    'Data pagamento': fdate(p.data_pagamento),
+    'Situação': PAG_ST[p.status]?.l,
+    Forma: p.forma,
+    'Faturas anexadas': (p.anexos || []).map((f) => f.nome).join(' | '),
+    'Conferência': CONF[confSt(p)].l,
+    'Conferido por': p.conferido_por_nome || '',
+    'Conferido em': fdateTs(p.conferido_em),
+    'Obs. conferência': p.conferencia_obs || '',
+    'Observação': p.obs,
+  };
+};
 
 /** As abas da planilha exportada. Mesmas do protótipo, sem os acessos. */
 export function montarAbas(base, hoje = todayISO()) {
@@ -92,17 +116,7 @@ export function montarAbas(base, hoje = todayISO()) {
       })),
     Pagamentos: comAloj(base.pagamentos)
       .sort((x, y) => txt(x.competencia, y.competencia) || nm(x.alojamento_id).localeCompare(nm(y.alojamento_id)))
-      .map((p) => ({
-        'Competência': compLabel(p.competencia),
-        Alojamento: nm(p.alojamento_id),
-        Conta: p.conta,
-        'Valor (R$)': nv(p.valor),
-        Vencimento: fdate(p.vencimento),
-        'Data pagamento': fdate(p.data_pagamento),
-        'Situação': PAG_ST[p.status]?.l,
-        Forma: p.forma,
-        'Observação': p.obs,
-      })),
+      .map((p) => linhaPagamento(base, p)),
     'Mobiliário': comAloj(base.itens)
       .sort((x, y) => nm(x.alojamento_id).localeCompare(nm(y.alojamento_id)))
       .map((i) => ({
@@ -127,11 +141,17 @@ export function montarAbas(base, hoje = todayISO()) {
   };
 }
 
+/** Nome do arquivo da planilha de faturas, com o filtro que gerou a lista. */
+export function nomeArquivoFaturas(f) {
+  const tag = [f.comp && `comp-${f.comp}`, f.de && `venc-de-${f.de}`, f.ate && `ate-${f.ate}`].filter(Boolean).join('_') || 'todas';
+  return `PHD_Faturas_${tag}.xlsx`;
+}
+
 /** Só carrega a biblioteca quando a pessoa pede a planilha. */
-export async function exportarXlsx(base) {
+async function salvarXlsx(abas, arquivo) {
   const XLSX = await import('xlsx');
   const wb = XLSX.utils.book_new();
-  Object.entries(montarAbas(base)).forEach(([nome, linhas]) => {
+  Object.entries(abas).forEach(([nome, linhas]) => {
     const ws = XLSX.utils.json_to_sheet(linhas.length ? linhas : [{ 'Sem registros': '' }]);
     const chaves = Object.keys(linhas[0] || { 'Sem registros': '' });
     ws['!cols'] = chaves.map((k) => ({
@@ -139,5 +159,10 @@ export async function exportarXlsx(base) {
     }));
     XLSX.utils.book_append_sheet(wb, ws, nome);
   });
-  XLSX.writeFile(wb, `PHD_Alojamentos_${todayISO()}.xlsx`);
+  XLSX.writeFile(wb, arquivo);
 }
+
+export const exportarXlsx = (base) => salvarXlsx(montarAbas(base), `PHD_Alojamentos_${todayISO()}.xlsx`);
+
+/** A lista da tela de faturas, exatamente como está filtrada. */
+export const exportarFaturas = (base, lista, f) => salvarXlsx({ Faturas: lista.map((p) => linhaPagamento(base, p)) }, nomeArquivoFaturas(f));

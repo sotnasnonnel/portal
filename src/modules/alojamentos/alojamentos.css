@@ -372,8 +372,51 @@
 .aloj-toast { position: fixed; z-index: 1100; left: 50%; bottom: 24px; transform: translateX(-50%); max-width: calc(100vw - 32px); padding: 10px 16px; border-radius: var(--ctl-radius); background: var(--a-ink); color: #fff; font-size: var(--font-size-sm); box-shadow: 0 10px 28px rgba(15, 23, 42, 0.25); }
 .aloj-toast[hidden] { display: none; }
 
+/* ============================ faturas (Contas a Pagar) ============================ */
+.aloj-subnav { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; margin: 0 0 18px; border: 1px solid var(--a-line); border-radius: 999px; background: var(--neutral-surface); max-width: 100%; }
+.aloj-subnav a {
+  display: inline-flex; align-items: center; gap: 7px; height: var(--ctl-h-sm); padding: 0 14px; border-radius: 999px;
+  color: var(--a-ink2); font-size: var(--font-size-sm); font-weight: var(--fw-semibold); text-decoration: none; white-space: nowrap;
+}
+.aloj-subnav a:hover { color: var(--a-ink); }
+.aloj-subnav a[aria-current="page"] { background: var(--mod-accent-soft); color: var(--mod-accent-ink); }
+.aloj-fgrid4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px 14px; }
+.aloj-inrow { display: flex; align-items: center; gap: 6px; }
+.aloj-inrow input { flex: 1; min-width: 0; }
+.aloj-atalhos { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--a-soft); }
+.aloj-atalhos > .rot { display: inline-flex; align-items: center; gap: 6px; color: var(--a-muted); font-size: var(--font-size-xs); font-weight: var(--fw-semibold); }
+.aloj-atalhos .aloj-inline { border-radius: 999px; }
+.aloj-atalhos .fim { margin-left: auto; }
+.aloj-tab tr.late td { background: var(--a-bad-bg); }
+.aloj-tab small.t-bad { color: var(--a-bad); font-weight: var(--fw-bold); }
+.aloj-tab small.t-warn { color: var(--a-warn); font-weight: var(--fw-bold); }
+.aloj-sec .aloj-link { font-size: var(--font-size-sm); margin-left: auto; }
+.aloj-tab td a { color: inherit; text-decoration: none; }
+.aloj-tab td a:hover b { color: var(--mod-accent); }
+.aloj-ic-txt { display: inline-flex; align-items: center; gap: 6px; }
+.aloj-files { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.aloj-file { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 6px 8px; border: 1px solid var(--a-line); border-radius: var(--ctl-radius-sm); background: var(--neutral-bg); }
+.aloj-file .fn { flex: 1; min-width: 0; }
+.aloj-file .fn b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--font-size-sm); }
+.aloj-file .fn span { display: block; color: var(--a-muted); font-size: var(--font-size-2xs); }
+.aloj-file.compacto { padding: 0; border: 0; background: none; }
+.aloj-upl { display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; height: var(--ctl-h-sm); padding: 0 12px; border: 1px dashed var(--neutral-border-strong); border-radius: var(--ctl-radius-sm); color: var(--a-ink2); font-size: var(--font-size-xs); font-weight: var(--fw-semibold); cursor: pointer; }
+.aloj-upl:hover { border-color: var(--mod-accent); color: var(--mod-accent-ink); }
+.aloj-upl:focus-within { outline: 2px solid var(--mod-accent); outline-offset: 2px; }
+.aloj-upl input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.aloj-upl.busy { opacity: 0.6; cursor: progress; }
+.aloj-conf-sum { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 18px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--a-line); }
+.aloj-modal-b > .aloj-nota { margin-bottom: 14px; }
+
+@media (max-width: 1180px) {
+  .aloj-fgrid4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 @media (max-width: 960px) {
   .aloj-home, .aloj-g2 { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 760px) {
+  .aloj-fgrid4, .aloj-conf-sum { grid-template-columns: minmax(0, 1fr); }
+  .aloj-subnav { border-radius: var(--card-radius); }
 }
 @media (max-width: 768px) {
   .alojMain { padding: var(--shell-main-pad-mobile); }

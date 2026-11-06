@@ -15,6 +15,7 @@ const CAMPOS = [
 ];
 const CONTAGENS = [
   ['veiculos', 'Veículos'],
+  ['faturas', 'Faturas'],
   ['mensal', 'Lançamentos mensais'],
   ['ocorrencias', 'Multas e avarias'],
   ['condutores', 'Condutores'],

@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { ehAdminSetorAdm, ehTimeSetorAdm } from '../../../../config/setorAdm';
 import { DEFAULT_CFG } from '../../lib/regras';
+import { FILTROS_FATURAS } from '../../lib/faturas';
 import { carregarColecao, carregarConfig, carregarTudo } from '../../lib/frota';
 import { FrotaContext } from './FrotaContext';
 
@@ -16,6 +17,7 @@ const FILTROS_RELATORIOS = {
 };
 const FILTROS_INICIAIS = {
   veiculos: { q: '', status: 'Ativo', locadora: '', ct: '', custo_resp: '' },
+  faturas: FILTROS_FATURAS,
   mensal: { comp: '', q: '', locadora: '', custo_resp: '' },
   combustivel: { comp: '', q: '' },
   manutencao: { q: '', st: '' },
@@ -25,11 +27,11 @@ const FILTROS_INICIAIS = {
   painel: { comp: '' },
 };
 const VAZIO = {
-  veiculos: [], mensal: [], ocorrencias: [], condutores: [], manutencoes: [],
+  veiculos: [], mensal: [], ocorrencias: [], condutores: [], manutencoes: [], faturas: [],
 };
 
 /**
- * Estado do módulo: as cinco coleções inteiras em memória, como no protótipo. As
+ * Estado do módulo: as seis coleções inteiras em memória, como no protótipo. As
  * telas cruzam tudo (o painel lê as cinco, o condutor olha veículo e ocorrência) e
  * a frota é pequena: poucos milhares de linhas no total. Os filtros também moram
  * aqui para sobreviver à troca de tela, e para um indicador do painel poder abrir
@@ -42,6 +44,8 @@ export default function FrotaProvider({ children }) {
   const [cfg, setCfg] = useState(DEFAULT_CFG);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
+  // Coleções cuja tabela ainda não existe no banco (migração pendente).
+  const [ausentes, setAusentes] = useState([]);
   const [filtros, setFiltros] = useState(FILTROS_INICIAIS);
   const [drawer, setDrawer] = useState(null);
   const [aviso, setAviso] = useState(null);
@@ -52,7 +56,8 @@ export default function FrotaProvider({ children }) {
     Promise.all([carregarTudo(), carregarConfig()])
       .then(([d, c]) => {
         if (!vivo) return;
-        setDados(d);
+        setDados(d.dados);
+        setAusentes(d.ausentes);
         setCfg(c);
       })
       .catch((e) => { if (vivo) setErro(e.message); })
@@ -62,7 +67,7 @@ export default function FrotaProvider({ children }) {
 
   const recarregar = useCallback(async (cols) => {
     const listas = await Promise.all(cols.map(carregarColecao));
-    setDados((d) => ({ ...d, ...Object.fromEntries(cols.map((c, i) => [c, listas[i]])) }));
+    setDados((d) => ({ ...d, ...Object.fromEntries(cols.map((c, i) => [c, listas[i] || []])) }));
   }, []);
 
   const toast = useCallback((msg, tipo = '') => {
@@ -84,7 +89,7 @@ export default function FrotaProvider({ children }) {
   const limparFiltros = useCallback((tela) => {
     setFiltros((f) => ({
       ...f,
-      [tela]: tela === 'relatorios' ? { tipo: f.relatorios.tipo, ...FILTROS_RELATORIOS } : FILTROS_OCORRENCIAS,
+      [tela]: tela === 'relatorios' ? { tipo: f.relatorios.tipo, ...FILTROS_RELATORIOS } : FILTROS_INICIAIS[tela],
     }));
   }, []);
 
@@ -105,11 +110,11 @@ export default function FrotaProvider({ children }) {
   const ctx = useMemo(() => ({ dados, cfg }), [dados, cfg]);
 
   const value = useMemo(() => ({
-    dados, cfg, setCfg, ctx, carregando, erro, recarregar, toast,
+    dados, cfg, setCfg, ctx, carregando, erro, ausentes, recarregar, toast,
     filtros, setFiltro, irPara, limparFiltros,
     drawer, abrirDetalhe, abrirForm, fecharDrawer,
     podeEscrever, isAdmin, podeExcluir,
-  }), [dados, cfg, ctx, carregando, erro, recarregar, toast, filtros, setFiltro, irPara, limparFiltros,
+  }), [dados, cfg, ctx, carregando, erro, ausentes, recarregar, toast, filtros, setFiltro, irPara, limparFiltros,
     drawer, abrirDetalhe, abrirForm, fecharDrawer, podeEscrever, isAdmin, podeExcluir]);
 
   return (

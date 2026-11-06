@@ -4,6 +4,7 @@ import { useAuth } from '../../../../contexts/AuthContext';
 import ModuleSidebar from '../../../../components/Layout/ModuleSidebar';
 import { ehAdminSetorAdm, ehTimeSetorAdm } from '../../../../config/setorAdm';
 import { contagensNav } from '../../lib/regras';
+import { fatVencida } from '../../lib/faturas';
 import { useFrota } from './FrotaContext';
 import { navSections } from './nav';
 
@@ -12,7 +13,10 @@ export default function Sidebar({ aberto = false, onFechar }) {
   const { user, modules } = useAuth();
   const { dados, cfg } = useFrota();
   const isAdmin = ehAdminSetorAdm(modules, user);
-  const contagens = useMemo(() => contagensNav(dados, cfg), [dados, cfg]);
+  const contagens = useMemo(() => ({
+    ...contagensNav(dados, cfg),
+    faturas: dados.faturas.filter(fatVencida).length,
+  }), [dados, cfg]);
 
   return (
     <ModuleSidebar

@@ -1,16 +1,20 @@
 import { useMemo, useRef, useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import {
+  Check, CreditCard, Trash2, TriangleAlert,
+} from 'lucide-react';
 import { useFrota } from './FrotaContext';
 import CascaDrawer from './CascaDrawer';
 import CampoArquivos from './Anexos';
 import Confirmar from './Confirmar';
 import { LinhaAuditoria } from './Pecas';
+import ResumoFatura from './ResumoFatura';
 import {
-  SCHEMAS, COL_NAME, FEM, listasDoForm, textosDoRegistro, valoresDoForm, faltando, tituloDe, pathsDosAnexos,
+  SCHEMAS, COL_NAME, FEM, fmtDec, listasDoForm, textosDoRegistro, valoresDoForm, faltando, tituloDe, pathsDosAnexos,
 } from '../../lib/schemas';
 import {
-  PLACA_RE, compLabel, duplicado, lastComp, patchVeiculo,
+  PLACA_RE, compLabel, duplicado, lastComp, patchVeiculo, todayISO,
 } from '../../lib/regras';
+import { autoPreencher, prepararFatura, veiculosParaFatura } from '../../lib/faturas';
 import { fmtDate } from '../../lib/formato';
 import { excluirRegistro, removerAnexos, salvarRegistro } from '../../lib/frota';
 
@@ -36,11 +40,25 @@ function efeitoNoVeiculo(col, vals, dados) {
   return null;
 }
 
-function Campo({ campo, valor, onChange }) {
+function Campo({
+  campo, valor, onChange, veiculos,
+}) {
   const id = `frota-fd-${campo.k}`;
   const mudar = (e) => onChange(e.target.value);
   let input;
-  if (campo.t === 'select') {
+  if (campo.t === 'veic') {
+    const ativos = veiculosParaFatura(veiculos);
+    input = (
+      <select id={id} className="frota-inp" value={valor} onChange={mudar}>
+        <option value="">Selecione um veículo ativo ({ativos.length})…</option>
+        {ativos.map((v) => (
+          <option key={v.id} value={v.placa}>{v.placa} — {v.modelo || ''} · {v.condutor || 'sem condutor'} · {v.locadora || ''}</option>
+        ))}
+        {/* Fatura antiga de veículo já devolvido continua abrindo. */}
+        {valor && !ativos.some((v) => v.placa === valor) && <option value={valor}>{valor} (não está ativo)</option>}
+      </select>
+    );
+  } else if (campo.t === 'select') {
     input = (
       <select id={id} className="frota-inp" value={valor} onChange={mudar}>
         <option value="" />
@@ -93,7 +111,25 @@ export default function FormFrota({ col, id, init }) {
   const doc = id ? dados[col].find((x) => x.id === id) : null;
   const schema = SCHEMAS[col];
 
-  const [textos, setTextos] = useState(() => textosDoRegistro(col, doc || init || {}));
+  // Previsto que o próprio formulário sugeriu: só ele é trocado ao mudar veículo,
+  // mês ou tipo. Valor digitado à mão fica.
+  const [inicial] = useState(() => {
+    const base = textosDoRegistro(col, doc || init || {});
+    if (col !== 'faturas' || doc || !init?.placa) return { textos: base, sugestao: '' };
+    return autoPreencher(base, 'placa', dados, '', (v) => fmtDec.format(v));
+  });
+  const [textos, setTextos] = useState(inicial.textos);
+  const [sugestao, setSugestao] = useState(inicial.sugestao);
+  const mudar = (k, v) => {
+    const next = { ...textos, [k]: v };
+    if (col !== 'faturas') {
+      setTextos(next);
+      return;
+    }
+    const r = autoPreencher(next, k, dados, sugestao, (n) => fmtDec.format(n));
+    setSugestao(r.sugestao);
+    setTextos(r.textos);
+  };
   const [arquivos, setArquivos] = useState(() => Object.fromEntries(
     schema.filter((f) => f.t === 'files').map((f) => [f.k, listaDe((doc || init)?.[f.k])]),
   ));
@@ -111,9 +147,9 @@ export default function FormFrota({ col, id, init }) {
     fecharDrawer();
   };
 
-  const salvar = async (e) => {
+  const salvar = async (e, textosForcados) => {
     e?.preventDefault();
-    const vals = valoresDoForm(col, textos);
+    let vals = valoresDoForm(col, textosForcados || textos);
     schema.filter((f) => f.t === 'files').forEach((f) => {
       vals[f.k] = f.multi ? arquivos[f.k] : (arquivos[f.k][0] || null);
     });
@@ -126,6 +162,15 @@ export default function FormFrota({ col, id, init }) {
     if (col === 'veiculos' && vals.placa && !PLACA_RE.test(vals.placa)) {
       toast('Placa inválida. Use o formato ABC1D23 ou ABC1234.', 'err');
       return;
+    }
+    if (col === 'faturas') {
+      const r = prepararFatura(vals, dados);
+      if (r.erro) {
+        toast(r.erro, 'err');
+        formRef.current?.querySelector(`#frota-fd-${r.campo}`)?.focus();
+        return;
+      }
+      vals = r.vals;
     }
     const dup = duplicado(col, vals, id, dados);
     if (dup) {
@@ -190,6 +235,20 @@ export default function FormFrota({ col, id, init }) {
     else secoes[secoes.length - 1].campos.push(f);
   });
 
+  // Atalhos da conferência: mudam a situação e salvam de uma vez.
+  const conferir = (status) => {
+    const next = { ...textos, status };
+    if (status === 'Paga' && !next.data_pagamento) next.data_pagamento = todayISO();
+    setTextos(next);
+    if (status === 'Divergência' && !String(next.obs_conferencia || '').trim()) {
+      toast('Descreva a divergência em “Observação da conferência” e clique em Salvar.', 'err');
+      formRef.current?.querySelector('#frota-fd-obs_conferencia')?.focus();
+      return;
+    }
+    salvar(null, next);
+  };
+  const atalhosFatura = col === 'faturas' && id && podeEscrever;
+
   const titulo = doc ? tituloDe(col, doc, compLabel, fmtDate) : '';
   return (
     <CascaDrawer
@@ -206,13 +265,22 @@ export default function FormFrota({ col, id, init }) {
             <button type="button" className="frota-btn danger" onClick={() => setConfirmaExcluir(true)}><Trash2 size={15} /> Excluir</button>
           )}
           <span className="frota-sp" />
-          <button type="button" className="frota-btn" onClick={cancelar}>Cancelar</button>
+          {atalhosFatura ? (
+            <>
+              <button type="button" className="frota-btn" onClick={() => conferir('Divergência')} disabled={salvando}><TriangleAlert size={15} /> Divergência</button>
+              <button type="button" className="frota-btn" onClick={() => conferir('Conferida')} disabled={salvando}><Check size={15} /> Conferida</button>
+              <button type="button" className="frota-btn" onClick={() => conferir('Paga')} disabled={salvando}><CreditCard size={15} /> Paga</button>
+            </>
+          ) : (
+            <button type="button" className="frota-btn" onClick={cancelar}>Cancelar</button>
+          )}
           {podeEscrever && (
             <button type="button" className="frota-btn primary" onClick={salvar} disabled={salvando}>{salvando ? 'Salvando…' : 'Salvar'}</button>
           )}
         </>
       )}
     >
+      {col === 'faturas' && doc && <ResumoFatura fatura={doc} />}
       <form ref={formRef} className="frota-stack frota-form" onSubmit={salvar} noValidate>
         {secoes.map((s) => (
           <section key={s.titulo} className="frota-fsec">
@@ -228,7 +296,7 @@ export default function FormFrota({ col, id, init }) {
                   onChange={(lista) => setArquivos((a) => ({ ...a, [f.k]: lista }))}
                 />
               ) : (
-                <Campo key={f.k} campo={f} valor={textos[f.k]} onChange={(v) => setTextos((t) => ({ ...t, [f.k]: v }))} />
+                <Campo key={f.k} campo={f} valor={textos[f.k]} veiculos={dados.veiculos} onChange={(v) => mudar(f.k, v)} />
               )))}
             </div>
           </section>

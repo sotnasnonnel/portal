@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import {
-  Car, Download, Pencil, Plus,
+  Car, Download, FileText, Pencil, Plus,
 } from 'lucide-react';
 import TableScroll from '../../../../components/UI/TableScroll';
 import { useFrota } from '../components/FrotaContext';
@@ -20,7 +20,7 @@ const ORDEM = { Ativo: 0, Reservado: 1, Inativo: 2 };
 
 export default function VeiculosFrota() {
   const {
-    dados, cfg, ctx, carregando, filtros, setFiltro, abrirDetalhe, abrirForm, podeEscrever, toast,
+    dados, cfg, ctx, carregando, filtros, setFiltro, irPara, abrirDetalhe, abrirForm, podeEscrever, toast,
   } = useFrota();
   const f = filtros.veiculos;
   const set = (patch) => setFiltro('veiculos', patch);
@@ -45,6 +45,7 @@ export default function VeiculosFrota() {
   return (
     <div className="frota-page frota-stack">
       <PageHead Icon={Car} titulo="Veículos" sub="Cadastro da frota: contrato de locação, condutor, centro de custo, quilometragem e equipamentos.">
+        <button type="button" className="frota-btn" onClick={() => irPara('faturas')}><FileText size={15} /> Faturas</button>
         <button type="button" className="frota-btn" onClick={exportar}><Download size={15} /> Exportar</button>
         {podeEscrever && (
           <button type="button" className="frota-btn primary" onClick={() => abrirForm('veiculos', null, { status: 'Ativo' })}><Plus size={15} /> Novo veículo</button>

@@ -1085,6 +1085,12 @@ const FROTA_PASSOS = [
       'Veículos guarda o contrato de locação e a alocação. O Controle mensal lança os custos por veículo, e o botão "Gerar" cria o mês seguinte copiando locação, GPS, centro de custo e limite de combustível.',
   },
   {
+    icon: FileText,
+    titulo: "Faturas",
+    texto:
+      "Lança a fatura da locadora por veículo ativo, com o PDF anexado. O valor previsto vem do controle mensal, e a diferença aparece na lista. Os botões Conferida, Divergência e Paga registram a conferência, com o nome de quem conferiu e a hora.",
+  },
+  {
     icon: Wrench,
     titulo: "Combustível e manutenção",
     texto:
@@ -1155,7 +1161,13 @@ const ALOJAMENTOS_PASSOS = [
     icon: Receipt,
     titulo: "Pagamentos",
     texto:
-      'Traz o quadro do mês, com "a lançar" para cada conta controlada que ainda não tem registro.',
+      'Traz o quadro do mês, com "a lançar" para cada conta controlada que ainda não tem registro. Manutenção sempre tem coluna e aceita vários lançamentos no mês. Cada lançamento pode levar fornecedor, nº do documento e a fatura anexada.',
+  },
+  {
+    icon: FileText,
+    titulo: "Faturas",
+    texto:
+      "Fica dentro de Pagamentos e é a visão do Contas a Pagar: filtra por competência ou vencimento e abre cada fatura para registrar a conferência (conferida ou com divergência). Alterar valor, vencimento ou anexos de um lançamento conferido o devolve para \"A conferir\".",
   },
   {
     icon: Sofa,

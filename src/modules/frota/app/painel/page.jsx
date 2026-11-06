@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import {
-  Car, Gauge, Info, LayoutDashboard, ShieldCheck, TriangleAlert, Wrench,
+  Car, FileText, Gauge, Info, LayoutDashboard, ShieldCheck, TriangleAlert, Wrench,
 } from 'lucide-react';
 import { useFrota } from '../components/FrotaContext';
 import {
@@ -10,6 +10,7 @@ import {
   combOf, compLabel, compLong, comps, conformidade, extrasOf, groupSum, isNum, kmRodado, mensalOf, ocAberta,
   revisao, sum, totalOf, uniq,
 } from '../../lib/regras';
+import { fatVencida } from '../../lib/faturas';
 import {
   compResolvida, fmtDate, fmtInt, money, money0,
 } from '../../lib/formato';
@@ -64,6 +65,28 @@ export default function PainelFrota() {
         id: 'oc', lvl: 1, tone: 'warn', Icon: TriangleAlert, t: `${ocA.length} multas/avarias sem baixa`,
         s: `${money(sum(ocA, 'valor'))} em aberto ou em tratativa`,
         abrir: () => irPara('ocorrencias', { status: 'abertas' }),
+      });
+    }
+    const fVenc = dados.faturas.filter(fatVencida);
+    const fDiv = dados.faturas.filter((f) => f.status === 'Divergência');
+    const fAg = dados.faturas.filter((f) => f.status === 'Aguardando conferência');
+    if (fVenc.length) {
+      al.push({
+        id: 'fv', lvl: 2, tone: 'crit', Icon: FileText, t: `${fVenc.length} fatura(s) vencida(s) sem pagamento`,
+        s: `${money(sum(fVenc, 'valor'))} — conferir com o Contas a Pagar`,
+        abrir: () => irPara('faturas', { venc: 'vencidas', status: '' }),
+      });
+    }
+    if (fDiv.length) {
+      al.push({
+        id: 'fd', lvl: 1, tone: 'warn', Icon: FileText, t: `${fDiv.length} fatura(s) com divergência`,
+        s: money(sum(fDiv, 'valor')), abrir: () => irPara('faturas', { status: 'Divergência', venc: '' }),
+      });
+    }
+    if (fAg.length) {
+      al.push({
+        id: 'fa', lvl: 0, tone: 'info', Icon: FileText, t: `${fAg.length} fatura(s) aguardando conferência`,
+        s: money(sum(fAg, 'valor')), abrir: () => irPara('faturas', { status: 'Aguardando conferência', venc: '' }),
       });
     }
     const obsN = ms.filter((m) => m.obs).length;

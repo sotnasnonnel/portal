@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import {
-  AlertTriangle, BarChart3, Car, Download, Fuel, Receipt, ShieldCheck, Wrench, X,
+  AlertTriangle, BarChart3, Car, Download, FileText, Fuel, Receipt, ShieldCheck, Wrench, X,
 } from 'lucide-react';
 import TableScroll from '../../../../components/UI/TableScroll';
 import { useFrota } from '../components/FrotaContext';
@@ -17,7 +17,7 @@ import {
 import { exportarLinhas } from '../../lib/exportar';
 
 const ICONES = {
-  custos: Receipt, combustivel: Fuel, ocorrencias: AlertTriangle, frota: Car, condutores: ShieldCheck, manutencao: Wrench,
+  custos: Receipt, combustivel: Fuel, ocorrencias: AlertTriangle, frota: Car, condutores: ShieldCheck, manutencao: Wrench, faturas: FileText,
 };
 const PREVIA_COLUNAS = 9;
 const PREVIA_LINHAS = 300;

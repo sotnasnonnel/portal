@@ -1,17 +1,19 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  AlertTriangle, Building2, CheckCircle2, ChevronLeft, ChevronRight, Clock, Pencil, Plus, Receipt, Trash2,
+  AlertTriangle, Building2, CheckCircle2, ChevronLeft, ChevronRight, Clock, FileCheck2, Pencil, Plus, Receipt, Trash2,
 } from 'lucide-react';
 import { useBase } from '../../lib/useBase';
 import {
-  CONTAS, STATUS, addMonths, alojs, byId, compLabel, compLong, curComp, esperado, fdate, money, moneyCurto, num, operando, pagsDe, plural, resumoCompetencia,
+  SEMPRE, STATUS, addMonths, alojs, byId, compLabel, compLong, contasDoQuadro, curComp, esperado, fdate, money, moneyCurto, num, operando, pagsDe, plural,
+  resumoCompetencia,
 } from '../../lib/regras';
-import { rotaFicha } from '../components/nav';
+import { rotaFaturas, rotaFicha } from '../components/nav';
 import { useAcoes } from '../components/useAcoes';
 import Dialogos from '../components/Dialogos';
+import { AnexosCompactos } from '../components/Anexos';
 import {
-  Barra, Carga, CelulaPagamento, Kpi, LegendaPagamentos, Nil, PillPagamento, Vazio,
+  Barra, Carga, CelulaPagamento, Kpi, LegendaPagamentos, Nil, PillPagamento, SubnavPagamentos, Vazio,
 } from '../components/Ui';
 
 const somaValor = (lista) => lista.reduce((s, p) => s + (num(p.valor) || 0), 0);
@@ -19,7 +21,7 @@ const somaValor = (lista) => lista.reduce((s, p) => s + (num(p.valor) || 0), 0);
 function Conteudo({ base, acoes, comp }) {
   const ops = alojs(base, operando);
   const doMes = base.pagamentos.filter((p) => p.competencia === comp);
-  const contas = CONTAS.filter((c) => ops.some((a) => (a.contas_controladas || []).includes(c)) || doMes.some((p) => p.conta === c));
+  const contas = contasDoQuadro(ops.flatMap((a) => a.contas_controladas || []), doMes.map((p) => p.conta));
   const { exp, lanc, pend } = resumoCompetencia(base, comp);
   const total = somaValor(doMes);
   const semValor = doMes.filter((p) => num(p.valor) === null).length;
@@ -74,7 +76,7 @@ function Conteudo({ base, acoes, comp }) {
                       {a.status !== 'ativo' && <small>{STATUS[a.status].l}</small>}
                     </th>
                     {contas.map((c) => {
-                      const controlada = (a.contas_controladas || []).includes(c);
+                      const controlada = (a.contas_controladas || []).includes(c) || SEMPRE.includes(c);
                       const temLancamento = pagsDe(base, a.id, c, comp).length > 0;
                       return (
                         <td key={c}>
@@ -98,26 +100,30 @@ function Conteudo({ base, acoes, comp }) {
             </table>
           </div>
         ) : <Vazio titulo="Nenhum alojamento em operação" texto="Cadastre alojamentos ativos para controlar as contas." />}
-        <LegendaPagamentos>Clique em uma célula para lançar ou editar · “·” = conta não controlada no alojamento</LegendaPagamentos>
+        <LegendaPagamentos>Clique em uma célula para lançar ou editar · Manutenção aceita vários lançamentos no mês · “·” = conta não controlada no alojamento</LegendaPagamentos>
       </div>
 
-      <h2 className="aloj-sec">Lançamentos de {compLabel(comp)}</h2>
+      <h2 className="aloj-sec">
+        Lançamentos de {compLabel(comp)}
+        <Link className="aloj-link" to={rotaFaturas({ comp })}><FileCheck2 size={14} /> Conferir faturas desta competência</Link>
+      </h2>
       <div className="aloj-card aloj-card-b">
         {lista.length ? (
           <div className="aloj-tab-scroll">
             <table className="aloj-tab">
               <thead>
-                <tr><th>Alojamento</th><th>Conta</th><th className="r">Valor</th><th>Vencimento</th><th>Pagamento</th><th>Situação</th><th>Observação</th><th className="acao" /></tr>
+                <tr><th>Alojamento</th><th>Conta</th><th className="r">Valor</th><th>Vencimento</th><th>Pagamento</th><th>Situação</th><th>Fatura</th><th>Observação</th><th className="acao" /></tr>
               </thead>
               <tbody>
                 {lista.map((p) => (
                   <tr key={p.id}>
                     <td><b>{nomeAloj(p)}</b></td>
-                    <td>{p.conta}</td>
+                    <td>{p.conta}{p.fornecedor && <small>{p.fornecedor}</small>}</td>
                     <td className="r">{num(p.valor) !== null ? money(p.valor) : <Nil />}</td>
                     <td>{fdate(p.vencimento) || <Nil />}</td>
                     <td>{fdate(p.data_pagamento) || <Nil />}{p.forma && <small>{p.forma}</small>}</td>
                     <td><PillPagamento p={p} /></td>
+                    <td><AnexosCompactos lista={p.anexos} onErro={acoes.avisar} vazio={<Nil />} /></td>
                     <td>{p.obs || <Nil />}</td>
                     <td className="acao">
                       <button type="button" className="aloj-mini" title="Editar" aria-label="Editar pagamento" onClick={() => acoes.editarPagamento(p)}><Pencil size={14} /></button>
@@ -144,7 +150,7 @@ export default function PagamentosAlojamentos() {
       <div className="aloj-head">
         <div>
           <h1>Pagamentos</h1>
-          <p>Contas fixas por competência (mês/ano de referência), com valor e data de pagamento</p>
+          <p>Contas fixas e manutenção por competência (mês/ano de referência), com valor e data de pagamento</p>
         </div>
         <div className="aloj-acoes">
           <div className="aloj-comp">
@@ -156,6 +162,7 @@ export default function PagamentosAlojamentos() {
           <button type="button" className="aloj-btn primario" onClick={() => acoes.novoPagamento({ competencia: comp })}><Plus size={14} /> Lançar pagamento</button>
         </div>
       </div>
+      <SubnavPagamentos atual="pagamentos" />
       <Carga carregando={carregando} erro={erro}>
         <Conteudo base={base} acoes={acoes} comp={comp} />
       </Carga>

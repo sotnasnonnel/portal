@@ -10,31 +10,47 @@ export const TABELAS = {
   ocorrencias: 'frota_ocorrencias',
   condutores: 'frota_condutores',
   manutencoes: 'frota_manutencoes',
+  faturas: 'frota_faturas',
 };
+
+/**
+ * Coleções que podem ainda não existir no banco: a tabela chega numa migração
+ * à parte (supabase_migration_frota_faturas.sql). Sem ela, o resto da Frota abre
+ * e só a tela de Faturas avisa.
+ */
+const OPCIONAIS = ['faturas'];
+// PGRST205: tabela fora do cache do PostgREST; 42P01: tabela inexistente.
+const TABELA_AUSENTE = ['PGRST205', '42P01'];
 
 // O PostgREST corta em 1.000 linhas e não avisa. Só o controle mensal já passa
 // disso em dois anos (cerca de 66 veículos x 12 meses), e os totais do painel
 // sairiam errados sem erro nenhum.
 const PAGINA = 1000;
 
-async function buscarTudo(tabela) {
+async function buscarTudo(tabela, opcional = false) {
   const linhas = [];
   for (let de = 0; ; de += PAGINA) {
     const { data, error } = await supabase.from(tabela).select('*').order('id').range(de, de + PAGINA - 1);
+    if (error && opcional && TABELA_AUSENTE.includes(error.code)) return null;
     if (error) throw new Error(`Não foi possível carregar ${tabela}: ${error.message}`);
     linhas.push(...data);
     if (data.length < PAGINA) return linhas;
   }
 }
 
+/** Lista da coleção; `null` quando a tabela opcional ainda não existe. */
 export async function carregarColecao(col) {
-  return buscarTudo(TABELAS[col]);
+  return buscarTudo(TABELAS[col], OPCIONAIS.includes(col));
 }
 
+/** Tudo de uma vez. `ausentes` lista as coleções opcionais sem tabela. */
 export async function carregarTudo() {
   const cols = Object.keys(TABELAS);
   const listas = await Promise.all(cols.map(carregarColecao));
-  return Object.fromEntries(cols.map((c, i) => [c, listas[i]]));
+  return {
+    dados: Object.fromEntries(cols.map((c, i) => [c, listas[i] || []])),
+    ausentes: cols.filter((c, i) => listas[i] === null),
+  };
 }
 
 export async function carregarConfig() {

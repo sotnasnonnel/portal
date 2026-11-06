@@ -160,6 +160,7 @@ const CatalogoMob = lazyPagina(() => import('../modules/mobilizacao/app/catalogo
 
 const PainelFrota = lazyPagina(() => import('../modules/frota/app/painel/page'));
 const VeiculosFrota = lazyPagina(() => import('../modules/frota/app/veiculos/page'));
+const FaturasFrota = lazyPagina(() => import('../modules/frota/app/faturas/page'));
 const MensalFrota = lazyPagina(() => import('../modules/frota/app/mensal/page'));
 const CombustivelFrota = lazyPagina(() => import('../modules/frota/app/combustivel/page'));
 const ManutencaoFrota = lazyPagina(() => import('../modules/frota/app/manutencao/page'));
@@ -173,6 +174,7 @@ const ListaAloj = lazyPagina(() => import('../modules/alojamentos/app/lista/page
 const DetalheAloj = lazyPagina(() => import('../modules/alojamentos/app/detalhe/page'));
 const OcupacaoAloj = lazyPagina(() => import('../modules/alojamentos/app/ocupacao/page'));
 const PagamentosAloj = lazyPagina(() => import('../modules/alojamentos/app/pagamentos/page'));
+const FaturasAloj = lazyPagina(() => import('../modules/alojamentos/app/faturas/page'));
 const MobiliarioAloj = lazyPagina(() => import('../modules/alojamentos/app/mobiliario/page'));
 
 const MapaTorre = lazyPagina(() => import('../modules/torre/app/mapa/page'));
@@ -1061,6 +1063,7 @@ export default function AppRoutes() {
             <Route index element={<Navigate to="/frota/painel" replace />} />
             <Route path="painel" element={<LazyPage><PainelFrota /></LazyPage>} />
             <Route path="veiculos" element={<LazyPage><VeiculosFrota /></LazyPage>} />
+            <Route path="faturas" element={<LazyPage><FaturasFrota /></LazyPage>} />
             <Route path="mensal" element={<LazyPage><MensalFrota /></LazyPage>} />
             <Route path="combustivel" element={<LazyPage><CombustivelFrota /></LazyPage>} />
             <Route path="manutencao" element={<LazyPage><ManutencaoFrota /></LazyPage>} />
@@ -1085,6 +1088,9 @@ export default function AppRoutes() {
             <Route path="imovel/:id" element={<LazyPage><DetalheAloj /></LazyPage>} />
             <Route path="ocupacao" element={<LazyPage><OcupacaoAloj /></LazyPage>} />
             <Route path="pagamentos" element={<LazyPage><PagamentosAloj /></LazyPage>} />
+            {/* Subaba de Pagamentos: debaixo de /pagamentos para o menu acender o item certo. */}
+            <Route path="pagamentos/faturas" element={<LazyPage><FaturasAloj /></LazyPage>} />
+            <Route path="faturas" element={<Navigate to="/alojamentos/pagamentos/faturas" replace />} />
             <Route path="mobiliario" element={<LazyPage><MobiliarioAloj /></LazyPage>} />
           </Route>
 

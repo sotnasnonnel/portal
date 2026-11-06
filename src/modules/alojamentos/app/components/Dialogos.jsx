@@ -1,9 +1,16 @@
-import { useEffect, useState } from 'react';
-import { Plus, Trash2, X } from 'lucide-react';
+import { useRef, useEffect, useState } from 'react';
+import {
+  Pencil, Plus, Trash2, X,
+} from 'lucide-react';
 import {
   coletar, faltando, opcoes, valoresIniciais,
 } from '../../lib/formularios';
-import { staysOn } from '../../lib/regras';
+import { removerAnexos } from '../../lib/anexos';
+import {
+  anexosOrfaos, compLong, fdate, money, num, pagsDe, plural, staysOn,
+} from '../../lib/regras';
+import CampoAnexos, { AnexosCompactos } from './Anexos';
+import { Nil, PillPagamento } from './Ui';
 
 function Modal({
   titulo, sub, largo, estreito, onFechar, corpo, rodape,
@@ -43,11 +50,17 @@ function Modal({
   );
 }
 
-function Campo({ campo, vals, onChange }) {
+function Campo({
+  campo, vals, onChange, arquivos,
+}) {
   const id = `aloj-f-${campo.k}`;
   const classe = `aloj-campo${campo.span === 2 ? ' s2' : ''}`;
   const dica = campo.hint && <span className="aloj-dica">{campo.hint}</span>;
   const v = vals[campo.k];
+
+  if (campo.type === 'files') {
+    return <CampoAnexos campo={campo} lista={v || []} onChange={(l) => onChange(campo.k, l)} {...arquivos} />;
+  }
 
   if (campo.type === 'toggle') {
     return (
@@ -110,6 +123,24 @@ function FormModal({ config, onFechar }) {
   const [vals, setVals] = useState(() => valoresIniciais(campos, config.valores));
   const [erro, setErro] = useState('');
   const [salvando, setSalvando] = useState(false);
+  const [enviando, setEnviando] = useState(0);
+
+  // Arquivos sobem quando a pessoa os escolhe, antes de Salvar. Ao fechar, o que
+  // não ficou no registro sai do bucket: os novos, se cancelou; os que saíram da
+  // lista, se salvou. Mesma regra do protótipo (onCloseHook).
+  const novos = useRef([]);
+  const fecharLimpando = (salvou, finais) => {
+    campos.filter((c) => c.type === 'files').forEach((c) => {
+      removerAnexos(anexosOrfaos(config.valores?.[c.k], novos.current, (finais || vals)[c.k], salvou));
+    });
+    onFechar();
+  };
+  const cancelar = () => fecharLimpando(false);
+  const arquivos = {
+    onEnviado: (path) => { novos.current.push(path); },
+    onOcupado: (sim) => setEnviando((n) => n + (sim ? 1 : -1)),
+    onErro: (msg) => setErro(msg),
+  };
 
   const mudar = (k, valor) => setVals((atual) => {
     const novo = { ...atual, [k]: valor };
@@ -130,11 +161,15 @@ function FormModal({ config, onFechar }) {
       setErro(`Preencha: ${faltam.join(', ')}.`);
       return;
     }
+    if (enviando) {
+      setErro('Aguarde o envio dos arquivos terminar.');
+      return;
+    }
     setSalvando(true);
     setErro('');
     try {
       await config.onSalvar(coletados);
-      onFechar();
+      fecharLimpando(true, coletados);
     } catch (e) {
       setErro(e.message);
       setSalvando(false);
@@ -146,13 +181,14 @@ function FormModal({ config, onFechar }) {
       titulo={config.titulo}
       sub={config.sub}
       largo={config.largo}
-      onFechar={onFechar}
+      onFechar={cancelar}
       corpo={(
         <form id="aloj-form" className="aloj-modal-b" onSubmit={salvar} noValidate>
+          {config.intro}
           <div className="aloj-fgrid">
             {campos.map((c) => (c.section
               ? <div key={c.section} className="aloj-fsec">{c.section}</div>
-              : <Campo key={c.k} campo={c} vals={vals} onChange={mudar} />))}
+              : <Campo key={c.k} campo={c} vals={vals} onChange={mudar} arquivos={arquivos} />))}
           </div>
           {erro && <p className="aloj-ferr" role="alert">{erro}</p>}
         </form>
@@ -166,9 +202,67 @@ function FormModal({ config, onFechar }) {
               </button>
             </span>
           )}
-          <button type="button" className="aloj-btn" onClick={onFechar}>Cancelar</button>
-          <button type="submit" form="aloj-form" className="aloj-btn primario" disabled={salvando}>
-            {salvando ? 'Salvando…' : rotulo}
+          <button type="button" className="aloj-btn" onClick={cancelar}>Cancelar</button>
+          <button type="submit" form="aloj-form" className="aloj-btn primario" disabled={salvando || enviando > 0}>
+            {salvando ? 'Salvando…' : enviando ? 'Enviando arquivo…' : rotulo}
+          </button>
+        </>
+      )}
+    />
+  );
+}
+
+/**
+ * Vários lançamentos da mesma conta no mês (ou a Manutenção, que sempre abre
+ * aqui). Lê da base viva: depois de editar ou excluir, a lista já vem certa.
+ */
+function ListaModal({ lista, acoes }) {
+  const { base, fechar } = acoes;
+  const { aid, conta, comp } = lista;
+  const a = base.alojamentos.find((x) => x.id === aid);
+  const ps = pagsDe(base, aid, conta, comp)
+    .sort((x, y) => String(x.data_pagamento || x.vencimento || '').localeCompare(String(y.data_pagamento || y.vencimento || '')));
+  const tot = ps.reduce((s, p) => s + (num(p.valor) || 0), 0);
+  return (
+    <Modal
+      titulo={`${conta} · ${compLong(comp)}`}
+      sub={`${a?.nome || ''} · ${plural(ps.length, 'lançamento')}`}
+      largo
+      onFechar={fechar}
+      corpo={(
+        <div className="aloj-modal-b">
+          {ps.length ? (
+            <div className="aloj-tab-scroll">
+              <table className="aloj-tab">
+                <thead>
+                  <tr><th>Fornecedor / serviço</th><th className="r">Valor</th><th>Vencimento</th><th>Pagamento</th><th>Fatura</th><th className="acao" /></tr>
+                </thead>
+                <tbody>
+                  {ps.map((p) => (
+                    <tr key={p.id}>
+                      <td><b>{p.fornecedor || p.conta}</b>{p.obs && <small>{p.obs}</small>}</td>
+                      <td className="r">{num(p.valor) !== null ? money(p.valor) : <Nil />}</td>
+                      <td>{fdate(p.vencimento) || <Nil />}</td>
+                      <td><PillPagamento p={p} />{p.data_pagamento && <small>{fdate(p.data_pagamento)}</small>}</td>
+                      <td><AnexosCompactos lista={p.anexos} onErro={acoes.avisar} vazio={<Nil />} /></td>
+                      <td className="acao">
+                        <button type="button" className="aloj-mini" title="Editar" aria-label="Editar lançamento" onClick={() => acoes.editarPagamento(p)}><Pencil size={14} /></button>
+                        <button type="button" className="aloj-mini" title="Excluir" aria-label="Excluir lançamento" onClick={() => acoes.excluirPagamento(p)}><Trash2 size={14} /></button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot><tr><td>Total</td><td className="r">{money(tot)}</td><td colSpan={4} /></tr></tfoot>
+              </table>
+            </div>
+          ) : <p className="aloj-texto">Nenhum lançamento.</p>}
+        </div>
+      )}
+      rodape={(
+        <>
+          <button type="button" className="aloj-btn" onClick={fechar}>Fechar</button>
+          <button type="button" className="aloj-btn primario" onClick={() => acoes.novoPagamento({ alojamento_id: aid, conta, competencia: comp })}>
+            <Plus size={14} /> Novo lançamento
           </button>
         </>
       )}
@@ -305,10 +399,11 @@ function Toast({ texto, onFim }) {
 /** O que useAcoes abriu. Cada tela desenha isto uma vez. */
 export default function Dialogos({ acoes }) {
   const {
-    form, confirmacao, quartosDe, toast, base, fechar, limparToast, salvarListaQuartos,
+    form, confirmacao, quartosDe, lista, toast, base, fechar, limparToast, salvarListaQuartos,
   } = acoes;
   return (
     <>
+      {lista && !form && !confirmacao && <ListaModal lista={lista} acoes={acoes} />}
       {form && <FormModal key={form.titulo} config={form} onFechar={fechar} />}
       {confirmacao && <ConfirmModal config={confirmacao} onFechar={fechar} />}
       {quartosDe && <QuartosModal a={quartosDe} base={base} onSalvar={salvarListaQuartos} onFechar={fechar} />}

@@ -4,6 +4,7 @@
 import {
   OC_STATUS, TIPOS_MAN, CAT_MULTA, CAT_AVARIA, parseBR, uniq, isNum,
 } from './regras.js';
+import { FAT_FORMAS, FAT_STATUS, FAT_TIPOS } from './faturas.js';
 
 export const fmtDec = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -158,10 +159,40 @@ export const SCHEMAS = {
     { k: 'descricao', l: 'Descrição', t: 'area', full: true },
     { k: 'anexos', l: 'Anexos (nota fiscal, checklist, protocolo)', t: 'files', multi: true, what: 'documento', docTypes: ['Nota fiscal', 'Checklist', 'Protocolo', 'Fotos', 'Outro'] },
   ],
+  // `veic`: só veículo ativo. Conferido por/em não aparecem: o banco grava.
+  faturas: [
+    { sec: 'Veículo' },
+    { k: 'placa', l: 'Veículo (somente ativos)', t: 'veic', req: true, full: true },
+    { k: 'locadora', l: 'Locadora', list: 'locadoras' },
+    { k: 'contrato', l: 'Nº contrato' },
+    { k: 'condutor', l: 'Condutor', list: 'condutores' },
+    { k: 'ct', l: 'CT / Centro de custo', list: 'cts' },
+    { k: 'custo_resp', l: 'Custo por conta de', t: 'select', opts: ['PHD', 'Cliente'] },
+    { sec: 'Fatura' },
+    { k: 'competencia', l: 'Mês de referência', t: 'month', req: true },
+    { k: 'tipo', l: 'Tipo de cobrança', t: 'select', opts: FAT_TIPOS, req: true },
+    { k: 'numero_fatura', l: 'Nº da fatura' },
+    { k: 'emissao', l: 'Data de emissão', t: 'date' },
+    { k: 'vencimento', l: 'Data de vencimento', t: 'date', req: true },
+    { k: 'valor', l: 'Valor da fatura', t: 'money', req: true },
+    { k: 'valor_previsto', l: 'Valor previsto', t: 'money', hint: 'Vem do controle mensal do veículo; ajuste se necessário' },
+    { k: 'forma_pagamento', l: 'Forma de pagamento', t: 'select', opts: FAT_FORMAS },
+    { k: 'envio_financeiro', l: 'Enviada ao Financeiro em', t: 'date' },
+    { k: 'linha_digitavel', l: 'Linha digitável do boleto / chave PIX', full: true },
+    { k: 'anexos', l: 'Documentos (fatura, boleto, nota fiscal, comprovante)', t: 'files', multi: true, what: 'documento', docTypes: ['Fatura', 'Boleto', 'Nota fiscal', 'Comprovante de pagamento', 'Outro'] },
+    { sec: 'Conferência — Contas a Pagar' },
+    { k: 'status', l: 'Situação', t: 'select', opts: FAT_STATUS, req: true },
+    { k: 'data_pagamento', l: 'Data de pagamento', t: 'date', hint: 'Em branco ao marcar Paga = hoje' },
+    { k: 'obs_conferencia', l: 'Observação da conferência', t: 'area', full: true, hint: 'Obrigatória quando houver divergência' },
+    { sec: 'Observações' },
+    { k: 'obs', l: 'Observações', t: 'area', full: true },
+  ],
 };
 
-export const COL_NAME = { veiculos: 'veículo', mensal: 'lançamento', ocorrencias: 'ocorrência', condutores: 'condutor', manutencoes: 'manutenção' };
-export const FEM = { ocorrencias: true, manutencoes: true };
+export const COL_NAME = {
+  veiculos: 'veículo', mensal: 'lançamento', ocorrencias: 'ocorrência', condutores: 'condutor', manutencoes: 'manutenção', faturas: 'fatura',
+};
+export const FEM = { ocorrencias: true, manutencoes: true, faturas: true };
 
 export const camposDe = (col) => SCHEMAS[col].filter((f) => f.k);
 
@@ -217,6 +248,7 @@ export function tituloDe(col, d, compLabel, fmtDate) {
   if (col === 'manutencoes') return `${d.placa || ''} · ${d.tipo || ''} · ${fmtDate(d.data)}`;
   if (col === 'veiculos') return `${d.placa || 'Retirada pendente'} · ${d.modelo || ''}`;
   if (col === 'condutores') return d.nome;
+  if (col === 'faturas') return `${d.placa || ''} · ${compLabel(d.competencia)} · ${d.numero_fatura ? `Nº ${d.numero_fatura}` : 'sem nº'}`;
   return '';
 }
 

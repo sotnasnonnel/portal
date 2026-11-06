@@ -1,5 +1,6 @@
 import {
-  alojs, byId, num, operando, staysOn, STATUS, CONTAS, UTIL_TIPOS, CHAVE, PAG_ST, FORMAS, DESTINOS, TIPOS_OC, TIPOS_IMOVEL, UFS,
+  alojs, byId, num, operando, staysOn, STATUS, CONTAS, CONTAS_CONTROLAVEIS, CONF, UTIL_TIPOS, CHAVE, PAG_ST, FORMAS, DESTINOS, TIPOS_OC,
+  TIPOS_IMOVEL, UFS,
 } from './regras.js';
 
 // Os campos de cada formulário, do jeito que o protótipo os descreve. Quem
@@ -70,7 +71,8 @@ export const alojFields = (isNew) => [
     k: 'contas_controladas',
     label: 'Contas fixas controladas mês a mês',
     type: 'checks',
-    opts: CONTAS.filter((c) => c !== 'Caução'),
+    // Manutenção fica fora: é variável e nunca entra como "a lançar".
+    opts: CONTAS_CONTROLAVEIS,
     hint: 'Aparecem como “a lançar” no quadro de pagamentos até serem registradas.',
   },
   { section: 'Observações' },
@@ -129,11 +131,30 @@ export const pagamentoFields = (base) => [
   { k: 'conta', label: 'Conta', type: 'select', opts: CONTAS, req: true },
   { k: 'competencia', label: 'Mês / ano de referência', type: 'month', req: true },
   { k: 'valor', label: 'Valor (R$)', type: 'money' },
-  { k: 'vencimento', label: 'Vencimento', type: 'date' },
+  { k: 'vencimento', label: 'Vencimento da fatura', type: 'date' },
   { k: 'data_pagamento', label: 'Data do pagamento', type: 'date' },
   { k: 'status', label: 'Situação', type: 'select', opts: pares(PAG_ST) },
   { k: 'forma', label: 'Forma de pagamento', type: 'select', opts: ['', ...FORMAS] },
-  { k: 'obs', label: 'Observação', type: 'textarea', span: 2, rows: 2, ph: 'Nº do boleto, protocolo, consumo (kWh)…' },
+  { k: 'fornecedor', label: 'Fornecedor / prestador', ph: 'Ex.: CEMIG, Claro, eletricista João' },
+  { k: 'documento', label: 'Nº da fatura / boleto / NF', ph: 'Ex.: 000123456' },
+  { k: 'anexos', label: 'Fatura, boleto ou comprovante', type: 'files', span: 2 },
+  { k: 'obs', label: 'Observação', type: 'textarea', span: 2, rows: 2, ph: 'Serviço de manutenção executado, consumo (kWh), protocolo…' },
+];
+
+/** Conferência pelo Contas a Pagar: o resultado e, junto, a situação do pagamento. */
+export const conferenciaFields = [
+  {
+    k: 'conferencia_status',
+    label: 'Resultado da conferência',
+    type: 'select',
+    opts: [['conferida', 'Conferida: fatura confere com o lançamento'], ['divergencia', 'Divergência encontrada'], ['pendente', `Deixar ${CONF.pendente.l.toLowerCase()}`]],
+  },
+  { k: 'status', label: 'Situação do pagamento', type: 'select', opts: pares(PAG_ST) },
+  { k: 'data_pagamento', label: 'Data do pagamento', type: 'date' },
+  { k: 'forma', label: 'Forma de pagamento', type: 'select', opts: ['', ...FORMAS] },
+  {
+    k: 'conferencia_obs', label: 'Observação da conferência', type: 'textarea', span: 2, rows: 3, ph: 'Ex.: valor do boleto difere do lançado; fatura de outro mês; aguardando 2ª via', hint: 'Obrigatória quando houver divergência.',
+  },
 ];
 
 export const itemFields = (base) => [
@@ -173,7 +194,7 @@ export function valoresIniciais(campos, valores = {}) {
       if (!ops.some(([valor]) => String(valor) === String(v))) v = ops[0]?.[0] ?? '';
     }
     if (c.type === 'toggle') v = !!v;
-    if (c.type === 'checks' && !Array.isArray(v)) v = [];
+    if ((c.type === 'checks' || c.type === 'files') && !Array.isArray(v)) v = [];
     out[c.k] = v;
   });
   return out;
@@ -185,7 +206,7 @@ export function coletar(campos, vals) {
   campos.forEach((c) => {
     if (c.section) return;
     const v = vals[c.k];
-    if (c.type === 'checks' || c.type === 'toggle') out[c.k] = v;
+    if (c.type === 'checks' || c.type === 'toggle' || c.type === 'files') out[c.k] = v;
     else if (c.type === 'money' || c.type === 'int') out[c.k] = num(v);
     else out[c.k] = String(v ?? '').trim();
   });

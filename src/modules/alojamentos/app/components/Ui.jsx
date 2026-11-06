@@ -1,9 +1,10 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
-  Check, Copy, Loader2, AlertCircle,
+  Check, Copy, Loader2, AlertCircle, FileCheck2, LayoutGrid, Paperclip,
 } from 'lucide-react';
 import {
-  CHAVE, PAG_ST, STATUS, compLabel, pagsDe, resumoCelula,
+  CHAVE, PAG_ST, STATUS, celulaAbreLista, compLabel, pagsDe, plural, resumoCelula,
 } from '../../lib/regras';
 
 // As peças visuais que as telas do módulo repetem.
@@ -104,17 +105,34 @@ export function CelulaPagamento({
     );
   }
   const { st, principal, sub } = resumoCelula(ps);
-  const mais = ps.length > 1 ? ` · +${ps.length - 1}` : '';
+  const nf = ps.reduce((s, p) => s + (p.anexos || []).length, 0);
+  const lista = celulaAbreLista(conta, ps);
+  const mais = ps.length > 1 ? `${sub ? ' · ' : ''}${ps.length} lanç.` : '';
   return (
     <button
       type="button"
       className={`aloj-cel ${st}`}
-      title={`${conta} · ${compLabel(comp)}${ps.length > 1 ? ` · ${ps.length} lançamentos` : ''}`}
-      onClick={() => acoes.editarPagamento(ps[0])}
+      title={`${conta} · ${compLabel(comp)}${ps.length > 1 ? ` · ${ps.length} lançamentos` : ''}${nf ? ` · ${plural(nf, 'fatura anexada', 'faturas anexadas')}` : ''}`}
+      onClick={() => (lista ? acoes.listarPagamentos(aid, conta, comp) : acoes.editarPagamento(ps[0]))}
     >
       <b>{principal}</b>
-      {sub && <small>{sub}{mais}</small>}
+      {(sub || mais || nf > 0) && <small>{sub}{mais}{nf > 0 && <> <Paperclip size={10} aria-hidden="true" /></>}</small>}
     </button>
+  );
+}
+
+/** Controle das duas visões de Pagamentos: o quadro e as faturas do Contas a Pagar. */
+export function SubnavPagamentos({ atual }) {
+  const itens = [
+    { k: 'pagamentos', href: '/alojamentos/pagamentos', rotulo: 'Quadro da competência', Icon: LayoutGrid },
+    { k: 'faturas', href: '/alojamentos/pagamentos/faturas', rotulo: 'Faturas · Contas a Pagar', Icon: FileCheck2 },
+  ];
+  return (
+    <nav className="aloj-subnav" aria-label="Pagamentos">
+      {itens.map((it) => (
+        <Link key={it.k} to={it.href} aria-current={atual === it.k ? 'page' : undefined}><it.Icon size={14} /> {it.rotulo}</Link>
+      ))}
+    </nav>
   );
 }
 

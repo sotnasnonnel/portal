@@ -39,6 +39,11 @@ export function fdate(s) {
   const d = pISO(s);
   return d ? `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}` : '';
 }
+/** Data local de um timestamptz (conferido_em), em DD/MM/AAAA. */
+export function fdateTs(ts) {
+  const d = ts ? new Date(ts) : null;
+  return d && !Number.isNaN(d.getTime()) ? `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}` : '';
+}
 export function fdm(s) {
   const d = pISO(s);
   return d ? `${pad(d.getDate())}/${pad(d.getMonth() + 1)}` : '';
@@ -70,6 +75,16 @@ export function addMonths(c, n) {
   const d = new Date(y, m - 1 + n, 1);
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
 }
+export function addDays(iso, n) {
+  const d = pISO(iso);
+  d.setDate(d.getDate() + n);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+/** Último dia do mês "YYYY-MM", como data ISO. */
+export function lastDay(c) {
+  const [y, m] = c.split('-').map(Number);
+  return `${c}-${pad(new Date(y, m, 0).getDate())}`;
+}
 
 /* ===================== constantes ===================== */
 export const STATUS = {
@@ -78,7 +93,14 @@ export const STATUS = {
   inativo: { l: 'Inativo', c: '' },
 };
 export const ORDER = { ativo: 0, desmobilizacao: 1, inativo: 2 };
-export const CONTAS = ['Aluguel', 'Condomínio', 'IPTU', 'Água', 'Energia', 'Internet', 'Gás', 'Faxina', 'Caução', 'Outros'];
+export const CONTAS = ['Aluguel', 'Condomínio', 'IPTU', 'Água', 'Energia', 'Internet', 'Gás', 'Faxina', 'Manutenção', 'Caução', 'Outros'];
+/**
+ * Contas variáveis: sempre têm coluna nos quadros e aceitam vários lançamentos no
+ * mês, mas nunca geram "a lançar" (não entram em contas_controladas).
+ */
+export const SEMPRE = ['Manutenção'];
+/** O que o cadastro oferece para controle mês a mês. */
+export const CONTAS_CONTROLAVEIS = CONTAS.filter((c) => c !== 'Caução' && !SEMPRE.includes(c));
 export const UTIL_TIPOS = ['Água', 'Energia', 'Internet', 'Gás', 'TV', 'Outro'];
 export const CHAVE = {
   com_morador: { l: 'Com o morador', c: 'info' },
@@ -93,6 +115,13 @@ export const PAG_ST = {
   pendente: { l: 'Pendente', c: 'warn' },
   agendado: { l: 'Agendado', c: 'info' },
 };
+/** Conferência da fatura pelo Contas a Pagar (alojamentos_pagamentos.conferencia_status). */
+export const CONF = {
+  pendente: { l: 'A conferir', c: 'warn' },
+  conferida: { l: 'Conferida', c: 'good' },
+  divergencia: { l: 'Divergência', c: 'bad' },
+};
+export const confSt = (p) => (CONF[p?.conferencia_status] ? p.conferencia_status : 'pendente');
 export const FORMAS = ['Boleto', 'PIX', 'PIX agendado', 'Débito automático', 'Transferência', 'Cartão corporativo', 'Reembolso', 'Outro'];
 export const DESTINOS = ['Em uso', 'Transferir p/ outro alojamento', 'Vender', 'Doar', 'Descartar', 'Deixar no imóvel'];
 export const DEST_C = {
@@ -289,6 +318,8 @@ export function alerts(base, hoje = todayISO()) {
     out.push({ sev: 'info', go: 'pagamentos', title: `${compLong(comp)}: ${exp - done} de ${exp} contas sem lançamento`, text: `${plural(falt.size, 'alojamento')} com contas a lançar na competência atual.` });
   }
 
+  out.push(...alertasFaturas(base, hoje));
+
   const inc = base.alojamentos.filter((a) => a.status === 'ativo' && missing(a).length);
   if (inc.length) {
     out.push({ sev: 'info', go: 'lista', filter: 'incompletos', title: plural(inc.length, 'cadastro incompleto', 'cadastros incompletos'), text: inc.map((a) => a.nome).join(', ') });
@@ -310,4 +341,162 @@ export function resumoCelula(ps) {
     ? (dia ? `dia ${+dia.slice(8)}` : (temValor ? 'pago' : ''))
     : (ps[0].vencimento ? `vence ${fdm(ps[0].vencimento)}` : PAG_ST[st].l.toLowerCase());
   return { st, principal, sub };
+}
+
+/** Colunas do quadro: as controladas, as SEMPRE e as que já têm lançamento. */
+export const contasDoQuadro = (controladas, lancadas) => CONTAS
+  .filter((c) => controladas.includes(c) || SEMPRE.includes(c) || lancadas.includes(c));
+
+/** A célula abre a lista (e não o formulário direto) quando há mais de um lançamento ou a conta é SEMPRE. */
+export const celulaAbreLista = (conta, ps) => ps.length > 1 || SEMPRE.includes(conta);
+
+/* ===================== faturas (Contas a Pagar) ===================== */
+const somaV = (l) => l.reduce((s, p) => s + (num(p.valor) || 0), 0);
+export const emAberto = (p) => p.status !== 'pago';
+export const vencida = (p, hoje = todayISO()) => !!p.vencimento && p.vencimento < hoje && emAberto(p);
+
+/** Alertas do Início: vencidas sem pagamento e as que vencem em até 3 dias. */
+export function alertasFaturas(base, hoje = todayISO()) {
+  const abertas = base.pagamentos.filter((p) => byId(base, p.alojamento_id) && p.vencimento && emAberto(p));
+  const atras = abertas.filter((p) => p.vencimento < hoje);
+  const ate = addDays(hoje, 3);
+  const prox = abertas.filter((p) => p.vencimento >= hoje && p.vencimento <= ate);
+  const resumo = (l) => `${money(somaV(l)) || 'R$ 0,00'} · ${[...new Set(l.map((p) => byId(base, p.alojamento_id).nome))].join(', ')}`;
+  const out = [];
+  if (atras.length) {
+    out.push({
+      sev: 'bad', go: 'pagamentos/faturas', chip: 'vencidas', title: `${plural(atras.length, 'fatura vencida', 'faturas vencidas')} sem pagamento`, text: resumo(atras),
+    });
+  }
+  if (prox.length) {
+    out.push({
+      sev: 'warn', go: 'pagamentos/faturas', chip: '3d', title: `${plural(prox.length, 'fatura vence', 'faturas vencem')} em até 3 dias`, text: resumo(prox),
+    });
+  }
+  return out;
+}
+
+/** Filtros da tela de faturas, todos vazios. */
+export const FAT0 = () => ({
+  comp: '', de: '', ate: '', aloj: '', conta: '', sit: '', conf: '', anexo: '', q: '',
+});
+export const filtroAtivo = (f) => Object.values(f).some(Boolean);
+
+export function fatFiltrar(base, f, hoje = todayISO()) {
+  const q = norm(f.q).trim();
+  const nome = (p) => String(byId(base, p.alojamento_id)?.nome || '');
+  return base.pagamentos.filter((p) => {
+    const a = byId(base, p.alojamento_id);
+    if (!a) return false;
+    if (f.comp && p.competencia !== f.comp) return false;
+    if ((f.de || f.ate) && !p.vencimento) return false;
+    if (f.de && p.vencimento < f.de) return false;
+    if (f.ate && p.vencimento > f.ate) return false;
+    if (f.aloj && p.alojamento_id !== f.aloj) return false;
+    if (f.conta && p.conta !== f.conta) return false;
+    if (f.conf && confSt(p) !== f.conf) return false;
+    const n = (p.anexos || []).length;
+    if (f.anexo === 'com' && !n) return false;
+    if (f.anexo === 'sem' && n) return false;
+    if (f.sit === 'apagar' && !emAberto(p)) return false;
+    if (f.sit === 'pago' && emAberto(p)) return false;
+    if (f.sit === 'vencidas' && !vencida(p, hoje)) return false;
+    if (q && !norm([a.nome, a.sigla, a.centro_custo, p.conta, p.fornecedor, p.documento, p.obs, ...(p.anexos || []).map((x) => x.nome)].join(' ')).includes(q)) return false;
+    return true;
+  }).sort((x, y) => (x.vencimento || '9999').localeCompare(y.vencimento || '9999')
+    || nome(x).localeCompare(nome(y), 'pt-BR') || String(x.conta).localeCompare(String(y.conta)));
+}
+
+export const ATALHOS_FATURA = [
+  ['hoje', 'Vencem hoje'], ['3d', 'Próximos 3 dias'], ['7d', 'Próximos 7 dias'], ['mes', 'Vencimento no mês'],
+  ['vencidas', 'Vencidas sem pagamento'], ['conferir', 'Com fatura, a conferir'],
+];
+
+export function fatChipOn(f, k, hoje = todayISO()) {
+  const m = f.comp || curComp(hoje);
+  if (k === 'hoje') return f.de === hoje && f.ate === hoje;
+  if (k === '3d') return f.de === hoje && f.ate === addDays(hoje, 3);
+  if (k === '7d') return f.de === hoje && f.ate === addDays(hoje, 7);
+  if (k === 'mes') return f.de === `${m}-01` && f.ate === lastDay(m);
+  if (k === 'vencidas') return f.sit === 'vencidas';
+  if (k === 'conferir') return f.conf === 'pendente' && f.anexo === 'com';
+  return false;
+}
+
+/**
+ * Aplica um atalho e devolve os filtros novos (não muda `atual`). Clicar no
+ * atalho já ligado o desliga. `reset` parte dos filtros vazios: é como o alerta
+ * do Início abre a tela.
+ */
+export function fatChip(atual, k, hoje = todayISO(), reset = false) {
+  if (k === 'limpar') return FAT0();
+  const f = reset ? FAT0() : { ...atual };
+  if (!reset && fatChipOn(f, k, hoje)) {
+    if (k === 'vencidas') f.sit = '';
+    else if (k === 'conferir') Object.assign(f, { conf: '', anexo: '' });
+    else Object.assign(f, { de: '', ate: '' });
+    return f;
+  }
+  const m = f.comp || curComp(hoje);
+  const novos = {
+    hoje: { de: hoje, ate: hoje, comp: '' },
+    '3d': { de: hoje, ate: addDays(hoje, 3), comp: '' },
+    '7d': { de: hoje, ate: addDays(hoje, 7), comp: '' },
+    mes: { de: `${m}-01`, ate: lastDay(m), comp: '' },
+    vencidas: {
+      sit: 'vencidas', de: '', ate: '', comp: '',
+    },
+    conferir: { conf: 'pendente', anexo: 'com' },
+  }[k];
+  return novos ? { ...f, ...novos } : f;
+}
+
+export function resumoFaturas(lista, hoje = todayISO()) {
+  const venc = lista.filter((p) => vencida(p, hoje));
+  return {
+    total: somaV(lista),
+    semValor: lista.filter((p) => num(p.valor) === null).length,
+    comAnexo: lista.filter((p) => (p.anexos || []).length).length,
+    conferidas: lista.filter((p) => confSt(p) === 'conferida').length,
+    divergencias: lista.filter((p) => confSt(p) === 'divergencia').length,
+    vencidas: venc.length,
+    valorVencido: somaV(venc),
+  };
+}
+
+const caminhos = (l) => (l || []).map((x) => x.path).join(',');
+/**
+ * Mesma regra do gatilho app_private.aloj_conferencia: mexer no valor, no
+ * vencimento ou nos anexos de um lançamento já conferido o devolve para "A
+ * conferir". O banco é quem aplica; o front usa só para avisar.
+ */
+export const voltaParaConferir = (antes, depois) => confSt(antes) !== 'pendente' && (
+  num(antes.valor) !== num(depois.valor)
+  || (antes.vencimento || '') !== (depois.vencimento || '')
+  || caminhos(antes.anexos) !== caminhos(depois.anexos));
+
+/** Validação do formulário de conferência; devolve a mensagem de erro ou ''. */
+export function erroConferencia(p, v) {
+  if (v.conferencia_status === 'divergencia' && !String(v.conferencia_obs || '').trim()) return 'Descreva a divergência encontrada.';
+  if (v.status === 'pago' && !v.data_pagamento && num(p.valor) === null) return 'Informe a data do pagamento.';
+  return '';
+}
+
+/* ===================== anexos ===================== */
+const TIPOS_ARQ = {
+  pdf: 'application/pdf', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif',
+};
+export const LIMITE_ANEXO = 20 * 1024 * 1024;
+export function tipoDoArquivo(file) {
+  if (Object.values(TIPOS_ARQ).includes(file.type)) return file.type;
+  return TIPOS_ARQ[String(file.name).split('.').pop().toLowerCase()] || '';
+}
+/**
+ * Arquivos que o formulário subiu e que já não servem: ao cancelar, os novos;
+ * ao salvar, os (originais + novos) que saíram da lista final.
+ */
+export function anexosOrfaos(originais, novos, finais, salvou) {
+  const ficam = new Set((finais || []).map((x) => x.path));
+  const candidatos = salvou ? [...(originais || []).map((x) => x.path), ...novos] : novos;
+  return [...new Set(candidatos)].filter((p) => !ficam.has(p));
 }

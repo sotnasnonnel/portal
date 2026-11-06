@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  Pencil, TriangleAlert, Trash2, Wrench,
+  FileText, Pencil, TriangleAlert, Trash2, Wrench,
 } from 'lucide-react';
 import { useFrota } from './FrotaContext';
 import CascaDrawer from './CascaDrawer';
@@ -9,8 +9,9 @@ import {
   Kpi, LinhaAuditoria, Pill, Placa,
 } from './Pecas';
 import {
-  combOf, compLabel, isNum, ocTone, revisao, stTone, todayISO, totalOf,
+  combOf, compLabel, isNum, lastComp, ocTone, revisao, stTone, sum, todayISO, totalOf,
 } from '../../lib/regras';
+import { fatTone } from '../../lib/faturas';
 import {
   fmtDate, fmtInt, int, km, linhaClicavel, money, money0,
 } from '../../lib/formato';
@@ -36,6 +37,11 @@ export default function DetalheVeiculo({ id }) {
   const oc = dados.ocorrencias.filter((o) => o.placa && o.placa === v.placa).sort(porDataDesc);
   const mn = dados.manutencoes.filter((m) => v.placa && m.placa === v.placa).sort(porDataDesc);
   const hist = v.historico || [];
+  const fs = dados.faturas
+    .filter((f) => v.placa && f.placa === v.placa)
+    .sort((a, b) => String(b.vencimento || b.competencia).localeCompare(String(a.vencimento || a.competencia)));
+  // Fatura nova só para veículo ativo com placa, como no formulário.
+  const aceitaFatura = v.status === 'Ativo' && v.placa;
 
   const excluir = async () => {
     try {
@@ -67,6 +73,9 @@ export default function DetalheVeiculo({ id }) {
             <button type="button" className="frota-btn danger" onClick={() => setConfirma(true)}><Trash2 size={15} /> Excluir</button>
           )}
           <span className="frota-sp" />
+          {aceitaFatura && (
+            <button type="button" className="frota-btn" onClick={() => abrirForm('faturas', null, { placa: v.placa, competencia: lastComp(dados.mensal) || todayISO().slice(0, 7), tipo: 'Locação mensal', status: 'Aguardando conferência' })}><FileText size={15} /> Fatura</button>
+          )}
           <button type="button" className="frota-btn" onClick={() => abrirForm('manutencoes', null, { placa: v.placa, data: todayISO(), tipo: 'Revisão preventiva', km: v.km_atual, condutor: v.condutor })}><Wrench size={15} /> Manutenção</button>
           <button type="button" className="frota-btn" onClick={() => abrirForm('ocorrencias', null, { placa: v.placa, status: 'Aberta', tipo: 'Multa', data: todayISO(), condutor: v.condutor, modelo: v.modelo, locadora: v.locadora })}><TriangleAlert size={15} /> Ocorrência</button>
           <button type="button" className="frota-btn primary" onClick={() => abrirForm('veiculos', id)}><Pencil size={15} /> Editar</button>
@@ -177,6 +186,23 @@ export default function DetalheVeiculo({ id }) {
               </tbody>
             </table>
           ) : <p className="frota-muted">Nenhuma ocorrência para esta placa.</p>}
+        </section>
+
+        <section className="frota-fsec">
+          <h3>Faturas</h3>
+          {fs.length ? (
+            <table className="frota-mini">
+              <thead><tr><th>Referência</th><th>Nº</th><th>Vencimento</th><th className="n">Valor</th><th>Conferência</th></tr></thead>
+              <tbody>
+                {fs.map((f) => (
+                  <tr key={f.id} className="frota-click" {...linhaClicavel(() => abrirDetalhe('faturas', f.id))}>
+                    <td>{compLabel(f.competencia)}</td><td>{f.numero_fatura || '—'}</td><td>{f.vencimento ? fmtDate(f.vencimento) : '—'}</td><td className="n">{money(f.valor)}</td><td><Pill tone={fatTone(f.status)}>{f.status}</Pill></td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot><tr><td colSpan={3}>{fs.length} fatura(s)</td><td className="n">{money(sum(fs, 'valor'))}</td><td /></tr></tfoot>
+            </table>
+          ) : <p className="frota-muted">Nenhuma fatura lançada para este veículo.</p>}
         </section>
 
         <section className="frota-fsec">

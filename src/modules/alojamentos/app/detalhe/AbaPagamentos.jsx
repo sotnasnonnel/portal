@@ -2,8 +2,9 @@ import {
   Clock, Pencil, Plus, Receipt, Trash2,
 } from 'lucide-react';
 import {
-  CONTAS, MES3, compLabel, curComp, doAloj, esperado, fdate, money, moneyCurto, num, plural, todayISO,
+  MES3, compLabel, contasDoQuadro, curComp, doAloj, esperado, fdate, money, moneyCurto, num, plural, todayISO,
 } from '../../lib/regras';
+import { AnexosCompactos } from '../components/Anexos';
 import {
   CelulaPagamento, LegendaPagamentos, Nil, PillPagamento, Vazio,
 } from '../components/Ui';
@@ -18,7 +19,7 @@ export default function AbaPagamentos({
   const doAno = (p) => String(p.competencia).startsWith(String(ano));
   const anos = [...new Set([...pags.map((p) => +String(p.competencia).slice(0, 4)), +todayISO().slice(0, 4)])].filter(Boolean).sort();
   const ctrl = a.contas_controladas || [];
-  const contas = CONTAS.filter((c) => ctrl.includes(c) || pags.some((p) => p.conta === c && doAno(p)));
+  const contas = contasDoQuadro(ctrl, pags.filter(doAno).map((p) => p.conta));
   const totConta = (c) => somaValor(pags.filter((p) => p.conta === c && doAno(p)));
   const totMes = (m) => somaValor(pags.filter((p) => p.competencia === m));
   const atual = curComp();
@@ -77,7 +78,7 @@ export default function AbaPagamentos({
               </table>
             </div>
           ) : <Vazio titulo="Nenhuma conta controlada" texto="Edite o cadastro e marque as contas que entram no controle mensal." />}
-          <LegendaPagamentos>“a lançar” = conta controlada sem lançamento</LegendaPagamentos>
+          <LegendaPagamentos>“a lançar” = conta controlada sem lançamento · Manutenção aceita vários lançamentos no mês</LegendaPagamentos>
         </div>
       </div>
 
@@ -93,16 +94,17 @@ export default function AbaPagamentos({
             <div className="aloj-tab-scroll">
               <table className="aloj-tab">
                 <thead>
-                  <tr><th>Competência</th><th>Conta</th><th className="r">Valor</th><th>Pagamento</th><th>Situação</th><th>Observação</th><th className="acao" /></tr>
+                  <tr><th>Competência</th><th>Conta</th><th className="r">Valor</th><th>Pagamento</th><th>Situação</th><th>Fatura</th><th>Observação</th><th className="acao" /></tr>
                 </thead>
                 <tbody>
                   {lista.map((p) => (
                     <tr key={p.id}>
-                      <td><b>{compLabel(p.competencia)}</b></td>
-                      <td>{p.conta}</td>
+                      <td><b>{compLabel(p.competencia)}</b>{p.vencimento && <small>vence {fdate(p.vencimento)}</small>}</td>
+                      <td>{p.conta}{p.fornecedor && <small>{p.fornecedor}</small>}</td>
                       <td className="r">{num(p.valor) !== null ? money(p.valor) : <Nil />}</td>
                       <td>{fdate(p.data_pagamento) || <Nil />}{p.forma && <small>{p.forma}</small>}</td>
                       <td><PillPagamento p={p} /></td>
+                      <td><AnexosCompactos lista={p.anexos} onErro={acoes.avisar} vazio={<Nil />} /></td>
                       <td>{p.obs || <Nil />}</td>
                       <td className="acao">
                         <button type="button" className="aloj-mini" title="Editar" aria-label="Editar pagamento" onClick={() => acoes.editarPagamento(p)}><Pencil size={14} /></button>
