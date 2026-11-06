@@ -5,7 +5,6 @@ import { listReimbursements, paidAmount, STATUS, STATUS_LABEL } from "../service
 import { formatBillable, formatCurrency, formatDate, relativeDays } from "../lib/format.js";
 import { kindMeta } from "../lib/kind.js";
 import { filtrarLista, opcoesDaLista, ordenarLista, proximaOrdem } from "../lib/listaFiltros.js";
-import { temPdf } from "../lib/pdfLote.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useConfirm, useToast } from "../context/FeedbackContext.jsx";
 import { baixarPlanilhaReembolsos } from "../services/reembolsoPlanilha.js";
@@ -151,12 +150,13 @@ export default function Reembolsos({ kind = "reembolso" }) {
     [byStatus, activeBillable, busca, ordem]
   );
 
-  // Seleção para baixar vários PDFs (só admin, só pedido que tem PDF). Vale o
-  // que está na tela: marcado que saiu do filtro não entra no download, para
-  // ninguém baixar o que não está vendo.
-  const comPdf = useMemo(() => (isAdmin ? filtered.filter(temPdf) : []), [isAdmin, filtered]);
-  const selecionados = useMemo(() => comPdf.filter((r) => selecao.has(r.id)), [comPdf, selecao]);
-  const todosMarcados = comPdf.length > 0 && selecionados.length === comPdf.length;
+  // Seleção para baixar vários PDFs (só admin, qualquer status). Vale o que
+  // está na tela: marcado que saiu do filtro não entra no download, para
+  // ninguém baixar o que não está vendo. Com "Aguardando Aprovação" filtrado,
+  // "marcar todos" pega só os aguardando.
+  const marcaveis = useMemo(() => (isAdmin ? filtered : []), [isAdmin, filtered]);
+  const selecionados = useMemo(() => marcaveis.filter((r) => selecao.has(r.id)), [marcaveis, selecao]);
+  const todosMarcados = marcaveis.length > 0 && selecionados.length === marcaveis.length;
   const marcar = (id) =>
     setSelecao((s) => {
       const nova = new Set(s);
@@ -164,7 +164,7 @@ export default function Reembolsos({ kind = "reembolso" }) {
       else nova.add(id);
       return nova;
     });
-  const marcarTodos = () => setSelecao(todosMarcados ? new Set() : new Set(comPdf.map((r) => r.id)));
+  const marcarTodos = () => setSelecao(todosMarcados ? new Set() : new Set(marcaveis.map((r) => r.id)));
 
   const baixarPdfs = async () => {
     setBaixandoPdfs({ feitos: 0, total: selecionados.length });
@@ -447,7 +447,7 @@ export default function Reembolsos({ kind = "reembolso" }) {
         {selecionados.length > 0 && (
           <div className="lote-pdf" role="region" aria-label="PDFs selecionados">
             <span className="lote-pdf-conta">
-              {selecionados.length} de {comPdf.length} com PDF {selecionados.length === 1 ? "marcado" : "marcados"}
+              {selecionados.length} de {marcaveis.length} {selecionados.length === 1 ? "marcado" : "marcados"}
             </span>
             <button
               type="button"
@@ -495,8 +495,8 @@ export default function Reembolsos({ kind = "reembolso" }) {
               <tr>
                 {isAdmin && (
                   <th className="col-sel">
-                    {comPdf.length > 0 && (
-                      <label className="sel-alvo" title="Marcar todos os aprovados da lista">
+                    {marcaveis.length > 0 && (
+                      <label className="sel-alvo" title="Marcar todos os pedidos da lista">
                         <input
                           type="checkbox"
                           checked={todosMarcados}
@@ -505,7 +505,7 @@ export default function Reembolsos({ kind = "reembolso" }) {
                           }}
                           onChange={marcarTodos}
                           disabled={baixandoPdfs !== null}
-                          aria-label="Marcar todos os aprovados da lista para baixar os PDFs"
+                          aria-label="Marcar todos os pedidos da lista para baixar os PDFs"
                         />
                       </label>
                     )}
@@ -527,7 +527,7 @@ export default function Reembolsos({ kind = "reembolso" }) {
                   tabIndex={0}
                   role="link"
                   aria-label={`Abrir ${meta.singular} de ${row.requester_name}`}
-                  className={selecao.has(row.id) && temPdf(row) ? "is-marcado" : undefined}
+                  className={selecao.has(row.id) ? "is-marcado" : undefined}
                   onClick={() => navigate(`${meta.base}/${row.id}`)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
@@ -540,17 +540,15 @@ export default function Reembolsos({ kind = "reembolso" }) {
                     // A linha inteira abre o pedido: o clique e a tecla na
                     // caixa não podem subir até ela.
                     <td className="col-sel" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-                      {temPdf(row) && (
-                        <label className="sel-alvo">
-                          <input
-                            type="checkbox"
-                            checked={selecao.has(row.id)}
-                            onChange={() => marcar(row.id)}
-                            disabled={baixandoPdfs !== null}
-                            aria-label={`Marcar o PDF de ${row.requester_name}`}
-                          />
-                        </label>
-                      )}
+                      <label className="sel-alvo">
+                        <input
+                          type="checkbox"
+                          checked={selecao.has(row.id)}
+                          onChange={() => marcar(row.id)}
+                          disabled={baixandoPdfs !== null}
+                          aria-label={`Marcar o PDF de ${row.requester_name}`}
+                        />
+                      </label>
                     </td>
                   )}
                   <td data-label="Solicitante">{row.requester_name}</td>

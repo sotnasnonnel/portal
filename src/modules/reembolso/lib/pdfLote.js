@@ -1,12 +1,8 @@
 /**
- * Baixar vários PDFs de uma vez, pela lista (só admin).
+ * Baixar vários PDFs de uma vez, pela lista (só admin). Qualquer pedido da
+ * lista entra, de qualquer status: o filtro da tela é que escolhe o lote.
  * Lógica pura, testada em pdfLote.test.js.
  */
-
-/** O pedido tem PDF? O mesmo critério do botão "Gerar PDF" do detalhe. */
-export function temPdf(r) {
-  return r?.status === "aprovado";
-}
 
 /**
  * Dois pedidos podem dar o mesmo nome de arquivo (mesma pessoa, mesmas datas,

@@ -1,4 +1,4 @@
-// Gera o PDF do reembolso aprovado: cabecalho + tabela de itens + uma pagina
+// Gera o PDF do reembolso (aprovado ou nao, pelo lote da lista): cabecalho + tabela de itens + uma pagina
 // por imagem de NF anexada. Nome do arquivo no padrao definido pelo cliente:
 //   ano.mes(competencia)_ano.mes.dia(pagamento)_PHDA_Nome Completo_REEMB_SN_R$valor
 //   ex: 2026.08_2026.09.15_PHDA_DANIELA SEBRIAN_REEMB_SN_R$153,98.pdf
@@ -18,8 +18,12 @@ const FIXO_TIPO = "REEMB_SN";
 
 // Data de pagamento efetiva: usa a salva no banco e, para registros antigos
 // (aprovados antes da regra automática), recalcula a partir da aprovação.
+// Pedido não aprovado ainda não tem aprovação para calcular: sem data salva,
+// fica sem data (o computePaymentDate(null) contaria a partir de hoje e
+// inventaria um pagamento que ninguém decidiu).
 function effectivePaymentDate(r) {
-  return r.payment_date || computePaymentDate(r.decided_at);
+  if (r.payment_date) return r.payment_date;
+  return r.status === "aprovado" ? computePaymentDate(r.decided_at) : null;
 }
 
 // Valor efetivamente aprovado/pago: o aprovado (com ou sem desconto) ou, na
@@ -137,13 +141,19 @@ async function montarReembolsoPdf(r) {
   field("Reembolsável pelo cliente", formatBillable(r.billable_to_client, { long: true }), col1, y);
   y += lineH;
 
-  // Valor solicitado x aprovado (mostra o desconto quando houver)
+  // Valor solicitado x aprovado (mostra o desconto quando houver). Pedido não
+  // aprovado não tem valor aprovado: o paidAmount cairia no total cheio e o
+  // PDF de um pedido aguardando pareceria aprovado.
   const paid = paidAmount(r);
   const total = Number(r.total || 0);
   field("Valor solicitado", formatCurrency(total), col1, y);
   field(
     "Valor aprovado",
-    paid < total ? `${formatCurrency(paid)}  (desconto ${formatCurrency(total - paid)})` : formatCurrency(paid),
+    r.status !== "aprovado"
+      ? "—"
+      : paid < total
+        ? `${formatCurrency(paid)}  (desconto ${formatCurrency(total - paid)})`
+        : formatCurrency(paid),
     col2,
     y
   );

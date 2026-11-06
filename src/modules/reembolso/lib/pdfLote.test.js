@@ -1,14 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { nomesSemRepetir, temPdf } from './pdfLote.js';
-
-test('só aprovado tem PDF', () => {
-  assert.equal(temPdf({ status: 'aprovado' }), true);
-  for (const status of ['rascunho', 'em_analise', 'reprovado', 'cancelado']) {
-    assert.equal(temPdf({ status }), false);
-  }
-  assert.equal(temPdf(null), false);
-});
+import { nomesSemRepetir } from './pdfLote.js';
 
 test('nomes diferentes ficam como estão', () => {
   assert.deepEqual(nomesSemRepetir(['a.pdf', 'b.pdf']), ['a.pdf', 'b.pdf']);
