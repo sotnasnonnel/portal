@@ -6,6 +6,13 @@
 // NULO (qualquer admin do Financeiro executa). Nesse caso avisamos TODOS os
 // admins do Financeiro (as executoras), um e-mail personalizado para cada.
 //
+// Nas etapas de APROVAÇÃO, além do aprovador da vez, o time de admins recebe um
+// e-mail de ACOMPANHAMENTO ("está em aprovação com X"), para não descobrir o
+// pedido só quando ele cai na execução. São papéis diferentes no mesmo envio:
+// quem decide lê "chegou a sua vez"; o time lê onde o pedido está parado. Um
+// e-mail só, com dois textos, evitaria o pior dos dois — pedir ação de quem não
+// pode agir, ou esconder a ação de quem precisa agir.
+//
 // Body: { solicitacao_id, dry_run? } — dry_run responde quem receberia, sem enviar.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -64,8 +71,13 @@ type Dest = { id: string; nome: string; email: string };
 function montarHtml(opts: {
   dest: Dest; ehExecucao: boolean; tipoLabel: string; numero: number | null;
   solicitante: string; sol: Record<string, unknown>; appUrl: string; logo: string;
+  // 'acao' = é a vez desta pessoa. 'acompanhamento' = aviso ao time do
+  // Financeiro de que o pedido está em aprovação com outra pessoa.
+  modo?: "acao" | "acompanhamento"; papelEtapa?: string | null;
 }) {
   const { dest, ehExecucao, tipoLabel, numero, solicitante, sol, appUrl, logo } = opts;
+  const acompanha = opts.modo === "acompanhamento";
+  const comQuem = opts.papelEtapa ?? "aprovação";
   const ehAumento = sol.tipo === "aumento_limite";
   const linha = (rot: string, val: unknown) =>
     val ? `<tr><td style="color:#6b7280;padding:2px 14px 2px 0">${rot}</td><td style="color:#1b2735">${val}</td></tr>` : "";
@@ -83,7 +95,9 @@ function montarHtml(opts: {
       </td></tr>
       <tr><td style="padding:26px 26px 8px;color:#1b2735;font-size:15px;line-height:1.55">
         <p style="margin:0 0 10px">Olá, <strong>${dest.nome}</strong>.</p>
-        <p style="margin:0 0 16px">Chegou a sua vez de ${ehExecucao ? "executar" : "aprovar"} uma solicitação de <strong>${tipoLabel}</strong>${numero != null ? ` (#${numero})` : ""}.</p>
+        ${acompanha
+          ? `<p style="margin:0 0 16px">Uma solicitação de <strong>${tipoLabel}</strong>${numero != null ? ` (#${numero})` : ""} entrou em aprovação e está com <strong>${comQuem}</strong>. Aviso de acompanhamento do time do Financeiro — <strong>não há ação sua agora</strong>; o pedido chega para execução quando a aprovação terminar.</p>`
+          : `<p style="margin:0 0 16px">Chegou a sua vez de ${ehExecucao ? "executar" : "aprovar"} uma solicitação de <strong>${tipoLabel}</strong>${numero != null ? ` (#${numero})` : ""}.</p>`}
         <table role="presentation" cellpadding="0" cellspacing="0" style="font-size:14px;margin-bottom:18px">
           ${linha("Solicitante", solicitante)}
           ${linha(ehAumento ? "Cartão" : "Descrição do cartão", sol.nome_despesa)}
@@ -94,7 +108,7 @@ function montarHtml(opts: {
           ${linha(ehAumento ? "Novo limite total" : "Valor", brl(sol.valor))}
           ${linha("Vigência", vigencia(sol))}
           ${linha("Aplicação", listaAplic(sol.aplicacao))}
-          <tr><td style="color:#6b7280;padding:2px 14px 2px 0">Etapa</td><td style="color:#1b2735"><strong>${ehExecucao ? "Execução" : "Aprovação"}</strong></td></tr>
+          <tr><td style="color:#6b7280;padding:2px 14px 2px 0">Etapa</td><td style="color:#1b2735"><strong>${ehExecucao ? "Execução" : "Aprovação"}</strong>${acompanha ? ` — ${comQuem}` : ""}</td></tr>
         </table>
       </td></tr>
       <tr><td style="padding:0 26px 28px"><a href="${appUrl}" style="background:#0f766e;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 22px;border-radius:10px;display:inline-block">Acessar o Portal PHD</a></td></tr>
@@ -155,16 +169,60 @@ Deno.serve(async (req) => {
         .not("email", "is", null);
       destinatarios = (data ?? []) as Dest[];
     }
-    if (destinatarios.length === 0) return json({ skipped: "no_recipients" });
+
+    // Acompanhamento: nas etapas de APROVAÇÃO, o time de admins fica sabendo
+    // que o pedido entrou e com quem está. Mesmo filtro de lista do e-mail de
+    // execução (recebe_email_listas), porque é o mesmo tipo de aviso — vai para
+    // o time, não para uma pessoa.
+    //
+    // Fora: o solicitante (que acompanha o pedido pela tela e não precisa de
+    // aviso sobre o próprio pedido) e quem já está em `destinatarios`, que
+    // recebe o e-mail de ação e não pode levar os dois.
+    let acompanhantes: Dest[] = [];
+    if (!ehExecucao) {
+      const { data } = await supabase
+        .from("colaboradores")
+        .select("id, nome, email")
+        .eq("financeiro_role", "admin")
+        .eq("ativo", true)
+        .eq("recebe_email_listas", true)
+        .not("email", "is", null);
+      const jaAvisados = new Set(destinatarios.map((d) => d.id));
+      acompanhantes = ((data ?? []) as Dest[])
+        .filter((d) => d.id !== sol.solicitante_id && !jaAvisados.has(d.id));
+    }
+
+    if (destinatarios.length === 0 && acompanhantes.length === 0) {
+      return json({ skipped: "no_recipients" });
+    }
 
     const { data: quem } = await supabase.from("colaboradores").select("nome").eq("id", sol.solicitante_id).maybeSingle();
     const solicitante = quem?.nome ?? "—";
     const tipoLabel = TIPO_LABEL[sol.tipo] ?? sol.tipo;
     const acao = ehExecucao ? "Execução" : "Aprovação";
-    const subject = `Solicitação ${tipoLabel}${sol.numero != null ? ` #${sol.numero}` : ""} - Aguardando sua ${acao}`;
+    const numeroTxt = sol.numero != null ? ` #${sol.numero}` : "";
+    const subject = `Solicitação ${tipoLabel}${numeroTxt} - Aguardando sua ${acao}`;
+    // Assunto diferente, e não o mesmo com o corpo trocado: o time recebe os
+    // dois tipos de e-mail, e "Aguardando sua Aprovação" numa etapa de outra
+    // pessoa faria procurar na tela uma ação que não existe.
+    const subjectAcompanha = `Solicitação ${tipoLabel}${numeroTxt} - Em aprovação com ${etapa.papel ?? "aprovador"}`;
+
+    // Um envio por pessoa, com o papel dela. Quem decide vem primeiro: se o
+    // Graph falhar no meio, o e-mail que pede ação já saiu.
+    const envios: { dest: Dest; modo: "acao" | "acompanhamento" }[] = [
+      ...destinatarios.map((dest) => ({ dest, modo: "acao" as const })),
+      ...acompanhantes.map((dest) => ({ dest, modo: "acompanhamento" as const })),
+    ];
 
     if (dry_run) {
-      return json({ would_send: true, to: destinatarios.map((d) => d.email), tipo_etapa: etapa.tipo_etapa, subject });
+      return json({
+        would_send: true,
+        to: destinatarios.map((d) => d.email),
+        to_acompanhamento: acompanhantes.map((d) => d.email),
+        tipo_etapa: etapa.tipo_etapa,
+        subject,
+        subject_acompanhamento: acompanhantes.length ? subjectAcompanha : undefined,
+      });
     }
 
     const appUrl = (Deno.env.get("PORTAL_URL") ?? "https://portal.phdengenharia.tech").replace(/\/+$/, "");
@@ -187,13 +245,16 @@ Deno.serve(async (req) => {
     // Um e-mail personalizado por destinatário; falha de um não derruba os outros.
     const enviados: string[] = [];
     const falhas: { email: string; erro: string }[] = [];
-    for (const dest of destinatarios) {
-      const html = montarHtml({ dest, ehExecucao, tipoLabel, numero: sol.numero, solicitante, sol, appUrl, logo });
+    for (const { dest, modo } of envios) {
+      const html = montarHtml({
+        dest, ehExecucao, tipoLabel, numero: sol.numero, solicitante, sol, appUrl, logo,
+        modo, papelEtapa: etapa.papel,
+      });
       try {
         const res = await fetch(`https://graph.microsoft.com/v1.0/users/${encodeURIComponent(sender)}/sendMail`, {
           method: "POST",
           headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ message: { subject, body: { contentType: "HTML", content: html }, toRecipients: [{ emailAddress: { address: dest.email } }] }, saveToSentItems: true }),
+          body: JSON.stringify({ message: { subject: modo === "acompanhamento" ? subjectAcompanha : subject, body: { contentType: "HTML", content: html }, toRecipients: [{ emailAddress: { address: dest.email } }] }, saveToSentItems: true }),
         });
         if (res.status !== 202) {
           const t = await res.text();
