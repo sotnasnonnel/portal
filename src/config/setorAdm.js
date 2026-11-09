@@ -30,6 +30,8 @@ export const SETOR_ADM_LIBERADOS = [
   'marcus.guimaraes@phdengenharia.eng.br',
   'lennon.santos@phdengenharia.eng.br',
   'jarbas.junior@phdengenharia.eng.br',
+  'perla.passos@phdengenharia.eng.br',
+  'edijane.rodrigues@phdengenharia.eng.br',
 ];
 
 /**

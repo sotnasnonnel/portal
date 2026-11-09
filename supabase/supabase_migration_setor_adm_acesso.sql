@@ -28,7 +28,9 @@ returns boolean language sql stable security definer set search_path = '' as $$
   select lower(coalesce((select auth.jwt() ->> 'email'), '')) in (
     'marcus.guimaraes@phdengenharia.eng.br',
     'lennon.santos@phdengenharia.eng.br',
-    'jarbas.junior@phdengenharia.eng.br'
+    'jarbas.junior@phdengenharia.eng.br',
+    'perla.passos@phdengenharia.eng.br',
+    'edijane.rodrigues@phdengenharia.eng.br'
   )
 $$;
 
