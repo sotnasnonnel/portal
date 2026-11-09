@@ -218,6 +218,61 @@ export async function atualizarIdeia(ideia, valores, autorId) {
 }
 
 /**
+ * Transforma uma IDEIA em INICIATIVA: o que a pessoa registrou como "a PHD
+ * deveria ter" saiu do papel, e agora tem antes e depois para medir.
+ *
+ * Existe porque a forma decide duas coisas que não se resolvem editando texto:
+ * só iniciativa concorre ao Programa de Inovação (montarRanking, em lib/roi.js)
+ * e só ela aceita ficha de ROI (policy programas_roi_insert). Sem este caminho,
+ * quem registrou como ideia tinha de cadastrar de novo — e o número, a data de
+ * registro e o histórico ficavam na linha abandonada.
+ *
+ * Só avança. Iniciativa não volta a ser ideia: a policy da ficha confere a forma
+ * apenas na criação, então desconverter deixaria ficha de ROI pendurada numa
+ * linha que já não pode ter uma.
+ *
+ * O texto da ideia (descrição, problema, benefícios) FICA. O CHECK por tipo não
+ * o proíbe na iniciativa, é o que a pessoa escreveu, e é o registro de onde a
+ * iniciativa nasceu; o detalhe esconde campo vazio, então a linha convertida
+ * mostra as duas partes sem buraco. Os três campos que o CHECK passa a exigir
+ * (data_inicio, finalidade, ferramentas) vêm do formulário de conversão.
+ */
+export async function converterEmIniciativa(ideia, valores, autorId) {
+  if (ideia.tipo !== 'ideia') throw new Error('Este registro já é uma iniciativa.');
+
+  const { data, error } = await supabase
+    .from('programas_ideias')
+    .update({
+      tipo: 'iniciativa',
+      data_inicio: valores.data_inicio || null,
+      finalidade: (valores.finalidade || '').trim(),
+      ferramentas: (valores.ferramentas || []).map((f) => f.trim()).filter(Boolean),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', ideia.id)
+    .select(COLUNAS)
+    .maybeSingle();
+  if (error) throw new Error(`Não foi possível transformar em iniciativa: ${error.message}`);
+  // UPDATE barrado pela RLS não dá erro no PostgREST, só não afeta linha. A
+  // policy aqui é mais estreita que a de excluir: converter é do AUTOR, nem o
+  // admin do módulo decide que a ideia de outra pessoa já existe.
+  if (!data) {
+    throw new Error('Você não pode transformar este registro. Só quem o registrou pode.');
+  }
+
+  // Best-effort, como o evento de 'criada': a conversão já está gravada, e
+  // perder o rastro não pode desfazer o que a pessoa acabou de fazer. É também
+  // o que mantém a tela de pé se a migração do tipo 'convertida' ainda não
+  // tiver sido aplicada (supabase_migration_programas_converter_iniciativa.sql).
+  await supabase.from('programas_ideias_eventos').insert([{
+    ideia_id: ideia.id, tipo: 'convertida', autor_id: autorId,
+    de: 'ideia', para: 'iniciativa',
+  }]);
+
+  return { ...data, autorNome: ideia.autorNome };
+}
+
+/**
  * Exclusão pelo autor (ou pelo admin do módulo). Os eventos saem por cascade.
  *
  * Confere o retorno em vez de confiar no "sem erro": DELETE barrado pela RLS

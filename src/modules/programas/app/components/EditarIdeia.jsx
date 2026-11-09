@@ -9,9 +9,13 @@ import {
  * o autor (ou o admin do módulo).
  *
  * Os campos são os mesmos do cadastro, com uma exceção deliberada: a FORMA
- * (ideia x iniciativa) não é editável. Trocá-la faria a linha violar o CHECK
- * por tipo do banco — uma ideia não tem data de início nem ferramenta, e uma
- * iniciativa não tem problema/benefícios. Quem errou a forma registra de novo.
+ * (ideia x iniciativa) não é editável aqui. Um <select> a trocaria sem pedir os
+ * campos que a outra forma exige, e a linha violaria o CHECK por tipo do banco
+ * — uma ideia não tem data de início nem ferramenta.
+ *
+ * Quem precisa trocar usa "Transformar em iniciativa" (ConverterIniciativa),
+ * que pede esses campos no mesmo gesto. Só nessa direção: ver
+ * converterEmIniciativa, em lib/ideias.js.
  */
 
 const VAZIO_FERRAMENTA = (id) => ({ id, valor: '' });

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AlertTriangle, Boxes, ExternalLink, Pencil, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Boxes, ExternalLink, Pencil, Trash2, Wrench, X } from 'lucide-react';
 import {
   CATEGORIA_LABEL, ELEGIBILIDADE_LABEL, SITUACAO_LABEL, STATUS_ALAVANCA_LABEL, corDoSetor,
 } from '../../../../config/programas';
@@ -170,6 +170,10 @@ export function DetalheIdeia({
   registro, podeEditar = false, podeExcluir = false, onFechar, onSalvar, onExcluir,
   // Classificar: só o admin do módulo recebe o callback (ver dashboard/page.jsx).
   onClassificar = null,
+  // Transformar ideia em iniciativa: só o AUTOR recebe o callback (ver
+  // ideias/page.jsx). Quem abre o modal é a tela, não este popup — dois
+  // diálogos empilhados escondem o de baixo e deixam dois jeitos de fechar.
+  onConverter = null,
 }) {
   const [editando, setEditando] = useState(false);
   const [salvando, setSalvando] = useState(false);
@@ -238,6 +242,14 @@ export function DetalheIdeia({
             <BotaoExcluir rotulo="Excluir para sempre?" excluindo={excluindo} onExcluir={excluir} />
           )}
           <span className="pg-modal-pe-espaco" />
+          {/* O inverso do Classificar: aparece só na IDEIA, que é o que ainda
+              não existe. Depois de convertida ela é iniciativa, e o botão não
+              tem mais o que fazer. */}
+          {onConverter && !ehIniciativa && (
+            <button type="button" className="pg-btn pg-btn-ghost" onClick={() => onConverter(registro)}>
+              <Wrench size={15} /> Transformar em iniciativa
+            </button>
+          )}
           {/* Só a INICIATIVA vira catálogo: ideia é o que ainda não existe. Já
               classificada, o botão sai de cena — repetir criaria uma segunda
               linha lá com o mesmo nome. */}

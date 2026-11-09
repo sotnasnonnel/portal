@@ -8,10 +8,11 @@ import {
   CATEGORIA_LABEL, SITUACOES, ehAdminProgramas,
 } from '../../../../config/programas';
 import {
-  listarIdeias, atualizarSituacao, atualizarIdeia, excluirIdeia,
+  listarIdeias, atualizarSituacao, atualizarIdeia, excluirIdeia, converterEmIniciativa,
 } from '../../lib/ideias';
 import { PRAZO_RELATORIO, listarFichas, situacaoFicha } from '../../lib/roi';
 import { DetalheIdeia } from '../components/Detalhe';
+import ConverterIniciativa from '../components/ConverterIniciativa';
 import RegrasInovacao from './RegrasInovacao';
 
 /**
@@ -46,6 +47,10 @@ export default function CampoDeIdeias() {
     if (location.state?.aviso) navigate(location.pathname, { replace: true, state: null });
   }, [location.state, location.pathname, navigate]);
   const [detalhe, setDetalhe] = useState(null);
+  // Ideia que está sendo transformada em iniciativa. O modal é da TELA, e não
+  // do popup de detalhe, porque as duas portas levam a ele: a coluna "Ficha de
+  // ROI" da tabela e o botão do detalhe.
+  const [convertendo, setConvertendo] = useState(null);
   // Ficha de ROI por registro. `null` = não deu para carregar: a coluna some e
   // o resto da tela segue — a ficha não pode derrubar o Campo de Ideias.
   const [fichas, setFichas] = useState(null);
@@ -89,6 +94,19 @@ export default function CampoDeIdeias() {
   const apagar = async (registro) => {
     await excluirIdeia(registro.id);
     setLinhas((atual) => atual.filter((l) => l.id !== registro.id));
+  };
+
+  /**
+   * Converteu e vai direto para a ficha de ROI: é por ela que se transforma uma
+   * ideia em iniciativa, e devolver à tabela faria procurar na própria linha o
+   * link que acabou de aparecer. A linha é atualizada em memória de qualquer
+   * jeito, para o voltar da ficha não mostrar "Ideia" de novo.
+   */
+  const converter = async (valores) => {
+    const atualizado = await converterEmIniciativa(convertendo, valores, user.id);
+    setLinhas((atual) => atual.map((l) => (l.id === atualizado.id ? atualizado : l)));
+    setConvertendo(null);
+    navigate(`/programas/ideias/${atualizado.id}/roi`);
   };
 
   const trocarSituacao = async (registro, nova) => {
@@ -215,7 +233,19 @@ export default function CampoDeIdeias() {
                           <span className="pg-motivo">{situacaoFicha(fichas.get(l.id)).label}</span>
                         </>
                       ) : (
-                        <span className="pg-motivo">Não se aplica a ideia</span>
+                        // A ideia não tem ficha, mas pode passar a ter: dizer só
+                        // "não se aplica" deixava sem saída quem registrou como
+                        // ideia algo que já construiu — e é justamente quem
+                        // procura a ficha nesta coluna.
+                        <>
+                          <button
+                            type="button" className="pg-link"
+                            onClick={() => setConvertendo(l)}
+                          >
+                            Transformar em iniciativa
+                          </button>
+                          <span className="pg-motivo">Ideia não tem ficha nem concorre ao prêmio</span>
+                        </>
                       )}
                     </td>
                   )}
@@ -224,6 +254,14 @@ export default function CampoDeIdeias() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {convertendo && (
+        <ConverterIniciativa
+          registro={convertendo}
+          onFechar={() => setConvertendo(null)}
+          onConverter={converter}
+        />
       )}
 
       {/* A lista já é só a minha, mas a condição fica explícita: é a mesma da
@@ -235,6 +273,11 @@ export default function CampoDeIdeias() {
         onFechar={() => setDetalhe(null)}
         onSalvar={salvarEdicao}
         onExcluir={apagar}
+        // Converter é do AUTOR, como editar: só quem registrou sabe se a ideia
+        // saiu do papel. A policy programas_ideias_update confere o mesmo.
+        onConverter={Boolean(detalhe) && detalhe.autor_id === user?.id
+          ? (r) => { setDetalhe(null); setConvertendo(r); }
+          : null}
       />
     </div>
   );
