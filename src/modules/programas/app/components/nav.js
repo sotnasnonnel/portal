@@ -1,4 +1,6 @@
-import { Boxes, ClipboardList, LayoutDashboard, Lightbulb, Rocket, Target, Trophy } from 'lucide-react';
+import {
+  Award, Boxes, ClipboardList, LayoutDashboard, Lightbulb, ListChecks, Rocket, Target, Trophy,
+} from 'lucide-react';
 
 // Navegação da sidebar dos Programas, na divisão padrão do portal (grupos
 // colapsáveis, como no Financeiro). Fica fora do Sidebar.jsx para não quebrar o
@@ -40,6 +42,11 @@ const PROGRAMA_NAV = {
     painel: { label: 'Painel da Alavanca', href: '/programas/painel-alavanca', Icon: Target },
     soComercial: true,
   },
+  awards: {
+    participar: [{ label: 'Projetos do Ano', href: '/programas/awards', Icon: Award }],
+    painel: { label: 'Projetos inscritos', href: '/programas/inscritos-awards', Icon: ListChecks },
+    soAvaliadorAwards: true,
+  },
 };
 
 /** Qual programa a rota atual pertence. `null` na tela de escolha. */
@@ -54,10 +61,15 @@ export function programaDaRota(pathname = '') {
   if (pathname.startsWith('/programas/iniciativas') || pathname.startsWith('/programas/pedidos')) {
     return 'iniciativas';
   }
+  if (pathname.startsWith('/programas/awards') || pathname.startsWith('/programas/inscritos-awards')) {
+    return 'awards';
+  }
   return null;
 }
 
-export function navSections({ ehComercial = false, ehAdmin = false, programa = null } = {}) {
+export function navSections({
+  ehComercial = false, ehAdmin = false, avaliaAwards = false, programa = null,
+} = {}) {
   // Fora de um programa (a tela de escolha), o menu lista os dois: é o único
   // momento em que não dá para saber para onde a pessoa vai.
   const chaves = programa ? [programa] : Object.keys(PROGRAMA_NAV);
@@ -70,6 +82,7 @@ export function navSections({ ehComercial = false, ehAdmin = false, programa = n
   const paineis = chaves
     .filter((k) => PROGRAMA_NAV[k].painel)
     .filter((k) => !PROGRAMA_NAV[k].soComercial || ehComercial)
+    .filter((k) => !PROGRAMA_NAV[k].soAvaliadorAwards || avaliaAwards)
     .flatMap((k) => PROGRAMA_NAV[k].painel);
 
   const secoes = [

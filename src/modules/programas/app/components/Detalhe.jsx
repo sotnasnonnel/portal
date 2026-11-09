@@ -45,7 +45,7 @@ function Campos({ itens }) {
   );
 }
 
-function Casca({ titulo, etiquetas, children, onFechar, acoes }) {
+export function Casca({ titulo, etiquetas, children, onFechar, acoes }) {
   return (
     <div className="pg-modal-overlay" onClick={onFechar}>
       <div
@@ -84,7 +84,7 @@ function Casca({ titulo, etiquetas, children, onFechar, acoes }) {
  * linha mudar de altura no meio do clique, e a célula não tem onde dizer o que
  * está prestes a sumir.
  */
-function BotaoExcluir({ rotulo, excluindo, onExcluir }) {
+export function BotaoExcluir({ rotulo, excluindo, onExcluir }) {
   const [armado, setArmado] = useState(false);
 
   if (!armado) {

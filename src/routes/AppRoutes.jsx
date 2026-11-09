@@ -142,6 +142,9 @@ const FichaRoi = lazyPagina(() => import('../modules/programas/app/roi/page'));
 const RankingInovacao = lazyPagina(() => import('../modules/programas/app/ranking/page'));
 const IniciativasEmUso = lazyPagina(() => import('../modules/programas/app/iniciativas/page'));
 const PedidosIniciativa = lazyPagina(() => import('../modules/programas/app/pedidos/page'));
+const ProjetosDoAno = lazyPagina(() => import('../modules/programas/app/awards/page'));
+const FormProjetoAwards = lazyPagina(() => import('../modules/programas/app/awards/FormProjeto'));
+const ProjetosInscritos = lazyPagina(() => import('../modules/programas/app/awards/Inscritos'));
 const PosicaoEstoque = lazyPagina(() => import('../modules/estoque/app/posicao/page'));
 const EntradaEstoque = lazyPagina(() => import('../modules/estoque/app/entrada/page'));
 const SaidaEstoque = lazyPagina(() => import('../modules/estoque/app/saida/page'));
@@ -1171,6 +1174,10 @@ export default function AppRoutes() {
             {/* Irmão de /alavanca, e não filho: a sidebar marca o item ativo por
                 startsWith, e aninhado os dois links acenderiam juntos. */}
             <Route path="painel-alavanca" element={<LazyPage><PainelAlavanca /></LazyPage>} />
+            <Route path="awards" element={<LazyPage><ProjetosDoAno /></LazyPage>} />
+            <Route path="awards/novo" element={<LazyPage><FormProjetoAwards /></LazyPage>} />
+            <Route path="awards/:id/editar" element={<LazyPage><FormProjetoAwards /></LazyPage>} />
+            <Route path="inscritos-awards" element={<LazyPage><ProjetosInscritos /></LazyPage>} />
           </Route>
 
           <Route path="*" element={<Navigate to="/home" replace />} />

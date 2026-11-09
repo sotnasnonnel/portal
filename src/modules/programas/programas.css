@@ -1033,3 +1033,17 @@
    escrita continua dizendo a mesma coisa. */
 .pg-roi-podio .pg-roi-pos { background: var(--p-primary-soft); color: var(--p-primary); }
 .pg-roi-total { font-size: var(--font-size-lg); color: var(--p-ink); }
+
+/* ---- Projetos do Ano (PHD Awards) ---- */
+.pg-aw-cats { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 14px; }
+.pg-aw-cat {
+  display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; text-align: left;
+  border: 1px solid var(--p-border); border-radius: 10px; background: #fff;
+  font-family: inherit; font-size: var(--font-size-sm); color: var(--p-ink);
+}
+.pg-aw-cat span { font-size: var(--font-size-xs); color: var(--p-muted); line-height: 1.5; }
+.pg-aw-cat-opcao { cursor: pointer; transition: background 0.12s, border-color 0.12s; }
+.pg-aw-cat-opcao:hover { border-color: var(--p-primary-line); }
+.pg-aw-cat-opcao.is-on { background: var(--p-primary-soft); border-color: var(--p-primary); }
+.pg-aw-prazo { background: var(--p-primary-soft); color: var(--p-ink); font-weight: 600; }
+.pg-aw-arquivo { font-family: inherit; font-size: var(--font-size-sm); color: var(--p-ink); max-width: 100%; }

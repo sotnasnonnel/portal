@@ -1,4 +1,4 @@
-import { Boxes, Lightbulb, Rocket, Wrench } from 'lucide-react';
+import { Award, Boxes, Lightbulb, Rocket, Wrench } from 'lucide-react';
 
 /**
  * Catálogo do módulo Programas — os programas internos da PHD.
@@ -192,6 +192,54 @@ export const calcularPremio = (valorContrato) => {
   return Math.min(v * PREMIO_PERCENTUAL, PREMIO_TETO);
 };
 
+// ==================== PHD Awards: Projetos do Ano ====================
+
+/**
+ * Quem vê todos os projetos cadastrados. Esta lista só decide o que a tela
+ * mostra: quem protege o dado é a cópia dela em app_private.awards_avaliador()
+ * (supabase_migration_programas_awards.sql). Mudou aqui, muda lá.
+ */
+export const AWARDS_AVALIADORES = [
+  'lucas.ferraz@phdengenharia.eng.br',
+  'andre.guimaraes@phdengenharia.eng.br',
+  'marcus.guimaraes@phdengenharia.eng.br',
+];
+
+export const ehAvaliadorAwards = (user) =>
+  AWARDS_AVALIADORES.includes((user?.email || '').trim().toLowerCase());
+
+/** Cronograma do Lucas. A mesma data está em app_private.awards_pode_inscrever(). */
+export const AWARDS_INSCRICOES = { abre: '2026-11-16', fecha: '2026-12-04' };
+
+export const AWARDS_CATEGORIAS = [
+  {
+    valor: 'operacao',
+    label: 'Operação',
+    desc: 'Projetos em que estivemos na linha de frente, entregando previsibilidade, performance e resultados operacionais excepcionais junto às equipes.',
+  },
+  {
+    valor: 'backoffice',
+    label: 'Back office',
+    desc: 'Projetos em que não atuamos diretamente em campo, mas conseguimos gerar alto valor, inovação, governança e resultados concretos.',
+  },
+];
+
+export const AWARDS_CATEGORIA_LABEL = Object.fromEntries(AWARDS_CATEGORIAS.map((c) => [c.valor, c.label]));
+
+/** As perguntas do formulário, na ordem e com o texto dele. */
+export const AWARDS_PERGUNTAS = [
+  { campo: 'codigo_setor', label: 'Qual código ou setor do Projeto?', curta: true },
+  { campo: 'explicacao', label: 'Breve explicação sobre o projeto' },
+  { campo: 'impacto', label: 'Como esse Projeto impacta o cliente ou a PHD?' },
+  { campo: 'contribuicao', label: 'De que forma a PHD contribuiu para o sucesso do projeto?' },
+  { campo: 'economia', label: 'Quanto de economia ou eficiência foi gerada?' },
+  { campo: 'inovacoes', label: 'Quais inovações foram implantadas?' },
+  { campo: 'legado', label: 'Qual legado esse Projeto deixa para a PHD e para o cliente?' },
+  { campo: 'participantes', label: 'Quais pessoas participaram do projeto? (Colaboradores PHD)' },
+];
+
+export const AWARDS_LIMITE_ARQUIVO = 100 * 1024 * 1024;
+
 // ============================ Programas (catálogo) ============================
 
 export const PROGRAMAS = [
@@ -221,5 +269,13 @@ export const PROGRAMAS = [
     desc: 'Indique uma oportunidade comercial e concorra à premiação do programa.',
     href: '/programas/alavanca',
     cta: 'Minhas indicações',
+  },
+  {
+    slug: 'awards',
+    label: 'Projetos do Ano',
+    icon: Award,
+    desc: 'PHD Awards: cadastre seu projeto para concorrer em Operação ou Back office.',
+    href: '/programas/awards',
+    cta: 'Cadastrar seu Projeto',
   },
 ];
