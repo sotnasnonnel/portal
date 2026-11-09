@@ -21,6 +21,19 @@
 // outra carga, e aí basta trocar aqui (ou ganhar um seletor).
 export const PLR_ANO = 2026;
 
+/**
+ * Piso de LUCRO LÍQUIDO para a PLR ser paga: sem bater esta fração da meta, não
+ * há distribuição — é condição do programa, anterior a qualquer conta por pessoa.
+ *
+ * NÃO confundir com o `corteGatilho` que aparece no Resultado: aquele é o
+ * gatilho da MARGEM OPERACIONAL LÍQUIDA, que zera só o Fator Resultados da
+ * gerência (ver AvisoGatilho.jsx). São dois cortes diferentes, e este aqui vale
+ * para todo mundo.
+ *
+ * Fração, e não 70, porque é assim que formatarPct recebe.
+ */
+export const CORTE_LUCRO_LIQUIDO = 0.7;
+
 export const podeVerPlr = (modules) => !!modules?.plr;
 
 export const podeEditarPlr = (modules) => modules?.plr === 'admin';

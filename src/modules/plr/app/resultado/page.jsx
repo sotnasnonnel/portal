@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { AlertTriangle, Calculator, Loader2 } from 'lucide-react';
-import { PLR_ANO } from '../../../../config/plr';
+import { CORTE_LUCRO_LIQUIDO, PLR_ANO } from '../../../../config/plr';
 import { formatarDataHora } from '../../../../utils/formatters';
+import { formatarPct } from '../../lib/plr';
 import { carregarCalculo } from '../../lib/dados';
 import MinhaLinha from './MinhaLinha';
 import ResultadoTodos from './ResultadoTodos';
@@ -43,11 +44,24 @@ export default function ResultadoPlr() {
         <div className="plr-vazio plr-erro">Não foi possível calcular os Resultados agora. Tente de novo em instantes.</div>
       ) : (
         <>
+          {/* Variante FORTE do alerta, não o `plr-alerta` de sempre: esta é a
+              ressalva que decide se o valor da tela existe ou não, e no tom
+              discreto ela era lida depois dos números — quando a pessoa já
+              tinha somado o dinheiro. O AvisoGatilho segue no tom normal. */}
           {temValor ? (
-            <p className="plr-alerta" role="note">
-              <AlertTriangle size={16} aria-hidden="true" />
-              <span>São dados preliminares, podendo sofrer alterações.</span>
-            </p>
+            <div className="plr-alerta plr-alerta-forte" role="note">
+              <AlertTriangle size={22} aria-hidden="true" />
+              <div>
+                <strong className="plr-alerta-titulo">
+                  São dados preliminares, podendo sofrer alterações.
+                </strong>
+                <span>
+                  Lembrando que, para recebermos a PLR, temos que bater{' '}
+                  <b className="plr-alerta-meta">{formatarPct(CORTE_LUCRO_LIQUIDO, 0)}</b>{' '}
+                  da meta do lucro líquido.
+                </span>
+              </div>
+            </div>
           ) : null}
           {soPropria ? <MinhaLinha dados={dados} /> : <ResultadoTodos dados={dados} />}
         </>
