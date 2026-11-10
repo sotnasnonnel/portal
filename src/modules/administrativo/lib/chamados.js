@@ -7,6 +7,7 @@ import { resolverPapeis, PapelNaoAtribuidoError } from '../../../services/alcada
 import { avaliarAlcada, PAPEL_LABEL } from '../../../config/alcadas';
 import {
   decidirAprovacao, cadeiaDoFluxo, juntarCadeias, papeisForaDaCadeia, escadaDoOrganograma,
+  equipeDoOrganograma,
 } from './alcadaAdm';
 import { proximoStatusAoResponder, STATUS_ENCERRADOS } from './statusChamado';
 import { venceEmISO } from './prazo';
@@ -170,12 +171,37 @@ async function nomeDaGerencia(gerenciaId) {
  * — aí o campo volta a ser editável, em vez de travar num valor vazio.
  */
 export async function buscarCentroDeCusto({ solicitanteId, classe, gerenciaPropriaId } = {}) {
+  // Sem exceção cadastrada, o CC sai do organograma: a equipe do gerente da
+  // escada. A gerência do Gestão de Horas é cadastrada à parte e desgarra.
+  const doOrganograma = await equipePeloOrganograma(solicitanteId, classe);
+  if (doOrganograma) return doOrganograma;
+
   const aprovador = await primeiroAprovador(solicitanteId, classe);
   if (aprovador) {
     const { data, error } = await supabase.rpc('chamados_adm_centro_custo', { p_pessoa: aprovador });
     if (!error && data) return data;
   }
   return nomeDaGerencia(gerenciaPropriaId);
+}
+
+/**
+ * Equipe pelo organograma, tolerante a falha (só preenche um campo). Quando há
+ * exceção cadastrada no Adm, o aprovador não é o da escada — devolve '' e o CC
+ * segue o caminho antigo.
+ */
+async function equipePeloOrganograma(solicitanteId, classe) {
+  if (!solicitanteId) return '';
+  try {
+    if (cadeiaDoFluxo(await buscarFluxos(solicitanteId), classe).length) return '';
+    const [{ data: cadeia, error }, { data: equipes }] = await Promise.all([
+      supabase.rpc('chamados_adm_cadeia', { p_solicitante: solicitanteId }),
+      supabase.from('horas_gerencias').select('nome'),
+    ]);
+    if (error) return '';
+    return equipeDoOrganograma(cadeia || [], (equipes || []).map((g) => g.nome));
+  } catch {
+    return '';
+  }
 }
 
 /** Cabeça da cadeia, tolerante a falha: aqui ela só preenche um campo. */

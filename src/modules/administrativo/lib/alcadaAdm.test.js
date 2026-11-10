@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   SERVICOS_COM_ALCADA, alcadaDoServico, valorParaAlcada, decidirAprovacao, cadeiaDoFluxo,
   juntarCadeias, papeisForaDaCadeia, escadaDoOrganograma, ehGerente, ehAcimaDeGerente, ehGerencia,
+  equipeDoOrganograma,
 } from './alcadaAdm.js';
 import { avaliarAlcada } from '../../../config/alcadas.js';
 
@@ -208,10 +209,27 @@ test('sem gerente na cadeia, o degrau vira o primeiro diretor', () => {
 
 test('gerente é preferido ao diretor, mesmo com o diretor mais perto', () => {
   assert.deepEqual(escada([
-    { nivel: 1, id: 'h', nome: 'Head', funcao: 'HEAD DE QUALIDADE' },
+    { nivel: 1, id: 's', nome: 'Sênior', funcao: 'CONSULTOR PLANEJAMENTO SR' },
     { nivel: 2, id: 'd', nome: 'Diretor', funcao: 'DIRETOR DE OPERAÇÕES' },
     { nivel: 3, id: 'g', nome: 'GerEx', funcao: 'GERENTE EXECUTIVO' },
-  ]), ['Gestor direto:Head', 'Gerente:GerEx']);
+  ]), ['Gestor direto:Sênior', 'Gerente:GerEx']);
+});
+
+// Chamado #376: Adailton → Alessandro (coordenador) → Ivano (Head) → Leonardo.
+// O Head é o degrau de gerência; pulá-lo mandava o pedido ao Gerente Executivo.
+test('Head conta como gerente: o coordenador sobe para o Head, não acima dele', () => {
+  assert.deepEqual(escada([
+    { nivel: 1, id: 'c', nome: 'Alessandro', funcao: 'COORDENADOR DE PLANEJAMENTOS' },
+    { nivel: 2, id: 'h', nome: 'Ivano', funcao: 'HEAD DE QUALIDADE' },
+    { nivel: 3, id: 'g', nome: 'Leonardo', funcao: 'GERENTE EXECUTIVO' },
+  ]), ['Gestor direto:Alessandro', 'Gerente:Ivano']);
+});
+
+test('quem responde direto ao Head para nele', () => {
+  assert.deepEqual(escada([
+    { nivel: 1, id: 'h', nome: 'Ivano', funcao: 'HEAD DE QUALIDADE' },
+    { nivel: 2, id: 'g', nome: 'Leonardo', funcao: 'GERENTE EXECUTIVO' },
+  ]), ['Gestor direto:Ivano']);
 });
 
 // 12 pessoas hoje respondem a um consultor sênior, que não é liderança: sem
@@ -250,4 +268,37 @@ test('acento e caixa do cadastro não mudam a classificação do cargo', () => {
   assert.equal(ehGerente('  gerente de pmo  '), true);
   assert.equal(ehGerencia('COORDENADORA DE MARKETING '), false);
   assert.equal(ehGerencia('ESPECIALISTA DE PMO'), false);
+});
+
+// ---------------------------------------------------------------------------
+// Centro de custo pelo organograma
+// ---------------------------------------------------------------------------
+
+const EQUIPES = ['Equipe IVANO ROBERTO SILVA DA CRUZ', 'Equipe LEONARDO AUGUSTO OLIVEIRA DRUMOND',
+  'Equipe TULIO RAFAEL DE MORAIS NEIVA', 'Gerência Geral'];
+const ALESSANDRO = { nivel: 1, id: 'a', nome: 'ALESSANDRO PEREIRA MOREIRA', funcao: 'COORDENADOR DE PLANEJAMENTOS' };
+const IVANO = { nivel: 2, id: 'i', nome: 'IVANO ROBERTO SILVA DA CRUZ', funcao: 'HEAD DE QUALIDADE' };
+const LEONARDO = { nivel: 3, id: 'l', nome: 'LEONARDO AUGUSTO OLIVEIRA DRUMOND', funcao: 'GERENTE EXECUTIVO' };
+
+// Chamado #376: o Adailton estava em "Equipe PAULO" no Gestão de Horas.
+test('CC é a equipe do gerente da escada, não a do coordenador', () => {
+  assert.equal(equipeDoOrganograma([ALESSANDRO, IVANO, LEONARDO], EQUIPES),
+    'Equipe IVANO ROBERTO SILVA DA CRUZ');
+});
+
+test('coordenador com equipe própria não puxa o CC: vale a do gerente', () => {
+  const tulio = { nivel: 1, id: 't', nome: 'TULIO RAFAEL DE MORAIS NEIVA', funcao: 'COORDENADOR DE PLANEJAMENTO' };
+  assert.equal(equipeDoOrganograma([tulio, { ...LEONARDO, nivel: 2 }], EQUIPES),
+    'Equipe LEONARDO AUGUSTO OLIVEIRA DRUMOND');
+});
+
+test('gerente sem equipe própria: sobe até o primeiro que lidera uma', () => {
+  const semEquipe = { nivel: 2, id: 'g', nome: 'FULANO', funcao: 'GERENTE DE PMO' };
+  assert.equal(equipeDoOrganograma([ALESSANDRO, semEquipe, LEONARDO], EQUIPES),
+    'Equipe LEONARDO AUGUSTO OLIVEIRA DRUMOND');
+});
+
+test('sem cadeia ou sem equipe na cadeia, devolve vazio', () => {
+  assert.equal(equipeDoOrganograma([], EQUIPES), '');
+  assert.equal(equipeDoOrganograma([{ nivel: 1, id: 'x', nome: 'X', funcao: 'CEO' }], EQUIPES), '');
 });

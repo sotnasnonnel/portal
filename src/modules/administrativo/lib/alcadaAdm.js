@@ -139,8 +139,16 @@ const semAcento = (s) => String(s || '')
  * Cargo de gerência. "GERENTE EXECUTIVO", "GERENTE FINANCEIRO" e "GERENTE DE
  * PMO" contam — todos gerenciam; o que a regra procura é o degrau, não o
  * sufixo do cargo.
+ *
+ * "HEAD DE ..." é o mesmo degrau com outro nome: o Head de Qualidade responde
+ * ao Gerente Executivo como qualquer gerente. Antes ele não contava, e quem
+ * estava sob um coordenador dele pulava o Head e ia direto ao Gerente
+ * Executivo (chamado #376, 10/11/2026).
  */
-export const ehGerente = (funcao) => semAcento(funcao).includes('GERENTE');
+export const ehGerente = (funcao) => {
+  const f = semAcento(funcao);
+  return f.includes('GERENTE') || f.startsWith('HEAD ');
+};
 
 /** Acima de gerente: diretoria e CEO. Fim da linha da escada. */
 export const ehAcimaDeGerente = (funcao) => {
@@ -178,20 +186,53 @@ export const PAPEL_GERENTE = 'Gerente';
  * @returns {Array<{id: string, nome: string, funcao: string, papel: string}>}
  */
 export function escadaDoOrganograma(superiores = []) {
+  return escadaComCadeia(superiores).passos;
+}
+
+/**
+ * Centro de custo do chamado, tirado do organograma: a equipe de quem fecha a
+ * escada (o gerente). Se ele não lidera equipe própria, sobe a cadeia até o
+ * primeiro que lidera.
+ *
+ * As equipes do Gestão de Horas se chamam "Equipe <NOME DO LÍDER>", e o vínculo
+ * é por esse nome. Antes o CC vinha da gerência cadastrada à mão no Gestão de
+ * Horas, que desgarrava do organograma a cada remanejamento (Adailton estava
+ * em "Equipe PAULO" sendo da escada do Ivano — chamado #376, 10/11/2026).
+ *
+ * @param superiores saída de `chamados_adm_cadeia`
+ * @param equipes nomes de `horas_gerencias`
+ * @returns nome da equipe, ou '' quando ninguém na cadeia lidera uma
+ */
+export function equipeDoOrganograma(superiores = [], equipes = []) {
+  const { passos, cadeia } = escadaComCadeia(superiores);
+  if (!passos.length) return '';
+  const porLider = new Map(
+    equipes.filter(Boolean).map((nome) => [semAcento(nome.replace(/^Equipe\s+/i, '')), nome]),
+  );
+  const dono = passos[passos.length - 1];
+  const daqui = cadeia.slice(cadeia.findIndex((p) => p.id === dono.id));
+  for (const p of daqui) {
+    const equipe = porLider.get(semAcento(p.nome));
+    if (equipe) return equipe;
+  }
+  return '';
+}
+
+function escadaComCadeia(superiores = []) {
   const cadeia = [...superiores]
     .filter((p) => p?.id)
     .sort((a, b) => (a.nivel || 0) - (b.nivel || 0));
 
   const direto = cadeia[0];
-  if (!direto) return [];
+  if (!direto) return { passos: [], cadeia };
 
   const passos = [{ ...direto, papel: PAPEL_GESTOR_DIRETO }];
-  if (ehGerencia(direto.funcao)) return passos;
+  if (ehGerencia(direto.funcao)) return { passos, cadeia };
 
   const acima = cadeia.slice(1).filter((p) => p.id !== direto.id);
   const gerente = acima.find((p) => ehGerente(p.funcao))
     || acima.find((p) => ehAcimaDeGerente(p.funcao));
   if (gerente) passos.push({ ...gerente, papel: PAPEL_GERENTE });
 
-  return passos;
+  return { passos, cadeia };
 }
