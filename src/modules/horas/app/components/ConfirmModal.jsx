@@ -11,7 +11,7 @@ export default function ConfirmModal({
 }) {
   if (!open) return null;
   return (
-    <div className="horas-modal-bg" onClick={(e) => e.target === e.currentTarget && onCancel?.()}>
+    <div className="horas-modal-bg" onMouseDown={(e) => e.target === e.currentTarget && onCancel?.()}>
       <div className="horas-modal" style={{ width: 420 }}>
         <h3>{title}</h3>
         <p className="horas-sub" style={{ marginBottom: 20 }}>{message}</p>

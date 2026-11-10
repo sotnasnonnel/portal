@@ -69,7 +69,7 @@ export default function ApontamentoModal({ projetos, campos = [], inicial = null
   }
 
   return (
-    <div className="horas-modal-bg" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="horas-modal-bg" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="horas-modal horas-modal-manual">
         <h3>{edicao ? 'Editar apontamento' : modelo ? 'Duplicar apontamento' : 'Lançamento manual'}</h3>
         <div className="horas-fld">

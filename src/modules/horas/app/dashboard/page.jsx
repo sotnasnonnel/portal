@@ -349,7 +349,7 @@ export default function DashboardPage() {
       </div>
 
       {popup ? (
-        <div className="horas-modal-bg" onClick={(e) => e.target === e.currentTarget && setPopup(null)}>
+        <div className="horas-modal-bg" onMouseDown={(e) => e.target === e.currentTarget && setPopup(null)}>
           <div className="horas-modal" style={{ width: 720 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
               <h3 style={{ margin: 0 }}>{popup.title}</h3>

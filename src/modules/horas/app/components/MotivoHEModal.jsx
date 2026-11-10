@@ -23,7 +23,7 @@ export default function MotivoHEModal({ titulo, descricao, rotulo = 'Motivo', co
   }
 
   return (
-    <div className="horas-modal-bg" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="horas-modal-bg" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="horas-modal">
         <h3>{titulo}</h3>
         {descricao ? (

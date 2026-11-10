@@ -70,7 +70,7 @@ export default function DestinoHEModal({
   }
 
   return (
-    <div className="horas-modal-bg" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="horas-modal-bg" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="horas-modal horas-modal-manual">
         <h3>
           {titulo} #{solicitacao.numero}
