@@ -1,3 +1,11 @@
+-- ============================================================================
+-- OBSOLETO desde 10/11/2026 -- NAO RODE.
+-- Os cadastros que este seed criou foram apagados: a aprovacao do Atendimento
+-- voltou a ser a escada do organograma (coordenador -> gerente) em todos os
+-- servicos. Rodar isto de novo reinstala a etapa unica do GER PHD por cima do
+-- organograma. Backup do que existia: backup_fluxos_atendimento_20261110.sql.
+-- ============================================================================
+--
 -- Seed: aprovador do Administrativo = GER PHD (org.xlsx)
 -- (projeto bogsuuhrgvopzgcceoqz) -- decisao da diretoria, ago/2026
 --
