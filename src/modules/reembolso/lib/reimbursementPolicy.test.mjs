@@ -275,17 +275,25 @@ test("calendário do Financeiro: cada corte paga na data da tabela (inclusive)",
     ["2026-10-10", "2026-11-03"],
     ["2026-10-23", "2026-11-03"],
     ["2026-10-24", "2026-11-18"],
-    ["2026-11-13", "2026-11-18"],
-    ["2026-11-14", "2026-12-01"],
-    ["2026-11-25", "2026-12-01"],
-    ["2026-11-26", "2026-12-16"],
-    ["2026-12-11", "2026-12-16"],
+    ["2026-11-06", "2026-11-18"],
   ];
   for (const [aprov, paga] of casos) assert.equal(computePaymentDate(aprovadoEm(aprov)), paga, aprov);
 });
 
-test("fora do calendário vale a regra de sempre", () => {
+test("antes do calendário vale a regra de sempre", () => {
   assert.equal(computePaymentDate(aprovadoEm("2026-09-05")), "2026-09-16");
-  assert.equal(computePaymentDate(aprovadoEm("2026-12-12")), "2027-01-01");
-  assert.equal(computePaymentDate(aprovadoEm("2026-12-28")), "2027-01-16");
+});
+
+test("regra semanal: paga na quarta, corte na sexta da semana anterior", () => {
+  const casos = [
+    ["2026-11-07", "2026-11-18"], // sábado
+    ["2026-11-10", "2026-11-18"], // terça
+    ["2026-11-13", "2026-11-18"], // sexta (corte, inclusive)
+    ["2026-11-14", "2026-11-25"], // sábado depois do corte
+    ["2026-11-18", "2026-11-25"], // quarta
+    ["2026-11-20", "2026-11-25"], // sexta
+    ["2026-11-21", "2026-12-02"], // virada de mês
+    ["2026-12-26", "2027-01-06"], // virada de ano
+  ];
+  for (const [aprov, paga] of casos) assert.equal(computePaymentDate(aprovadoEm(aprov)), paga, aprov);
 });

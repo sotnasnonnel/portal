@@ -444,6 +444,19 @@ export function itensExcedentes(items, keyOf = (it) => it) {
 
 // Data de pagamento calculada a partir da data de APROVAÇÃO.
 //
+// REGRA SEMANAL (10/11/2026): o Financeiro paga toda QUARTA-FEIRA, e o corte é
+// a SEXTA-FEIRA da semana anterior (inclusive). Aprovado de sábado a sexta ->
+// paga na quarta seguinte a essa sexta. Ex.: aprovado entre 07/11 e 13/11
+// (sexta) -> paga 18/11; aprovado em 14/11 (sábado) -> paga 25/11.
+// Vale para quem foi aprovado a partir de SEMANAL_INICIO; antes disso, o
+// pedido já tem a data gravada e o cálculo abaixo continua o de antes.
+// Feriado em quarta não é tratado: o Financeiro ajusta a data na mão.
+const SEMANAL_INICIO = "2026-11-07";
+const SEXTA = 5;
+const DIAS_SEXTA_ATE_QUARTA = 5;
+
+// --- Regras antigas (aprovações antes de SEMANAL_INICIO) ---
+//
 // Regra PROVISÓRIA do lançamento (2026-09-01), que substituiu a de 5/20/21:
 //   • aprovado entre os dias 1 e 10  -> paga dia 16 do mesmo mês
 //   • aprovado entre os dias 11 e 25 -> paga dia 1º do mês seguinte
@@ -463,9 +476,8 @@ export const CALENDARIO_PAGAMENTO = [
   ["2026-09-25", "2026-10-01"],
   ["2026-10-09", "2026-10-14"],
   ["2026-10-23", "2026-11-03"],
-  ["2026-11-13", "2026-11-18"],
-  ["2026-11-25", "2026-12-01"],
-  ["2026-12-11", "2026-12-16"],
+  // Até 06/11; de 07/11 em diante vale a regra semanal (SEMANAL_INICIO).
+  ["2026-11-06", "2026-11-18"],
 ];
 
 const isoLocal = (d) =>
@@ -477,6 +489,13 @@ export function computePaymentDate(approvalIso) {
   if (Number.isNaN(base.getTime())) return null;
 
   const dia = isoLocal(base);
+  if (dia >= SEMANAL_INICIO) {
+    // Próxima sexta (ou a própria, se aprovado na sexta) + 5 dias = quarta.
+    const ateSexta = (SEXTA - base.getDay() + 7) % 7;
+    return isoLocal(
+      new Date(base.getFullYear(), base.getMonth(), base.getDate() + ateSexta + DIAS_SEXTA_ATE_QUARTA)
+    );
+  }
   if (dia >= CALENDARIO_INICIO) {
     const linha = CALENDARIO_PAGAMENTO.find(([ate]) => dia <= ate);
     if (linha) return linha[1];
