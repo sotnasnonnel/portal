@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FileSpreadsheet } from 'lucide-react';
+import { FileSpreadsheet, MousePointerClick } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { fetchApontamentos, fetchProjetos, fetchColaboradores } from '../../lib/data';
+import { fetchApontamentos, fetchProjetos, fetchColaboradores, fetchGerencias } from '../../lib/data';
 import { agruparHoras, serieDiaria, somaMs } from '../../lib/aggregate';
 import { fmtHoras, startOfDay, startOfWeek, startOfMonth, periodoPadrao, intervaloTs } from '../../lib/format';
 import { escopo, isGestao } from '../../lib/roles';
-import { lookupProjetos, lookupColaboradores } from '../../lib/lookups';
+import { lookupProjetos, lookupColaboradores, gerentesDoEscopo } from '../../lib/lookups';
 import { labelsUsados, valorDoCampo } from '../../lib/camposEquipe';
 import { BrandBarChart, BrandLineChart, BrandPieChart } from '../components/Charts';
 import ApontamentosTable from '../components/ApontamentosTable';
+import Modal from '../components/Modal';
+import Aviso, { Carregando } from '../components/Aviso';
 import SearchableSelect from '../components/SearchableSelect';
 import AusenciasProximaSemana from '../components/AusenciasProximaSemana';
 
@@ -22,10 +24,11 @@ export default function DashboardPage() {
   const [apont, setApont] = useState([]);
   const [projetos, setProjetos] = useState([]);
   const [colabs, setColabs] = useState([]);
+  const [gerencias, setGerencias] = useState([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState('');
   const [range, setRange] = useState(() => periodoPadrao(30));
-  const [filtro, setFiltro] = useState({ projeto: '', colab: '' });
+  const [filtro, setFiltro] = useState({ projeto: '', gerente: '', colab: '' });
   const [quebra, setQuebra] = useState(''); // campo do apontamento escolhido
   const [popup, setPopup] = useState(null);
 
@@ -36,15 +39,17 @@ export default function DashboardPage() {
       setErro('');
       try {
         const { sinceTs, ateTs } = intervaloTs(range);
-        const [a, ps, cs] = await Promise.all([
+        const [a, ps, cs, gs] = await Promise.all([
           fetchApontamentos({ role, colaboradorId, sinceTs, ateTs }),
           fetchProjetos({ incluirArquivados: true }),
           isGestao(role) ? fetchColaboradores() : Promise.resolve([]),
+          isGestao(role) ? fetchGerencias() : Promise.resolve([]),
         ]);
         if (cancel) return;
         setApont(a);
         setProjetos(ps);
         setColabs(cs);
+        setGerencias(gs);
       } catch (e) {
         if (!cancel) setErro(e?.message || 'Falha ao carregar o dashboard.');
       } finally {
@@ -62,12 +67,21 @@ export default function DashboardPage() {
   // O filtro só oferece projetos que aparecem nos apontamentos do escopo.
   const projetosEscopo = useMemo(() => proj.usadosEm(apont), [proj, apont]);
 
+  // Filtro por gerente: a equipe considerada é a ATUAL do colaborador.
+  const gerentes = useMemo(() => gerentesDoEscopo(gerencias, colabs), [gerencias, colabs]);
+  const gerenteAtual = gerentes.some((g) => g.value === filtro.gerente) ? filtro.gerente : '';
+  const colabsDoGerente = useMemo(
+    () => (gerenteAtual ? new Set(colabs.filter((c) => c.gerenciaId === gerenteAtual).map((c) => c.id)) : null),
+    [colabs, gerenteAtual]
+  );
+
   const list = useMemo(() => {
     let l = apont;
     if (filtro.projeto) l = l.filter((a) => a.projetoId === filtro.projeto);
+    if (isGestao(role) && colabsDoGerente) l = l.filter((a) => colabsDoGerente.has(a.colaboradorId));
     if (isGestao(role) && filtro.colab) l = l.filter((a) => a.colaboradorId === filtro.colab);
     return l;
-  }, [apont, filtro, role]);
+  }, [apont, filtro, role, colabsDoGerente]);
 
   const agora = Date.now();
   const stats = useMemo(
@@ -150,19 +164,21 @@ export default function DashboardPage() {
 
   const titulo = tipo === 'equipe' ? 'Dashboard da Equipe' : 'Meu Dashboard';
   let subt = tipo === 'equipe' ? 'Horas apontadas pela sua equipe.' : 'Suas horas apontadas.';
+  if (gerenteAtual) subt += ` · Gerente: ${gerentes.find((g) => g.value === gerenteAtual)?.label}`;
   if (filtro.colab) subt += ` · ${colab.nome(filtro.colab)}`;
 
   if (loading) {
     return (
       <>
         <h1>{titulo}</h1>
-        <div className="horas-hint">Carregando…</div>
+        <Carregando />
       </>
     );
   }
 
-  // Colaboradores oferecidos no filtro: a equipe (subárvore) que a RPC devolveu.
-  const colabsFiltro = colabs;
+  // Colaboradores oferecidos no filtro: a equipe (subárvore) que a RPC devolveu,
+  // restrita ao gerente escolhido.
+  const colabsFiltro = colabsDoGerente ? colabs.filter((c) => colabsDoGerente.has(c.id)) : colabs;
 
   // Os gráficos que este papel/gerência tem hoje. Os condicionais entram na
   // lista só quando existem, para o grid não ficar com buracos.
@@ -191,7 +207,8 @@ export default function DashboardPage() {
           <select
             value={quebraAtual}
             onChange={(e) => setQuebra(e.target.value)}
-            style={{ maxWidth: 220 }}
+            aria-label="Campo do apontamento usado no gráfico"
+            className="horas-inline-select"
           >
             {labelsDisponiveis.map((l) => (
               <option key={l} value={l}>
@@ -258,32 +275,51 @@ export default function DashboardPage() {
       <h1>{titulo}</h1>
       <p className="horas-sub">{subt}</p>
 
-      {erro ? <div className="horas-hint">⚠️ {erro}</div> : null}
+      {erro ? <Aviso tom="erro">{erro}</Aviso> : null}
 
       {/* Filtros: período (consulta ao banco) + gerência/projeto/colaborador (na tela) */}
       <div className="horas-card">
         <div className="horas-toolbar" style={{ marginBottom: 0 }}>
           <div className="horas-fld" style={{ maxWidth: 150 }}>
-            <label>De</label>
-            <input type="date" value={range.de} onChange={(e) => setRange((r) => ({ ...r, de: e.target.value }))} />
+            <label htmlFor="horas-dash-de">De</label>
+            <input id="horas-dash-de" type="date" value={range.de} onChange={(e) => setRange((r) => ({ ...r, de: e.target.value }))} />
           </div>
           <div className="horas-fld" style={{ maxWidth: 150 }}>
-            <label>Até</label>
-            <input type="date" value={range.ate} onChange={(e) => setRange((r) => ({ ...r, ate: e.target.value }))} />
+            <label htmlFor="horas-dash-ate">Até</label>
+            <input id="horas-dash-ate" type="date" value={range.ate} onChange={(e) => setRange((r) => ({ ...r, ate: e.target.value }))} />
           </div>
           <div className="horas-fld" style={{ maxWidth: 340, flex: '1 1 260px' }}>
-            <label>Projeto</label>
+            <label htmlFor="horas-dash-projeto">Projeto</label>
             <SearchableSelect
+              id="horas-dash-projeto"
               value={filtro.projeto}
               placeholder="Todos"
               onChange={(v) => setFiltro((f) => ({ ...f, projeto: v }))}
               options={[{ value: '', label: 'Todos' }, ...projetosEscopo.map((p) => ({ value: p.id, label: p.nome }))]}
             />
           </div>
+          {isGestao(role) && gerentes.length > 1 ? (
+            <div className="horas-fld" style={{ maxWidth: 280, flex: '1 1 220px' }}>
+              <label>Gerente</label>
+              <SearchableSelect
+                value={gerenteAtual}
+                placeholder="Todos"
+                onChange={(v) =>
+                  setFiltro((f) => {
+                    const c = colabs.find((x) => x.id === f.colab);
+                    // Troca de gerente limpa o colaborador que não é da equipe nova.
+                    const manterColab = !v || (c && c.gerenciaId === v);
+                    return { ...f, gerente: v, colab: manterColab ? f.colab : '' };
+                  })
+                }
+                options={[{ value: '', label: 'Todos' }, ...gerentes]}
+              />
+            </div>
+          ) : null}
           {isGestao(role) ? (
             <div className="horas-fld" style={{ maxWidth: 220 }}>
-              <label>Colaborador</label>
-              <select value={filtro.colab} onChange={(e) => setFiltro((f) => ({ ...f, colab: e.target.value }))}>
+              <label htmlFor="horas-dash-colab">Colaborador</label>
+              <select id="horas-dash-colab" value={filtro.colab} onChange={(e) => setFiltro((f) => ({ ...f, colab: e.target.value }))}>
                 <option value="">Toda a equipe</option>
                 {colabsFiltro.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -294,11 +330,11 @@ export default function DashboardPage() {
             </div>
           ) : null}
           <div className="horas-spacer" />
-          {filtro.projeto || filtro.colab ? (
+          {filtro.projeto || gerenteAtual || filtro.colab ? (
             <button
               className="horas-btn2"
               type="button"
-              onClick={() => setFiltro({ projeto: '', colab: '' })}
+              onClick={() => setFiltro({ projeto: '', gerente: '', colab: '' })}
             >
               Limpar filtros
             </button>
@@ -320,56 +356,50 @@ export default function DashboardPage() {
       {/* Veio do Dashboard do gestor em Gestão de Pessoas. Só na visão de equipe. */}
       {tipo === 'equipe' ? <AusenciasProximaSemana /> : null}
 
+      {/* A dica vem ANTES dos gráficos: no rodapé, ninguém a lia antes de clicar. */}
+      <p className="horas-nota">
+        <MousePointerClick size={14} aria-hidden="true" />
+        Clique numa fatia, ponto ou barra para ver os apontamentos por trás do número.
+      </p>
+
       {/* Grid único: os cards existentes ficam lado a lado. Quando o total é
           ímpar, o último ocupa a linha inteira em vez de deixar meia coluna vazia. */}
       <div className="horas-g2">
         {graficos.map((g, i) => (
-          <div
+          <section
             className="horas-card"
             key={g.id}
+            aria-labelledby={`horas-graf-${g.id}`}
             style={graficos.length % 2 === 1 && i === graficos.length - 1 ? { gridColumn: '1 / -1' } : undefined}
           >
-            {g.acao ? (
-              <div className="horas-campo-topo">
-                <div className="horas-sec" style={{ margin: 0 }}>
-                  {g.titulo}
-                </div>
-                {g.acao}
-              </div>
-            ) : (
-              <div className="horas-sec">{g.titulo}</div>
-            )}
+            <div className="horas-card-topo">
+              <h2 className="horas-sec" id={`horas-graf-${g.id}`}>
+                {g.titulo}
+              </h2>
+              {g.acao}
+            </div>
             <div className="horas-chart-wrap">{g.chart}</div>
-          </div>
+          </section>
         ))}
       </div>
 
-      <div className="horas-hint" style={{ marginTop: 18 }}>
-        💡 Clique em qualquer fatia, ponto ou barra dos gráficos para ver os apontamentos.
-      </div>
-
       {popup ? (
-        <div className="horas-modal-bg" onMouseDown={(e) => e.target === e.currentTarget && setPopup(null)}>
-          <div className="horas-modal" style={{ width: 720 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-              <h3 style={{ margin: 0 }}>{popup.title}</h3>
-              <button className="horas-btn-icon" type="button" onClick={() => setPopup(null)} title="Fechar">
-                ✕
-              </button>
-            </div>
-            <p className="horas-sub" style={{ marginBottom: 12 }}>
-              Total: <b>{fmtHoras(somaMs(popup.list))}</b> em {popup.list.length} apontamento(s).
-            </p>
-            <div className="horas-table-wrap" style={{ border: '1px solid var(--h-border)', borderRadius: 12 }}>
-              <ApontamentosTable
-                list={popup.list}
-                projetoNome={proj.nome}
-                projetoCor={proj.cor}
-                nameOf={mostraColaborador ? colab.nome : undefined}
-              />
-            </div>
+        <Modal titulo={popup.title} onClose={() => setPopup(null)} fechar className="horas-modal-lg">
+          <p className="horas-modal-msg">
+            Total: <b>{fmtHoras(somaMs(popup.list))}</b> em {popup.list.length} apontamento(s).
+          </p>
+          <div
+            className="horas-table-wrap"
+            style={{ border: '1px solid var(--h-border)', borderRadius: 'var(--h-radius-lg)' }}
+          >
+            <ApontamentosTable
+              list={popup.list}
+              projetoNome={proj.nome}
+              projetoCor={proj.cor}
+              nameOf={mostraColaborador ? colab.nome : undefined}
+            />
           </div>
-        </div>
+        </Modal>
       ) : null}
     </>
   );

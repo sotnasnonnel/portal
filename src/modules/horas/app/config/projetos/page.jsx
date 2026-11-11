@@ -12,6 +12,7 @@ import {
 import { podeConfigurarHoras } from '../../../lib/roles';
 import SearchableSelect from '../../components/SearchableSelect';
 import ConfirmModal from '../../components/ConfirmModal';
+import Aviso, { Carregando } from '../../components/Aviso';
 
 // Acesso a Projetos: quem enxerga cada projeto no seletor de "Apontar".
 // O padrão continua sendo a herança de área (a pessoa vê os projetos da sua
@@ -159,7 +160,7 @@ export default function ConfigProjetosPage() {
     return (
       <>
         <h1>Acesso a Projetos</h1>
-        <div className="horas-hint">Carregando…</div>
+        <Carregando />
       </>
     );
   }
@@ -168,7 +169,7 @@ export default function ConfigProjetosPage() {
     return (
       <>
         <h1>Acesso a Projetos</h1>
-        <div className="horas-hint">Nenhum projeto ativo cadastrado ainda.</div>
+        <Aviso>Nenhum projeto ativo cadastrado ainda.</Aviso>
       </>
     );
   }
@@ -180,20 +181,21 @@ export default function ConfigProjetosPage() {
         Escolha o projeto e marque quem pode vê-lo no seletor de "Apontar".
       </p>
 
-      <div className="horas-hint">
+      <Aviso>
         Por padrão vale a <b>herança de área</b>: a pessoa vê os projetos da equipe dela e das
         equipes dos gestores acima. Marcar ou desmarcar cria uma <b>exceção</b> só para esta
         pessoa neste projeto — dá tanto para tirar de quem é da área quanto para conceder a quem
         não é. Isto muda apenas o seletor do apontamento; o histórico já registrado não é afetado.
-      </div>
+      </Aviso>
 
-      {erro ? <div className="horas-hint">⚠️ {erro}</div> : null}
+      {erro ? <Aviso tom="erro">{erro}</Aviso> : null}
 
       <div className="horas-card">
         <div className="horas-toolbar" style={{ marginBottom: 0 }}>
           <div className="horas-fld" style={{ maxWidth: 420 }}>
-            <label>Projeto ({projetos.length} ativos)</label>
+            <label htmlFor="horas-acesso-projeto">Projeto ({projetos.length} ativos)</label>
             <SearchableSelect
+              id="horas-acesso-projeto"
               value={projetoId}
               placeholder="Selecione o projeto…"
               onChange={(v) => {
@@ -207,10 +209,11 @@ export default function ConfigProjetosPage() {
             />
           </div>
           <div className="horas-fld" style={{ maxWidth: 280 }}>
-            <label>Buscar pessoa ou equipe</label>
+            <label htmlFor="horas-acesso-busca">Buscar pessoa ou equipe</label>
             <div className="horas-busca">
-              <Search size={14} />
+              <Search size={14} aria-hidden="true" />
               <input
+                id="horas-acesso-busca"
                 type="text"
                 value={busca}
                 placeholder="Nome ou equipe…"
@@ -246,7 +249,7 @@ export default function ConfigProjetosPage() {
 
       <div className="horas-card horas-table-wrap">
         {carregando ? (
-          <div className="horas-empty">Carregando…</div>
+          <Carregando texto="Carregando as pessoas…" />
         ) : (
           <table className="horas-tbl-resp">
             <thead>
@@ -255,7 +258,9 @@ export default function ConfigProjetosPage() {
                 <th>Pessoa</th>
                 <th>Equipe</th>
                 <th>Situação</th>
-                <th></th>
+                <th>
+                  <span className="horas-sr">Ações</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -274,9 +279,7 @@ export default function ConfigProjetosPage() {
                   <td data-label="Pessoa">
                     <b>{p.nome}</b>
                     {p.funcao ? (
-                      <div className="horas-muted" style={{ fontSize: 'var(--font-size-2xs)' }}>
-                        {p.funcao}
-                      </div>
+                      <div className="horas-desc">{p.funcao}</div>
                     ) : null}
                   </td>
                   <td className="horas-muted" data-label="Equipe">
@@ -291,6 +294,7 @@ export default function ConfigProjetosPage() {
                         className="horas-btn-icon"
                         type="button"
                         title="Voltar ao padrão da área"
+                        aria-label={`Voltar ${p.nome} ao padrão da área`}
                         disabled={emVoo === p.colaboradorId}
                         onClick={() => voltarAoPadrao(p)}
                       >
@@ -303,7 +307,7 @@ export default function ConfigProjetosPage() {
               {filtradas.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="horas-empty">
-                    Ninguém encontrado com "{busca}".
+                    {busca.trim() ? `Ninguém encontrado com "${busca}".` : 'Nenhuma pessoa para listar.'}
                   </td>
                 </tr>
               ) : null}

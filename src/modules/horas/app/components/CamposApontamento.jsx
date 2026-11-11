@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import SearchableSelect from './SearchableSelect';
 
 // Os campos que a EQUIPE configurou em /horas/config/apontamento, renderizados
@@ -9,18 +10,21 @@ import SearchableSelect from './SearchableSelect';
 // Campo aqui é independente: não existe mais a cadeia em que um filtrava o outro
 // (era regra do catálogo fixo, que a configuração livre não consegue expressar).
 export default function CamposApontamento({ campos = [], valores = {}, onChange, disabled = false }) {
+  const uid = useId();
   return (
     <>
       {campos.map((c) => {
         const valor = valores[c.id] || '';
+        const id = `${uid}-${c.id}`;
         return (
           <div className={`horas-fld${ehLargo(c) ? ' horas-fld-largo' : ''}`} key={c.id}>
-            <label>
+            <label htmlFor={id}>
               {c.label}
               {c.obrigatorio ? null : <span className="horas-muted"> (opcional)</span>}
             </label>
             {c.tipo === 'texto' ? (
               <input
+                id={id}
                 type="text"
                 value={valor}
                 disabled={disabled}
@@ -29,6 +33,7 @@ export default function CamposApontamento({ campos = [], valores = {}, onChange,
               />
             ) : (
               <SearchableSelect
+                id={id}
                 value={valor}
                 disabled={disabled}
                 placeholder={`Selecione ${c.label.toLowerCase()}…`}

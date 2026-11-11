@@ -5,6 +5,7 @@ import { useAuth } from '../../../../../contexts/AuthContext';
 import { fetchSolicitacoes } from '../../../../../services/horasExtras';
 import { fmtMin } from '../../../../../config/horasExtras';
 import SolicitacoesHETable from '../../components/SolicitacoesHETable';
+import Aviso, { Carregando } from '../../components/Aviso';
 
 // Minhas Solicitações: só as que EU abri (a RPC também devolve as que eu aprovo e
 // as da minha equipe — filtramos aqui pelo meu id).
@@ -50,28 +51,39 @@ export default function MinhasHEPage() {
 
   return (
     <>
-      <h1>Minhas Solicitações de Hora Extra</h1>
-      <p className="horas-sub">
-        {totais.qtd} solicitação(ões) · {totais.pendentes} aguardando aprovação ·{' '}
-        {fmtMin(totais.minutos)} aprovadas.
-      </p>
-
-      {erro ? <div className="horas-hint is-erro">⚠️ {erro}</div> : null}
-
-      <div className="horas-card">
-        <div className="horas-toolbar" style={{ marginBottom: 0 }}>
-          <div className="horas-spacer" />
+      {/* A ação principal sobe para o cabeçalho: antes ocupava um cartão inteiro
+          só para um botão. */}
+      <div className="horas-head">
+        <div>
+          <h1>Minhas Solicitações de Hora Extra</h1>
+          <p className="horas-sub">
+            {loading ? (
+              'Carregando…'
+            ) : (
+              <>
+                {totais.qtd} solicitação(ões) · {totais.pendentes} aguardando aprovação ·{' '}
+                {fmtMin(totais.minutos)} aprovadas.
+              </>
+            )}
+          </p>
+        </div>
+        <div className="horas-head-acoes">
           <Link className="horas-btn" to="/horas/extras/nova">
             <Plus size={16} /> Nova solicitação
           </Link>
         </div>
       </div>
 
+      {erro ? <Aviso tom="erro">{erro}</Aviso> : null}
+
       <div className="horas-card horas-table-wrap">
         {loading ? (
-          <div className="horas-empty">Carregando…</div>
+          <Carregando />
         ) : (
-          <SolicitacoesHETable list={minhas} />
+          <SolicitacoesHETable
+            list={minhas}
+            vazio="Você ainda não pediu hora extra. Use Nova solicitação para abrir a primeira."
+          />
         )}
       </div>
     </>

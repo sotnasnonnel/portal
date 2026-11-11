@@ -25,6 +25,12 @@
   --h-gray-600: #475569;
   --h-gray-700: #334155;
   --h-red: #ef4444;
+  /* Fundos de botão com texto branco: as versões mais escuras passam no
+     contraste AA (4.5:1). #00a49a/#ef4444 com branco ficavam em ~3:1. */
+  --h-green-strong: #00857d;
+  --h-red-strong: #dc2626;
+  /* Anel de foco dos campos: o 0.08 de antes quase não aparecia. */
+  --h-focus: 0 0 0 3px rgba(196, 74, 40, 0.22);
   --h-radius-md: 8px;
   --h-radius-lg: 12px;
   --h-radius-xl: 16px;
@@ -76,7 +82,36 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--h-blue);
+  margin: 0 0 12px;
+  line-height: var(--lh-tight);
+}
+
+/* ---- cabeçalho de página: título + ações à direita ---- */
+.horas-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px 16px;
+}
+.horas-head-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+/* Topo de cartão: título da seção à esquerda, ação à direita. */
+.horas-card-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 12px;
   margin-bottom: 12px;
+}
+.horas-card-topo .horas-sec {
+  margin: 0;
 }
 
 /* ---- grid 2 colunas ---- */
@@ -128,7 +163,9 @@
   font-weight: 600;
   margin-top: 6px;
   letter-spacing: -0.02em;
+  line-height: var(--lh-tight);
   color: var(--h-ink);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ---- chart ---- */
@@ -141,6 +178,58 @@
   .horas-chart-wrap {
     height: 280px;
   }
+}
+
+/* Barras deitadas (BarrasDeitadas em Charts.jsx): com muitas linhas o gráfico
+   fica mais alto que o quadro e rola aqui dentro. */
+.horas-chart-rola {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Legenda da rosca (LegendaRolavel em Charts.jsx): o teto de altura/largura
+   vem do wrapperStyle; aqui só o desenho de cada item. */
+.horas-legenda {
+  list-style: none;
+  margin: 0;
+  padding: 0 var(--space-1);
+}
+.horas-legenda button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-width: 0;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--font-size-xs);
+  line-height: 1.5;
+  color: var(--h-muted);
+  text-align: left;
+  cursor: pointer;
+}
+.horas-legenda button:hover .horas-legenda-nome {
+  color: var(--h-ink);
+}
+.horas-legenda button:focus-visible {
+  outline: 2px solid var(--mod-accent);
+  outline-offset: 1px;
+  border-radius: 4px;
+}
+.horas-legenda-cor {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+.horas-legenda-nome {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ---- cards ---- */
@@ -164,6 +253,9 @@
   color: var(--h-gray-700);
   font-weight: 600;
 }
+.horas-fld label .horas-muted {
+  font-weight: var(--fw-regular);
+}
 .horasRoot input[type='text'],
 .horasRoot input[type='date'],
 .horasRoot input[type='time'],
@@ -186,7 +278,12 @@
 .horasRoot select:focus,
 .horasRoot textarea:focus {
   border-color: var(--h-primary);
-  box-shadow: 0 0 0 3px rgba(196, 74, 40, 0.08);
+  box-shadow: var(--h-focus);
+}
+.horasRoot input:hover:not(:disabled):not(:focus),
+.horasRoot select:hover:not(:disabled):not(:focus),
+.horasRoot textarea:hover:not(:disabled):not(:focus) {
+  border-color: var(--h-gray-300);
 }
 /* Campos só-de-leitura (vêm do cadastro: nome, cargo, equipe, total calculado). */
 .horasRoot input:disabled,
@@ -215,7 +312,7 @@
   white-space: nowrap;
   transition: background 0.15s, box-shadow 0.15s;
 }
-.horas-btn:hover {
+.horas-btn:hover:not(:disabled) {
   background: var(--h-brand-700);
 }
 .horas-btn:disabled {
@@ -223,16 +320,16 @@
   cursor: not-allowed;
 }
 .horas-btn.grn {
-  background: var(--h-green);
+  background: var(--h-green-strong);
 }
-.horas-btn.grn:hover {
-  background: #00857d;
+.horas-btn.grn:hover:not(:disabled) {
+  background: #00776f;
 }
 .horas-btn.red {
-  background: var(--h-red);
+  background: var(--h-red-strong);
 }
-.horas-btn.red:hover {
-  background: #dc2626;
+.horas-btn.red:hover:not(:disabled) {
+  background: #b91c1c;
 }
 .horas-btn2 {
   display: inline-flex;
@@ -250,9 +347,13 @@
   cursor: pointer;
   white-space: nowrap;
 }
-.horas-btn2:hover {
+.horas-btn2:hover:not(:disabled) {
   background: var(--h-gray-50);
   border-color: var(--h-gray-300);
+}
+.horas-btn2:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 .horas-btn-icon {
   display: inline-flex;
@@ -266,9 +367,19 @@
   color: var(--h-muted);
   cursor: pointer;
 }
-.horas-btn-icon:hover {
+.horas-btn-icon:hover:not(:disabled) {
   background: var(--h-gray-100);
-  color: var(--h-red);
+  color: var(--h-ink);
+}
+/* Só a ação destrutiva fica vermelha no hover — antes editar e duplicar também
+   ficavam, e pareciam perigosos. */
+.horas-btn-icon.is-danger:hover:not(:disabled) {
+  background: var(--tone-erro-bg);
+  color: var(--tone-erro-fg);
+}
+.horas-btn-icon:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 /* ---- timer ---- */
@@ -284,7 +395,7 @@
 }
 .horas-timer-grid .horas-fld > input[type='text'],
 .horas-timer-grid .horas-ss-btn {
-  min-height: 48px;
+  min-height: var(--ctl-h-lg);
   font-size: var(--font-size-md);
 }
 /* A Tarefa é o campo mais longo do catálogo (nomes de até ~80 caracteres):
@@ -307,10 +418,10 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 9px 12px;
-  min-height: 40px;
-  border: 1.5px solid var(--h-border);
-  border-radius: var(--h-radius-md);
+  padding: var(--ctl-pad-y) var(--ctl-pad-x);
+  min-height: var(--ctl-h);
+  border: var(--ctl-border) solid var(--h-border);
+  border-radius: var(--ctl-radius);
   background: #fff;
   color: var(--h-ink);
   font-size: var(--font-size-md);
@@ -320,12 +431,16 @@
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 .horas-ss-btn:hover:not(:disabled) {
-  border-color: var(--h-primary);
+  border-color: var(--h-gray-300);
 }
-.horas-ss-btn:focus {
+.horas-ss-btn:focus-visible,
+.horas-ss-btn[aria-expanded='true'] {
   outline: none;
   border-color: var(--h-primary);
-  box-shadow: 0 0 0 3px rgba(196, 74, 40, 0.08);
+  box-shadow: var(--h-focus);
+}
+.horas-ss-btn[aria-expanded='true'] .horas-ss-chev {
+  transform: rotate(180deg);
 }
 .horas-ss.is-disabled .horas-ss-btn,
 .horas-ss-btn:disabled {
@@ -344,6 +459,7 @@
 .horas-ss-chev {
   flex: 0 0 auto;
   color: var(--h-gray-700);
+  transition: transform 0.15s;
 }
 /* A lista NÃO fica presa à largura do botão: nomes de projeto ("ADMB-CT10-GRMS
    — ADM DO BRASIL") e de tarefa não cabem num filtro estreito e vinham
@@ -358,8 +474,8 @@
   width: max-content;
   max-width: min(560px, 90vw);
   background: #fff;
-  border: 1.5px solid var(--h-border);
-  border-radius: var(--h-radius-md);
+  border: var(--ctl-border) solid var(--h-border);
+  border-radius: var(--ctl-radius);
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14);
   overflow: hidden;
 }
@@ -382,6 +498,17 @@
   min-height: auto;
   padding: 2px 0;
 }
+/* O campo geral (.horasRoot input[type='text']) é mais específico e
+   desenhava borda e anel de foco dentro da caixa de busca da lista. */
+.horasRoot .horas-ss-search input[type='text'] {
+  border: none;
+  box-shadow: none;
+  min-height: auto;
+  padding: 2px 0;
+}
+.horas-ss-search:focus-within {
+  color: var(--h-primary);
+}
 .horas-ss-list {
   max-height: 240px;
   overflow-y: auto;
@@ -395,7 +522,7 @@
   gap: 8px;
   padding: 9px 10px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--ctl-radius-sm);
   background: transparent;
   color: var(--h-ink);
   font-size: var(--font-size-md);
@@ -403,8 +530,13 @@
   text-align: left;
   cursor: pointer;
 }
-.horas-ss-opt:hover {
-  background: var(--h-gray-100, #f3f4f6);
+.horas-ss-opt:hover,
+.horas-ss-opt:focus-visible {
+  background: var(--h-gray-100);
+}
+.horas-ss-opt:focus-visible {
+  outline: 2px solid var(--h-primary);
+  outline-offset: -2px;
 }
 /* O check fica fixo à direita; quem quebra é o texto. */
 .horas-ss-opt > span {
@@ -420,16 +552,46 @@
   font-size: var(--font-size-sm);
   text-align: center;
 }
+/* O cronômetro é o centro da tela de Apontar: um painel próprio, que muda de
+   cor quando está correndo — dá para saber o estado de relance, de longe. */
+.horas-timer-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 22px 16px 20px;
+  border: 1px solid var(--h-border);
+  border-radius: var(--card-radius);
+  background: var(--h-gray-50);
+  transition: background 0.2s, border-color 0.2s;
+}
+.horas-timer-panel.is-running {
+  background: var(--tone-ok-bg);
+  border-color: #a7f3d0;
+}
+.horas-timer-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--h-muted);
+}
+.horas-timer-panel.is-running .horas-timer-estado {
+  color: var(--tone-ok-fg);
+}
 .horas-timer-display {
   font-size: var(--font-size-display);
   font-weight: 300;
   font-variant-numeric: tabular-nums;
   letter-spacing: 2px;
+  line-height: 1;
   text-align: center;
-  padding: 8px;
+  color: var(--h-gray-600);
 }
 .horas-timer-display.running {
-  color: var(--h-green);
+  color: var(--tone-ok-fg);
+  font-weight: 400;
 }
 .horas-timer-actions {
   display: flex;
@@ -437,15 +599,23 @@
   justify-content: center;
   flex-wrap: wrap;
 }
+.horas-timer-actions .horas-btn {
+  min-height: var(--ctl-h-lg);
+  min-width: 160px;
+}
+.horas-timer-panel .horas-hint {
+  margin: 0;
+  align-self: stretch;
+}
 .horas-live {
   font-size: var(--font-size-xs);
-  color: var(--h-green);
+  color: var(--tone-ok-fg);
+  text-align: center;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   font-weight: 500;
-  margin-top: 14px;
 }
 .horas-live-dot {
   width: 7px;
@@ -454,6 +624,17 @@
   background: var(--h-green);
   display: inline-block;
   animation: horasPulse 1.4s infinite;
+}
+@keyframes horasSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .horas-live-dot,
+  .horas-spin {
+    animation: none;
+  }
 }
 @keyframes horasPulse {
   0%,
@@ -469,6 +650,86 @@
 .horas-table-wrap {
   padding: 0;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Tabela com rolagem própria (Registros): altura limitada à janela, cabeçalho
+   e linha de total presos enquanto o corpo rola. */
+.horas-table-scroll {
+  max-height: max(360px, calc(100vh - 300px));
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.horas-table-scroll:focus-visible {
+  outline: 2px solid var(--mod-accent);
+  outline-offset: 2px;
+}
+.horasRoot .horas-table-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+.horasRoot .horas-table-scroll tfoot td {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+}
+.horasRoot tfoot td {
+  background: var(--h-gray-50);
+  border-top: 1px solid var(--h-border);
+  border-bottom: none;
+  font-weight: 600;
+  color: var(--h-ink);
+}
+/* Com sticky, a borda do th rola junto com o corpo (border-collapse); a sombra
+   interna mantém a linha divisória no lugar. */
+.horasRoot .horas-table-scroll thead th {
+  box-shadow: inset 0 -1px 0 var(--h-border);
+}
+
+/* Tabela de apontamentos: colunas com largura pensada para o conteúdo. */
+.horasRoot .horas-tbl-apont tbody tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--h-gray-50) 55%, transparent);
+}
+.horasRoot .horas-tbl-apont tbody tr:hover td {
+  background: var(--h-gray-50);
+}
+.horas-td-nome {
+  white-space: nowrap;
+  font-weight: 500;
+  color: var(--h-ink);
+}
+.horas-td-projeto {
+  min-width: 160px;
+  max-width: 260px;
+}
+.horas-projeto {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.horas-projeto .horas-pill {
+  flex: none;
+  margin-right: 0;
+}
+.horas-td-detalhes {
+  min-width: 200px;
+  max-width: 380px;
+}
+.horas-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+.horas-tags .horas-tag {
+  margin: 0;
+}
+/* Descrição longa: duas linhas e reticências; o texto inteiro fica no title. */
+.horas-desc-curta {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .horasRoot table {
   width: 100%;
@@ -501,8 +762,54 @@
 .horas-right {
   text-align: right;
 }
+/* O th geral (.horasRoot th) alinha à esquerda e vencia o .horas-right: o
+   cabeçalho "Duração" ficava torto em relação aos números. */
+.horasRoot th.horas-right {
+  text-align: right;
+}
 .horas-muted {
   color: var(--h-muted);
+}
+.horas-num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.horas-dur {
+  font-weight: 600;
+  color: var(--h-ink);
+}
+/* Texto de apoio dentro da célula (descrição, matrícula, observações). */
+.horas-desc {
+  font-size: var(--font-size-xs);
+  color: var(--h-muted);
+  margin-top: 3px;
+  line-height: var(--lh-normal);
+}
+.horas-just {
+  font-size: var(--font-size-xs);
+}
+.horas-td-texto {
+  min-width: 220px;
+  max-width: 320px;
+}
+.horas-td-acao {
+  white-space: nowrap;
+}
+/* Linha de projeto arquivado: some do apontamento, então fica apagada aqui. */
+.horasRoot tr.is-arquivado td {
+  color: var(--h-muted);
+}
+/* Só para leitor de tela (cabeçalho da coluna de ações, por exemplo). */
+.horas-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 .horas-tag {
   display: inline-block;
@@ -551,6 +858,76 @@
   padding: 36px;
   font-size: var(--font-size-md);
 }
+.horas-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 36px;
+  color: var(--h-muted);
+  font-size: var(--font-size-md);
+}
+.horas-spin {
+  animation: horasSpin 0.9s linear infinite;
+}
+/* Nota curta sobre o bloco abaixo (ex.: "clique no gráfico…"). */
+.horas-nota {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-xs);
+  color: var(--h-muted);
+  margin: 0 0 12px;
+}
+
+/* Aviso com ícone (componente Aviso). Sem .has-ico o aviso continua em fluxo
+   de texto, para os que ainda são só texto com <b>. */
+.horas-hint.has-ico {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.horas-hint-ico {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--h-primary);
+}
+.horas-hint-txt {
+  min-width: 0;
+}
+.horas-hint.is-aviso {
+  background: var(--tone-andamento-bg);
+  border-left-color: #d97706;
+  color: var(--tone-andamento-fg);
+}
+.horas-hint.is-aviso .horas-hint-ico,
+.horas-hint.is-erro .horas-hint-ico,
+.horas-hint.is-ok .horas-hint-ico {
+  color: currentColor;
+}
+
+/* Confirmação flutuante (AvisoTemporario). */
+.horas-toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 990; /* abaixo dos diálogos (1000) */
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 12px 16px;
+  border-radius: var(--ctl-radius);
+  background: var(--neutral-ink);
+  color: #fff;
+  font-size: var(--font-size-md);
+  font-weight: 500;
+  box-shadow: var(--h-shadow-lg);
+}
+.horas-toast svg {
+  flex: 0 0 auto;
+  color: #6ee7b7;
+}
 
 /* ---- badges de papel (usuario · gerente · diretoria) ---- */
 .horas-badge {
@@ -571,6 +948,16 @@
   color: var(--h-blue);
 }
 .horas-badge.diretoria {
+  background: var(--h-brand-50);
+  color: var(--h-brand-700);
+}
+/* Os papéis atuais (ROLES em lib/roles.js). Coordenador e gestor não tinham
+   cor: a pílula aparecia sem fundo, como texto solto. */
+.horas-badge.coordenador {
+  background: var(--tone-aberto-bg);
+  color: var(--tone-aberto-fg);
+}
+.horas-badge.gestor {
   background: var(--h-brand-50);
   color: var(--h-brand-700);
 }
@@ -633,19 +1020,28 @@
 
 /* Variações do aviso: erro (bloqueio) e sucesso (confirmação). */
 .horas-hint.is-erro {
-  background: #fef2f2;
+  background: var(--tone-erro-bg);
   border-left-color: var(--h-red);
-  color: #991b1b;
+  color: var(--tone-erro-fg);
 }
 .horas-hint.is-ok {
-  background: #ecfdf5;
+  background: var(--tone-ok-bg);
   border-left-color: #059669;
-  color: #065f46;
+  color: var(--tone-ok-fg);
+}
+/* Rascunho com alteração ainda não gravada (Config. do Apontamento). */
+.horas-pendente {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--tone-andamento-fg);
 }
 
 /* Select dentro de célula de tabela (vínculo de gerência). */
 .horas-inline-select {
-  min-height: 34px;
+  min-height: var(--ctl-h-sm);
   padding: 5px 28px 5px 10px;
   font-size: var(--font-size-sm);
   max-width: 220px;
@@ -701,8 +1097,13 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
+  border: 0;
   cursor: pointer;
   padding: 0;
+}
+/* Anel duplo (branco + tinta): visível em qualquer cor de fundo. */
+.horas-cor-btn.is-sel {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--h-ink);
 }
 
 .horas-cfg-block {
@@ -761,6 +1162,42 @@
   font-weight: 700;
   margin: 0 0 16px;
 }
+.horas-modal:focus {
+  outline: none;
+}
+.horas-modal-topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.horasRoot .horas-modal-topo h3 {
+  margin: 0;
+  line-height: var(--lh-tight);
+}
+.horas-modal-msg {
+  font-size: var(--font-size-md);
+  color: var(--h-muted);
+  line-height: var(--lh-normal);
+  margin: -6px 0 18px;
+}
+.horas-modal-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+.horas-modal .horas-hint {
+  margin-bottom: 12px;
+}
+.horas-modal-sm {
+  width: 420px;
+}
+.horas-modal-lg {
+  width: 760px;
+}
 .horas-modal .horas-fld {
   margin-bottom: 13px;
 }
@@ -769,8 +1206,7 @@
   width: 560px;
   padding: 30px;
 }
-.horas-modal-manual h3 {
-  font-size: var(--font-size-xl);
+.horas-modal-manual .horas-modal-topo {
   margin-bottom: 20px;
 }
 .horas-modal-manual .horas-fld {
@@ -778,7 +1214,7 @@
 }
 .horas-modal-manual .horas-fld > input,
 .horas-modal-manual .horas-ss-btn {
-  min-height: 46px;
+  min-height: var(--ctl-h-lg);
   font-size: var(--font-size-md);
 }
 .horas-modal-row2 {
@@ -798,6 +1234,34 @@
 @media (max-width: 768px) {
   .horasMain {
     padding: var(--shell-main-pad-mobile);
+  }
+
+  /* Diálogos ocupam quase a tela toda: o respiro de 24-30px comia ~15% da
+     largura útil num celular de 375px. */
+  .horas-modal-bg {
+    padding: 12px;
+    align-items: flex-end;
+  }
+  .horas-modal,
+  .horas-modal-manual {
+    padding: 20px;
+    max-height: calc(100dvh - 24px);
+  }
+  .horas-modal-acoes > .horas-btn,
+  .horas-modal-acoes > .horas-btn2 {
+    flex: 1 1 140px;
+  }
+
+  .horas-toast {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    max-width: none;
+  }
+
+  .horas-empty,
+  .horas-loading {
+    padding: 24px 12px;
   }
 
   /* Cabeçalho podia quebrar linha: o nowrap fixava o piso de cada coluna no
@@ -873,8 +1337,62 @@
     flex: 1 1 100%;
   }
 
-  .horasRoot .horas-tbl-resp tbody tr:hover td {
+  .horasRoot .horas-tbl-resp tbody tr:hover td,
+  .horasRoot .horas-tbl-apont tbody tr:nth-child(even) td {
     background: none;
+  }
+
+  /* Total no celular: a linha inteira gruda no pé (não cada célula, que
+     ficariam uma por cima da outra) e mostra rótulo e soma lado a lado. */
+  .horasRoot .horas-tbl-resp tfoot tr {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2);
+    background: var(--h-gray-50);
+  }
+  .horasRoot .horas-tbl-resp tfoot td {
+    display: block;
+    padding: 6px 0;
+    border-top: none;
+  }
+  .horasRoot .horas-tbl-resp tfoot td:empty {
+    display: none;
+  }
+  .horasRoot .horas-table-scroll tfoot td {
+    position: static;
+  }
+  .horasRoot .horas-table-scroll tfoot tr {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    margin-bottom: 0;
+  }
+  .horas-td-projeto,
+  .horas-td-detalhes {
+    min-width: 0;
+    max-width: none;
+  }
+
+  /* Filtros: cada campo ocupa a linha (ou meia, para as datas) em vez da
+     largura fixa do desktop. O !important vence o maxWidth inline das telas. */
+  .horas-toolbar > .horas-fld {
+    flex: 1 1 140px;
+    max-width: none !important;
+  }
+  .horas-toolbar > .horas-spacer {
+    display: none;
+  }
+  .horas-toolbar > .horas-btn,
+  .horas-toolbar > .horas-btn2 {
+    flex: 1 1 auto;
+  }
+  .horas-head-acoes {
+    width: 100%;
+    margin-bottom: 16px;
+  }
+  .horas-head-acoes > .horas-btn,
+  .horas-head-acoes > .horas-btn2 {
+    flex: 1 1 auto;
   }
 
   /* 22px é pequeno demais para o dedo; com wrap eles ocupam 2 linhas. */
@@ -928,16 +1446,23 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 12px;
-  border: 1.5px solid var(--h-border);
-  border-radius: var(--h-radius-md);
+  padding: 0 var(--ctl-pad-x);
+  border: var(--ctl-border) solid var(--h-border);
+  border-radius: var(--ctl-radius);
   background: #fff;
   color: var(--h-gray-600);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+/* O foco é da caixa inteira (o input interno não tem borda própria): antes
+   não havia nenhum sinal de foco aqui. */
+.horas-busca:focus-within {
+  border-color: var(--h-primary);
+  box-shadow: var(--h-focus);
 }
 .horasRoot .horas-busca input[type='text'] {
   border: none;
-  padding: 9px 0;
-  min-height: 38px;
+  padding: var(--ctl-pad-y) 0;
+  min-height: calc(var(--ctl-h) - 2 * var(--ctl-border));
   background: transparent;
 }
 .horasRoot .horas-busca input[type='text']:focus {

@@ -25,6 +25,7 @@ import ApontamentoModal from '../components/ApontamentoModal';
 import CamposApontamento from '../components/CamposApontamento';
 import ConfirmModal from '../components/ConfirmModal';
 import SearchableSelect from '../components/SearchableSelect';
+import Aviso, { AvisoTemporario, Carregando } from '../components/Aviso';
 
 export default function ApontarPage() {
   const { user, modules } = useAuth();
@@ -47,6 +48,7 @@ export default function ApontarPage() {
   const [aEditar, setAEditar] = useState(null);
   const [aDuplicar, setADuplicar] = useState(null);
   const [aExcluir, setAExcluir] = useState(null);
+  const [ok, setOk] = useState(''); // confirmação flutuante da última ação
 
   // Projeto e descrição são fixos do módulo; o miolo do formulário são os
   // campos da equipe, guardados por id do campo em `valores`.
@@ -180,6 +182,7 @@ export default function ApontarPage() {
             fimTs: Date.now(),
           });
           await carregar();
+          setOk('Apontamento gravado.');
         }
       } else {
         const run = await startTimer(colaboradorId, {
@@ -210,6 +213,7 @@ export default function ApontarPage() {
           descricao: form.descricao,
         })
       );
+      setOk('Alterações salvas no cronômetro.');
     } catch (e) {
       setErro(e?.message || 'Falha ao salvar as alterações.');
     } finally {
@@ -224,6 +228,7 @@ export default function ApontarPage() {
     });
     setAEditar(null);
     await carregar();
+    setOk('Apontamento atualizado.');
   }
 
   async function salvarManual(payload) {
@@ -231,6 +236,7 @@ export default function ApontarPage() {
     setShowManual(false);
     setADuplicar(null);
     await carregar();
+    setOk('Apontamento salvo.');
   }
 
   async function confirmarExclusao() {
@@ -240,6 +246,7 @@ export default function ApontarPage() {
     try {
       await deleteApontamento(a.id);
       await carregar();
+      setOk('Apontamento excluído.');
     } catch (e) {
       setErro(e?.message || 'Falha ao excluir.');
     }
@@ -249,10 +256,11 @@ export default function ApontarPage() {
     return (
       <>
         <h1>Apontar Horas</h1>
-        <div className="horas-hint">
-          Seu usuário não está vinculado a uma gerência. Peça à gerência ou à diretoria para
-          vincular você em "Equipe".
-        </div>
+        <p className="horas-sub">Registre o tempo trabalhado por projeto.</p>
+        <Aviso tom="aviso">
+          Seu usuário não está vinculado a uma gerência, então ainda não dá para apontar. Peça à
+          gerência ou à diretoria para vincular você em <b>Equipe</b>.
+        </Aviso>
       </>
     );
   }
@@ -261,7 +269,7 @@ export default function ApontarPage() {
     return (
       <>
         <h1>Apontar Horas</h1>
-        <div className="horas-hint">Carregando…</div>
+        <Carregando />
       </>
     );
   }
@@ -276,7 +284,8 @@ export default function ApontarPage() {
     <>
       <h1>Apontar Horas</h1>
       <p className="horas-sub">
-        Área: <b>{gerenciaNome}</b> — preencha os campos abaixo e inicie o cronômetro.
+        Área <b>{gerenciaNome}</b>. Preencha os campos e inicie o cronômetro — ou faça um
+        lançamento manual se esqueceu de ligá-lo.
       </p>
 
       {/* Total de horas em evidência: é a primeira coisa que se procura ao abrir
@@ -288,39 +297,42 @@ export default function ApontarPage() {
         <Stat k="Apontamentos hoje" v={listaHoje.length} />
       </div>
 
-      {erro ? <div className="horas-hint">⚠️ {erro}</div> : null}
+      {erro ? <Aviso tom="erro">{erro}</Aviso> : null}
 
       {semProjetos ? (
-        <div className="horas-hint">
-          ⚠️ A sua área (<b>{gerenciaNome}</b>) ainda não tem projetos cadastrados, então não é
-          possível apontar por enquanto. O <b>gestor</b> da sua equipe precisa cadastrá-los em
-          "Configuração".
-        </div>
+        <Aviso tom="aviso">
+          A sua área (<b>{gerenciaNome}</b>) ainda não tem projetos cadastrados, então não é
+          possível apontar por enquanto. O <b>gestor</b> da sua equipe precisa cadastrá-los em{' '}
+          <b>Configuração</b>.
+        </Aviso>
       ) : null}
 
       {/* Equipe sem campos configurados não fica travada: aponta com projeto e
           descrição. O aviso só vai para quem pode fazer algo a respeito — quem
           configura resolve na hora; a liderança sabe a quem pedir. */}
       {!campos.length && podeConfigurarCamposDaEquipe(user, gerenciaId) ? (
-        <div className="horas-hint">
+        <Aviso>
           A sua equipe ainda não tem campos de apontamento configurados. Defina-os em{' '}
           <b>Config. do Apontamento</b> para pedir sigla, tarefa, frente de serviço — o que fizer
           sentido aqui — antes do cronômetro.
-        </div>
+        </Aviso>
       ) : null}
       {!campos.length && isGestao(role) && !podeConfigurarCamposDaEquipe(user, gerenciaId) ? (
-        <div className="horas-hint">
+        <Aviso>
           A sua equipe ainda não tem campos de apontamento configurados — dá para apontar só com
           projeto e descrição. Peça a configuração ao administrador da Gestão de Horas.
-        </div>
+        </Aviso>
       ) : null}
 
-      <div className="horas-card">
-        <div className="horas-sec">Apontamento</div>
+      <section className="horas-card" aria-labelledby="horas-apontar-tit">
+        <h2 className="horas-sec" id="horas-apontar-tit">
+          {running ? 'Apontamento em andamento' : 'Novo apontamento'}
+        </h2>
         <div className="horas-timer-grid">
           <div className="horas-fld">
-            <label>Projeto</label>
+            <label htmlFor="horas-apontar-projeto">Projeto</label>
             <SearchableSelect
+              id="horas-apontar-projeto"
               value={form.projetoId}
               placeholder="Selecione o projeto…"
               onChange={(v) => setForm((f) => ({ ...f, projetoId: v }))}
@@ -332,8 +344,11 @@ export default function ApontarPage() {
           </div>
           <CamposApontamento campos={campos} valores={valores} onChange={setValor} />
           <div className="horas-fld" style={{ gridColumn: '1 / -1' }}>
-            <label>Descrição (opcional)</label>
+            <label htmlFor="horas-apontar-desc">
+              Descrição <span className="horas-muted">(opcional)</span>
+            </label>
             <input
+              id="horas-apontar-desc"
               type="text"
               placeholder="No que você está trabalhando?"
               value={form.descricao}
@@ -342,66 +357,72 @@ export default function ApontarPage() {
           </div>
         </div>
 
-        <div className={`horas-timer-display ${running ? 'running' : ''}`}>{fmtDur(elapsed)}</div>
+        <div className={`horas-timer-panel${running ? ' is-running' : ''}`}>
+          <div className="horas-timer-estado">
+            {running ? <span className="horas-live-dot" aria-hidden="true" /> : null}
+            {running ? 'Cronômetro correndo' : 'Cronômetro parado'}
+          </div>
+          <div className={`horas-timer-display ${running ? 'running' : ''}`} role="timer">
+            {fmtDur(elapsed)}
+          </div>
 
-        <div className="horas-timer-actions">
-          <button
-            className={`horas-btn ${running ? 'red' : 'grn'}`}
-            type="button"
-            onClick={toggleTimer}
-            disabled={busy || (!running && !podeIniciar)}
-          >
-            {running ? <Square size={16} /> : <Play size={16} />}
-            {running ? 'Encerrar' : 'Iniciar'}
-          </button>
-          {timerAlterado ? (
+          <div className="horas-timer-actions">
+            <button
+              className={`horas-btn ${running ? 'red' : 'grn'}`}
+              type="button"
+              onClick={toggleTimer}
+              disabled={busy || (!running && !podeIniciar)}
+            >
+              {running ? <Square size={16} /> : <Play size={16} />}
+              {running ? 'Encerrar e gravar' : 'Iniciar'}
+            </button>
+            {timerAlterado ? (
+              <button
+                className="horas-btn2"
+                type="button"
+                onClick={salvarAlteracoesTimer}
+                disabled={busy || !!pendentes.length}
+              >
+                <Save size={16} /> Salvar alterações
+              </button>
+            ) : null}
             <button
               className="horas-btn2"
               type="button"
-              onClick={salvarAlteracoesTimer}
-              disabled={busy || !!pendentes.length}
+              onClick={() => setShowManual(true)}
+              disabled={!!running || semProjetos}
             >
-              <Save size={16} /> Salvar alterações
+              <Plus size={16} /> Lançamento manual
             </button>
+          </div>
+
+          {/* Botão desabilitado sem dizer por quê é o tipo de coisa que gera
+              chamado: dizemos qual campo falta, e o aviso some sozinho. */}
+          {!running && !semProjetos && !!form.projetoId && pendentes.length ? (
+            <Aviso tom="aviso">Preencha {pendentes.join(', ')} para iniciar o cronômetro.</Aviso>
           ) : null}
-          <button
-            className="horas-btn2"
-            type="button"
-            onClick={() => setShowManual(true)}
-            disabled={!!running || semProjetos}
-          >
-            <Plus size={16} /> Lançamento manual
-          </button>
+
+          {timerAlterado ? (
+            <Aviso tom="aviso">
+              Você mudou o apontamento em andamento. Clique em <b>Salvar alterações</b> para valer —
+              encerrar sem salvar grava o que estava antes.
+            </Aviso>
+          ) : null}
+
+          {running ? (
+            <div className="horas-live">
+              Desde {fmtData(running.inicio)} · {proj.nome(running.projetoId)}
+            </div>
+          ) : null}
         </div>
+      </section>
 
-        {/* Botão desabilitado sem dizer por quê é o tipo de coisa que gera
-            chamado: dizemos qual campo falta, e o aviso some sozinho. */}
-        {!running && !semProjetos && !!form.projetoId && pendentes.length ? (
-          <div className="horas-hint" style={{ marginTop: 12 }}>
-            Preencha {pendentes.join(', ')} para iniciar o cronômetro.
-          </div>
-        ) : null}
-
-        {timerAlterado ? (
-          <div className="horas-hint" style={{ marginTop: 12 }}>
-            Você mudou o apontamento em andamento. Clique em <b>Salvar alterações</b> para valer —
-            encerrar sem salvar grava o que estava antes.
-          </div>
-        ) : null}
-
-        {running ? (
-          <div className="horas-live">
-            <span className="horas-live-dot" />
-            Em andamento desde {fmtData(running.inicio)} · {proj.nome(running.projetoId)}
-          </div>
-        ) : null}
-      </div>
-
-      <div className="horas-sec" style={{ marginTop: 22 }}>
-        Apontamentos de hoje
-      </div>
+      <h2 className="horas-sec" style={{ marginTop: 22 }}>
+        Apontamentos de hoje{listaHoje.length ? ` (${listaHoje.length})` : ''}
+      </h2>
       <div className="horas-card horas-table-wrap">
         <ApontamentosTable
+          vazio="Nenhum apontamento hoje. Inicie o cronômetro ou faça um lançamento manual."
           list={listaHoje}
           projetoNome={proj.nome}
           projetoCor={proj.cor}
@@ -447,6 +468,8 @@ export default function ApontarPage() {
         onConfirm={confirmarExclusao}
         onCancel={() => setAExcluir(null)}
       />
+
+      <AvisoTemporario msg={ok} onFim={() => setOk('')} />
     </>
   );
 }

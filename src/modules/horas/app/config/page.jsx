@@ -13,6 +13,7 @@ import { isGestao, isHorasAdmin } from '../../lib/roles';
 import ConfirmModal from '../components/ConfirmModal';
 import SeletorCor from '../components/SeletorCor';
 import { CORES } from '../../lib/cores';
+import Aviso, { Carregando } from '../components/Aviso';
 
 // Configuração da ÁREA do gestor: os PROJETOS que a equipe dele vê ao apontar.
 // Cada gestor edita só a sua área; o admin do módulo vê todas (a RLS garante
@@ -118,7 +119,7 @@ export default function ConfigPage() {
     return (
       <>
         <h1>Configuração da Área</h1>
-        <div className="horas-hint">Carregando…</div>
+        <Carregando />
       </>
     );
   }
@@ -127,10 +128,10 @@ export default function ConfigPage() {
     return (
       <>
         <h1>Configuração da Área</h1>
-        <div className="horas-hint">
+        <Aviso>
           Você não administra nenhuma área. Os projetos são definidos pelo <b>gestor</b> da sua
           equipe.
-        </div>
+        </Aviso>
       </>
     );
   }
@@ -139,7 +140,7 @@ export default function ConfigPage() {
     return (
       <>
         <h1>Configuração da Área</h1>
-        <div className="horas-hint">Carregando a sua área…</div>
+        <Carregando texto="Carregando a sua área…" />
       </>
     );
   }
@@ -149,20 +150,20 @@ export default function ConfigPage() {
       <h1>Configuração da Área</h1>
       <p className="horas-sub">Defina os projetos que a sua equipe vê ao apontar.</p>
 
-      <div className="horas-hint">
+      <Aviso>
         Aqui ficam só os projetos. Os demais campos do apontamento (sigla, tarefa, frente de
         serviço — o que fizer sentido para a sua equipe) são definidos centralmente, em{' '}
         <b>Config. do Apontamento</b>: peça a quem administra a Gestão de Horas.
-      </div>
+      </Aviso>
 
-      {erro ? <div className="horas-hint">⚠️ {erro}</div> : null}
+      {erro ? <Aviso tom="erro">{erro}</Aviso> : null}
 
       {areasGeriveis.length > 1 ? (
         <div className="horas-card">
           <div className="horas-toolbar" style={{ marginBottom: 0 }}>
             <div className="horas-fld" style={{ maxWidth: 340 }}>
-              <label>Área</label>
-              <select value={sel} onChange={(e) => setSel(e.target.value)}>
+              <label htmlFor="horas-cfg-area">Área</label>
+              <select id="horas-cfg-area" value={sel} onChange={(e) => setSel(e.target.value)}>
                 {areasGeriveis.map((g) => (
                   <option key={g.id} value={g.id}>
                     {g.nome}
@@ -174,12 +175,15 @@ export default function ConfigPage() {
         </div>
       ) : null}
 
-      <div className="horas-card">
-        <div className="horas-sec">Novo projeto</div>
+      <section className="horas-card" aria-labelledby="horas-cfg-novo-tit">
+        <h2 className="horas-sec" id="horas-cfg-novo-tit">
+          Novo projeto
+        </h2>
         <div className="horas-toolbar">
           <div className="horas-fld" style={{ maxWidth: 260 }}>
-            <label>Nome</label>
+            <label htmlFor="horas-cfg-nome">Nome</label>
             <input
+              id="horas-cfg-nome"
               type="text"
               placeholder="Nome do projeto"
               value={novo.nome}
@@ -188,8 +192,11 @@ export default function ConfigPage() {
             />
           </div>
           <div className="horas-fld" style={{ maxWidth: 220 }}>
-            <label>Cliente (opcional)</label>
+            <label htmlFor="horas-cfg-cliente">
+              Cliente <span className="horas-muted">(opcional)</span>
+            </label>
             <input
+              id="horas-cfg-cliente"
               type="text"
               placeholder="Cliente"
               value={novo.cliente}
@@ -198,14 +205,21 @@ export default function ConfigPage() {
           </div>
           <div className="horas-fld">
             <label>Cor</label>
-            <SeletorCor value={novo.cor} onChange={(cor) => setNovo((n) => ({ ...n, cor }))} />
+            <SeletorCor
+              value={novo.cor}
+              rotulo="Cor do novo projeto"
+              onChange={(cor) => setNovo((n) => ({ ...n, cor }))}
+            />
           </div>
-          <button className="horas-btn" type="button" onClick={adicionarProjeto}>
-            <Plus size={16} /> Criar
+          <button className="horas-btn" type="button" onClick={adicionarProjeto} disabled={!novo.nome.trim()}>
+            <Plus size={16} /> Criar projeto
           </button>
         </div>
-      </div>
+      </section>
 
+      <h2 className="horas-sec" style={{ marginTop: 22 }}>
+        Projetos da área ({projetos.length})
+      </h2>
       <div className="horas-card horas-table-wrap">
         <table className="horas-tbl-resp">
           <thead>
@@ -214,31 +228,42 @@ export default function ConfigPage() {
               <th>Cliente</th>
               <th>Cor</th>
               <th>Status</th>
-              <th></th>
+              <th>
+                <span className="horas-sr">Ações</span>
+              </th>
             </tr>
           </thead>
           <tbody>
             {projetos.map((p) => (
-              <tr key={p.id} style={p.arquivado ? { opacity: 0.55 } : undefined}>
+              <tr key={p.id} className={p.arquivado ? 'is-arquivado' : undefined}>
                 <td data-label="Projeto">
-                  <span className="horas-pill" style={{ background: p.cor }} />
+                  <span className="horas-pill" aria-hidden="true" style={{ background: p.cor }} />
                   <b>{p.nome}</b>
                 </td>
                 <td className="horas-muted" data-label="Cliente">{p.cliente || '—'}</td>
                 <td data-label="Cor">
-                  <SeletorCor value={p.cor} onChange={(cor) => salvarProjeto(p, { cor })} />
+                  <SeletorCor value={p.cor} rotulo={`Cor de ${p.nome}`} onChange={(cor) => salvarProjeto(p, { cor })} />
                 </td>
-                <td className="horas-muted" data-label="Status">{p.arquivado ? 'Arquivado' : 'Ativo'}</td>
+                <td data-label="Status">
+                  <span className={`horas-tag${p.arquivado ? '' : ' ok'}`}>{p.arquivado ? 'Arquivado' : 'Ativo'}</span>
+                </td>
                 <td className="horas-right horas-td-acao" style={{ whiteSpace: 'nowrap' }}>
                   <button
                     className="horas-btn-icon"
                     type="button"
                     title={p.arquivado ? 'Reativar' : 'Arquivar'}
+                    aria-label={`${p.arquivado ? 'Reativar' : 'Arquivar'} ${p.nome}`}
                     onClick={() => salvarProjeto(p, { arquivado: !p.arquivado })}
                   >
                     {p.arquivado ? <ArchiveRestore size={15} /> : <Archive size={15} />}
                   </button>
-                  <button className="horas-btn-icon" type="button" title="Excluir" onClick={() => setAExcluir(p)}>
+                  <button
+                    className="horas-btn-icon is-danger"
+                    type="button"
+                    title="Excluir"
+                    aria-label={`Excluir ${p.nome}`}
+                    onClick={() => setAExcluir(p)}
+                  >
                     <Trash2 size={15} />
                   </button>
                 </td>

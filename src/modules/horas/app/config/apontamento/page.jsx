@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Plus, Trash2, ChevronUp, ChevronDown, Sparkles } from 'lucide-react';
 import { useAuth } from '../../../../../contexts/AuthContext';
@@ -21,6 +21,7 @@ import {
 } from '../../../lib/camposEquipe';
 import { MODELO_PADRAO } from '../../../lib/catalogoTarefas';
 import ConfirmModal from '../../components/ConfirmModal';
+import Aviso, { Carregando } from '../../components/Aviso';
 
 // Configuração do APONTAMENTO: os campos que cada equipe preenche antes de dar
 // play no cronômetro. Diferente da tela de projetos, esta é CENTRAL — a lista
@@ -154,7 +155,7 @@ export default function ConfigApontamentoPage() {
     return (
       <>
         <h1>Configuração do Apontamento</h1>
-        <div className="horas-hint">Carregando…</div>
+        <Carregando />
       </>
     );
   }
@@ -163,7 +164,7 @@ export default function ConfigApontamentoPage() {
     return (
       <>
         <h1>Configuração do Apontamento</h1>
-        <div className="horas-hint">Nenhuma equipe cadastrada ainda.</div>
+        <Aviso>Nenhuma equipe cadastrada ainda.</Aviso>
       </>
     );
   }
@@ -179,19 +180,21 @@ export default function ConfigApontamentoPage() {
         iniciar o cronômetro — na ordem em que aparecem na tela.
       </p>
 
-      <div className="horas-hint">
+      <Aviso>
         Cada equipe tem os seus. Renomear um campo ou apagá-lo <b>não</b> muda os apontamentos já
-        registrados: cada um guarda o rótulo como estava no dia. O <b>projeto</b> continua vindo de
-        "Configuração" e a <b>descrição</b> é sempre opcional.
-      </div>
+        registrados: cada um guarda o rótulo como estava no dia. O <b>projeto</b> continua vindo de{' '}
+        <b>Configuração</b> e a <b>descrição</b> é sempre opcional.
+      </Aviso>
 
-      {erro ? <div className="horas-hint">⚠️ {erro}</div> : null}
+      {erro ? <Aviso tom="erro">{erro}</Aviso> : null}
 
       <div className="horas-card">
         <div className="horas-toolbar" style={{ marginBottom: 0 }}>
           <div className="horas-fld" style={{ maxWidth: 420 }}>
-            <label>{variasEquipes ? `Equipe (${equipes.length} no total)` : 'Equipe'}</label>
-            <select value={sel} disabled={!variasEquipes} onChange={(e) => setSel(e.target.value)}>
+            <label htmlFor="horas-cfgap-equipe">
+              {variasEquipes ? `Equipe (${equipes.length} no total)` : 'Equipe'}
+            </label>
+            <select id="horas-cfgap-equipe" value={sel} disabled={!variasEquipes} onChange={(e) => setSel(e.target.value)}>
               {equipes.map((g) => (
                 <option key={g.id} value={g.id}>
                   {g.nome}
@@ -202,14 +205,16 @@ export default function ConfigApontamentoPage() {
         </div>
       </div>
 
-      <div className="horas-sec" style={{ marginTop: 22 }}>
+      <h2 className="horas-sec" style={{ marginTop: 22 }}>
         Campos de {equipe?.nome || 'equipe'}
-      </div>
+        {campos.length ? ` (${campos.length})` : ''}
+      </h2>
 
       {campos.length === 0 ? (
         <div className="horas-card">
-          <div className="horas-empty" style={{ marginBottom: 14 }}>
-            Nenhum campo configurado. A equipe aponta só com projeto e descrição.
+          <div className="horas-empty" style={{ paddingBottom: 14 }}>
+            Nenhum campo configurado — a equipe aponta só com projeto e descrição. Comece pelo modelo
+            padrão ou crie os campos um a um abaixo.
           </div>
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <button className="horas-btn2" type="button" onClick={usarModeloPadrao}>
@@ -231,15 +236,17 @@ export default function ConfigApontamentoPage() {
         />
       ))}
 
-      <div className="horas-card">
-        <div className="horas-sec">Novo campo</div>
+      <section className="horas-card" aria-labelledby="horas-cfgap-novo-tit">
+        <h2 className="horas-sec" id="horas-cfgap-novo-tit">
+          Novo campo
+        </h2>
         <CampoForm campo={novo} onChange={setNovo} />
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 14 }}>
+        <div className="horas-modal-acoes">
           <button className="horas-btn" type="button" onClick={adicionar} disabled={!sel}>
             <Plus size={16} /> Adicionar campo
           </button>
         </div>
-      </div>
+      </section>
 
       <ConfirmModal
         open={!!aExcluir}
@@ -273,17 +280,20 @@ function CampoCard({ campo, primeiro, ultimo, onSalvar, onExcluir, onMover }) {
     rascunho.obrigatorio !== original.obrigatorio ||
     rascunho.opcoesTxt !== original.opcoesTxt;
 
+  const nome = campo.label || 'Campo sem nome';
+
   return (
-    <div className="horas-card">
+    <section className="horas-card" aria-label={`Campo ${nome}`}>
       <div className="horas-campo-topo">
-        <div className="horas-sec" style={{ margin: 0 }}>
-          {campo.label || 'Campo sem nome'}
-        </div>
+        <h3 className="horas-sec" style={{ margin: 0 }}>
+          {nome}
+        </h3>
         <div style={{ whiteSpace: 'nowrap' }}>
           <button
             className="horas-btn-icon"
             type="button"
             title="Mover para cima"
+            aria-label={`Mover ${nome} para cima`}
             disabled={primeiro}
             onClick={() => onMover(-1)}
           >
@@ -293,12 +303,19 @@ function CampoCard({ campo, primeiro, ultimo, onSalvar, onExcluir, onMover }) {
             className="horas-btn-icon"
             type="button"
             title="Mover para baixo"
+            aria-label={`Mover ${nome} para baixo`}
             disabled={ultimo}
             onClick={() => onMover(1)}
           >
             <ChevronDown size={15} />
           </button>
-          <button className="horas-btn-icon" type="button" title="Excluir" onClick={onExcluir}>
+          <button
+            className="horas-btn-icon is-danger"
+            type="button"
+            title="Excluir"
+            aria-label={`Excluir o campo ${nome}`}
+            onClick={onExcluir}
+          >
             <Trash2 size={15} />
           </button>
         </div>
@@ -306,12 +323,24 @@ function CampoCard({ campo, primeiro, ultimo, onSalvar, onExcluir, onMover }) {
 
       <CampoForm campo={rascunho} onChange={setRascunho} />
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 14 }}>
+      {/* O Salvar desabilitado não dizia por quê: agora o card avisa quando há
+          alteração pendente e dá para desfazê-la. */}
+      <div className="horas-modal-acoes" style={{ alignItems: 'center' }}>
+        {mudou ? (
+          <>
+            <span className="horas-pendente" role="status">
+              Alterações não salvas
+            </span>
+            <button className="horas-btn2" type="button" onClick={() => setRascunho(original)}>
+              Descartar
+            </button>
+          </>
+        ) : null}
         <button className="horas-btn" type="button" disabled={!mudou} onClick={() => onSalvar(rascunho)}>
-          Salvar
+          Salvar campo
         </button>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -319,13 +348,15 @@ function CampoCard({ campo, primeiro, ultimo, onSalvar, onExcluir, onMover }) {
 // texto, uma por linha — é o jeito mais rápido de colar uma lista de planilha.
 function CampoForm({ campo, onChange }) {
   const set = (patch) => onChange({ ...campo, ...patch });
+  const uid = useId();
 
   return (
     <>
       <div className="horas-toolbar" style={{ marginBottom: campo.tipo === 'texto' ? 0 : 14 }}>
         <div className="horas-fld" style={{ maxWidth: 280 }}>
-          <label>Nome do campo</label>
+          <label htmlFor={`${uid}-nome`}>Nome do campo</label>
           <input
+            id={`${uid}-nome`}
             type="text"
             placeholder="Ex.: Frente de serviço"
             value={campo.label}
@@ -333,8 +364,8 @@ function CampoForm({ campo, onChange }) {
           />
         </div>
         <div className="horas-fld" style={{ maxWidth: 200 }}>
-          <label>Tipo</label>
-          <select value={campo.tipo} onChange={(e) => set({ tipo: e.target.value })}>
+          <label htmlFor={`${uid}-tipo`}>Tipo</label>
+          <select id={`${uid}-tipo`} value={campo.tipo} onChange={(e) => set({ tipo: e.target.value })}>
             {TIPOS.map((t) => (
               <option key={t.valor} value={t.valor}>
                 {t.label}
@@ -343,8 +374,9 @@ function CampoForm({ campo, onChange }) {
           </select>
         </div>
         <div className="horas-fld" style={{ maxWidth: 220 }}>
-          <label>Preenchimento</label>
+          <label htmlFor={`${uid}-obrig`}>Preenchimento</label>
           <select
+            id={`${uid}-obrig`}
             value={campo.obrigatorio ? 'sim' : 'nao'}
             onChange={(e) => set({ obrigatorio: e.target.value === 'sim' })}
           >
@@ -356,15 +388,17 @@ function CampoForm({ campo, onChange }) {
 
       {campo.tipo === 'texto' ? null : (
         <div className="horas-fld">
-          <label>Opções da lista — uma por linha</label>
+          <label htmlFor={`${uid}-opcoes`}>Opções da lista — uma por linha</label>
           <textarea
+            id={`${uid}-opcoes`}
+            aria-describedby={`${uid}-opcoes-ajuda`}
             className="horas-opcoes"
             rows={Math.min(12, Math.max(4, campo.opcoesTxt.split('\n').length))}
             placeholder={'Civil\nMontagem\nElétrica'}
             value={campo.opcoesTxt}
             onChange={(e) => set({ opcoesTxt: e.target.value })}
           />
-          <div className="horas-muted" style={{ fontSize: 'var(--font-size-2xs)', marginTop: 4 }}>
+          <div className="horas-desc" id={`${uid}-opcoes-ajuda`}>
             {deRascunho(campo).opcoes.length} opção(ões). Linhas em branco e repetidas são
             ignoradas.
           </div>

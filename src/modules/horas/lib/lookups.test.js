@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { lookupProjetos, lookupColaboradores, lookupGerencias } from './lookups.js';
+import { lookupProjetos, lookupColaboradores, lookupGerencias, gerentesDoEscopo } from './lookups.js';
 
 test('lookupProjetos resolve nome/cor e cai em padrão', () => {
   const p = lookupProjetos([{ id: 'p1', nome: 'Alpha', cor: '#123456' }]);
@@ -41,4 +41,20 @@ test('lookupGerencias resolve nome', () => {
   const g = lookupGerencias([{ id: 'g1', nome: 'Engenharia' }]);
   assert.equal(g.nome('g1'), 'Engenharia');
   assert.equal(g.nome('x'), '—');
+});
+
+test('gerentesDoEscopo: só equipes do escopo, rotuladas pelo gerente', () => {
+  const gerencias = [
+    { id: 'g1', nome: 'Equipe BRUNO', gestor_id: 'b' },
+    { id: 'g2', nome: 'Equipe ANDRE', gestor_id: 'fora' },
+    { id: 'g3', nome: 'Equipe OUTRA', gestor_id: 'x' },
+  ];
+  const colabs = [
+    { id: 'b', nome: 'Bruno Azevedo', gerenciaId: 'g1' },
+    { id: 'c', nome: 'Carla', gerenciaId: 'g2' },
+  ];
+  assert.deepEqual(gerentesDoEscopo(gerencias, colabs), [
+    { value: 'g2', label: 'ANDRE' },
+    { value: 'g1', label: 'Bruno Azevedo' },
+  ]);
 });

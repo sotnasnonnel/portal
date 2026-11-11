@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { toDatetimeLocal } from '../../lib/format';
 import {
   faltando,
@@ -9,6 +9,8 @@ import {
 } from '../../lib/camposEquipe';
 import CamposApontamento from './CamposApontamento';
 import SearchableSelect from './SearchableSelect';
+import Modal from './Modal';
+import Aviso from './Aviso';
 
 // O formulário completo de um apontamento, nos três usos:
 //  - `inicial` vazio  -> lançamento manual (quem esqueceu de ligar o cronômetro)
@@ -31,6 +33,7 @@ export default function ApontamentoModal({ projetos, campos = [], inicial = null
   const [fim, setFim] = useState(() => toDatetimeLocal(base ? deslocar(base.fim) : Date.now()));
   const [erro, setErro] = useState('');
   const [salvando, setSalvando] = useState(false);
+  const uid = useId();
 
   // Valores gravados que a configuração atual da equipe não representa (campo
   // apagado depois, ou registro do catálogo antigo). Não dá para editá-los aqui,
@@ -68,13 +71,20 @@ export default function ApontamentoModal({ projetos, campos = [], inicial = null
     }
   }
 
+  const titulo = edicao ? 'Editar apontamento' : modelo ? 'Duplicar apontamento' : 'Lançamento manual';
+
   return (
-    <div className="horas-modal-bg" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="horas-modal horas-modal-manual">
-        <h3>{edicao ? 'Editar apontamento' : modelo ? 'Duplicar apontamento' : 'Lançamento manual'}</h3>
+    <Modal titulo={titulo} onClose={salvando ? undefined : onClose} className="horas-modal-manual">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          submit();
+        }}
+      >
         <div className="horas-fld">
-          <label>Projeto</label>
+          <label htmlFor={`${uid}-proj`}>Projeto</label>
           <SearchableSelect
+            id={`${uid}-proj`}
             value={projetoId}
             placeholder="Selecione o projeto…"
             onChange={(v) => setProjetoId(v)}
@@ -90,39 +100,47 @@ export default function ApontamentoModal({ projetos, campos = [], inicial = null
           onChange={(id, v) => setValores((vals) => ({ ...vals, [id]: v }))}
         />
         <div className="horas-fld">
-          <label>Descrição</label>
-          <input type="text" value={descricao} onChange={(e) => setDescricao(e.target.value)} />
+          <label htmlFor={`${uid}-desc`}>
+            Descrição <span className="horas-muted">(opcional)</span>
+          </label>
+          <input
+            id={`${uid}-desc`}
+            type="text"
+            placeholder="No que você trabalhou?"
+            value={descricao}
+            onChange={(e) => setDescricao(e.target.value)}
+          />
         </div>
         <div className="horas-modal-row2">
           <div className="horas-fld">
-            <label>Início</label>
-            <input type="datetime-local" value={ini} onChange={(e) => setIni(e.target.value)} />
+            <label htmlFor={`${uid}-ini`}>Início</label>
+            <input id={`${uid}-ini`} type="datetime-local" value={ini} onChange={(e) => setIni(e.target.value)} />
           </div>
           <div className="horas-fld">
-            <label>Fim</label>
-            <input type="datetime-local" value={fim} onChange={(e) => setFim(e.target.value)} />
+            <label htmlFor={`${uid}-fim`}>Fim</label>
+            <input id={`${uid}-fim`} type="datetime-local" value={fim} onChange={(e) => setFim(e.target.value)} />
           </div>
         </div>
 
         {preservados.length ? (
-          <div className="horas-hint" style={{ marginBottom: 8 }}>
+          <Aviso>
             Este apontamento tem valores de campos que a equipe não usa mais (
             {preservados.map((c) => `${c.label}: ${c.valor}`).join(' · ')}). Eles não são editáveis
             aqui, mas continuam gravados.
-          </div>
+          </Aviso>
         ) : null}
 
-        {erro ? <div className="horas-hint" style={{ marginBottom: 8 }}>⚠️ {erro}</div> : null}
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
+        {erro ? <Aviso tom="erro">{erro}</Aviso> : null}
+        <div className="horas-modal-acoes">
           <button className="horas-btn2" type="button" onClick={onClose} disabled={salvando}>
             Cancelar
           </button>
-          <button className="horas-btn" type="button" onClick={submit} disabled={salvando}>
-            {salvando ? 'Salvando…' : 'Salvar'}
+          <button className="horas-btn" type="submit" disabled={salvando}>
+            {salvando ? 'Salvando…' : edicao ? 'Salvar alterações' : 'Salvar apontamento'}
           </button>
         </div>
-      </div>
-    </div>
+      </form>
+    </Modal>
   );
 }
 

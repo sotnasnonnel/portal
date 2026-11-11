@@ -12,6 +12,7 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
+  LabelList,
 } from 'recharts';
 import { PALETTE } from '../../lib/aggregate';
 import { fmtHoras } from '../../lib/format';
@@ -50,9 +51,62 @@ const cortaTick = (v) => {
 // true quando não há nada a plotar (lista vazia ou tudo zerado)
 const semDados = (data) => !data.length || data.every((d) => !(d.ms ?? d.horas));
 
+// Barras deitadas: o nome fica à esquerda, na horizontal, com espaço para ~26
+// caracteres (16 no celular) em vez dos 14 inclinados das barras em pé. Cada
+// linha tem altura fixa; se não couberem no quadro, ele rola por dentro em vez
+// de espremer as barras. A duração vai escrita na ponta de cada barra.
+const LINHA_PX = 30;
+const fmtPonta = (h) => fmtHoras(h * 3600000);
+
+function BarrasDeitadas({ data, onSelect, estreito }) {
+  const larguraNome = estreito ? 110 : 170;
+  const maxNome = estreito ? 16 : 26;
+  const corta = (v) => {
+    const s = String(v ?? '');
+    return s.length > maxNome ? `${s.slice(0, maxNome - 1)}…` : s;
+  };
+  return (
+    <div className="horas-chart-rola">
+      <div style={{ height: Math.max(data.length * LINHA_PX + 16, 100), minHeight: '100%' }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={data}
+            layout="vertical"
+            margin={{ top: 4, right: 56, left: 4, bottom: 4 }}
+            barCategoryGap={6}
+            onClick={(s) => s?.activeLabel && onSelect?.(s.activeLabel)}
+          >
+            <CartesianGrid stroke={GRID} horizontal={false} />
+            <XAxis type="number" hide />
+            <YAxis
+              type="category"
+              dataKey="name"
+              width={larguraNome}
+              interval={0}
+              tick={tickStyle}
+              tickLine={false}
+              axisLine={{ stroke: GRID }}
+              tickFormatter={corta}
+            />
+            <Tooltip formatter={fmtTip} cursor={{ fill: 'rgba(196,74,40,.06)' }} />
+            <Bar dataKey="horas" fill={PRIMARY} radius={[0, 6, 6, 0]} cursor="pointer" minPointSize={2} maxBarSize={22}>
+              <LabelList dataKey="horas" position="right" formatter={fmtPonta} style={tickStyle} />
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
 export function BrandBarChart({ data, onSelect }) {
   const estreito = useMediaQuery(ESTREITO);
   if (semDados(data)) return <Empty />;
+  // Nome longo (tarefa, função, projeto) em barra em pé vira texto inclinado e
+  // cortado — deita as barras e o nome passa a caber.
+  if (data.some((d) => String(d.name ?? '').length > MAX_TICK)) {
+    return <BarrasDeitadas data={data} onSelect={onSelect} estreito={estreito} />;
+  }
   // Com rótulo longo (nome de pessoa/projeto) ou muitas barras, na horizontal
   // um nome encosta no outro — aí inclina e reserva altura para o eixo.
   const inclina = !estreito && (data.length > 6 || data.some((d) => String(d.name ?? '').length > 10));
@@ -112,6 +166,25 @@ export function BrandLineChart({ data, onSelect }) {
   );
 }
 
+// Legenda própria da rosca. A padrão do Recharts cresce com o número de itens
+// e, no Dashboard da Equipe (dezenas de projetos, nomes longos), passava da
+// altura e da largura do quadro. Aqui ela tem teto, rola por dentro e corta o
+// nome com reticências — o nome inteiro fica no title (e no tooltip da fatia).
+function LegendaRolavel({ payload = [], onSelect }) {
+  return (
+    <ul className="horas-legenda">
+      {payload.map((p) => (
+        <li key={p.value}>
+          <button type="button" title={p.value} onClick={() => onSelect?.(p.value)}>
+            <span className="horas-legenda-cor" style={{ background: p.color }} aria-hidden="true" />
+            <span className="horas-legenda-nome">{p.value}</span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export function BrandPieChart({ data, onSelect }) {
   const estreito = useMediaQuery(ESTREITO);
   if (semDados(data)) return <Empty />;
@@ -120,12 +193,19 @@ export function BrandPieChart({ data, onSelect }) {
       <PieChart>
         <Tooltip formatter={fmtTip} />
         {/* No celular a legenda vertical à direita comia ~40% da largura e a
-            rosca virava um anel minúsculo — embaixo ela usa a largura toda. */}
+            rosca virava um anel minúsculo — embaixo ela usa a largura toda.
+            O teto (largura à direita, altura embaixo) é o que impede a
+            legenda de estourar o quadro quando há muitos itens. */}
         <Legend
           layout={estreito ? 'horizontal' : 'vertical'}
           align={estreito ? 'center' : 'right'}
           verticalAlign={estreito ? 'bottom' : 'middle'}
-          wrapperStyle={{ fontSize: 'var(--font-size-xs)', color: TICK, lineHeight: '20px' }}
+          content={<LegendaRolavel onSelect={onSelect} />}
+          wrapperStyle={
+            estreito
+              ? { width: '100%', maxHeight: '38%', overflowY: 'auto' }
+              : { width: '42%', maxHeight: '100%', overflowY: 'auto' }
+          }
         />
         <Pie
           data={data}

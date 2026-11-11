@@ -20,6 +20,7 @@ import {
 } from '../../../../../config/horasExtras';
 import { notificarHoraExtra } from '../../../../../services/notificarHoraExtra';
 import SearchableSelect from '../../components/SearchableSelect';
+import Aviso, { Carregando } from '../../components/Aviso';
 
 // Nova Solicitação de Hora Extra.
 // O prazo é validado aqui e no envio: sem retroativo e, no próprio dia, só até o
@@ -170,7 +171,7 @@ export default function NovaHEPage() {
     return (
       <>
         <h1>Nova Solicitação de Hora Extra</h1>
-        <div className="horas-hint">Carregando…</div>
+        <Carregando />
       </>
     );
   }
@@ -183,33 +184,34 @@ export default function NovaHEPage() {
         <b>{aprovador ? aprovador.nome : 'não identificado'}</b>
       </p>
 
-      <div className={`horas-hint ${prazo.ok ? '' : 'is-erro'}`}>
-        {prazo.ok ? '✅' : '⛔'} {prazo.msg}
-      </div>
+      <Aviso tom={prazo.ok ? 'ok' : 'erro'}>{prazo.msg}</Aviso>
 
       {!aprovador ? (
-        <div className="horas-hint is-erro">
-          ⚠️ Nenhum gestor com acesso ao portal foi encontrado acima de você na hierarquia da Gestão
+        <Aviso tom="erro">
+          Nenhum gestor com acesso ao portal foi encontrado acima de você na hierarquia da Gestão
           de Pessoas. Sem isso não há para quem enviar a aprovação.
-        </div>
+        </Aviso>
       ) : null}
 
-      {erro ? <div className="horas-hint is-erro">⚠️ {erro}</div> : null}
+      {erro ? <Aviso tom="erro">{erro}</Aviso> : null}
 
-      <div className="horas-card">
-        <div className="horas-sec">Identificação</div>
+      <section className="horas-card" aria-labelledby="horas-he-ident-tit">
+        <h2 className="horas-sec" id="horas-he-ident-tit">
+          Identificação
+        </h2>
         <div className="horas-timer-grid">
           <div className="horas-fld">
-            <label>Colaborador</label>
-            <input type="text" value={user?.nome || ''} disabled />
+            <label htmlFor="horas-he-nome">Colaborador</label>
+            <input id="horas-he-nome" type="text" value={user?.nome || ''} disabled />
           </div>
           <div className="horas-fld">
-            <label>Cargo</label>
-            <input type="text" value={user?.funcao || '—'} disabled />
+            <label htmlFor="horas-he-cargo">Cargo</label>
+            <input id="horas-he-cargo" type="text" value={user?.funcao || '—'} disabled />
           </div>
           <div className="horas-fld">
-            <label>Matrícula</label>
+            <label htmlFor="horas-he-matricula">Matrícula</label>
             <input
+              id="horas-he-matricula"
               type="text"
               placeholder="Ex.: 12345"
               value={form.matricula}
@@ -217,8 +219,9 @@ export default function NovaHEPage() {
             />
           </div>
           <div className="horas-fld">
-            <label>Centro de custo</label>
+            <label htmlFor="horas-he-cc">Centro de custo</label>
             <input
+              id="horas-he-cc"
               type="text"
               placeholder="Ex.: Engenharia"
               value={form.centroCusto}
@@ -226,8 +229,9 @@ export default function NovaHEPage() {
             />
           </div>
           <div className="horas-fld">
-            <label>Cliente/Projeto</label>
+            <label htmlFor="horas-he-projeto">Cliente/Projeto</label>
             <SearchableSelect
+              id="horas-he-projeto"
               value={form.projetoId}
               placeholder="Selecione o projeto…"
               onChange={(v) => set({ projetoId: v })}
@@ -238,18 +242,21 @@ export default function NovaHEPage() {
             />
           </div>
           <div className="horas-fld">
-            <label>Equipe</label>
-            <input type="text" value={gerenciaNome || '—'} disabled />
+            <label htmlFor="horas-he-equipe">Equipe</label>
+            <input id="horas-he-equipe" type="text" value={gerenciaNome || '—'} disabled />
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="horas-card">
-        <div className="horas-sec">A hora extra</div>
+      <section className="horas-card" aria-labelledby="horas-he-dados-tit">
+        <h2 className="horas-sec" id="horas-he-dados-tit">
+          A hora extra
+        </h2>
         <div className="horas-timer-grid">
           <div className="horas-fld">
-            <label>Data</label>
+            <label htmlFor="horas-he-data">Data</label>
             <input
+              id="horas-he-data"
               type="date"
               value={form.dataHe}
               min={janela.min}
@@ -257,28 +264,30 @@ export default function NovaHEPage() {
             />
           </div>
           <div className="horas-fld">
-            <label>Hora início</label>
+            <label htmlFor="horas-he-ini">Hora início</label>
             <input
+              id="horas-he-ini"
               type="time"
               value={form.horaInicio}
               onChange={(e) => set({ horaInicio: e.target.value })}
             />
           </div>
           <div className="horas-fld">
-            <label>Hora fim</label>
+            <label htmlFor="horas-he-fim">Hora fim</label>
             <input
+              id="horas-he-fim"
               type="time"
               value={form.horaFim}
               onChange={(e) => set({ horaFim: e.target.value })}
             />
           </div>
           <div className="horas-fld">
-            <label>Quantidade estimada</label>
-            <input type="text" value={fmtMin(minutos)} disabled />
+            <label htmlFor="horas-he-qtd">Quantidade estimada</label>
+            <input id="horas-he-qtd" type="text" value={fmtMin(minutos)} disabled />
           </div>
           <div className="horas-fld">
-            <label>Motivo</label>
-            <select value={form.motivo} onChange={(e) => set({ motivo: e.target.value })}>
+            <label htmlFor="horas-he-motivo">Motivo</label>
+            <select id="horas-he-motivo" value={form.motivo} onChange={(e) => set({ motivo: e.target.value })}>
               {MOTIVOS.map((m) => (
                 <option key={m} value={m}>
                   {m}
@@ -288,8 +297,9 @@ export default function NovaHEPage() {
           </div>
           {form.motivo === MOTIVO_OUTRO ? (
             <div className="horas-fld">
-              <label>Descrever outro motivo</label>
+              <label htmlFor="horas-he-outro">Descrever outro motivo</label>
               <input
+                id="horas-he-outro"
                 type="text"
                 value={form.outroMotivo}
                 onChange={(e) => set({ outroMotivo: e.target.value })}
@@ -297,8 +307,12 @@ export default function NovaHEPage() {
             </div>
           ) : null}
           <div className="horas-fld" style={{ gridColumn: '1 / -1' }}>
-            <label>Justificativa (obrigatória)</label>
+            <label htmlFor="horas-he-just">
+              Justificativa <span className="horas-muted">(obrigatória)</span>
+            </label>
             <textarea
+              id="horas-he-just"
+              required
               rows={3}
               placeholder="Explique por que a hora extra é necessária."
               value={form.justificativa}
@@ -307,13 +321,13 @@ export default function NovaHEPage() {
           </div>
         </div>
 
-        <div className="horas-hint" style={{ marginTop: 4 }}>
+        <Aviso>
           Ao enviar, o seu gestor recebe um e-mail e decide o <b>destino da hora</b>:
           Medição/Pagamento ou Banco de Horas. O percentual é aplicado pelo DP/RM conforme a CCT
           vigente.
-        </div>
+        </Aviso>
 
-        <div className="horas-timer-actions">
+        <div className="horas-modal-acoes">
           <button
             className="horas-btn grn"
             type="button"
@@ -323,7 +337,7 @@ export default function NovaHEPage() {
             <Send size={16} /> {enviando ? 'Enviando…' : 'Enviar solicitação'}
           </button>
         </div>
-      </div>
+      </section>
     </>
   );
 }

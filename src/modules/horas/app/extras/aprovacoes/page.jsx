@@ -7,6 +7,7 @@ import { notificarHoraExtra } from '../../../../../services/notificarHoraExtra';
 import SolicitacoesHETable from '../../components/SolicitacoesHETable';
 import DestinoHEModal from '../../components/DestinoHEModal';
 import MotivoHEModal from '../../components/MotivoHEModal';
+import Aviso, { Carregando } from '../../components/Aviso';
 
 // Aprovações Pendentes: as solicitações em que EU sou o aprovador (superior
 // direto do solicitante). Aprovar exige definir o destino da hora; reprovar exige
@@ -71,10 +72,20 @@ export default function AprovacoesHEPage() {
   const acoes = (s) =>
     podeDecidir(s, meuId) ? (
       <>
-        <button className="horas-btn grn horas-btn-sm" type="button" onClick={() => setAAprovar(s)}>
+        <button
+          className="horas-btn grn horas-btn-sm"
+          type="button"
+          aria-label={`Aprovar a solicitação ${s.numero}`}
+          onClick={() => setAAprovar(s)}
+        >
           <Check size={14} /> Aprovar
         </button>{' '}
-        <button className="horas-btn red horas-btn-sm" type="button" onClick={() => setAReprovar(s)}>
+        <button
+          className="horas-btn red horas-btn-sm"
+          type="button"
+          aria-label={`Reprovar a solicitação ${s.numero}`}
+          onClick={() => setAReprovar(s)}
+        >
           <X size={14} /> Reprovar
         </button>
       </>
@@ -84,42 +95,48 @@ export default function AprovacoesHEPage() {
     <>
       <h1>Aprovações Pendentes</h1>
       <p className="horas-sub">
-        {pendentes.length} solicitação(ões) aguardando você · {fmtMin(totalPendente)} no total.
+        {loading
+          ? 'Carregando…'
+          : `${pendentes.length} solicitação(ões) aguardando você · ${fmtMin(totalPendente)} no total.`}
       </p>
 
-      <div className="horas-hint">
+      <Aviso>
         Ao aprovar, defina se a hora vai para <b>Medição/Pagamento</b> ou <b>Banco de Horas</b> (que
         exige data, período e quantidade previstos para compensação). O percentual não é informado
         por você: o DP/RM aplica conforme a CCT vigente.
-      </div>
+      </Aviso>
 
-      {erro ? <div className="horas-hint is-erro">⚠️ {erro}</div> : null}
+      {erro ? <Aviso tom="erro">{erro}</Aviso> : null}
 
       <div className="horas-card horas-table-wrap">
         {loading ? (
-          <div className="horas-empty">Carregando…</div>
+          <Carregando />
         ) : (
-          <SolicitacoesHETable list={pendentes} mostraColaborador acoes={acoes} />
+          <SolicitacoesHETable
+            list={pendentes}
+            mostraColaborador
+            acoes={acoes}
+            vazio="Nada aguardando a sua decisão agora."
+          />
         )}
       </div>
 
       {decididas.length ? (
         <>
-          <div className="horas-toolbar" style={{ marginTop: 18 }}>
-            <div className="horas-sec" style={{ margin: 0 }}>
-              Já decididas por você ({decididas.length})
-            </div>
-            <div className="horas-spacer" />
+          <div className="horas-card-topo" style={{ marginTop: 18 }}>
+            <h2 className="horas-sec">Já decididas por você ({decididas.length})</h2>
             <button
-              className="horas-btn2"
+              className="horas-btn2 horas-btn-sm"
               type="button"
+              aria-expanded={verDecididas}
+              aria-controls="horas-he-decididas"
               onClick={() => setVerDecididas((v) => !v)}
             >
               {verDecididas ? 'Ocultar' : 'Mostrar'}
             </button>
           </div>
           {verDecididas ? (
-            <div className="horas-card horas-table-wrap">
+            <div className="horas-card horas-table-wrap" id="horas-he-decididas">
               <SolicitacoesHETable list={decididas} mostraColaborador />
             </div>
           ) : null}

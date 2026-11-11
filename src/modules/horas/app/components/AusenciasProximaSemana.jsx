@@ -4,6 +4,7 @@ import { useAuth } from '../../../../contexts/AuthContext';
 import { supabase } from '../../../../services/supabase';
 import { getEquipeIds } from '../../../../services/equipe';
 import { getStatusCalculado, formatarData } from '../../../../utils/formatters';
+import Aviso, { Carregando } from './Aviso';
 
 /**
  * Ausências da equipe que começam nos próximos 7 dias.
@@ -82,22 +83,22 @@ export default function AusenciasProximaSemana() {
   }, []);
 
   return (
-    <div className="horas-card" style={{ marginBottom: 18 }}>
-      <div className="horas-campo-topo">
-        <div className="horas-sec" style={{ margin: 0 }}>
-          Ausência(s) marcada(s) para próxima semana
-        </div>
+    <section className="horas-card" aria-labelledby="horas-ausencias-tit">
+      <div className="horas-card-topo">
+        <h2 className="horas-sec" id="horas-ausencias-tit">
+          Ausências nos próximos 7 dias
+        </h2>
         {abreGestaoAusencia ? (
-          <button className="horas-btn2" type="button" onClick={() => navigate('/gestor/ausencia')}>
+          <button className="horas-btn2 horas-btn-sm" type="button" onClick={() => navigate('/gestor/ausencia')}>
             Ver gestão de ausência
           </button>
         ) : null}
       </div>
 
       {carregando ? (
-        <div className="horas-empty">Carregando…</div>
+        <Carregando />
       ) : erro ? (
-        <div className="horas-empty">⚠️ {erro}</div>
+        <Aviso tom="erro">{erro}</Aviso>
       ) : !lista.length ? (
         <div className="horas-empty">Ninguém da equipe entra em ausência nos próximos 7 dias.</div>
       ) : (
@@ -118,7 +119,7 @@ export default function AusenciasProximaSemana() {
                   <td data-label="Colaborador" style={{ fontWeight: 600 }}>{s.colaborador_nome}</td>
                   <td data-label="Início">{formatarData(s.ausencia_agendada_inicio)}</td>
                   <td data-label="Término">{formatarData(s.ausencia_agendada_fim)}</td>
-                  <td data-label="Dias">{s.dias_solicitados || 0} dias</td>
+                  <td className="horas-num" data-label="Dias">{s.dias_solicitados || 0} dias</td>
                   <td data-label="Status">
                     <span
                       className="horas-badge"
@@ -133,6 +134,6 @@ export default function AusenciasProximaSemana() {
           </table>
         </div>
       )}
-    </div>
+    </section>
   );
 }

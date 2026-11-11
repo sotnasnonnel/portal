@@ -1,4 +1,7 @@
+import Modal from './Modal';
+
 // Diálogo de confirmação no visual do módulo (substitui window.confirm/alert).
+// O foco abre no Cancelar: num diálogo de exclusão, Enter por engano não apaga.
 export default function ConfirmModal({
   open,
   title = 'Confirmar',
@@ -11,19 +14,16 @@ export default function ConfirmModal({
 }) {
   if (!open) return null;
   return (
-    <div className="horas-modal-bg" onMouseDown={(e) => e.target === e.currentTarget && onCancel?.()}>
-      <div className="horas-modal" style={{ width: 420 }}>
-        <h3>{title}</h3>
-        <p className="horas-sub" style={{ marginBottom: 20 }}>{message}</p>
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <button className="horas-btn2" type="button" onClick={onCancel}>
-            {cancelLabel}
-          </button>
-          <button className={`horas-btn ${danger ? 'red' : ''}`} type="button" onClick={onConfirm}>
-            {confirmLabel}
-          </button>
-        </div>
+    <Modal titulo={title} onClose={onCancel} className="horas-modal-sm">
+      <p className="horas-modal-msg">{message}</p>
+      <div className="horas-modal-acoes">
+        <button className="horas-btn2" type="button" onClick={onCancel}>
+          {cancelLabel}
+        </button>
+        <button className={`horas-btn ${danger ? 'red' : ''}`} type="button" onClick={onConfirm}>
+          {confirmLabel}
+        </button>
       </div>
-    </div>
+    </Modal>
   );
 }

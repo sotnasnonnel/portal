@@ -27,6 +27,21 @@ export function lookupColaboradores(colabs) {
   };
 }
 
+// Opções do filtro "Gerente": cada equipe do Horas (horas_gerencias) é ancorada
+// num gerente (gestor_id). Só entram as equipes de quem está no escopo (colabs),
+// e o rótulo é o nome do gerente — ou o nome da equipe sem o "Equipe ".
+export function gerentesDoEscopo(gerencias, colabs) {
+  const nomes = new Map(colabs.map((c) => [c.id, c.nome]));
+  const noEscopo = new Set(colabs.map((c) => c.gerenciaId).filter(Boolean));
+  return gerencias
+    .filter((g) => noEscopo.has(g.id))
+    .map((g) => ({
+      value: g.id,
+      label: (g.gestor_id && nomes.get(g.gestor_id)) || String(g.nome || '').replace(/^Equipe\s+/i, ''),
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
+}
+
 export function lookupGerencias(gerencias) {
   const mapa = new Map(gerencias.map((g) => [g.id, g.nome]));
   return { nome: (id) => mapa.get(id) || '—' };

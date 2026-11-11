@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
+import Modal from './Modal';
+import Aviso from './Aviso';
 import {
   DESTINO_LABEL,
   PERIODO_LABEL,
@@ -32,6 +34,7 @@ export default function DestinoHEModal({
   const [motivo, setMotivo] = useState('');
   const [erro, setErro] = useState('');
   const [salvando, setSalvando] = useState(false);
+  const uid = useId();
 
   const ehBanco = destino === 'banco';
   // Janela legal da compensação: da data da hora extra até 180 dias depois.
@@ -70,93 +73,89 @@ export default function DestinoHEModal({
   }
 
   return (
-    <div className="horas-modal-bg" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="horas-modal horas-modal-manual">
-        <h3>
-          {titulo} #{solicitacao.numero}
-        </h3>
-        <p className="horas-sub" style={{ marginTop: -6 }}>
-          {solicitacao.colaborador_nome} · {fmtMin(solicitacao.minutos)} de hora extra
-        </p>
+    <Modal
+      titulo={`${titulo} #${solicitacao.numero}`}
+      onClose={salvando ? undefined : onClose}
+      className="horas-modal-manual"
+    >
+      <p className="horas-modal-msg">
+        {solicitacao.colaborador_nome} · {fmtMin(solicitacao.minutos)} de hora extra
+      </p>
 
-        <div className="horas-fld">
-          <label>Destino da hora</label>
-          <select value={destino} onChange={(e) => setDestino(e.target.value)}>
-            <option value="medicao">{DESTINO_LABEL.medicao}</option>
-            <option value="banco">{DESTINO_LABEL.banco}</option>
-          </select>
-        </div>
+      <div className="horas-fld">
+        <label htmlFor={`${uid}-destino`}>Destino da hora</label>
+        <select id={`${uid}-destino`} value={destino} onChange={(e) => setDestino(e.target.value)}>
+          <option value="medicao">{DESTINO_LABEL.medicao}</option>
+          <option value="banco">{DESTINO_LABEL.banco}</option>
+        </select>
+      </div>
 
-        {ehBanco ? (
-          <>
-            <div className="horas-modal-row2">
-              <div className="horas-fld">
-                <label>Data prevista para compensação (até {PRAZO_COMPENSACAO_DIAS} dias)</label>
-                <input
-                  type="date"
-                  value={data}
-                  min={janela.min}
-                  max={janela.max}
-                  onChange={(e) => setData(e.target.value)}
-                />
-              </div>
-              <div className="horas-fld">
-                <label>Período previsto</label>
-                <select value={periodo} onChange={(e) => setPeriodo(e.target.value)}>
-                  {Object.entries(PERIODO_LABEL).map(([v, l]) => (
-                    <option key={v} value={v}>
-                      {l}
-                    </option>
-                  ))}
-                </select>
-              </div>
+      {ehBanco ? (
+        <>
+          <div className="horas-modal-row2">
+            <div className="horas-fld">
+              <label htmlFor={`${uid}-data`}>
+                Data prevista para compensação (até {PRAZO_COMPENSACAO_DIAS} dias)
+              </label>
+              <input
+                id={`${uid}-data`}
+                type="date"
+                value={data}
+                min={janela.min}
+                max={janela.max}
+                onChange={(e) => setData(e.target.value)}
+              />
             </div>
             <div className="horas-fld">
-              <label>Quantidade prevista (HH:MM)</label>
-              <input type="time" value={qtd} onChange={(e) => setQtd(e.target.value)} />
+              <label htmlFor={`${uid}-periodo`}>Período previsto</label>
+              <select id={`${uid}-periodo`} value={periodo} onChange={(e) => setPeriodo(e.target.value)}>
+                {Object.entries(PERIODO_LABEL).map(([v, l]) => (
+                  <option key={v} value={v}>
+                    {l}
+                  </option>
+                ))}
+              </select>
             </div>
-            <div className={`horas-hint ${prazo.ok ? 'is-ok' : 'is-erro'}`} style={{ marginBottom: 8 }}>
-              {prazo.ok ? '✅' : '⛔'} {prazo.msg}
-            </div>
-          </>
-        ) : null}
-
-        {pedeMotivo ? (
+          </div>
           <div className="horas-fld">
-            <label>Motivo da alteração</label>
-            <textarea rows={2} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+            <label htmlFor={`${uid}-qtd`}>Quantidade prevista (HH:MM)</label>
+            <input id={`${uid}-qtd`} type="time" value={qtd} onChange={(e) => setQtd(e.target.value)} />
           </div>
-        ) : (
-          <div className="horas-fld">
-            <label>Observação (opcional)</label>
-            <textarea rows={2} value={observacao} onChange={(e) => setObservacao(e.target.value)} />
-          </div>
-        )}
+          <Aviso tom={prazo.ok ? 'ok' : 'erro'}>{prazo.msg}</Aviso>
+        </>
+      ) : null}
 
-        <div className="horas-hint" style={{ marginBottom: 8 }}>
-          O percentual da hora extra não é informado aqui — o DP/RM aplica conforme a CCT vigente.
+      {pedeMotivo ? (
+        <div className="horas-fld">
+          <label htmlFor={`${uid}-motivo`}>Motivo da alteração</label>
+          <textarea id={`${uid}-motivo`} rows={2} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
         </div>
-
-        {erro ? (
-          <div className="horas-hint" style={{ marginBottom: 8 }}>
-            ⚠️ {erro}
-          </div>
-        ) : null}
-
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
-          <button className="horas-btn2" type="button" onClick={onClose} disabled={salvando}>
-            Cancelar
-          </button>
-          <button
-            className="horas-btn grn"
-            type="button"
-            onClick={confirmar}
-            disabled={salvando || (ehBanco && !prazo.ok)}
-          >
-            {salvando ? 'Salvando…' : 'Confirmar'}
-          </button>
+      ) : (
+        <div className="horas-fld">
+          <label htmlFor={`${uid}-obs`}>
+            Observação <span className="horas-muted">(opcional)</span>
+          </label>
+          <textarea id={`${uid}-obs`} rows={2} value={observacao} onChange={(e) => setObservacao(e.target.value)} />
         </div>
+      )}
+
+      <Aviso>O percentual da hora extra não é informado aqui — o DP/RM aplica conforme a CCT vigente.</Aviso>
+
+      {erro ? <Aviso tom="erro">{erro}</Aviso> : null}
+
+      <div className="horas-modal-acoes">
+        <button className="horas-btn2" type="button" onClick={onClose} disabled={salvando}>
+          Cancelar
+        </button>
+        <button
+          className="horas-btn grn"
+          type="button"
+          onClick={confirmar}
+          disabled={salvando || (ehBanco && !prazo.ok)}
+        >
+          {salvando ? 'Salvando…' : 'Confirmar'}
+        </button>
       </div>
-    </div>
+    </Modal>
   );
 }
