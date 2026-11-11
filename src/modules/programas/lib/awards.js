@@ -4,7 +4,8 @@ import { erroDoArquivo, tipoDoArquivo } from './awardsRegras';
 
 /**
  * Acesso a dados dos Projetos do Ano. A RLS faz o recorte: cada um recebe os
- * próprios projetos, quem avalia recebe todos. As duas telas usam a mesma consulta.
+ * próprios projetos, mais os finalistas depois que a votação abre; quem avalia
+ * recebe todos. As duas telas usam a mesma consulta.
  */
 
 const BUCKET = 'programas-awards';
@@ -105,6 +106,81 @@ export async function excluirProjeto(projeto) {
   }
   await removerArquivo(projeto.apresentacao?.path);
 }
+
+// ============================ Fases, votos e pódio ============================
+// Quem grava aqui são as funções do banco (supabase_migration_programas_awards_votacao.sql):
+// elas conferem a fase, o limite de finalistas e quem está chamando.
+
+export async function buscarEstado() {
+  const { data, error } = await supabase
+    .from('programas_awards_estado')
+    .select('fase, max_finalistas, mudou_em')
+    .eq('id', 1)
+    .maybeSingle();
+  if (error) throw new Error(`Não foi possível carregar a fase do prêmio: ${error.message}`);
+  return data || { fase: 'validacao', max_finalistas: 6, mudou_em: null };
+}
+
+/** Ids dos finalistas. Na validação, só quem avalia recebe algo. */
+export async function listarFinalistas() {
+  const { data, error } = await supabase.from('programas_awards_finalistas').select('projeto_id');
+  if (error) throw new Error(`Não foi possível carregar os finalistas: ${error.message}`);
+  return new Set((data || []).map((f) => f.projeto_id));
+}
+
+async function chamar(funcao, parametros) {
+  const { data, error } = await supabase.rpc(funcao, parametros);
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export const marcarFinalista = (projetoId, finalista) =>
+  chamar('awards_marcar_finalista', { p_projeto: projetoId, p_finalista: finalista });
+
+export const mudarFase = (fase) => chamar('awards_mudar_fase', { p_fase: fase });
+
+/** O voto da pessoa, por categoria: { operacao: [id1, id2, id3], backoffice: [...] }. */
+export async function listarMeusVotos(colaboradorId) {
+  const { data, error } = await supabase
+    .from('programas_awards_votos')
+    .select('categoria, posicao, projeto_id, votado_em')
+    .eq('eleitor_id', colaboradorId)
+    .order('posicao');
+  if (error) throw new Error(`Não foi possível carregar o seu voto: ${error.message}`);
+  const votos = {};
+  (data || []).forEach((v) => {
+    votos[v.categoria] = votos[v.categoria] || [];
+    votos[v.categoria][v.posicao - 1] = v.projeto_id;
+  });
+  return votos;
+}
+
+export const votar = (categoria, projetos) => chamar('awards_votar', { p_categoria: categoria, p_projetos: projetos });
+
+/** Soma por finalista, só para quem avalia. */
+export async function buscarResultado() {
+  return (await chamar('awards_resultado')) || [];
+}
+
+/** O pódio por categoria: { operacao: [id1, id2, id3], backoffice: [...] }. */
+export async function listarPodio() {
+  const { data, error } = await supabase
+    .from('programas_awards_podio')
+    .select('categoria, posicao, projeto_id')
+    .order('posicao');
+  if (error) throw new Error(`Não foi possível carregar os vencedores: ${error.message}`);
+  const podio = {};
+  (data || []).forEach((p) => {
+    podio[p.categoria] = podio[p.categoria] || [];
+    podio[p.categoria][p.posicao - 1] = p.projeto_id;
+  });
+  return podio;
+}
+
+export const revelar = (podio) => chamar('awards_revelar', {
+  p_operacao: podio.operacao || [],
+  p_backoffice: podio.backoffice || [],
+});
 
 /** Bucket privado: a URL vence em 2 minutos e já vem marcada para download. */
 export async function urlDaApresentacao(apresentacao) {

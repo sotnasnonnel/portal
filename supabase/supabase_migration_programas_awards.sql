@@ -6,7 +6,7 @@
 -- QUEM VÊ O QUÊ:
 --   - todo logado cadastra (uma pessoa pode cadastrar mais de um projeto) e vê
 --     só os que ele mesmo cadastrou;
---   - quem avalia (Lucas Ferraz, André Guimarães e Marcus Guimarães) vê todos. A lista repete
+--   - quem avalia (Lucas Ferraz, André Guimarães, Marcus Guimarães e Pedro Morais) vê todos. A lista repete
 --     AWARDS_AVALIADORES (src/config/programas.js) DE PROPÓSITO: aquela só
 --     controla o que a tela mostra, e quem protege o dado é esta. Mudou lá, muda
 --     aqui. Não usa programas_role porque 'admin' dos Programas é outra gente.
@@ -17,7 +17,8 @@
 -- dos Programas, para poderem testar antes da abertura.
 --
 -- Operação ou Back office é escolha de quem cadastra (decisão do Lucas, 09/11).
--- A validação (07 a 11/12) e a votação (14 a 18/12) ainda não existem aqui.
+-- A validação e a votação estão em supabase_migration_programas_awards_votacao.sql,
+-- que redefine as policies deste arquivo: NÃO rode este de novo depois daquele.
 --
 -- PRÉ-REQUISITO: supabase_migration_programas.sql (is_programas_admin).
 -- APLICAR ANTES DO FRONT, que grava nesta tabela.
@@ -31,7 +32,8 @@ returns boolean language sql stable security definer set search_path = '' as $$
   select lower(coalesce((select auth.jwt() ->> 'email'), '')) in (
     'lucas.ferraz@phdengenharia.eng.br',
     'andre.guimaraes@phdengenharia.eng.br',
-    'marcus.guimaraes@phdengenharia.eng.br'
+    'marcus.guimaraes@phdengenharia.eng.br',
+    'pedro.morais@phdengenharia.eng.br'
   )
 $$;
 

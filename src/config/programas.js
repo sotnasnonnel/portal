@@ -203,6 +203,7 @@ export const AWARDS_AVALIADORES = [
   'lucas.ferraz@phdengenharia.eng.br',
   'andre.guimaraes@phdengenharia.eng.br',
   'marcus.guimaraes@phdengenharia.eng.br',
+  'pedro.morais@phdengenharia.eng.br',
 ];
 
 export const ehAvaliadorAwards = (user) =>
@@ -239,6 +240,30 @@ export const AWARDS_PERGUNTAS = [
 ];
 
 export const AWARDS_LIMITE_ARQUIVO = 100 * 1024 * 1024;
+
+/**
+ * Fases do prêmio, em programas_awards_estado.fase. Quem avalia muda a fase por
+ * botão (awards_mudar_fase / awards_revelar), sem data fixa: a votação fica
+ * aberta até pouco antes do anúncio.
+ */
+export const AWARDS_FASES = {
+  validacao: {
+    label: 'Inscrições e validação',
+    dica: 'Marque os finalistas de cada categoria. Ao abrir a votação, eles ficam visíveis para todos e nenhum projeto pode mais ser cadastrado, editado ou excluído.',
+  },
+  votacao: {
+    label: 'Votação aberta',
+    dica: 'Todos votam em 1º, 2º e 3º de cada categoria e podem mudar o voto até o encerramento. Só quem avalia vê o resultado parcial.',
+  },
+  encerrada: {
+    label: 'Votação encerrada',
+    dica: 'Ninguém vota mais. Confira o resultado, resolva os empates e confirme o pódio antes de revelar.',
+  },
+  revelada: {
+    label: 'Vencedores revelados',
+    dica: 'O pódio de cada categoria está visível para todos em Projetos do Ano.',
+  },
+};
 
 // ============================ Programas (catálogo) ============================
 

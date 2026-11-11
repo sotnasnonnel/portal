@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { AWARDS_LIMITE_ARQUIVO, AWARDS_PERGUNTAS } from '../../../config/programas.js';
 import {
-  erroDoArquivo, faltandoNoProjeto, hojeEmBrasilia, podeInscrever, situacaoInscricoes, tipoDoArquivo,
+  erroDoArquivo, erroDoVoto, faltandoNoProjeto, hojeEmBrasilia, podeInscrever, rankingDaCategoria,
+  situacaoInscricoes, tipoDoArquivo,
 } from './awardsRegras.js';
 
 const comum = { email: 'fulano.detal@phdengenharia.eng.br' };
@@ -49,4 +50,24 @@ test('recusa formato fora da lista e arquivo acima de 100 MB', () => {
   assert.equal(erroDoArquivo({ name: 'a.pdf', size: AWARDS_LIMITE_ARQUIVO }), null);
   assert.match(erroDoArquivo({ name: 'a.pdf', size: AWARDS_LIMITE_ARQUIVO + 1 }), /100 MB/);
   assert.match(erroDoArquivo({ name: 'a.zip', size: 10 }), /formato não aceito/);
+});
+
+test('o voto precisa de 3 projetos diferentes, ou de tantos quantos forem os finalistas', () => {
+  assert.equal(erroDoVoto(['a', 'b', 'c'], 6), null);
+  assert.match(erroDoVoto(['a', 'b', ''], 6), /1º ao 3º/);
+  assert.match(erroDoVoto(['a', 'a', 'b'], 6), /diferentes/);
+  assert.equal(erroDoVoto(['a', 'b', ''], 2), null);
+  assert.match(erroDoVoto(['', '', ''], 1), /1º lugar/);
+});
+
+test('o ranking marca só os empates que mexem no pódio', () => {
+  const linha = (id, pontos, primeiro = 0, segundo = 0) => ({ projeto_id: id, pontos, primeiro, segundo, terceiro: 0 });
+  const r = rankingDaCategoria([linha('d', 1), linha('a', 9, 3), linha('b', 5, 1), linha('c', 5, 0, 2), linha('e', 1)]);
+  assert.deepEqual(r.map((l) => l.projeto_id), ['a', 'b', 'c', 'd', 'e']);
+  assert.deepEqual(r.map((l) => l.empate), [false, true, true, false, false]);
+
+  const corte = rankingDaCategoria([linha('a', 9), linha('b', 6), linha('c', 4), linha('d', 4)]);
+  assert.deepEqual(corte.map((l) => l.empate), [false, false, true, true]);
+
+  assert.deepEqual(rankingDaCategoria([]), []);
 });

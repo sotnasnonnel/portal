@@ -681,7 +681,7 @@ const PROGRAMAS_USAR_STEPS = [
     icon: Trophy,
     titulo: "Projetos do Ano: PHD Awards",
     texto:
-      'Em "Projetos do Ano" você cadastra um projeto para concorrer em Operação ou Back office, de 16/11 a 04/12. Pode cadastrar mais de um e, durante o prazo, editar ou excluir o que enviou. Nesta fase, só quem avalia vê os projetos cadastrados.',
+      'Em "Projetos do Ano" você cadastra um projeto para concorrer em Operação ou Back office, de 16/11 a 04/12. Pode cadastrar mais de um e, durante o prazo, editar ou excluir o que enviou. Depois, quem avalia escolhe os finalistas e abre a votação: aí todos votam em 1º, 2º e 3º lugar de cada categoria, e os vencedores são revelados na mesma tela.',
   },
 ];
 

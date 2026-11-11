@@ -76,3 +76,39 @@ export function erroDoArquivo(arquivo) {
   if (arquivo.size > AWARDS_LIMITE_ARQUIVO) return `${arquivo.name}: acima de 100 MB.`;
   return null;
 }
+
+// ============================ Votação e pódio ============================
+
+/** 1º vale 3, 2º vale 2, 3º vale 1 (decisão do Lucas). A soma é feita em awards_resultado(). */
+export const PONTOS_POR_POSICAO = [3, 2, 1];
+
+/** Com menos de 3 finalistas na categoria, o voto e o pódio têm menos posições. */
+export const posicoesExigidas = (finalistas) => Math.min(3, Math.max(0, finalistas));
+
+/** A mensagem do problema no voto (ids em ordem 1º, 2º, 3º), ou null se ele pode ir. */
+export function erroDoVoto(escolhas, finalistas) {
+  const exigidas = posicoesExigidas(finalistas);
+  const preenchidas = escolhas.slice(0, exigidas).filter(Boolean);
+  if (preenchidas.length < exigidas) return `Escolha o ${exigidas === 1 ? '1º lugar' : `1º ao ${exigidas}º lugar`}.`;
+  if (new Set(preenchidas).size < exigidas) return 'Escolha projetos diferentes para cada posição.';
+  return null;
+}
+
+/**
+ * Ordena os finalistas de uma categoria por pontos e marca os empates que mexem
+ * no pódio. Quem tem mais votos em 1º fica na frente só para sugerir a ordem: o
+ * empate em pontos continua marcado, porque quem decide é a comissão.
+ */
+export function rankingDaCategoria(linhas) {
+  const ordem = [...linhas].sort((a, b) => b.pontos - a.pontos
+    || b.primeiro - a.primeiro
+    || b.segundo - a.segundo);
+  const k = posicoesExigidas(ordem.length);
+  const corte = k ? ordem[k - 1].pontos : Infinity;
+  const repetidos = new Set(ordem.map((l) => l.pontos).filter((p, i, todos) => todos.indexOf(p) !== i));
+  return ordem.map((l, i) => ({
+    ...l,
+    posicao: i + 1,
+    empate: l.pontos >= corte && repetidos.has(l.pontos),
+  }));
+}

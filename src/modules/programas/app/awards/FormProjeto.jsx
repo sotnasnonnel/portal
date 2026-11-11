@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { AWARDS_CATEGORIAS, AWARDS_PERGUNTAS } from '../../../../config/programas';
-import { buscarProjeto, criarProjeto, editarProjeto } from '../../lib/awards';
+import { buscarEstado, buscarProjeto, criarProjeto, editarProjeto } from '../../lib/awards';
 import {
   ACEITA_ARQUIVO, erroDoArquivo, faltandoNoProjeto, podeInscrever,
 } from '../../lib/awardsRegras';
@@ -28,7 +28,17 @@ export default function FormProjeto() {
   const [erro, setErro] = useState('');
   const [pronto, setPronto] = useState(null);
   const avisoRef = useRef(null);
-  const liberado = podeInscrever(user, modules);
+  // Depois que a votação abre, nenhum projeto muda (a RLS também barra).
+  const [fase, setFase] = useState(null);
+  const liberado = fase === 'validacao' && podeInscrever(user, modules);
+
+  useEffect(() => {
+    let ativo = true;
+    buscarEstado()
+      .then((e) => { if (ativo) setFase(e.fase); })
+      .catch((e) => { if (ativo) { setErro(e.message); setFase('?'); } });
+    return () => { ativo = false; };
+  }, []);
 
   useEffect(() => {
     if (!id) return undefined;
@@ -89,11 +99,11 @@ export default function FormProjeto() {
 
   const voltar = <Link className="pg-link" to="/programas/awards">Voltar aos Projetos do Ano</Link>;
 
-  if (carregando) {
+  if (carregando || !fase) {
     return <div className="pg-page"><div className="pg-vazio"><Loader2 size={20} className="pg-spin" /> Carregando…</div></div>;
   }
   if (!liberado) {
-    return <div className="pg-page"><div className="pg-vazio">As inscrições não estão abertas agora. {voltar}.</div></div>;
+    return <div className="pg-page"><div className="pg-vazio">{erro || 'As inscrições não estão abertas agora.'} {voltar}.</div></div>;
   }
   if (id && !projeto) {
     return <div className="pg-page"><div className="pg-vazio">{erro || 'Projeto não encontrado.'} {voltar}.</div></div>;
