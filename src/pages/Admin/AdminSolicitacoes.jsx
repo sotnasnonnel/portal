@@ -4,7 +4,8 @@ import { supabase } from '../../services/supabase';
 import { formatarMoeda } from '../../utils/formatters';
 import {
   FileText, Check, X, CheckCheck,
-  Loader2, Filter, Trash2, Wrench, FastForward, History, ChevronDown, Ban, Search, Send,
+  Loader2, Trash2, Wrench, FastForward, History, ChevronDown, Ban, Search, Send,
+  FolderKanban, Briefcase, LayoutList,
 } from 'lucide-react';
 import FluxoTimeline from '../../components/Solicitacoes/FluxoTimeline';
 import {
@@ -14,6 +15,9 @@ import {
 import ModalRespostas, { DETALHE, buscarRespostas } from '../Gestor/requisicoes/ModalRespostas';
 import BotaoPdfRequisicao from '../../components/BotaoPdfRequisicao';
 import EnviarConhecimentoModal from './EnviarConhecimentoModal';
+import { REQUISICOES } from '../../config/requisicoes';
+import { agruparPorProjeto, funcaoDaRequisicao, nomeProjeto, normalizarCodigo } from '../Gestor/requisicoes/projetos';
+import { carregarDetalhesLista, carregarResolvedorProjeto } from '../Gestor/requisicoes/detalhesRequisicoes';
 import { notificarAprovadorSolic } from '../../services/notificarAprovadorSolic';
 import { notificarSolicitanteReprovacao } from '../../services/notificarSolicitanteReprovacao';
 import '../../components/UI/Components.css';
@@ -32,6 +36,9 @@ const SELECT_SOL = `
 /** Normaliza para busca: sem acento, sem caixa. */
 const semAcento = (t) => (t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
+// Ícone de cada tipo nos filtros: o mesmo da tela de nova requisição.
+const ICONE_TIPO = Object.fromEntries(REQUISICOES.filter((r) => r.tipoDb).map((r) => [r.tipoDb, r.icon]));
+
 export default function AdminSolicitacoes() {
   const { user, markSolicVisto } = useAuth();
   const [solicitacoes, setSolicitacoes] = useState([]);
@@ -45,6 +52,9 @@ export default function AdminSolicitacoes() {
   const [verRespostas, setVerRespostas] = useState(null);
   const [solRespostas, setSolRespostas] = useState(null);
   const [expandido, setExpandido] = useState(() => new Set());
+  const [detalhes, setDetalhes] = useState({});       // solicitacao_id -> função/projeto/profissional
+  const [resolverProjeto, setResolverProjeto] = useState(null); // código -> { completo, cliente }
+  const [gruposFechados, setGruposFechados] = useState(() => new Set());
   const seededRef = useRef(false);
 
   const toggleCard = (id) => setExpandido((prev) => {
@@ -84,6 +94,7 @@ export default function AdminSolicitacoes() {
         .select(SELECT_SOL)
         .order('created_at', { ascending: false });
       if (error) throw error;
+      setDetalhes(await carregarDetalhesLista(data || []).catch(() => ({})));
       setSolicitacoes(data || []);
     } catch (err) {
       console.error('Erro ao buscar solicitações:', err);
@@ -98,6 +109,15 @@ export default function AdminSolicitacoes() {
     window.addEventListener('solicitacoes_rh_atualizadas', handle);
     return () => window.removeEventListener('solicitacoes_rh_atualizadas', handle);
   }, [fetchSolicitacoes]);
+
+  // Nome dos projetos (cliente + código completo): uma vez por visita.
+  useEffect(() => {
+    let vivo = true;
+    carregarResolvedorProjeto()
+      .then((fn) => { if (vivo) setResolverProjeto(() => fn); })
+      .catch(() => {});
+    return () => { vivo = false; };
+  }, []);
 
   // Semeia UMA vez: abre expandidas as solicitações que aguardam a ação do admin.
   useEffect(() => {
@@ -115,18 +135,33 @@ export default function AdminSolicitacoes() {
   // "BRANDÃO". Cobre o colaborador, quem abriu e o número da solicitação —
   // é por um desses três que se procura uma requisição específica.
   const termo = semAcento(busca).trim();
-  const filtradas = solicitacoes.filter((s) => {
+  // Também acha pelo código do projeto, pela função e pelo profissional da
+  // contratação (que não tem colaborador_id).
+  const semTipo = solicitacoes.filter((s) => {
     const matchStatus = filtroStatus === 'todos'
       ? true
       : filtroStatus === 'historico'
         ? s.status !== 'pendente'
         : s.status === filtroStatus;
-    const matchTipo = filtroTipo === 'todos' || s.tipo === filtroTipo;
+    const d = detalhes[s.id];
     const matchBusca = !termo || [
       s.colaborador?.nome, s.gestor?.nome, s.numero != null ? `#${s.numero}` : '',
+      d?.nome_profissional, d?.codigo_proposta_projeto, funcaoDaRequisicao(s, d),
     ].some((campo) => semAcento(campo).includes(termo));
-    return matchStatus && matchTipo && matchBusca;
+    return matchStatus && matchBusca;
   });
+  // Os chips de tipo contam dentro do status e da busca, e só aparecem os
+  // tipos que existem (mais o ativo, para dar para desmarcar).
+  const contagemTipo = semTipo.reduce((acc, s) => ({ ...acc, [s.tipo]: (acc[s.tipo] || 0) + 1 }), {});
+  const tiposVisiveis = Object.keys(TIPO_LABEL).filter((t) => contagemTipo[t] || t === filtroTipo);
+  const filtradas = semTipo.filter((s) => filtroTipo === 'todos' || s.tipo === filtroTipo);
+  const itens = agruparPorProjeto(filtradas, detalhes);
+  const toggleGrupo = (chave) => setGruposFechados((prev) => {
+    const next = new Set(prev);
+    if (next.has(chave)) next.delete(chave); else next.add(chave);
+    return next;
+  });
+  const infoProjeto = (codigo) => (resolverProjeto && normalizarCodigo(codigo) ? resolverProjeto(codigo) : null);
 
   const cont = (st) => solicitacoes.filter((s) => s.status === st).length;
   const aguardandoAdmin = solicitacoes.filter((s) => acaoDisponivel(APROVADORES.admin, s.etapas) !== null).length;
@@ -328,6 +363,196 @@ export default function AdminSolicitacoes() {
     return { data: null, texto: just };
   };
 
+  // Um card de requisição. Dentro de um grupo de projeto o código já está no
+  // cabeçalho do grupo, então o card não repete.
+  const renderCard = (s, { emGrupo = false } = {}) => {
+    const resumo = resumoAndamento(s, s.etapas);
+    const tomB = badgeDeStatus(resumo.tom);
+    const acao = acaoDisponivel(APROVADORES.admin, s.etapas); // 'aprovacao' | 'execucao' | null
+    const det = s.tipo === 'desligamento' ? parseDesligamento(s.justificativa) : { data: null, texto: s.justificativa };
+    const detLista = detalhes[s.id];
+    // Contratação não tem colaborador_id: quem entra é o profissional do formulário.
+    const nomeColab = s.colaborador?.nome || detLista?.nome_profissional?.trim() || '';
+    const funcao = funcaoDaRequisicao(s, detLista);
+    const codProjeto = s.tipo === 'formulario_contratacao' && normalizarCodigo(detLista?.codigo_proposta_projeto)
+      ? detLista.codigo_proposta_projeto.trim()
+      : null;
+    const nomeProj = codProjeto ? nomeProjeto(infoProjeto(codProjeto)) : '';
+    const aberto = expandido.has(s.id);
+    return (
+      <div key={s.id} className={`sol-card ${acao ? 'sol-card--acao' : ''}`}>
+        <button
+          type="button"
+          className="sol-card-header"
+          aria-expanded={aberto}
+          aria-controls={`sol-body-${s.id}`}
+          onClick={() => toggleCard(s.id)}
+        >
+          <ChevronDown size={16} aria-hidden className={`sol-card-chevron ${aberto ? 'is-open' : ''}`} />
+          <span className="sol-card-headtext">
+            <span className="sol-card-headline sol-card-colab">
+              {s.numero != null && `#${s.numero} · `}{TIPO_LABEL[s.tipo]} · {nomeColab || (s.gestor?.nome ? `Solicitado por ${s.gestor.nome}` : '—')}
+            </span>
+            {(funcao || (codProjeto && !emGrupo)) && (
+              <span className="req-card-meta">
+                {funcao && <span className="req-card-funcao"><Briefcase size={12} aria-hidden /> {funcao}</span>}
+                {codProjeto && !emGrupo && (
+                  <span className="req-card-projeto" title={nomeProj || undefined}>
+                    <FolderKanban size={12} aria-hidden /> {codProjeto}
+                    {nomeProj && <span className="req-card-projeto-nome"> · {nomeProj}</span>}
+                  </span>
+                )}
+              </span>
+            )}
+            {!aberto && resumo.tom === 'pendente' && (
+              <span className="sol-card-headsub">{resumo.texto}</span>
+            )}
+          </span>
+          <span className={`badge ${tomB.badge}`}>{tomB.label}</span>
+        </button>
+
+        {aberto && (
+        <div id={`sol-body-${s.id}`} className="sol-card-body">
+        <div className="sol-card-top">
+          <div>
+            <div className="sol-card-colab">{nomeColab || '—'}</div>
+            <div className="sol-card-tipo">
+              {TIPO_LABEL[s.tipo]}
+              {s.iniciativa && <span className="sol-card-iniciativa"> · {INICIATIVA_LABEL[s.iniciativa]}</span>}
+              {s.gestor?.nome && <span> · solicitado por {s.gestor.nome}</span>}
+              {s.created_at && <span className="sol-card-iniciativa"> · Aberta em {new Date(s.created_at).toLocaleDateString('pt-BR')}</span>}
+            </div>
+          </div>
+        </div>
+
+        <div className="sol-card-info req-card-info">
+          {s.tipo !== 'aumento_salario' && funcao && (
+            <span>Função: <strong>{funcao}</strong></span>
+          )}
+          {codProjeto && (
+            <span>Projeto: <strong>{codProjeto}</strong>{nomeProj && ` · ${nomeProj}`}</span>
+          )}
+          {s.tipo === 'aumento_salario' && s.salario_proposto != null && (
+            <span>Valor: {formatarMoeda(s.colaborador?.salario)} → <strong style={{ color: 'var(--color-success)' }}>{formatarMoeda(s.salario_proposto)}</strong></span>
+          )}
+          {s.tipo === 'aumento_salario' && s.funcao_proposta && (
+            <span>Função: {s.colaborador?.funcao || '—'} → <strong style={{ color: 'var(--color-success)' }}>{s.funcao_proposta}</strong></span>
+          )}
+          {s.tipo === 'aumento_salario' && s.cargo_proposto && (
+            <span>Cargo: <strong style={{ color: 'var(--color-success)' }}>{s.cargo_proposto}</strong></span>
+          )}
+          {s.tipo === 'desligamento' && det.data && (
+            <span>Desligamento sugerido: <strong style={{ color: 'var(--color-danger)' }}>{det.data}</strong></span>
+          )}
+        </div>
+        {det.texto && <div className="sol-card-just">{det.texto}</div>}
+
+        {/* Editada pelo solicitante depois de enviada: a cadeia recomeçou,
+            então o que já tinha sido aprovado antes não vale mais. */}
+        {s.edicao_motivo && (
+          <div className="sol-card-resumo tom-devolvida">
+            <strong>
+              Editada pelo solicitante{s.edicao_em ? ` em ${new Date(s.edicao_em).toLocaleDateString('pt-BR')}` : ''} — a aprovação recomeçou:
+            </strong> {s.edicao_motivo}
+          </div>
+        )}
+
+        <div className={`sol-card-resumo tom-${resumo.tom}`}>{resumo.texto}</div>
+
+        <FluxoTimeline etapas={s.etapas} />
+
+        {/* Consulta e ferramentas do admin à esquerda; a decisão à direita. */}
+        <div className="sol-card-actions req-card-acoes">
+          <div className="req-card-acoes-sec">
+            <BotaoPdfRequisicao sol={s} nomeColaborador={nomeColab} nomeSolicitante={s.gestor?.nome} />
+            {DETALHE[s.tipo] && (
+              <button className="btn btn-outline btn-sm" disabled={acaoId === s.id}
+                onClick={async () => { setSolRespostas(s); setVerRespostas(await buscarRespostas(s)); }}>
+                <FileText size={14} /> Ver respostas
+              </button>
+            )}
+            {s.tipo === 'desligamento' && s.status !== 'cancelada' && (
+              <button className="btn btn-outline btn-sm" disabled={acaoId === s.id}
+                title="Avisar ADM, TI e outros envolvidos no recolhimento"
+                onClick={() => setConhecimentoSol(s)}>
+                <Send size={14} /> Enviar para conhecimento{s.ciencias?.length ? ` (${s.ciencias.length})` : ''}
+              </button>
+            )}
+            {s.status === 'pendente' && (
+              <>
+                <button className="btn btn-outline btn-sm" title="Reatribuir a etapa atual a outra pessoa" disabled={acaoId === s.id} onClick={() => { setReatribuirSol(s); setReatribuirId(''); }}>
+                  <Wrench size={14} /> Reatribuir
+                </button>
+                <button className="btn btn-outline btn-sm" title="Forçar avanço da etapa atual" disabled={acaoId === s.id} onClick={() => forcarAvanco(s)}>
+                  <FastForward size={14} /> Forçar avanço
+                </button>
+                <button className="btn btn-outline btn-sm req-btn-perigo" title="Cancelar a requisição (encerra o fluxo)" disabled={acaoId === s.id} onClick={() => { setDecisao({ sol: s, modo: 'cancelar' }); setComentario(''); }}>
+                  <Ban size={14} /> Cancelar requisição
+                </button>
+              </>
+            )}
+            <button className="btn btn-ghost btn-sm req-btn-excluir" title="Excluir" aria-label="Excluir requisição" disabled={acaoId === s.id} onClick={() => excluir(s.id)}>
+              <Trash2 size={15} />
+            </button>
+          </div>
+          {acao && (
+            <div className="req-card-acoes-dec">
+              {acao === 'aprovacao' && (
+                <>
+                  <button className="btn btn-outline btn-sm req-btn-perigo" disabled={acaoId === s.id} onClick={() => { setDecisao({ sol: s, modo: 'reprovar' }); setComentario(''); }}>
+                    <X size={14} /> Reprovar
+                  </button>
+                  <button className="btn btn-success btn-sm" disabled={acaoId === s.id} onClick={() => { setDecisao({ sol: s, modo: 'aprovar' }); setComentario(''); }}>
+                    {acaoId === s.id ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />} Aprovar
+                  </button>
+                </>
+              )}
+              {acao === 'execucao' && (
+                <button className="btn btn-primary btn-sm" disabled={acaoId === s.id} onClick={() => executar(s)}>
+                  {acaoId === s.id ? <Loader2 size={14} className="animate-spin" /> : <CheckCheck size={14} />} Executar / Concluir
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+        </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderGrupo = (g) => {
+    const aberto = !gruposFechados.has(g.chave);
+    const nome = nomeProjeto(infoProjeto(g.codigo));
+    const aguardam = g.sols.filter((s) => acaoDisponivel(APROVADORES.admin, s.etapas) !== null).length;
+    return (
+      <section key={`g-${g.chave}`} className={`req-grupo ${aguardam ? 'req-grupo--acao' : ''}`}>
+        <button
+          type="button"
+          className="req-grupo-header"
+          aria-expanded={aberto}
+          onClick={() => toggleGrupo(g.chave)}
+        >
+          <ChevronDown size={16} aria-hidden className={`sol-card-chevron ${aberto ? 'is-open' : ''}`} />
+          <FolderKanban size={18} aria-hidden className="req-grupo-icone" />
+          <span className="req-grupo-titulo">
+            <span className="req-grupo-codigo">{g.codigo}</span>
+            {nome && <span className="req-grupo-nome">{nome}</span>}
+          </span>
+          <span className="req-grupo-tags">
+            {aguardam > 0 && <span className="req-grupo-tag req-grupo-tag--acao">{aguardam} aguardando você</span>}
+            <span className="req-grupo-tag">{g.sols.length} contratações</span>
+          </span>
+        </button>
+        {aberto && (
+          <div className="req-grupo-lista">
+            {g.sols.map((s) => renderCard(s, { emGrupo: true }))}
+          </div>
+        )}
+      </section>
+    );
+  };
+
   return (
     <div className="admin-page animate-fade-in-up">
       <h1 className="page-title"><FileText size={28} /> Requisições DP</h1>
@@ -382,27 +607,33 @@ export default function AdminSolicitacoes() {
               </button>
             )}
           </div>
-          <div style={{ display: 'flex', gap: 'var(--space-sm)', alignItems: 'center', flexWrap: 'wrap' }}>
-            {/* Busca antes dos chips: com muitas requisições, filtrar por tipo
-                ainda deixa dezenas na tela, e quem procura já sabe o nome. */}
-            <div className="sol-busca">
-              <Search size={15} aria-hidden />
-              <input
-                type="search"
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
-                placeholder="Buscar por nome ou nº…"
-                aria-label="Buscar por nome do colaborador, solicitante ou número"
-              />
-            </div>
-            <Filter size={15} color="var(--color-text-muted)" />
-            {['todos', ...Object.keys(TIPO_LABEL)].map((t) => (
-              <button key={t} className={`filter-chip ${filtroTipo === t ? 'active' : ''}`} onClick={() => setFiltroTipo(t)}
-                title={t === 'todos' ? undefined : TIPO_LABEL[t]}>
-                {t === 'todos' ? 'Todos os tipos' : TIPO_LABEL_CURTO[t]}
-              </button>
-            ))}
+          <div className="sol-busca">
+            <Search size={15} aria-hidden />
+            <input
+              type="search"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              placeholder="Buscar por nome, nº, projeto ou função…"
+              aria-label="Buscar por colaborador, solicitante, número, código do projeto ou função"
+            />
           </div>
+        </div>
+        <div className="req-tipos" role="group" aria-label="Filtrar por tipo de requisição">
+          {['todos', ...tiposVisiveis].map((t) => {
+            const Icone = t === 'todos' ? LayoutList : (ICONE_TIPO[t] || FileText);
+            const ativo = filtroTipo === t;
+            const n = t === 'todos' ? semTipo.length : (contagemTipo[t] || 0);
+            return (
+              <button key={t} type="button" className={`req-tipo ${ativo ? 'is-active' : ''}`}
+                aria-pressed={ativo}
+                onClick={() => setFiltroTipo(t)}
+                title={t === 'todos' ? 'Todos os tipos' : TIPO_LABEL[t]}>
+                <Icone size={15} aria-hidden />
+                <span>{t === 'todos' ? 'Todos' : TIPO_LABEL_CURTO[t]}</span>
+                <span className="req-tipo-n">{n}</span>
+              </button>
+            );
+          })}
         </div>
 
         {loading ? (
@@ -415,128 +646,7 @@ export default function AdminSolicitacoes() {
           </div>
         ) : (
           <div style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-            {filtradas.map((s) => {
-              const resumo = resumoAndamento(s, s.etapas);
-              const tomB = badgeDeStatus(resumo.tom);
-              const acao = acaoDisponivel(APROVADORES.admin, s.etapas); // 'aprovacao' | 'execucao' | null
-              const det = s.tipo === 'desligamento' ? parseDesligamento(s.justificativa) : { data: null, texto: s.justificativa };
-              return (
-                <div key={s.id} className={`sol-card ${acao ? 'sol-card--acao' : ''}`}>
-                  <button
-                    type="button"
-                    className="sol-card-header"
-                    aria-expanded={expandido.has(s.id)}
-                    aria-controls={`sol-body-${s.id}`}
-                    onClick={() => toggleCard(s.id)}
-                  >
-                    <ChevronDown size={16} aria-hidden className={`sol-card-chevron ${expandido.has(s.id) ? 'is-open' : ''}`} />
-                    <span className="sol-card-headtext">
-                      <span className="sol-card-headline sol-card-colab">
-                        {s.numero != null && `#${s.numero} · `}{TIPO_LABEL[s.tipo]} · {s.colaborador?.nome || (s.gestor?.nome ? `Solicitado por ${s.gestor.nome}` : '—')}
-                      </span>
-                      {!expandido.has(s.id) && resumo.tom === 'pendente' && (
-                        <span className="sol-card-headsub">{resumo.texto}</span>
-                      )}
-                    </span>
-                    <span className={`badge ${tomB.badge}`}>{tomB.label}</span>
-                  </button>
-
-                  {expandido.has(s.id) && (
-                  <div id={`sol-body-${s.id}`} className="sol-card-body">
-                  <div className="sol-card-top">
-                    <div>
-                      <div className="sol-card-colab">{s.colaborador?.nome || '—'}</div>
-                      <div className="sol-card-tipo">
-                        {TIPO_LABEL[s.tipo]}
-                        {s.iniciativa && <span className="sol-card-iniciativa"> · {INICIATIVA_LABEL[s.iniciativa]}</span>}
-                        {s.gestor?.nome && <span> · solicitado por {s.gestor.nome}</span>}
-                        {s.created_at && <span className="sol-card-iniciativa"> · Aberta em {new Date(s.created_at).toLocaleDateString('pt-BR')}</span>}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="sol-card-info">
-                    {s.tipo === 'aumento_salario' && s.salario_proposto != null && (
-                      <span>Valor: {formatarMoeda(s.colaborador?.salario)} → <strong style={{ color: 'var(--color-success)' }}>{formatarMoeda(s.salario_proposto)}</strong></span>
-                    )}
-                    {s.tipo === 'aumento_salario' && s.funcao_proposta && (
-                      <span>Função: {s.colaborador?.funcao || '—'} → <strong style={{ color: 'var(--color-success)' }}>{s.funcao_proposta}</strong></span>
-                    )}
-                    {s.tipo === 'aumento_salario' && s.cargo_proposto && (
-                      <span>Cargo: <strong style={{ color: 'var(--color-success)' }}>{s.cargo_proposto}</strong></span>
-                    )}
-                    {s.tipo === 'desligamento' && det.data && (
-                      <span>Desligamento sugerido: <strong style={{ color: 'var(--color-danger)' }}>{det.data}</strong></span>
-                    )}
-                  </div>
-                  {det.texto && <div className="sol-card-just">{det.texto}</div>}
-
-                  {/* Editada pelo solicitante depois de enviada: a cadeia recomeçou,
-                      então o que já tinha sido aprovado antes não vale mais. */}
-                  {s.edicao_motivo && (
-                    <div className="sol-card-resumo tom-devolvida">
-                      <strong>
-                        Editada pelo solicitante{s.edicao_em ? ` em ${new Date(s.edicao_em).toLocaleDateString('pt-BR')}` : ''} — a aprovação recomeçou:
-                      </strong> {s.edicao_motivo}
-                    </div>
-                  )}
-
-                  <div className={`sol-card-resumo tom-${resumo.tom}`}>{resumo.texto}</div>
-
-                  <FluxoTimeline etapas={s.etapas} />
-
-                  <div className="sol-card-actions">
-                    <BotaoPdfRequisicao sol={s} nomeColaborador={s.colaborador?.nome} nomeSolicitante={s.gestor?.nome} />
-                    {DETALHE[s.tipo] && (
-                      <button className="btn btn-outline btn-sm" disabled={acaoId === s.id}
-                        onClick={async () => { setSolRespostas(s); setVerRespostas(await buscarRespostas(s)); }}>
-                        <FileText size={14} /> Ver respostas
-                      </button>
-                    )}
-                    {s.tipo === 'desligamento' && s.status !== 'cancelada' && (
-                      <button className="btn btn-outline btn-sm" disabled={acaoId === s.id}
-                        title="Avisar ADM, TI e outros envolvidos no recolhimento"
-                        onClick={() => setConhecimentoSol(s)}>
-                        <Send size={14} /> Enviar para conhecimento{s.ciencias?.length ? ` (${s.ciencias.length})` : ''}
-                      </button>
-                    )}
-                    {acao === 'aprovacao' && (
-                      <>
-                        <button className="btn btn-success btn-sm" disabled={acaoId === s.id} onClick={() => { setDecisao({ sol: s, modo: 'aprovar' }); setComentario(''); }}>
-                          {acaoId === s.id ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />} Aprovar
-                        </button>
-                        <button className="btn btn-danger btn-sm" disabled={acaoId === s.id} onClick={() => { setDecisao({ sol: s, modo: 'reprovar' }); setComentario(''); }}>
-                          <X size={14} /> Reprovar
-                        </button>
-                      </>
-                    )}
-                    {acao === 'execucao' && (
-                      <button className="btn btn-primary btn-sm" disabled={acaoId === s.id} onClick={() => executar(s)}>
-                        {acaoId === s.id ? <Loader2 size={14} className="animate-spin" /> : <CheckCheck size={14} />} Executar / Concluir
-                      </button>
-                    )}
-                    {s.status === 'pendente' && (
-                      <>
-                        <button className="btn btn-outline btn-sm" title="Reatribuir a etapa atual a outra pessoa" disabled={acaoId === s.id} onClick={() => { setReatribuirSol(s); setReatribuirId(''); }}>
-                          <Wrench size={14} /> Reatribuir
-                        </button>
-                        <button className="btn btn-outline btn-sm" title="Forçar avanço da etapa atual" disabled={acaoId === s.id} onClick={() => forcarAvanco(s)}>
-                          <FastForward size={14} /> Forçar avanço
-                        </button>
-                        <button className="btn btn-danger btn-sm" title="Cancelar a requisição (encerra o fluxo)" disabled={acaoId === s.id} onClick={() => { setDecisao({ sol: s, modo: 'cancelar' }); setComentario(''); }}>
-                          <Ban size={14} /> Cancelar requisição
-                        </button>
-                      </>
-                    )}
-                    <button className="btn btn-ghost btn-sm" title="Excluir" disabled={acaoId === s.id} onClick={() => excluir(s.id)} style={{ color: 'var(--color-danger)', marginLeft: 'auto' }}>
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
-                  </div>
-                  )}
-                </div>
-              );
-            })}
+            {itens.map((it) => (it.tipo === 'grupo' ? renderGrupo(it) : renderCard(it.sol)))}
           </div>
         )}
       </div>
