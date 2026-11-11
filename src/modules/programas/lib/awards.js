@@ -139,6 +139,9 @@ export const marcarFinalista = (projetoId, finalista) =>
 
 export const mudarFase = (fase) => chamar('awards_mudar_fase', { p_fase: fase });
 
+/** Apaga finalistas, votos e pódio e volta às inscrições. O banco só deixa antes de 16/11. */
+export const zerarTeste = () => chamar('awards_zerar_teste');
+
 /** O voto da pessoa, por categoria: { operacao: [id1, id2, id3], backoffice: [...] }. */
 export async function listarMeusVotos(colaboradorId) {
   const { data, error } = await supabase

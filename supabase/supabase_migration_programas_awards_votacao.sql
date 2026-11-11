@@ -375,7 +375,9 @@ begin
     raise exception 'Encerre a votação antes de revelar.';
   end if;
 
-  delete from public.programas_awards_podio;
+  -- "where true": o Supabase carrega o safeupdate nas chamadas do app, e ele
+  -- recusa DELETE sem WHERE mesmo dentro de função.
+  delete from public.programas_awards_podio where true;
 
   foreach v_categoria in array array['operacao', 'backoffice']::text[] loop
     v_projetos := case v_categoria when 'operacao' then p_operacao else p_backoffice end;

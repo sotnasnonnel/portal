@@ -7,8 +7,9 @@ import {
 } from '../../../../config/programas';
 import {
   buscarEstado, buscarResultado, listarFinalistas, listarProjetos, marcarFinalista, mudarFase, revelar,
+  zerarTeste,
 } from '../../lib/awards';
-import { posicoesExigidas, rankingDaCategoria } from '../../lib/awardsRegras';
+import { podeZerarTeste, posicoesExigidas, rankingDaCategoria } from '../../lib/awardsRegras';
 import DetalheProjeto from './DetalheProjeto';
 
 /**
@@ -101,6 +102,7 @@ export default function ProjetosInscritos() {
             finalistas={AWARDS_CATEGORIAS.map((c) => `${c.label} ${contarFinalistas(c.valor)}/${estado.max_finalistas}`)}
             semVotos={!resultado.some((r) => r.eleitores > 0)}
             onMudar={(nova) => executar(() => mudarFase(nova))}
+            onZerar={() => executar(zerarTeste)}
           />
 
           {fase !== 'validacao' && (
@@ -213,8 +215,9 @@ function BotaoConfirmar({ rotulo, pergunta, primario = false, onConfirmar }) {
   );
 }
 
-function PainelFase({ estado, finalistas, semVotos, onMudar }) {
+function PainelFase({ estado, finalistas, semVotos, onMudar, onZerar }) {
   const { fase, mudou_em: mudouEm } = estado;
+  const teste = podeZerarTeste();
   return (
     <section className="pg-card">
       <div className="pg-roi-cab">
@@ -267,7 +270,21 @@ function PainelFase({ estado, finalistas, semVotos, onMudar }) {
             />
           </>
         )}
+        {teste && (
+          <BotaoConfirmar
+            rotulo="Zerar teste"
+            pergunta="Apaga finalistas, votos e pódio e volta para as inscrições. Zerar?"
+            onConfirmar={onZerar}
+          />
+        )}
       </div>
+      {teste && (
+        <p className="pg-aw-dica" style={{ marginTop: 10, marginBottom: 0 }}>
+          Até 15/11 vocês podem testar tudo e zerar quantas vezes quiserem. Os projetos de teste
+          cada um apaga pelo botão Excluir, em Projetos do Ano. A partir de 16/11 o botão some e os
+          votos passam a valer.
+        </p>
+      )}
     </section>
   );
 }

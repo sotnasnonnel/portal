@@ -16,6 +16,12 @@ export function situacaoInscricoes(hoje = hojeEmBrasilia()) {
   return hoje > AWARDS_INSCRICOES.fecha ? 'encerradas' : 'abertas';
 }
 
+/**
+ * Antes das inscrições, quem avalia testa o fluxo inteiro e zera depois. A mesma
+ * data está em public.awards_zerar_teste(): depois dela os votos são de verdade.
+ */
+export const podeZerarTeste = (hoje = hojeEmBrasilia()) => situacaoInscricoes(hoje) === 'antes';
+
 /** Mesma regra de app_private.awards_pode_inscrever(). */
 export const podeInscrever = (user, modules, hoje = hojeEmBrasilia()) =>
   situacaoInscricoes(hoje) === 'abertas' || ehAvaliadorAwards(user) || ehAdminProgramas(modules);
