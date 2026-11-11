@@ -66,7 +66,7 @@ export function criarResolvedorProjeto({ obras = [], projetos = [] } = {}) {
 
   return (codigo) => {
     const c = normalizarCodigo(codigo);
-    if (!c) return { completo: null, cliente: null };
+    if (!c) return { codigo: null, completo: null, cliente: null };
 
     let completo = phdPorCodigo.get(c) || null;
     if (!completo && phdPorCt.has(c) && phdPorCt.get(c).size === 1) {
@@ -83,15 +83,56 @@ export function criarResolvedorProjeto({ obras = [], projetos = [] } = {}) {
     }
 
     return {
+      codigo: c,
       completo: completo && completo.toUpperCase() !== c ? completo : null,
       cliente,
     };
   };
 }
 
-/** "ADM DO BRASIL · ADMB-CT27-DESC" — o que dá para mostrar como nome do projeto. */
-export function nomeProjeto(info) {
-  return [info?.cliente, info?.completo].filter(Boolean).join(' · ');
+/**
+ * "ADM DO BRASIL · ADMB-CT27-DESC" — o que dá para mostrar como nome do projeto.
+ * `informado` é o nome digitado no próprio formulário (Nome do Cliente da vaga):
+ * entra quando o cadastro não achou o cliente, e se não for só o código repetido.
+ */
+export function nomeProjeto(info, informado) {
+  let cliente = info?.cliente || null;
+  const inf = String(informado ?? '').trim();
+  if (!cliente && normalizarCodigo(inf) && normalizarCodigo(inf) !== normalizarCodigo(info?.codigo)) cliente = inf;
+  return [cliente, info?.completo].filter(Boolean).join(' · ');
+}
+
+// Campo do formulário que traz o código do projeto, por tipo de requisição.
+const CAMPO_PROJETO = {
+  formulario_contratacao: 'codigo_proposta_projeto',
+  nova_vaga: 'codigo_cliente',
+};
+
+// Campo com o nome do cliente digitado no formulário (só a vaga tem).
+const CAMPO_NOME = { nova_vaga: 'nome_cliente' };
+
+/** Código do projeto como foi digitado, ou null se a requisição não tem/não é código. */
+export function codigoProjetoTexto(s, det) {
+  const campo = CAMPO_PROJETO[s.tipo];
+  const bruto = campo ? det?.[campo] : null;
+  return normalizarCodigo(bruto) ? String(bruto).trim() : null;
+}
+
+/** Nome do cliente digitado no formulário (só nova vaga), para complementar o nome. */
+export function nomeInformado(s, det) {
+  const campo = CAMPO_NOME[s.tipo];
+  return campo ? det?.[campo] || null : null;
+}
+
+// Rótulo da contagem no cabeçalho do grupo.
+const ROTULO_GRUPO = {
+  formulario_contratacao: ['contratação', 'contratações'],
+  nova_vaga: ['vaga', 'vagas'],
+};
+
+export function rotuloGrupo(tipo, n) {
+  const [um, varios] = ROTULO_GRUPO[tipo] || ['requisição', 'requisições'];
+  return `${n} ${n === 1 ? um : varios}`;
 }
 
 /**
@@ -108,17 +149,20 @@ export function funcaoDaRequisicao(s, det) {
   }
 }
 
-/** Código de projeto que agrupa a requisição (hoje só as contratações). */
+/**
+ * Chave que agrupa a requisição: tipo + código. Contratações e vagas do mesmo
+ * projeto ficam em grupos separados — são etapas diferentes do processo.
+ */
 export function codigoDeAgrupamento(s, det) {
-  if (s.tipo !== 'formulario_contratacao') return null;
-  return normalizarCodigo(det?.codigo_proposta_projeto);
+  const cod = codigoProjetoTexto(s, det);
+  return cod ? `${s.tipo}:${normalizarCodigo(cod)}` : null;
 }
 
 /**
- * Junta as contratações do mesmo projeto. A lista mantém a ordem original e o
- * grupo entra no lugar da primeira (mais recente) contratação dele. Projeto com
- * uma contratação só não vira grupo: fica como card comum.
- * Itens: { tipo: 'sol', sol } | { tipo: 'grupo', chave, codigo, sols }.
+ * Junta as contratações (e as vagas) do mesmo projeto. A lista mantém a ordem
+ * original e o grupo entra no lugar da primeira (mais recente) requisição dele.
+ * Projeto com uma requisição só não vira grupo: fica como card comum.
+ * Itens: { tipo: 'sol', sol } | { tipo: 'grupo', chave, tipoReq, codigo, nomeInformado, sols }.
  */
 export function agruparPorProjeto(lista, detalhes = {}) {
   const porChave = new Map();
@@ -140,8 +184,10 @@ export function agruparPorProjeto(lista, detalhes = {}) {
     saida.push({
       tipo: 'grupo',
       chave,
-      // Mostra o código como foi digitado na contratação mais recente.
-      codigo: String(detalhes[s.id].codigo_proposta_projeto).trim(),
+      tipoReq: s.tipo,
+      // Mostra o código como foi digitado na requisição mais recente.
+      codigo: codigoProjetoTexto(s, detalhes[s.id]),
+      nomeInformado: membros.map((m) => nomeInformado(m, detalhes[m.id])).find(Boolean) || null,
       sols: membros,
     });
   }

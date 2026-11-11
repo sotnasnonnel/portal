@@ -16,7 +16,10 @@ import ModalRespostas, { DETALHE, buscarRespostas } from '../Gestor/requisicoes/
 import BotaoPdfRequisicao from '../../components/BotaoPdfRequisicao';
 import EnviarConhecimentoModal from './EnviarConhecimentoModal';
 import { REQUISICOES } from '../../config/requisicoes';
-import { agruparPorProjeto, funcaoDaRequisicao, nomeProjeto, normalizarCodigo } from '../Gestor/requisicoes/projetos';
+import {
+  agruparPorProjeto, funcaoDaRequisicao, nomeProjeto, normalizarCodigo,
+  codigoProjetoTexto, nomeInformado, rotuloGrupo,
+} from '../Gestor/requisicoes/projetos';
 import { carregarDetalhesLista, carregarResolvedorProjeto } from '../Gestor/requisicoes/detalhesRequisicoes';
 import { notificarAprovadorSolic } from '../../services/notificarAprovadorSolic';
 import { notificarSolicitanteReprovacao } from '../../services/notificarSolicitanteReprovacao';
@@ -146,7 +149,7 @@ export default function AdminSolicitacoes() {
     const d = detalhes[s.id];
     const matchBusca = !termo || [
       s.colaborador?.nome, s.gestor?.nome, s.numero != null ? `#${s.numero}` : '',
-      d?.nome_profissional, d?.codigo_proposta_projeto, funcaoDaRequisicao(s, d),
+      d?.nome_profissional, d?.codigo_proposta_projeto, d?.codigo_cliente, d?.nome_cliente, funcaoDaRequisicao(s, d),
     ].some((campo) => semAcento(campo).includes(termo));
     return matchStatus && matchBusca;
   });
@@ -374,10 +377,8 @@ export default function AdminSolicitacoes() {
     // Contratação não tem colaborador_id: quem entra é o profissional do formulário.
     const nomeColab = s.colaborador?.nome || detLista?.nome_profissional?.trim() || '';
     const funcao = funcaoDaRequisicao(s, detLista);
-    const codProjeto = s.tipo === 'formulario_contratacao' && normalizarCodigo(detLista?.codigo_proposta_projeto)
-      ? detLista.codigo_proposta_projeto.trim()
-      : null;
-    const nomeProj = codProjeto ? nomeProjeto(infoProjeto(codProjeto)) : '';
+    const codProjeto = codigoProjetoTexto(s, detLista);
+    const nomeProj = codProjeto ? nomeProjeto(infoProjeto(codProjeto), nomeInformado(s, detLista)) : '';
     const aberto = expandido.has(s.id);
     return (
       <div key={s.id} className={`sol-card ${acao ? 'sol-card--acao' : ''}`}>
@@ -523,7 +524,7 @@ export default function AdminSolicitacoes() {
 
   const renderGrupo = (g) => {
     const aberto = !gruposFechados.has(g.chave);
-    const nome = nomeProjeto(infoProjeto(g.codigo));
+    const nome = nomeProjeto(infoProjeto(g.codigo), g.nomeInformado);
     const aguardam = g.sols.filter((s) => acaoDisponivel(APROVADORES.admin, s.etapas) !== null).length;
     return (
       <section key={`g-${g.chave}`} className={`req-grupo ${aguardam ? 'req-grupo--acao' : ''}`}>
@@ -541,7 +542,7 @@ export default function AdminSolicitacoes() {
           </span>
           <span className="req-grupo-tags">
             {aguardam > 0 && <span className="req-grupo-tag req-grupo-tag--acao">{aguardam} aguardando você</span>}
-            <span className="req-grupo-tag">{g.sols.length} contratações</span>
+            <span className="req-grupo-tag">{rotuloGrupo(g.tipoReq, g.sols.length)}</span>
           </span>
         </button>
         {aberto && (

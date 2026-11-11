@@ -6,7 +6,7 @@ import { criarResolvedorProjeto } from './projetos';
 // Não traz a linha inteira: isso continua no "Ver respostas".
 const DETALHE_LISTA = {
   formulario_contratacao: { tabela: 'formularios_contratacao', colunas: 'solicitacao_id, codigo_proposta_projeto, cargo_nivel, nome_profissional' },
-  nova_vaga: { tabela: 'vagas', colunas: 'solicitacao_id, funcao' },
+  nova_vaga: { tabela: 'vagas', colunas: 'solicitacao_id, funcao, codigo_cliente, nome_cliente' },
   mapeamento: { tabela: 'mapeamentos', colunas: 'solicitacao_id, funcao' },
 };
 

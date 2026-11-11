@@ -15,7 +15,10 @@ import BotaoGerarNovaVaga from './BotaoGerarNovaVaga';
 import AcoesEditarRequisicao from './AcoesEditarRequisicao';
 import RequisicoesRh from './RequisicoesRh';
 import { REQUISICOES } from '../../../config/requisicoes';
-import { agruparPorProjeto, funcaoDaRequisicao, nomeProjeto, normalizarCodigo } from './projetos';
+import {
+  agruparPorProjeto, funcaoDaRequisicao, nomeProjeto, normalizarCodigo,
+  codigoProjetoTexto, nomeInformado, rotuloGrupo,
+} from './projetos';
 import { carregarDetalhesLista, carregarResolvedorProjeto } from './detalhesRequisicoes';
 import { decidirRequisicaoRh } from '../../../services/decisaoRequisicaoRh';
 import BotaoPdfRequisicao from '../../../components/BotaoPdfRequisicao';
@@ -178,10 +181,8 @@ export default function AcompanharRequisicoes() {
     // Contratação não tem colaborador_id: quem entra é o profissional do formulário.
     const nomeColab = nomes[s.colaborador_id] || s.colaborador?.nome || detLista?.nome_profissional?.trim() || '';
     const funcao = funcaoDaRequisicao(s, detLista);
-    const codProjeto = s.tipo === 'formulario_contratacao' && normalizarCodigo(detLista?.codigo_proposta_projeto)
-      ? detLista.codigo_proposta_projeto.trim()
-      : null;
-    const nomeProj = codProjeto ? nomeProjeto(infoProjeto(codProjeto)) : '';
+    const codProjeto = codigoProjetoTexto(s, detLista);
+    const nomeProj = codProjeto ? nomeProjeto(infoProjeto(codProjeto), nomeInformado(s, detLista)) : '';
     const aberto = expandido.has(s.id);
     return (
       <div key={s.id} className={`sol-card ${podeAprovar ? 'sol-card--acao' : ''}`}>
@@ -300,7 +301,7 @@ export default function AcompanharRequisicoes() {
 
   const renderGrupo = (g) => {
     const aberto = !gruposFechados.has(g.chave);
-    const nome = nomeProjeto(infoProjeto(g.codigo));
+    const nome = nomeProjeto(infoProjeto(g.codigo), g.nomeInformado);
     const aguardam = g.sols.filter((s) => acaoDisponivel(user?.id, s.etapas) === 'aprovacao').length;
     return (
       <section key={`g-${g.chave}`} className={`req-grupo ${aguardam ? 'req-grupo--acao' : ''}`}>
@@ -318,7 +319,7 @@ export default function AcompanharRequisicoes() {
           </span>
           <span className="req-grupo-tags">
             {aguardam > 0 && <span className="req-grupo-tag req-grupo-tag--acao">{aguardam} aguardando você</span>}
-            <span className="req-grupo-tag">{g.sols.length} contratações</span>
+            <span className="req-grupo-tag">{rotuloGrupo(g.tipoReq, g.sols.length)}</span>
           </span>
         </button>
         {aberto && (
