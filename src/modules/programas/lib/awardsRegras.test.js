@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { AWARDS_LIMITE_ARQUIVO, AWARDS_PERGUNTAS } from '../../../config/programas.js';
 import {
-  erroDoArquivo, erroDoVoto, faltandoNoProjeto, hojeEmBrasilia, podeInscrever, podeZerarTeste, rankingDaCategoria,
+  erroDoArquivo, erroDoVoto, faltandoNoProjeto, hojeEmBrasilia, podeInscrever, podeZerarPremiacao, rankingDaCategoria,
   situacaoInscricoes, tipoDoArquivo,
 } from './awardsRegras.js';
 
@@ -72,8 +72,8 @@ test('o ranking marca só os empates que mexem no pódio', () => {
   assert.deepEqual(rankingDaCategoria([]), []);
 });
 
-test('o teste só pode ser zerado antes de as inscrições abrirem', () => {
-  assert.equal(podeZerarTeste('2026-11-15'), true);
-  assert.equal(podeZerarTeste('2026-11-16'), false);
-  assert.equal(podeZerarTeste('2026-12-18'), false);
+test('a premiação só pode ser zerada antes de as inscrições abrirem', () => {
+  assert.equal(podeZerarPremiacao('2026-11-15'), true);
+  assert.equal(podeZerarPremiacao('2026-11-16'), false);
+  assert.equal(podeZerarPremiacao('2026-12-18'), false);
 });

@@ -1,8 +1,8 @@
 -- Migration: programas_awards_zerar (projeto bogsuuhrgvopzgcceoqz)
 -- ============================================================================
--- PHD Awards: botão "Zerar teste" para quem avalia, para que eles mesmos possam
--- testar o fluxo inteiro (finalistas, votação, resultado, revelação) e voltar
--- ao começo quantas vezes quiserem, sem depender de alguém rodar SQL.
+-- PHD Awards: botão "Zerar premiação" para quem avalia. Antes de as inscrições
+-- abrirem, eles conhecem o fluxo inteiro (finalistas, votação, resultado,
+-- revelação) e voltam ao começo quantas vezes quiserem, sem depender de SQL.
 --
 -- Apaga pódio, votos e finalistas e volta a fase para 'validacao'. Os projetos
 -- cadastrados ficam: cada um apaga os seus de teste pelo botão Excluir, que
@@ -17,11 +17,11 @@
 -- Idempotente: pode rodar de novo.
 -- ============================================================================
 
-create or replace function public.awards_zerar_teste()
+create or replace function public.awards_zerar_premiacao()
 returns void language plpgsql security definer set search_path = '' as $$
 begin
   if not app_private.awards_avaliador() then
-    raise exception 'Só quem avalia zera o teste.';
+    raise exception 'Só quem avalia zera a premiação.';
   end if;
   if (timezone('America/Sao_Paulo', now()))::date >= date '2026-11-16' then
     raise exception 'As inscrições já abriram: não dá mais para zerar.';
@@ -38,8 +38,8 @@ begin
 end;
 $$;
 
-revoke all on function public.awards_zerar_teste() from public;
-revoke execute on function public.awards_zerar_teste() from anon;
-grant execute on function public.awards_zerar_teste() to authenticated;
+revoke all on function public.awards_zerar_premiacao() from public;
+revoke execute on function public.awards_zerar_premiacao() from anon;
+grant execute on function public.awards_zerar_premiacao() to authenticated;
 
 notify pgrst, 'reload schema';
