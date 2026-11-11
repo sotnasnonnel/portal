@@ -17,10 +17,10 @@ export function situacaoInscricoes(hoje = hojeEmBrasilia()) {
 }
 
 /**
- * Antes das inscrições, quem avalia pode percorrer o fluxo inteiro e zerar depois.
- * A mesma data está em public.awards_zerar_premiacao(): depois dela os votos valem.
+ * Antes das inscrições, quem avalia pode percorrer o fluxo inteiro e reiniciar depois.
+ * A mesma data está em public.awards_reiniciar_premiacao(): depois dela os votos valem.
  */
-export const podeZerarPremiacao = (hoje = hojeEmBrasilia()) => situacaoInscricoes(hoje) === 'antes';
+export const podeReiniciarPremiacao = (hoje = hojeEmBrasilia()) => situacaoInscricoes(hoje) === 'antes';
 
 /** Mesma regra de app_private.awards_pode_inscrever(). */
 export const podeInscrever = (user, modules, hoje = hojeEmBrasilia()) =>

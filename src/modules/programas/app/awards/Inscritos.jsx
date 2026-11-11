@@ -7,9 +7,9 @@ import {
 } from '../../../../config/programas';
 import {
   buscarEstado, buscarResultado, listarFinalistas, listarProjetos, marcarFinalista, mudarFase, revelar,
-  zerarPremiacao,
+  reiniciarPremiacao,
 } from '../../lib/awards';
-import { podeZerarPremiacao, posicoesExigidas, rankingDaCategoria } from '../../lib/awardsRegras';
+import { podeReiniciarPremiacao, posicoesExigidas, rankingDaCategoria } from '../../lib/awardsRegras';
 import DetalheProjeto from './DetalheProjeto';
 
 /**
@@ -102,7 +102,7 @@ export default function ProjetosInscritos() {
             finalistas={AWARDS_CATEGORIAS.map((c) => `${c.label} ${contarFinalistas(c.valor)}/${estado.max_finalistas}`)}
             semVotos={!resultado.some((r) => r.eleitores > 0)}
             onMudar={(nova) => executar(() => mudarFase(nova))}
-            onZerar={() => executar(zerarPremiacao)}
+            onReiniciar={() => executar(reiniciarPremiacao)}
           />
 
           {fase !== 'validacao' && (
@@ -215,9 +215,9 @@ function BotaoConfirmar({ rotulo, pergunta, primario = false, onConfirmar }) {
   );
 }
 
-function PainelFase({ estado, finalistas, semVotos, onMudar, onZerar }) {
+function PainelFase({ estado, finalistas, semVotos, onMudar, onReiniciar }) {
   const { fase, mudou_em: mudouEm } = estado;
-  const podeZerar = podeZerarPremiacao();
+  const podeReiniciar = podeReiniciarPremiacao();
   return (
     <section className="pg-card">
       <div className="pg-roi-cab">
@@ -270,17 +270,17 @@ function PainelFase({ estado, finalistas, semVotos, onMudar, onZerar }) {
             />
           </>
         )}
-        {podeZerar && (
+        {podeReiniciar && (
           <BotaoConfirmar
-            rotulo="Zerar premiação"
-            pergunta="Apaga finalistas, votos e vencedores e volta para as inscrições. Zerar?"
-            onConfirmar={onZerar}
+            rotulo="Reiniciar premiação"
+            pergunta="Apaga finalistas, votos e vencedores e volta para as inscrições. Reiniciar?"
+            onConfirmar={onReiniciar}
           />
         )}
       </div>
-      {podeZerar && (
+      {podeReiniciar && (
         <p className="pg-aw-dica" style={{ marginTop: 10, marginBottom: 0 }}>
-          Até 15/11 dá para percorrer todas as etapas e zerar a premiação quantas vezes quiserem.
+          Até 15/11 dá para percorrer todas as etapas e reiniciar a premiação quantas vezes quiserem.
           Os projetos cadastrados até lá cada um apaga pelo botão Excluir, em Projetos do Ano. A
           partir de 16/11 o botão some e os votos passam a valer.
         </p>

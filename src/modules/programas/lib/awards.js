@@ -140,7 +140,7 @@ export const marcarFinalista = (projetoId, finalista) =>
 export const mudarFase = (fase) => chamar('awards_mudar_fase', { p_fase: fase });
 
 /** Apaga finalistas, votos e pódio e volta às inscrições. O banco só deixa antes de 16/11. */
-export const zerarPremiacao = () => chamar('awards_zerar_premiacao');
+export const reiniciarPremiacao = () => chamar('awards_reiniciar_premiacao');
 
 /** O voto da pessoa, por categoria: { operacao: [id1, id2, id3], backoffice: [...] }. */
 export async function listarMeusVotos(colaboradorId) {

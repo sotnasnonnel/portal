@@ -1,6 +1,6 @@
--- Migration: programas_awards_zerar (projeto bogsuuhrgvopzgcceoqz)
+-- Migration: programas_awards_reiniciar (projeto bogsuuhrgvopzgcceoqz)
 -- ============================================================================
--- PHD Awards: botão "Zerar premiação" para quem avalia. Antes de as inscrições
+-- PHD Awards: botão "Reiniciar premiação" para quem avalia. Antes de as inscrições
 -- abrirem, eles conhecem o fluxo inteiro (finalistas, votação, resultado,
 -- revelação) e voltam ao começo quantas vezes quiserem, sem depender de SQL.
 --
@@ -17,14 +17,14 @@
 -- Idempotente: pode rodar de novo.
 -- ============================================================================
 
-create or replace function public.awards_zerar_premiacao()
+create or replace function public.awards_reiniciar_premiacao()
 returns void language plpgsql security definer set search_path = '' as $$
 begin
   if not app_private.awards_avaliador() then
-    raise exception 'Só quem avalia zera a premiação.';
+    raise exception 'Só quem avalia reinicia a premiação.';
   end if;
   if (timezone('America/Sao_Paulo', now()))::date >= date '2026-11-16' then
-    raise exception 'As inscrições já abriram: não dá mais para zerar.';
+    raise exception 'As inscrições já abriram: não dá mais para reiniciar.';
   end if;
 
   perform 1 from public.programas_awards_estado where id = 1 for update;
@@ -38,8 +38,8 @@ begin
 end;
 $$;
 
-revoke all on function public.awards_zerar_premiacao() from public;
-revoke execute on function public.awards_zerar_premiacao() from anon;
-grant execute on function public.awards_zerar_premiacao() to authenticated;
+revoke all on function public.awards_reiniciar_premiacao() from public;
+revoke execute on function public.awards_reiniciar_premiacao() from anon;
+grant execute on function public.awards_reiniciar_premiacao() to authenticated;
 
 notify pgrst, 'reload schema';
