@@ -1050,8 +1050,6 @@
 
 /* Validação, votação e pódio */
 .pg-aw-dica { margin: 0 0 8px; font-size: var(--font-size-sm); color: var(--p-muted); line-height: 1.5; }
-.pg-aw-marca { width: 16px; height: 16px; accent-color: var(--p-primary); cursor: pointer; }
-.pg-aw-marca:disabled { cursor: default; }
 .pg-aw-confirma { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: var(--font-size-sm); color: var(--p-ink); }
 .pg-aw-finalistas { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 6px; }
 .pg-aw-finalistas li {
@@ -1068,5 +1066,112 @@
 .pg-aw-podio li span:not(.pg-roi-pos) { font-size: var(--font-size-xs); color: var(--p-muted); line-height: 1.5; }
 .pg-aw-podio .pg-roi-pos { background: var(--p-primary-soft); color: var(--p-primary); flex: none; }
 .pg-aw-podio-tit { font-size: var(--font-size-md); font-weight: 700; text-align: left; }
-.pg-aw-resultado { min-width: 640px; }
+.pg-aw-resultado { min-width: 860px; }
 .pg-aw-tit svg { vertical-align: -2px; }
+
+/* ---- Cerimônia de revelação (Projetos do Ano) ----
+   Tela cheia escura para projetar no anúncio. Pódio na ordem clássica: 2º à
+   esquerda, 1º no centro e mais alto, 3º à direita. Os tamanhos de texto
+   grandes saem dos tokens (o maior é múltiplo de --font-size-display). */
+.pg-cer {
+  --cer-ouro: #e9b949; --cer-prata: #c0c7d1; --cer-bronze: #c77d4a;
+  position: fixed; inset: 0; z-index: 300; overflow: hidden;
+  display: flex; flex-direction: column; color: #fff;
+  background: radial-gradient(ellipse at 50% 30%, #4a2416 0%, #1d0f0a 55%, #0d0705 100%);
+}
+.pg-cer-topo { display: flex; align-items: center; justify-content: space-between; padding: 16px 22px; }
+.pg-cer-marca { display: inline-flex; align-items: center; gap: 8px; font-size: var(--font-size-sm); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--cer-ouro); }
+.pg-cer-ferramentas { display: inline-flex; gap: 6px; }
+.pg-cer-ferramentas button {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: var(--ctl-h-icon); height: var(--ctl-h-icon); border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: #fff; cursor: pointer;
+}
+.pg-cer-ferramentas button:hover { background: rgba(255, 255, 255, 0.16); }
+
+.pg-cer-abertura { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; padding: 20px; }
+.pg-cer-abertura h1 { margin: 0; font-size: calc(var(--font-size-display) * 1.6); font-weight: 800; letter-spacing: -0.01em; }
+.pg-cer-abertura p { margin: 0; font-size: var(--font-size-2xl); color: rgba(255, 255, 255, 0.75); }
+.pg-cer-trofeu { color: var(--cer-ouro); filter: drop-shadow(0 0 24px rgba(233, 185, 73, 0.55)); animation: pgCerBrilho 2.4s ease-in-out infinite; }
+
+.pg-cer-palco { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 0 20px; min-height: 0; animation: pgCerEntra 0.6s ease-out; }
+.pg-cer-categoria { margin: 0 0 auto; padding-top: 8px; font-size: var(--font-size-display); font-weight: 800; color: var(--cer-ouro); text-align: center; }
+
+.pg-cer-podio { display: flex; align-items: flex-end; justify-content: center; gap: 18px; width: 100%; max-width: 1100px; }
+.pg-cer-lugar { flex: 1 1 0; min-width: 0; max-width: 340px; display: flex; flex-direction: column; align-items: stretch; gap: 14px; }
+.pg-cer-cartao {
+  min-height: 190px; padding: 18px 16px; border-radius: 16px; text-align: center;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  background: rgba(255, 255, 255, 0.06); border: 1px dashed rgba(255, 255, 255, 0.25);
+}
+.pg-cer-oculto { font-size: var(--font-size-display); font-weight: 800; color: rgba(255, 255, 255, 0.3); }
+.pg-cer-cartao.is-suspense { border-style: solid; border-color: var(--cer-ouro); animation: pgCerTreme 0.25s linear infinite, pgCerAura 1s ease-in-out infinite; }
+.pg-cer-contagem { font-size: calc(var(--font-size-display) * 2); font-weight: 800; color: var(--cer-ouro); line-height: 1; animation: pgCerPulsa 1s ease-out; }
+.pg-cer-cartao.is-revelado { border-style: solid; background: rgba(255, 255, 255, 0.1); animation: pgCerRevela 0.7s cubic-bezier(0.2, 1.4, 0.4, 1); }
+.lugar-1 .pg-cer-cartao.is-revelado { border-color: var(--cer-ouro); box-shadow: 0 0 48px rgba(233, 185, 73, 0.45); }
+.lugar-2 .pg-cer-cartao.is-revelado { border-color: var(--cer-prata); }
+.lugar-3 .pg-cer-cartao.is-revelado { border-color: var(--cer-bronze); }
+.pg-cer-pos { font-size: var(--font-size-xs); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255, 255, 255, 0.7); }
+.pg-cer-nome { font-size: var(--font-size-2xl); font-weight: 800; line-height: 1.2; overflow-wrap: anywhere; }
+.lugar-1 .pg-cer-nome { font-size: var(--font-size-3xl); color: var(--cer-ouro); }
+.pg-cer-meta { font-size: var(--font-size-sm); color: rgba(255, 255, 255, 0.78); line-height: 1.45; }
+.pg-cer-participantes { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+.pg-cer-degrau {
+  display: flex; align-items: flex-start; justify-content: center; padding-top: 14px;
+  border-radius: 12px 12px 0 0; font-size: var(--font-size-4xl); font-weight: 800; color: rgba(0, 0, 0, 0.55);
+}
+.lugar-1 .pg-cer-degrau { height: 190px; background: linear-gradient(180deg, #f3d27a, var(--cer-ouro) 40%, #b8892a); }
+.lugar-2 .pg-cer-degrau { height: 140px; background: linear-gradient(180deg, #e3e8ee, var(--cer-prata) 40%, #8e97a3); }
+.lugar-3 .pg-cer-degrau { height: 100px; background: linear-gradient(180deg, #e2a77d, var(--cer-bronze) 40%, #8f4f27); }
+
+.pg-cer-pe { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 22px 20px 28px; }
+.pg-cer-btn { min-height: var(--ctl-h-lg); padding: 0 28px; font-size: var(--font-size-lg); }
+.pg-cer-erro { margin: 0; font-size: var(--font-size-sm); color: #fecaca; text-align: center; }
+
+.pg-cer-confete { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.pg-cer-confete span {
+  position: absolute; top: -20px; width: 10px; height: 16px; border-radius: 2px; opacity: 0;
+  animation-name: pgCerCai; animation-timing-function: linear; animation-fill-mode: forwards;
+}
+
+@keyframes pgCerEntra { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes pgCerTreme { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-3px) rotate(-0.6deg); } 75% { transform: translateX(3px) rotate(0.6deg); } }
+@keyframes pgCerAura { 0%, 100% { box-shadow: 0 0 0 rgba(233, 185, 73, 0); } 50% { box-shadow: 0 0 36px rgba(233, 185, 73, 0.5); } }
+@keyframes pgCerPulsa { from { transform: scale(1.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes pgCerRevela { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes pgCerBrilho { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+@keyframes pgCerCai {
+  0% { opacity: 1; transform: translateY(0) rotate(var(--giro)); }
+  100% { opacity: 0.9; transform: translateY(110vh) rotate(calc(var(--giro) + 720deg)); }
+}
+
+@media (max-width: 720px) {
+  .pg-cer-podio { gap: 8px; }
+  .pg-cer-cartao { min-height: 150px; padding: 12px 8px; }
+  .pg-cer-nome, .lugar-1 .pg-cer-nome { font-size: var(--font-size-lg); }
+  .pg-cer-meta { font-size: var(--font-size-2xs); }
+  .pg-cer-categoria { font-size: var(--font-size-2xl); }
+  .pg-cer-abertura h1 { font-size: var(--font-size-display); }
+  .lugar-1 .pg-cer-degrau { height: 120px; }
+  .lugar-2 .pg-cer-degrau { height: 90px; }
+  .lugar-3 .pg-cer-degrau { height: 64px; }
+  .pg-cer-degrau { font-size: var(--font-size-2xl); }
+}
+
+/* Sem movimento para quem pediu: a contagem e a ordem continuam, só sem tremer e cair. */
+@media (prefers-reduced-motion: reduce) {
+  .pg-cer *, .pg-cer-trofeu { animation: none !important; }
+  .pg-cer-confete { display: none; }
+}
+
+.pg-aw-revelar { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+
+/* Vídeo obrigatório do cadastro: orientação em destaque e progresso do envio. */
+.pg-aw-orientacao { margin: 0 0 4px; padding: 10px 12px; border-radius: 8px; background: var(--p-primary-soft); color: var(--p-ink); }
+.pg-aw-progresso { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; font-size: var(--font-size-sm); color: var(--p-ink); }
+.pg-aw-progresso-barra { height: 8px; border-radius: 999px; background: var(--p-gray-100); overflow: hidden; }
+.pg-aw-progresso-barra span { display: block; height: 100%; background: var(--p-primary); transition: width 0.2s; }
+.pg-aw-video { width: 100%; max-height: 420px; border-radius: 10px; background: #000; }
+
+.pg-aw-nota { max-width: 140px; }

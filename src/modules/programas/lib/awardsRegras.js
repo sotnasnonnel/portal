@@ -1,5 +1,6 @@
 import {
-  AWARDS_INSCRICOES, AWARDS_LIMITE_ARQUIVO, AWARDS_PERGUNTAS,
+  AWARDS_CRITERIOS, AWARDS_INSCRICOES, AWARDS_LIMITE_ARQUIVO, AWARDS_LIMITE_VIDEO, AWARDS_PERGUNTAS,
+  AWARDS_PESO_COMISSAO, AWARDS_PESO_VOTACAO,
   ehAdminProgramas, ehAvaliadorAwards,
 } from '../../../config/programas.js';
 
@@ -27,11 +28,12 @@ export const podeInscrever = (user, modules, hoje = hojeEmBrasilia()) =>
   situacaoInscricoes(hoje) === 'abertas' || ehAvaliadorAwards(user) || ehAdminProgramas(modules);
 
 /** O que falta preencher, na ordem da tela. */
-export function faltandoNoProjeto(valores) {
+export function faltandoNoProjeto(valores, temVideo = true) {
   const faltando = valores.categoria ? [] : ['a categoria'];
   AWARDS_PERGUNTAS.forEach(({ campo }, i) => {
     if (!String(valores[campo] || '').trim()) faltando.push(`a pergunta ${i + 1}`);
   });
+  if (!temVideo) faltando.push('o vídeo');
   return faltando;
 }
 
@@ -64,6 +66,7 @@ const TIPOS = {
 };
 
 export const ACEITA_ARQUIVO = Object.keys(TIPOS).map((e) => `.${e}`).join(',');
+export const ACEITA_VIDEO = Object.keys(TIPOS).filter((e) => TIPOS[e].startsWith('video/')).map((e) => `.${e}`).join(',');
 
 /**
  * Pela extensão, e não por file.type: o navegador deixa o tipo vazio em vários
@@ -80,6 +83,15 @@ export function erroDoArquivo(arquivo) {
     return `${arquivo.name}: formato não aceito. Envie Word, Excel, PowerPoint, PDF, imagem, vídeo ou áudio.`;
   }
   if (arquivo.size > AWARDS_LIMITE_ARQUIVO) return `${arquivo.name}: acima de 100 MB.`;
+  return null;
+}
+
+/** O mesmo para o vídeo obrigatório: só vídeo, até 300 MB. */
+export function erroDoVideo(arquivo) {
+  if (!tipoDoArquivo(arquivo.name)?.startsWith('video/')) {
+    return `${arquivo.name}: envie um vídeo (MP4, MOV, AVI, WMV, WEBM ou MKV).`;
+  }
+  if (arquivo.size > AWARDS_LIMITE_VIDEO) return `${arquivo.name}: acima de 300 MB. Grave em resolução menor ou comprima o vídeo.`;
   return null;
 }
 
@@ -100,21 +112,83 @@ export function erroDoVoto(escolhas, finalistas) {
   return null;
 }
 
+/** 0 a 100: o mais votado da categoria fica com 100 e os outros proporcionais aos pontos. */
+export const notaDaVotacao = (pontos, maiorPontuacao) => (maiorPontuacao > 0 ? (pontos / maiorPontuacao) * 100 : 0);
+
 /**
- * Ordena os finalistas de uma categoria por pontos e marca os empates que mexem
- * no pódio. Quem tem mais votos em 1º fica na frente só para sugerir a ordem: o
- * empate em pontos continua marcado, porque quem decide é a comissão.
+ * 0 a 100, ou null se falta nota em algum critério. Média das notas de 0 a 10,
+ * ponderada pelo `peso` de cada critério (1 quando não vem), vezes 10.
  */
-export function rankingDaCategoria(linhas) {
-  const ordem = [...linhas].sort((a, b) => b.pontos - a.pontos
+export function notaDaComissao(notas = {}, criterios = AWARDS_CRITERIOS) {
+  if (!criterios.length || criterios.some((c) => notas[c.chave] == null)) return null;
+  const pesoTotal = criterios.reduce((soma, c) => soma + (c.peso ?? 1), 0);
+  const somaPonderada = criterios.reduce((soma, c) => soma + Number(notas[c.chave]) * (c.peso ?? 1), 0);
+  return (somaPonderada / pesoTotal) * 10;
+}
+
+/**
+ * 70% votação + 30% comissão. Sem critérios definidos, vale só a votação; com
+ * critérios e sem a nota da comissão, ainda não há nota final (null).
+ */
+export function notaFinal(votacao, comissao, criterios = AWARDS_CRITERIOS) {
+  if (!criterios.length) return votacao;
+  if (comissao == null) return null;
+  return AWARDS_PESO_VOTACAO * votacao + AWARDS_PESO_COMISSAO * comissao;
+}
+
+/** Duas casas, para o empate não depender de dízima. */
+const arredondada = (n) => (n == null ? null : Math.round(n * 100) / 100);
+
+/**
+ * Classifica os projetos de uma categoria pela nota final e marca os empates
+ * que mexem no pódio. `linhas` vêm de awards_resultado(); `notas` é
+ * { projeto_id: { criterio: nota } }. Quem ainda não tem nota final vai para o
+ * fim. Mais pontos e mais votos em 1º só desempatam a SUGESTÃO de ordem: o
+ * empate na nota final continua marcado, porque quem decide é a comissão.
+ */
+export function rankingDaCategoria(linhas, notas = {}, criterios = AWARDS_CRITERIOS) {
+  const maior = Math.max(0, ...linhas.map((l) => l.pontos));
+  const comNotas = linhas.map((l) => {
+    const votacao = notaDaVotacao(l.pontos, maior);
+    const comissao = notaDaComissao(notas[l.projeto_id], criterios);
+    return { ...l, votacao, comissao, final: notaFinal(votacao, comissao, criterios) };
+  });
+  const valor = (l) => (l.final == null ? -1 : arredondada(l.final));
+  const ordem = comNotas.sort((a, b) => valor(b) - valor(a)
+    || b.pontos - a.pontos
     || b.primeiro - a.primeiro
     || b.segundo - a.segundo);
   const k = posicoesExigidas(ordem.length);
-  const corte = k ? ordem[k - 1].pontos : Infinity;
-  const repetidos = new Set(ordem.map((l) => l.pontos).filter((p, i, todos) => todos.indexOf(p) !== i));
+  const corte = k ? valor(ordem[k - 1]) : Infinity;
+  const finais = ordem.filter((l) => l.final != null).map(valor);
+  const repetidos = new Set(finais.filter((v, i) => finais.indexOf(v) !== i));
   return ordem.map((l, i) => ({
     ...l,
     posicao: i + 1,
-    empate: l.pontos >= corte && repetidos.has(l.pontos),
+    empate: l.final != null && valor(l) >= corte && repetidos.has(valor(l)),
   }));
+}
+
+/**
+ * O pódio confirmado cobre todas as posições de cada categoria? `podio` vem de
+ * listarPodio(); `finalistas` é a contagem por categoria. Mesma regra de
+ * public.awards_publicar_vencedores().
+ */
+export function podioCompleto(podio, finalistas) {
+  const categorias = Object.keys(finalistas);
+  if (!categorias.some((c) => finalistas[c] > 0)) return false;
+  return categorias.every((c) => (podio[c] || []).filter(Boolean).length === posicoesExigidas(finalistas[c]));
+}
+
+/**
+ * A ordem da cerimônia: categoria por categoria, do 3º para o 1º lugar.
+ * `categorias` na ordem de AWARDS_CATEGORIAS; categoria sem pódio fica de fora.
+ */
+export function ordemDaRevelacao(podio, categorias) {
+  return categorias
+    .filter((c) => (podio[c] || []).some(Boolean))
+    .map((c) => ({
+      categoria: c,
+      posicoes: podio[c].map((id, i) => (id ? i + 1 : null)).filter(Boolean).reverse(),
+    }));
 }

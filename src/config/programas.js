@@ -239,7 +239,30 @@ export const AWARDS_PERGUNTAS = [
   { campo: 'participantes', label: 'Quais pessoas participaram do projeto? (Colaboradores PHD)' },
 ];
 
+/** A apresentação é opcional; o vídeo é obrigatório (Lucas, 12/11) e pesa mais. */
 export const AWARDS_LIMITE_ARQUIVO = 100 * 1024 * 1024;
+export const AWARDS_LIMITE_VIDEO = 300 * 1024 * 1024;
+
+/**
+ * Nota final (Lucas, 12/11): 70% votação + 30% comissão. Na votação, o mais votado
+ * da categoria fica com 100 e os outros proporcionais aos pontos. A comissão dá
+ * UMA nota de consenso (não cada um a sua), de 0 a 10 em cada critério; a média
+ * dos critérios, vezes 10, é a nota da comissão.
+ */
+export const AWARDS_PESO_VOTACAO = 0.7;
+export const AWARDS_PESO_COMISSAO = 0.3;
+
+/**
+ * Critérios da comissão: o Lucas ainda vai mandar. Formato de cada um:
+ * { chave: 'inovacao', label: 'Inovação', desc: 'opcional', peso: 1 (opcional) }.
+ * A `chave` é o que fica gravado em programas_awards_notas.criterio: depois que
+ * a comissão começar a dar nota, NÃO renomeie uma chave (a nota dela some da
+ * conta). Enquanto a lista estiver vazia, a nota final é só a da votação.
+ */
+export const AWARDS_CRITERIOS = [];
+
+/** Orientação do vídeo, com o texto do Lucas. */
+export const AWARDS_VIDEO_ORIENTACAO = 'Nos envie um vídeo de 1 minuto mostrando seu projeto/obra e a equipe e explicando de forma resumida o projeto, quais os impactos causados e o legado que será deixado.';
 
 /**
  * Fases do prêmio, em programas_awards_estado.fase. Quem avalia muda a fase por
@@ -248,16 +271,16 @@ export const AWARDS_LIMITE_ARQUIVO = 100 * 1024 * 1024;
  */
 export const AWARDS_FASES = {
   validacao: {
-    label: 'Inscrições e validação',
-    dica: 'Marque os finalistas de cada categoria. Ao abrir a votação, eles ficam visíveis para todos e nenhum projeto pode mais ser cadastrado, editado ou excluído.',
+    label: 'Inscrições',
+    dica: 'Ao abrir a votação, todos os projetos inscritos entram nela e ficam visíveis para todos, e nenhum projeto pode mais ser cadastrado, editado ou excluído.',
   },
   votacao: {
     label: 'Votação aberta',
-    dica: 'Todos votam em 1º, 2º e 3º de cada categoria e podem mudar o voto até o encerramento. Só quem avalia vê o resultado parcial.',
+    dica: 'Todos votam em 1º, 2º e 3º de cada categoria e podem mudar o voto até o encerramento. Só quem avalia vê o resultado parcial. A comissão já pode dar as notas.',
   },
   encerrada: {
     label: 'Votação encerrada',
-    dica: 'Ninguém vota mais. Confira o resultado, resolva os empates e confirme o pódio antes de revelar.',
+    dica: 'Ninguém vota mais. Dê a nota da comissão em cada projeto, confira a nota final (70% votação + 30% comissão), resolva os empates e confirme o pódio. A revelação é feita em Projetos do Ano, no botão "Revelar vencedores!". Reabrir a votação apaga o pódio confirmado.',
   },
   revelada: {
     label: 'Vencedores revelados',

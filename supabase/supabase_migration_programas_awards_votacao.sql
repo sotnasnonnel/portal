@@ -23,6 +23,8 @@
 --
 -- PRÉ-REQUISITO: supabase_migration_programas_awards.sql.
 -- APLICAR ANTES DO FRONT: a tela nova lê programas_awards_estado.
+-- DEPOIS DESTE vem supabase_migration_programas_awards_cerimonia.sql, que tira
+-- awards_revelar e redefine awards_mudar_fase: rodou este de novo, rode aquele.
 -- Idempotente: pode rodar de novo.
 -- ============================================================================
 

@@ -5,8 +5,8 @@ import { votar } from '../../lib/awards';
 import { PONTOS_POR_POSICAO, erroDoVoto, posicoesExigidas } from '../../lib/awardsRegras';
 
 /**
- * Os finalistas de cada categoria e o voto da pessoa (1º, 2º e 3º). Com a
- * votação encerrada, mostra só os finalistas e o voto que ficou.
+ * Os projetos na votação de cada categoria e o voto da pessoa (1º, 2º e 3º). Com a
+ * votação encerrada, mostra só os projetos e o voto que ficou.
  */
 export default function Votacao({ finalistas, meusVotos, aberta, onVotou, onVer }) {
   return AWARDS_CATEGORIAS.map((c) => (
@@ -59,7 +59,7 @@ function VotoCategoria({ categoria, projetos, voto, aberta, onVotou, onVer }) {
       <h2 className="pg-card-tit">{categoria.label}</h2>
 
       {projetos.length === 0 ? (
-        <p className="pg-aw-dica">Nenhum finalista nesta categoria.</p>
+        <p className="pg-aw-dica">Nenhum projeto nesta categoria.</p>
       ) : (
         <ul className="pg-aw-finalistas">
           {projetos.map((p) => (

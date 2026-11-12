@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertCircle, Download, Loader2, Pencil } from 'lucide-react';
+import { AlertCircle, Download, Loader2, Pencil, Play } from 'lucide-react';
 import { AWARDS_CATEGORIA_LABEL, AWARDS_PERGUNTAS } from '../../../../config/programas';
-import { urlDaApresentacao } from '../../lib/awards';
+import { urlDaApresentacao, urlParaAssistir } from '../../lib/awards';
 import { BotaoExcluir, Casca } from '../components/Detalhe';
 
 /** Popup com as respostas do projeto. Quem cadastrou recebe `podeMexer` durante o prazo. */
 export default function DetalheProjeto({ projeto, podeMexer = false, onFechar, onExcluir }) {
   const [baixando, setBaixando] = useState(false);
+  const [carregandoVideo, setCarregandoVideo] = useState(false);
+  const [videoUrl, setVideoUrl] = useState('');
   const [excluindo, setExcluindo] = useState(false);
   const [erro, setErro] = useState('');
 
@@ -17,11 +19,23 @@ export default function DetalheProjeto({ projeto, podeMexer = false, onFechar, o
     return () => window.removeEventListener('keydown', onKey);
   }, [onFechar]);
 
-  const baixar = async () => {
+  const assistir = async () => {
+    setCarregandoVideo(true);
+    setErro('');
+    try {
+      setVideoUrl(await urlParaAssistir(projeto.video));
+    } catch (e) {
+      setErro(e.message);
+    } finally {
+      setCarregandoVideo(false);
+    }
+  };
+
+  const baixar = async (arquivo) => {
     setBaixando(true);
     setErro('');
     try {
-      window.location.href = await urlDaApresentacao(projeto.apresentacao);
+      window.location.href = await urlDaApresentacao(arquivo);
     } catch (e) {
       setErro(e.message);
     } finally {
@@ -78,9 +92,27 @@ export default function DetalheProjeto({ projeto, podeMexer = false, onFechar, o
       ))}
 
       <section className="pg-det-bloco">
-        <h3>9. Apresentação do Projeto</h3>
+        <h3>9. Vídeo do Projeto</h3>
+        {!projeto.video ? (
+          <p className="pg-det-texto">Nenhum vídeo enviado.</p>
+        ) : videoUrl ? (
+          <video className="pg-aw-video" src={videoUrl} controls autoPlay playsInline />
+        ) : (
+          <div className="pg-acoes" style={{ marginTop: 0 }}>
+            <button type="button" className="pg-btn pg-btn-primary pg-btn-sm" onClick={assistir} disabled={carregandoVideo}>
+              {carregandoVideo ? <Loader2 size={15} className="pg-spin" /> : <Play size={15} />} Assistir
+            </button>
+            <button type="button" className="pg-btn pg-btn-ghost pg-btn-sm" onClick={() => baixar(projeto.video)} disabled={baixando}>
+              <Download size={15} /> Baixar
+            </button>
+          </div>
+        )}
+      </section>
+
+      <section className="pg-det-bloco">
+        <h3>10. Apresentação do Projeto</h3>
         {projeto.apresentacao ? (
-          <button type="button" className="pg-btn pg-btn-ghost pg-btn-sm" onClick={baixar} disabled={baixando}>
+          <button type="button" className="pg-btn pg-btn-ghost pg-btn-sm" onClick={() => baixar(projeto.apresentacao)} disabled={baixando}>
             {baixando ? <Loader2 size={15} className="pg-spin" /> : <Download size={15} />}
             {' '}{projeto.apresentacao.nome}
           </button>

@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertCircle, Award, Loader2, Plus } from 'lucide-react';
+import { AlertCircle, Award, Loader2, Plus, Trophy } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { AWARDS_CATEGORIAS, AWARDS_CATEGORIA_LABEL } from '../../../../config/programas';
+import { AWARDS_CATEGORIAS, AWARDS_CATEGORIA_LABEL, ehAvaliadorAwards } from '../../../../config/programas';
 import {
   buscarEstado, excluirProjeto, listarFinalistas, listarMeusVotos, listarPodio, listarProjetos,
 } from '../../lib/awards';
-import { podeInscrever, situacaoInscricoes } from '../../lib/awardsRegras';
+import { podeInscrever, podioCompleto, situacaoInscricoes } from '../../lib/awardsRegras';
+import Cerimonia from './Cerimonia';
 import DetalheProjeto from './DetalheProjeto';
 import Vencedores from './Vencedores';
 import Votacao from './Votacao';
@@ -18,7 +19,7 @@ const AVISO_PRAZO = {
 };
 
 /**
- * Projetos do Ano: o cadastro, os finalistas com o voto e, no fim, os
+ * Projetos do Ano: o cadastro, os projetos na votação com o voto e, no fim, os
  * vencedores. O que aparece depende da fase que quem avalia definiu.
  */
 export default function ProjetosDoAno() {
@@ -31,6 +32,8 @@ export default function ProjetosDoAno() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
   const [detalhe, setDetalhe] = useState(null);
+  const [cerimonia, setCerimonia] = useState(null);
+  const avaliador = ehAvaliadorAwards(user);
 
   const fase = estado?.fase || 'validacao';
   const liberado = fase === 'validacao' && podeInscrever(user, modules);
@@ -46,7 +49,8 @@ export default function ProjetosDoAno() {
         const [fin, votos, pod] = await Promise.all([
           listarFinalistas(),
           listarMeusVotos(user?.id),
-          est.fase === 'revelada' ? listarPodio() : {},
+          // Quem avalia lê o pódio confirmado antes da revelação: é o que a cerimônia mostra.
+          est.fase === 'revelada' || (avaliador && est.fase === 'encerrada') ? listarPodio() : {},
         ]);
         setFinalistas(fin);
         setMeusVotos(votos);
@@ -57,18 +61,25 @@ export default function ProjetosDoAno() {
     } finally {
       setCarregando(false);
     }
-  }, [user?.id]);
+  }, [user?.id, avaliador]);
 
   useEffect(() => { carregar(); }, [carregar]);
+
+  // Estável: a cerimônia usa no efeito da contagem, e uma função nova a cada render reiniciaria o relógio.
+  const aoPublicar = useCallback(() => setEstado((atual) => ({ ...atual, fase: 'revelada' })), []);
 
   const excluir = async (projeto) => {
     await excluirProjeto(projeto);
     setProjetos((atual) => atual.filter((p) => p.id !== projeto.id));
   };
 
-  // Quem avalia recebe todos da RLS; aqui a pessoa vê os dela e os finalistas.
+  // Quem avalia recebe todos da RLS; aqui a pessoa vê os dela e os da votação
+  // ("finalistas" no banco: desde 12/11 são todos os inscritos).
   const meus = projetos.filter((p) => p.autor_id === user?.id);
   const listaFinal = projetos.filter((p) => finalistas.has(p.id));
+  const podioPronto = podioCompleto(podio, Object.fromEntries(AWARDS_CATEGORIAS.map((c) => [
+    c.valor, listaFinal.filter((p) => p.categoria === c.valor).length,
+  ])));
 
   return (
     <div className="pg-page pg-page-wide">
@@ -117,6 +128,33 @@ export default function ProjetosDoAno() {
               A votação foi encerrada. Os vencedores serão revelados na premiação.
             </div>
           )}
+          {avaliador && fase === 'encerrada' && (
+            <div className="pg-card pg-aw-revelar">
+              {podioPronto ? (
+                <>
+                  <span className="pg-aw-dica" style={{ margin: 0 }}>
+                    Só quem avalia vê este botão. O resultado fica público quando o 1º lugar da última
+                    categoria aparecer.
+                  </span>
+                  <button type="button" className="pg-btn pg-btn-primary" onClick={() => setCerimonia({ publicar: true })}>
+                    <Trophy size={16} /> Revelar vencedores!
+                  </button>
+                </>
+              ) : (
+                <span className="pg-aw-dica" style={{ margin: 0 }}>
+                  Para revelar os vencedores, confirme antes o pódio em{' '}
+                  <Link className="pg-link" to="/programas/inscritos-awards">Projetos inscritos</Link>.
+                </span>
+              )}
+            </div>
+          )}
+          {avaliador && fase === 'revelada' && (
+            <div className="pg-acoes" style={{ marginTop: 0, marginBottom: 14 }}>
+              <button type="button" className="pg-btn pg-btn-ghost" onClick={() => setCerimonia({ publicar: false })}>
+                <Trophy size={16} /> Rever a revelação
+              </button>
+            </div>
+          )}
 
           {fase === 'revelada' && (
             <>
@@ -127,7 +165,7 @@ export default function ProjetosDoAno() {
 
           {(fase === 'votacao' || fase === 'encerrada') && (
             <>
-              <h2 className="pg-secao">Finalistas</h2>
+              <h2 className="pg-secao">Projetos na votação</h2>
               <Votacao
                 finalistas={listaFinal}
                 meusVotos={meusVotos}
@@ -168,6 +206,16 @@ export default function ProjetosDoAno() {
             </div>
           )}
         </>
+      )}
+
+      {cerimonia && (
+        <Cerimonia
+          podio={podio}
+          projetos={projetos}
+          publicar={cerimonia.publicar}
+          onPublicado={aoPublicar}
+          onFechar={() => setCerimonia(null)}
+        />
       )}
 
       {detalhe && (

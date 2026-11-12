@@ -4,10 +4,10 @@ import {
   AlertCircle, ArrowLeft, Award, CheckCircle2, Loader2, Send,
 } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { AWARDS_CATEGORIAS, AWARDS_PERGUNTAS } from '../../../../config/programas';
+import { AWARDS_CATEGORIAS, AWARDS_PERGUNTAS, AWARDS_VIDEO_ORIENTACAO } from '../../../../config/programas';
 import { buscarEstado, buscarProjeto, criarProjeto, editarProjeto } from '../../lib/awards';
 import {
-  ACEITA_ARQUIVO, erroDoArquivo, faltandoNoProjeto, podeInscrever,
+  ACEITA_ARQUIVO, ACEITA_VIDEO, erroDoArquivo, erroDoVideo, faltandoNoProjeto, podeInscrever,
 } from '../../lib/awardsRegras';
 
 const VAZIO = {
@@ -23,6 +23,10 @@ export default function FormProjeto() {
   const [v, setV] = useState(VAZIO);
   const [projeto, setProjeto] = useState(null);
   const [arquivo, setArquivo] = useState(null);
+  const [video, setVideo] = useState(null);
+  const [progresso, setProgresso] = useState(null);
+  // Trocar a chave limpa os campos de arquivo depois de "Cadastrar outro".
+  const [rodada, setRodada] = useState(0);
   const [carregando, setCarregando] = useState(!!id);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState('');
@@ -61,39 +65,42 @@ export default function FormProjeto() {
     avisoRef.current?.focus();
   };
 
-  const escolherArquivo = (e) => {
+  const escolher = (validar, guardar) => (e) => {
     const escolhido = e.target.files?.[0] || null;
-    const problema = escolhido && erroDoArquivo(escolhido);
+    const problema = escolhido && validar(escolhido);
     if (problema) {
       e.target.value = '';
-      setArquivo(null);
+      guardar(null);
       falhar(problema);
       return;
     }
     setErro('');
-    setArquivo(escolhido);
+    guardar(escolhido);
   };
 
   const enviar = async (e) => {
     e.preventDefault();
-    const faltando = faltandoNoProjeto(v);
+    const faltando = faltandoNoProjeto(v, Boolean(video || projeto?.video));
     if (faltando.length) {
       falhar(`Ainda falta preencher: ${faltando.join(', ')}.`);
       return;
     }
     setEnviando(true);
     setErro('');
+    const arquivos = { video, apresentacao: arquivo };
+    const aoProgredir = (etapa, fracao) => setProgresso({ etapa, fracao });
     try {
       if (projeto) {
-        await editarProjeto(projeto, v, arquivo, user.id);
+        await editarProjeto(projeto, v, arquivos, user.id, aoProgredir);
         navigate('/programas/awards');
       } else {
-        setPronto(await criarProjeto(v, arquivo, user.id));
+        setPronto(await criarProjeto(v, arquivos, user.id, aoProgredir));
       }
     } catch (err) {
       falhar(err.message);
     } finally {
       setEnviando(false);
+      setProgresso(null);
     }
   };
 
@@ -126,7 +133,7 @@ export default function FormProjeto() {
             <button
               type="button"
               className="pg-btn pg-btn-primary"
-              onClick={() => { setPronto(null); setV(VAZIO); setArquivo(null); }}
+              onClick={() => { setPronto(null); setV(VAZIO); setArquivo(null); setVideo(null); setRodada((r) => r + 1); }}
             >
               Cadastrar outro
             </button>
@@ -194,8 +201,26 @@ export default function FormProjeto() {
           ))}
 
           <div className="pg-campo">
-            <label htmlFor="apresentacao">9. Apresentação do Projeto<span className="opc">(opcional)</span></label>
-            <input id="apresentacao" type="file" className="pg-aw-arquivo" accept={ACEITA_ARQUIVO} onChange={escolherArquivo} />
+            <label htmlFor="video">9. Vídeo do Projeto<span className="req">*</span></label>
+            <p className="pg-campo-dica pg-aw-orientacao">{AWARDS_VIDEO_ORIENTACAO}</p>
+            <input
+              key={`video-${rodada}`} id="video" type="file" className="pg-aw-arquivo"
+              accept={ACEITA_VIDEO} onChange={escolher(erroDoVideo, setVideo)}
+            />
+            <p className="pg-campo-dica">
+              {projeto?.video && !video
+                ? `Vídeo atual: ${projeto.video.nome}. Escolher outro substitui este. `
+                : ''}
+              1 vídeo de até 300 MB: MP4, MOV, AVI, WMV, WEBM ou MKV. O do celular serve.
+            </p>
+          </div>
+
+          <div className="pg-campo">
+            <label htmlFor="apresentacao">10. Apresentação do Projeto<span className="opc">(opcional)</span></label>
+            <input
+              key={`apresentacao-${rodada}`} id="apresentacao" type="file" className="pg-aw-arquivo"
+              accept={ACEITA_ARQUIVO} onChange={escolher(erroDoArquivo, setArquivo)}
+            />
             <p className="pg-campo-dica">
               {projeto?.apresentacao && !arquivo
                 ? `Arquivo atual: ${projeto.apresentacao.nome}. Escolher outro substitui este. `
@@ -204,6 +229,16 @@ export default function FormProjeto() {
             </p>
           </div>
         </div>
+
+        {progresso && (
+          <div className="pg-aw-progresso" role="status">
+            <span>
+              Enviando {progresso.etapa === 'video' ? 'o vídeo' : 'a apresentação'}… {Math.round(progresso.fracao * 100)}%.
+              {' '}Não feche esta página.
+            </span>
+            <div className="pg-aw-progresso-barra"><span style={{ width: `${progresso.fracao * 100}%` }} /></div>
+          </div>
+        )}
 
         <div className="pg-acoes">
           <button type="button" className="pg-btn pg-btn-ghost" onClick={() => navigate('/programas/awards')} disabled={enviando}>

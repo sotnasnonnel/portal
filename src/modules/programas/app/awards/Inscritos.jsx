@@ -1,43 +1,52 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { AlertCircle, AlertTriangle, ListChecks, Loader2 } from 'lucide-react';
+import { AlertCircle, AlertTriangle, CheckCircle2, ListChecks, Loader2 } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import {
-  AWARDS_CATEGORIAS, AWARDS_CATEGORIA_LABEL, AWARDS_FASES, ehAvaliadorAwards,
+  AWARDS_CATEGORIAS, AWARDS_CATEGORIA_LABEL, AWARDS_CRITERIOS, AWARDS_FASES, ehAvaliadorAwards,
 } from '../../../../config/programas';
 import {
-  buscarEstado, buscarResultado, listarFinalistas, listarProjetos, marcarFinalista, mudarFase, revelar,
+  buscarEstado, buscarResultado, confirmarPodio, listarNotas, listarPodio, listarProjetos, mudarFase,
   reiniciarPremiacao,
 } from '../../lib/awards';
 import { podeReiniciarPremiacao, posicoesExigidas, rankingDaCategoria } from '../../lib/awardsRegras';
+import AvaliarProjeto from './AvaliarProjeto';
 import DetalheProjeto from './DetalheProjeto';
+
+const formatar = (n) => (n == null ? '—' : n.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }));
 
 /**
  * Todos os projetos cadastrados, só para quem avalia (quem protege o dado é a
- * RLS). Aqui também se escolhem os finalistas, se abre e encerra a votação, se
- * acompanha o resultado parcial e se confirma o pódio antes de revelar.
+ * RLS). Aqui também se abre e encerra a votação (todos os inscritos entram), se
+ * acompanha o resultado parcial e se confirma o pódio. A revelação é a cerimônia
+ * de Projetos do Ano (Cerimonia.jsx), no botão "Revelar vencedores!".
  */
 export default function ProjetosInscritos() {
   const { user } = useAuth();
   const avaliador = ehAvaliadorAwards(user);
   const [linhas, setLinhas] = useState([]);
   const [estado, setEstado] = useState(null);
-  const [finalistas, setFinalistas] = useState(new Set());
   const [resultado, setResultado] = useState([]);
+  const [podioSalvo, setPodioSalvo] = useState({});
+  const [notas, setNotas] = useState({});
+  const [avaliando, setAvaliando] = useState(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
   const [categoria, setCategoria] = useState('');
   const [detalhe, setDetalhe] = useState(null);
-  const [marcando, setMarcando] = useState(null);
 
   const carregar = useCallback(async () => {
     setErro('');
     try {
-      const [todos, est, fin] = await Promise.all([listarProjetos(), buscarEstado(), listarFinalistas()]);
+      const [todos, est] = await Promise.all([listarProjetos(), buscarEstado()]);
       setLinhas(todos);
       setEstado(est);
-      setFinalistas(fin);
-      setResultado(est.fase === 'validacao' ? [] : await buscarResultado());
+      const [res, pod, nts] = est.fase === 'validacao'
+        ? [[], {}, {}]
+        : await Promise.all([buscarResultado(), listarPodio(), listarNotas()]);
+      setResultado(res);
+      setPodioSalvo(pod);
+      setNotas(nts);
     } catch (e) {
       setErro(e.message);
     } finally {
@@ -56,25 +65,6 @@ export default function ProjetosInscritos() {
 
   const fase = estado?.fase || 'validacao';
   const contar = (valor) => linhas.filter((p) => p.categoria === valor).length;
-  const contarFinalistas = (valor) => linhas.filter((p) => p.categoria === valor && finalistas.has(p.id)).length;
-
-  const alternarFinalista = async (projeto) => {
-    const marcar = !finalistas.has(projeto.id);
-    setMarcando(projeto.id);
-    setErro('');
-    try {
-      await marcarFinalista(projeto.id, marcar);
-      setFinalistas((atual) => {
-        const novo = new Set(atual);
-        if (marcar) novo.add(projeto.id); else novo.delete(projeto.id);
-        return novo;
-      });
-    } catch (e) {
-      setErro(e.message);
-    } finally {
-      setMarcando(null);
-    }
-  };
 
   const executar = async (acao) => {
     setErro('');
@@ -99,7 +89,7 @@ export default function ProjetosInscritos() {
         <>
           <PainelFase
             estado={estado}
-            finalistas={AWARDS_CATEGORIAS.map((c) => `${c.label} ${contarFinalistas(c.valor)}/${estado.max_finalistas}`)}
+            inscritos={AWARDS_CATEGORIAS.map((c) => `${c.label} ${contar(c.valor)}`)}
             semVotos={!resultado.some((r) => r.eleitores > 0)}
             onMudar={(nova) => executar(() => mudarFase(nova))}
             onReiniciar={() => executar(reiniciarPremiacao)}
@@ -111,7 +101,10 @@ export default function ProjetosInscritos() {
               resultado={resultado}
               projetos={linhas}
               onVer={setDetalhe}
-              onRevelar={(podio) => executar(() => revelar(podio))}
+              podioSalvo={podioSalvo}
+              notas={notas}
+              onAvaliar={setAvaliando}
+              onConfirmar={(podio) => executar(() => confirmarPodio(podio))}
             />
           )}
 
@@ -140,28 +133,18 @@ export default function ProjetosInscritos() {
               <table className="pg-tabela">
                 <thead>
                   <tr>
-                    <th>Finalista</th>
                     <th>ID</th>
                     <th className="col-titulo">Código ou setor</th>
                     <th>Categoria</th>
                     <th>Cadastrado por</th>
                     <th className="col-curta">Enviado</th>
-                    <th>Arquivo</th>
+                    <th>Vídeo</th>
+                    <th>Apresentação</th>
                   </tr>
                 </thead>
                 <tbody>
                   {visiveis.map((p) => (
                     <tr key={p.id}>
-                      <td>
-                        <input
-                          type="checkbox"
-                          className="pg-aw-marca"
-                          aria-label={`Finalista: ${p.codigo_setor}`}
-                          checked={finalistas.has(p.id)}
-                          disabled={fase !== 'validacao' || marcando === p.id}
-                          onChange={() => alternarFinalista(p)}
-                        />
-                      </td>
                       <td className="num">#{p.numero}</td>
                       <td className="col-titulo">
                         <button type="button" className="pg-link" onClick={() => setDetalhe(p)}>{p.codigo_setor}</button>
@@ -169,6 +152,7 @@ export default function ProjetosInscritos() {
                       <td>{AWARDS_CATEGORIA_LABEL[p.categoria]}</td>
                       <td>{p.autorNome || '—'}</td>
                       <td className="num">{new Date(p.criado_em).toLocaleDateString('pt-BR')}</td>
+                      <td>{p.video ? 'Sim' : 'Não'}</td>
                       <td>{p.apresentacao ? 'Sim' : 'Não'}</td>
                     </tr>
                   ))}
@@ -180,6 +164,15 @@ export default function ProjetosInscritos() {
       )}
 
       {detalhe && <DetalheProjeto projeto={detalhe} onFechar={() => setDetalhe(null)} />}
+      {avaliando && (
+        <AvaliarProjeto
+          projeto={avaliando}
+          notas={notas[avaliando.id]}
+          colaboradorId={user?.id}
+          onSalvo={(id, valores) => setNotas((atual) => ({ ...atual, [id]: valores }))}
+          onFechar={() => setAvaliando(null)}
+        />
+      )}
     </div>
   );
 }
@@ -215,7 +208,7 @@ function BotaoConfirmar({ rotulo, pergunta, primario = false, onConfirmar }) {
   );
 }
 
-function PainelFase({ estado, finalistas, semVotos, onMudar, onReiniciar }) {
+function PainelFase({ estado, inscritos, semVotos, onMudar, onReiniciar }) {
   const { fase, mudou_em: mudouEm } = estado;
   const podeReiniciar = podeReiniciarPremiacao();
   return (
@@ -226,14 +219,14 @@ function PainelFase({ estado, finalistas, semVotos, onMudar, onReiniciar }) {
       </div>
       <p className="pg-aw-dica">{AWARDS_FASES[fase].dica}</p>
       <p className="pg-aw-dica">
-        Finalistas: {finalistas.join(' · ')}
+        Inscritos: {inscritos.join(' · ')}
         {mudouEm && fase !== 'validacao' && ` · desde ${new Date(mudouEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}`}
       </p>
       <div className="pg-acoes" style={{ marginTop: 12 }}>
         {fase === 'validacao' && (
           <BotaoConfirmar
             primario rotulo="Abrir votação"
-            pergunta="Os finalistas ficam visíveis para todos e os projetos não mudam mais. Abrir?"
+            pergunta="Todos os inscritos entram na votação e ficam visíveis para todos, e os projetos não mudam mais. Abrir?"
             onConfirmar={() => onMudar('votacao')}
           />
         )}
@@ -246,8 +239,8 @@ function PainelFase({ estado, finalistas, semVotos, onMudar, onReiniciar }) {
             />
             {semVotos && (
               <BotaoConfirmar
-                rotulo="Voltar para validação"
-                pergunta="Os finalistas deixam de aparecer para todos. Voltar?"
+                rotulo="Voltar para as inscrições"
+                pergunta="Os projetos deixam de aparecer para todos e voltam a poder ser editados. Voltar?"
                 onConfirmar={() => onMudar('validacao')}
               />
             )}
@@ -273,7 +266,7 @@ function PainelFase({ estado, finalistas, semVotos, onMudar, onReiniciar }) {
         {podeReiniciar && (
           <BotaoConfirmar
             rotulo="Reiniciar premiação"
-            pergunta="Apaga finalistas, votos e vencedores e volta para as inscrições. Reiniciar?"
+            pergunta="Apaga votos e vencedores e volta para as inscrições. Reiniciar?"
             onConfirmar={onReiniciar}
           />
         )}
@@ -289,19 +282,41 @@ function PainelFase({ estado, finalistas, semVotos, onMudar, onReiniciar }) {
   );
 }
 
-/** Resultado parcial por categoria e, com a votação encerrada, o pódio a confirmar. */
-function Resultado({ fase, resultado, projetos, onVer, onRevelar }) {
+/**
+ * Resultado por categoria: votos, nota da votação, nota da comissão e nota final
+ * (70/30). Com a votação encerrada, o pódio a confirmar.
+ */
+function Resultado({
+  fase, resultado, projetos, podioSalvo, notas, onVer, onAvaliar, onConfirmar,
+}) {
   const porId = useMemo(() => new Map(projetos.map((p) => [p.id, p])), [projetos]);
   const rankings = useMemo(() => Object.fromEntries(AWARDS_CATEGORIAS.map((c) => [
-    c.valor, rankingDaCategoria(resultado.filter((r) => r.categoria === c.valor)),
-  ])), [resultado]);
+    c.valor, rankingDaCategoria(resultado.filter((r) => r.categoria === c.valor), notas),
+  ])), [resultado, notas]);
+  const temCriterios = AWARDS_CRITERIOS.length > 0;
+  const podeAvaliar = temCriterios && (fase === 'votacao' || fase === 'encerrada');
 
   const sugerido = useMemo(() => Object.fromEntries(AWARDS_CATEGORIAS.map((c) => {
     const r = rankings[c.valor];
     return [c.valor, r.slice(0, posicoesExigidas(r.length)).map((l) => l.projeto_id)];
   })), [rankings]);
-  const [podio, setPodio] = useState(sugerido);
-  useEffect(() => { setPodio(sugerido); }, [sugerido]);
+  // Com pódio já confirmado, a tela abre nele, não no cálculo: o empate resolvido fica.
+  const temSalvo = AWARDS_CATEGORIAS.some((c) => podioSalvo[c.valor]?.length);
+  const inicial = useMemo(
+    () => (temSalvo ? { ...sugerido, ...podioSalvo } : sugerido),
+    [temSalvo, sugerido, podioSalvo],
+  );
+  const [podio, setPodio] = useState(inicial);
+  useEffect(() => { setPodio(inicial); }, [inicial]);
+  const confirmado = temSalvo && AWARDS_CATEGORIAS.every(
+    (c) => (podioSalvo[c.valor] || []).join() === (podio[c.valor] || []).join(),
+  );
+  const [confirmando, setConfirmando] = useState(false);
+  const confirmar = async () => {
+    setConfirmando(true);
+    await onConfirmar(podio);
+    setConfirmando(false);
+  };
 
   const escolher = (cat, i, id) => setPodio((atual) => ({
     ...atual, [cat]: atual[cat].map((v, j) => (j === i ? id : v)),
@@ -311,6 +326,7 @@ function Resultado({ fase, resultado, projetos, onVer, onRevelar }) {
     const ranking = rankings[c.valor];
     const eleitores = ranking[0]?.eleitores || 0;
     const temEmpate = ranking.some((l) => l.empate);
+    const semNota = temCriterios ? ranking.filter((l) => l.comissao == null).length : 0;
     return (
       <section className="pg-card" key={c.valor}>
         <div className="pg-roi-cab">
@@ -318,8 +334,19 @@ function Resultado({ fase, resultado, projetos, onVer, onRevelar }) {
           <span className="pg-badge tom-neutro">{eleitores} {eleitores === 1 ? 'pessoa votou' : 'pessoas votaram'}</span>
         </div>
 
+        {ranking.length > 0 && !temCriterios && (
+          <p className="pg-aw-dica">
+            Os critérios da comissão ainda não foram definidos: por enquanto a nota final é só a da votação.
+          </p>
+        )}
+        {semNota > 0 && (
+          <p className="pg-aw-dica">
+            Falta a nota da comissão em {semNota} {semNota === 1 ? 'projeto' : 'projetos'}: sem ela, o projeto fica sem nota final e vai para o fim da lista.
+          </p>
+        )}
+
         {ranking.length === 0 ? (
-          <p className="pg-aw-dica">Nenhum finalista nesta categoria.</p>
+          <p className="pg-aw-dica">Nenhum projeto nesta categoria.</p>
         ) : (
           <div className="pg-tabela-scroll">
             <table className="pg-tabela pg-aw-resultado">
@@ -332,6 +359,9 @@ function Resultado({ fase, resultado, projetos, onVer, onRevelar }) {
                   <th className="num">Em 2º</th>
                   <th className="num">Em 3º</th>
                   <th className="num">Pontos</th>
+                  <th className="num">Votação (70%)</th>
+                  {temCriterios && <th className="num">Comissão (30%)</th>}
+                  <th className="num">Nota final</th>
                 </tr>
               </thead>
               <tbody>
@@ -350,7 +380,19 @@ function Resultado({ fase, resultado, projetos, onVer, onRevelar }) {
                       <td className="num">{l.primeiro}</td>
                       <td className="num">{l.segundo}</td>
                       <td className="num">{l.terceiro}</td>
-                      <td className="num"><strong>{l.pontos}</strong></td>
+                      <td className="num">{l.pontos}</td>
+                      <td className="num">{formatar(l.votacao)}</td>
+                      {temCriterios && (
+                        <td className="num">
+                          {formatar(l.comissao)}
+                          {podeAvaliar && p && (
+                            <button type="button" className="pg-link" style={{ marginLeft: 8 }} onClick={() => onAvaliar(p)}>
+                              {l.comissao == null ? 'Avaliar' : 'Editar'}
+                            </button>
+                          )}
+                        </td>
+                      )}
+                      <td className="num"><strong>{formatar(l.final)}</strong></td>
                     </tr>
                   );
                 })}
@@ -361,10 +403,10 @@ function Resultado({ fase, resultado, projetos, onVer, onRevelar }) {
 
         {fase === 'encerrada' && ranking.length > 0 && (
           <>
-            <h3 className="pg-secao" style={{ marginTop: 16 }}>Pódio a revelar</h3>
+            <h3 className="pg-secao" style={{ marginTop: 16 }}>Pódio a confirmar</h3>
             {temEmpate && (
               <div className="pg-aviso tom-atencao">
-                <AlertTriangle size={16} /> Há empate em pontos no pódio. A comissão decide a ordem: ajuste abaixo antes de revelar.
+                <AlertTriangle size={16} /> Há empate na nota final do pódio. A comissão decide a ordem: ajuste abaixo antes de confirmar.
               </div>
             )}
             <div className="pg-aw-voto">
@@ -379,7 +421,7 @@ function Resultado({ fase, resultado, projetos, onVer, onRevelar }) {
                   >
                     {ranking.map((l) => (
                       <option key={l.projeto_id} value={l.projeto_id}>
-                        {porId.get(l.projeto_id)?.codigo_setor || '—'} ({l.pontos} pts)
+                        {porId.get(l.projeto_id)?.codigo_setor || '—'} (nota {formatar(l.final)})
                       </option>
                     ))}
                   </select>
@@ -396,13 +438,22 @@ function Resultado({ fase, resultado, projetos, onVer, onRevelar }) {
   return (
     <>
       {cartoes}
+      {fase === 'encerrada' && confirmado && (
+        <div className="pg-aviso tom-ok">
+          <CheckCircle2 size={16} />
+          <span>
+            Pódio confirmado. Ninguém vê ainda. Na hora do anúncio, abra{' '}
+            <Link className="pg-link" to="/programas/awards">Projetos do Ano</Link> e clique em
+            {' '}<strong>Revelar vencedores!</strong>: o 3º, o 2º e o 1º de cada categoria aparecem um por vez.
+          </span>
+        </div>
+      )}
       {fase === 'encerrada' && (
         <div className="pg-acoes" style={{ marginTop: 0 }}>
-          <BotaoConfirmar
-            primario rotulo="Revelar vencedores"
-            pergunta="O pódio das duas categorias aparece para todos. Revelar?"
-            onConfirmar={() => onRevelar(podio)}
-          />
+          <button type="button" className="pg-btn pg-btn-primary" onClick={confirmar} disabled={confirmando || confirmado}>
+            {confirmando && <Loader2 size={15} className="pg-spin" />}
+            {confirmado ? 'Pódio confirmado' : temSalvo ? 'Confirmar o pódio alterado' : 'Confirmar pódio'}
+          </button>
         </div>
       )}
     </>

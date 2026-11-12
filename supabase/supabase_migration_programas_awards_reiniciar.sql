@@ -14,6 +14,8 @@
 --
 -- PRÉ-REQUISITO: supabase_migration_programas_awards_votacao.sql, na versão
 -- de 11/11 (com o Pedro em awards_avaliador e o "where true" do awards_revelar).
+-- DEPOIS DESTE: supabase_migration_programas_awards_comissao.sql redefine a
+-- função para apagar também as notas da comissão. Rodou este de novo, rode aquele.
 -- Idempotente: pode rodar de novo.
 -- ============================================================================
 
