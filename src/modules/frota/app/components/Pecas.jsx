@@ -30,7 +30,7 @@ export function Estado() {
   if (!podeEscrever) {
     return (
       <div className="frota-note warn">
-        <span>Seu usuário não faz parte do time do Atendimento, então a base aparece vazia e nada pode ser alterado. Peça o acesso em Gerenciar acessos.</span>
+        <span>Seu usuário não está liberado para Frota e Alojamentos, então a base aparece vazia e nada pode ser alterado. Peça o acesso em Gerenciar acessos.</span>
       </div>
     );
   }

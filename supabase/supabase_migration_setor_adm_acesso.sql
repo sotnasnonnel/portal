@@ -21,6 +21,10 @@
 --
 -- PRÉ-REQUISITO: supabase_migration_administrativo.sql (cria is_adm_time e
 -- is_adm_admin).
+-- DEPOIS DESTE vem supabase_migration_setor_adm_acesso_por_pessoa.sql, que
+-- aposenta a lista de e-mails: as três funções passam a ler a coluna
+-- colaboradores.setor_adm_acesso, ligada no Gerenciamento de acessos. Rodou
+-- este de novo, rode aquele depois — senão a lista volta a valer.
 -- ============================================================================
 
 create or replace function app_private.setor_adm_liberado()

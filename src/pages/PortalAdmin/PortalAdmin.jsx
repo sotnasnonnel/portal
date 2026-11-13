@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { ArrowLeft, Search, Loader2, RefreshCw, CheckCircle2, MinusCircle } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
@@ -86,7 +86,7 @@ export default function PortalAdmin() {
     setLoading(true);
     setErr("");
     const [colab, reemb, solic] = await Promise.all([
-      supabase.from("colaboradores").select("id, nome, email, perfil, rh_dp, organograma_consulta, valores_ajuste, horas_role, financeiro_role, administrativo_role, programas_role, plr_role, auth_id, ativo").order("nome"),
+      supabase.from("colaboradores").select("id, nome, email, perfil, rh_dp, organograma_consulta, valores_ajuste, setor_adm_acesso, horas_role, financeiro_role, administrativo_role, programas_role, plr_role, auth_id, ativo").order("nome"),
       supabase.from("reembolso_profiles").select("id, email, role"),
       supabase.from("solic_profiles").select("id, email, role"),
     ]);
@@ -114,6 +114,9 @@ export default function PortalAdmin() {
         orgConsulta: c.organograma_consulta === true,
         // Idem, para a tela de Ajustes de Valores.
         valoresAjuste: c.valores_ajuste === true,
+        // Idem, para Frota e Alojamentos (card "Administrativo" da Home). NÃO é
+        // o mesmo que admRole, que é o Atendimento. Ver config/setorAdm.js.
+        setorAdmAcesso: c.setor_adm_acesso === true,
         // 'usuario' e NULL são a mesma coisa (sem elevação) — o select mostra
         // ambos como "Pela hierarquia".
         horasRole: c.horas_role && c.horas_role !== "usuario" ? c.horas_role : "",
@@ -159,6 +162,12 @@ export default function PortalAdmin() {
     } else if (app === "valores") {
       res = await supabase.from("colaboradores").update({ valores_ajuste: value }).eq("id", row.colabId);
       patch = { valoresAjuste: value };
+    } else if (app === "setorAdm") {
+      // Booleana: libera entrar E escrever em Frota/Alojamentos. Administrar
+      // (configurações, excluir cadastro-mestre) pede, além disto, Admin no
+      // Atendimento — a coluna ao lado.
+      res = await supabase.from("colaboradores").update({ setor_adm_acesso: value }).eq("id", row.colabId);
+      patch = { setorAdmAcesso: value };
     } else if (app === "reembolso") {
       res = await supabase.from("reembolso_profiles").update({ role: value }).eq("id", row.reembId);
       patch = { reembRole: value };
@@ -215,6 +224,40 @@ export default function PortalAdmin() {
     return { total, logados };
   }, [rows]);
 
+  // --- Barra de rolagem horizontal acima da tabela ---------------------------
+  // O scroll (horizontal e vertical) vive no .pa-table-wrap, não na página. A
+  // barra de cima é um espelho: um div vazio com a mesma largura da tabela.
+  const topScrollRef = useRef(null);
+  const wrapRef = useRef(null);
+  const [larguraTabela, setLarguraTabela] = useState(0);
+
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return undefined;
+    const medir = () => setLarguraTabela(wrap.scrollWidth);
+    medir();
+    // Reagir ao resize da janela não basta: a largura muda também quando o
+    // conteúdo das células muda (um "Aguardando 1º acesso" é mais largo que um
+    // select) e quando a busca filtra as linhas.
+    const ro = new ResizeObserver(medir);
+    ro.observe(wrap);
+    const tabela = wrap.querySelector("table");
+    if (tabela) ro.observe(tabela);
+    return () => ro.disconnect();
+  }, [loading, filtered.length]);
+
+  // Um lado por vez: sem a trava, mover uma barra reposiciona a outra, que
+  // reposiciona a primeira, e a rolagem engasga.
+  const sincronizando = useRef(false);
+  const espelharScroll = useCallback((origem, destino) => {
+    if (sincronizando.current || !origem || !destino) return;
+    sincronizando.current = true;
+    destino.scrollLeft = origem.scrollLeft;
+    requestAnimationFrame(() => {
+      sincronizando.current = false;
+    });
+  }, []);
+
   // Gate de UI (a RLS é quem realmente protege as escritas).
   if (!isSuperAdmin(user)) return <Navigate to="/home" replace />;
 
@@ -263,6 +306,42 @@ export default function PortalAdmin() {
         />
         Ajustes de Valores
       </label>
+    );
+  }
+
+  // Frota e Alojamentos (card "Administrativo" da Home). Booleana, e não papel:
+  // o módulo é rotina interna do setor, sem nada de consulta geral, então quem
+  // não está marcado nem vê o card. Antes desta coluna, liberar uma pessoa
+  // exigia editar a lista de e-mails em config/setorAdm.js, buildar e ainda
+  // rodar o SQL que repetia a lista — ver setor_adm_acesso_por_pessoa.
+  function SetorAdmCheck({ row }) {
+    const key = `${row.email}:setorAdm`;
+    const saving = savingKey === key;
+    return (
+      <>
+        <label
+          className="pa-efetivo pa-check"
+          title="Abre Frota e Alojamentos para esta pessoa, com permissão de escrita."
+        >
+          <input
+            type="checkbox"
+            checked={row.setorAdmAcesso}
+            disabled={saving}
+            onChange={(e) => changeRole(row, "setorAdm", e.target.checked)}
+          />
+          Frota e Alojamentos
+        </label>
+        {/* Sem esta linha, não se via que CONFIGURAR os dois módulos depende do
+            Admin do Atendimento, e não deste checkbox. */}
+        <small className="pa-efetivo">
+          Hoje:{" "}
+          {!row.setorAdmAcesso
+            ? "Sem acesso"
+            : row.admRole === "admin"
+              ? "Admin do setor"
+              : "Time (sem configurações)"}
+        </small>
+      </>
     );
   }
 
@@ -344,7 +423,22 @@ export default function PortalAdmin() {
 
       {err ? <div className="pa-error">Erro ao carregar: {err}</div> : null}
 
-      <div className="pa-table-wrap">
+      {/* Espelho da barra horizontal, acima do cabeçalho. aria-hidden porque não
+          é conteúdo: quem navega por teclado rola o container de baixo. */}
+      <div
+        className="pa-topscroll"
+        ref={topScrollRef}
+        aria-hidden="true"
+        onScroll={() => espelharScroll(topScrollRef.current, wrapRef.current)}
+      >
+        <div className="pa-topscroll-spacer" style={{ width: larguraTabela }} />
+      </div>
+
+      <div
+        className="pa-table-wrap"
+        ref={wrapRef}
+        onScroll={() => espelharScroll(wrapRef.current, topScrollRef.current)}
+      >
         {loading ? (
           <div className="pa-empty">
             <Loader2 size={26} className="pa-spin" /> Carregando…
@@ -361,6 +455,9 @@ export default function PortalAdmin() {
                 <th>Dados</th>
                 <th>Financeiro</th>
                 <th>Atendimento</th>
+                {/* O SETOR, não o módulo de chamados da coluna anterior: Frota e
+                    Alojamentos (config/setorAdm.js). */}
+                <th>Administrativo (setor)</th>
                 <th>Programas</th>
                 <th>Resultados</th>
               </tr>
@@ -440,6 +537,9 @@ export default function PortalAdmin() {
                     <RoleSelect row={row} app="administrativo" value={row.admRole ?? ""} options={ADM_ROLES} hasAccess />
                   </td>
                   <td>
+                    <SetorAdmCheck row={row} />
+                  </td>
+                  <td>
                     <RoleSelect row={row} app="programas" value={row.progRole ?? ""} options={PROGRAMAS_ROLES} hasAccess />
                   </td>
                   <td>
@@ -449,7 +549,7 @@ export default function PortalAdmin() {
               ))}
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="pa-empty-cell">
+                  <td colSpan={11} className="pa-empty-cell">
                     Ninguém encontrado.
                   </td>
                 </tr>

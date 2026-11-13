@@ -1,31 +1,33 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ehAdminSetorAdm, podeAcessarSetorAdm, SETOR_ADM_EM_BREVE } from './setorAdm.js';
+import { ehAdminSetorAdm, ehTimeSetorAdm, podeAcessarSetorAdm } from './setorAdm.js';
 
-const marcus = { email: 'marcus.guimaraes@phdengenharia.eng.br' };
-const lennon = { email: 'Lennon.Santos@phdengenharia.eng.br' };
-const jarbas = { email: 'jarbas.junior@phdengenharia.eng.br' };
-const perla = { email: 'perla.passos@phdengenharia.eng.br' };
-const edijane = { email: 'edijane.rodrigues@phdengenharia.eng.br' };
-const foraDaLista = { email: 'fulano.detal@phdengenharia.eng.br' };
+const liberado = { email: 'marcus.guimaraes@phdengenharia.eng.br', setorAdmAcesso: true };
+const semAcesso = { email: 'fulano.detal@phdengenharia.eng.br', setorAdmAcesso: false };
 const admin = { administrativo: 'admin' };
 const atendente = { administrativo: 'atendente' };
 const semPapel = { administrativo: 'user' };
 
-test('em lançamento restrito, só quem está na lista entra', { skip: !SETOR_ADM_EM_BREVE }, () => {
-  assert.equal(podeAcessarSetorAdm(marcus, admin), true);
-  assert.equal(podeAcessarSetorAdm(lennon, atendente), true);
-  assert.equal(podeAcessarSetorAdm(jarbas, admin), true);
-  assert.equal(podeAcessarSetorAdm(perla, atendente), true);
-  assert.equal(podeAcessarSetorAdm(edijane, atendente), true);
-  assert.equal(podeAcessarSetorAdm(foraDaLista, admin), false);
-  assert.equal(podeAcessarSetorAdm(null, admin), false);
+test('entra só quem está marcado no Gerenciamento de acessos', () => {
+  assert.equal(podeAcessarSetorAdm(liberado), true);
+  assert.equal(podeAcessarSetorAdm(semAcesso), false);
+  // Sem a coluna carregada ainda (ou sessão a meio caminho), fica de fora:
+  // o gate falha fechado, como a RLS.
+  assert.equal(podeAcessarSetorAdm({ email: 'x@y.br' }), false);
+  assert.equal(podeAcessarSetorAdm(null), false);
 });
 
-test('na lista, atendente também administra; fora dela, nem o admin', { skip: !SETOR_ADM_EM_BREVE }, () => {
-  assert.equal(ehAdminSetorAdm(admin, marcus), true);
-  assert.equal(ehAdminSetorAdm(atendente, lennon), true);
-  assert.equal(ehAdminSetorAdm(admin, jarbas), true);
-  assert.equal(ehAdminSetorAdm(admin, foraDaLista), false);
-  assert.equal(ehAdminSetorAdm(semPapel, marcus), false);
+test('estar marcado já é ser do time: escrever não pede papel no Atendimento', () => {
+  assert.equal(ehTimeSetorAdm(liberado), true);
+  assert.equal(ehTimeSetorAdm(semAcesso), false);
+});
+
+test('administrar pede o checkbox E Admin no Atendimento', () => {
+  assert.equal(ehAdminSetorAdm(admin, liberado), true);
+  // Atendente do Adm entra e escreve, mas não configura nem exclui
+  // cadastro-mestre — era o que a lista de e-mails deixava passar.
+  assert.equal(ehAdminSetorAdm(atendente, liberado), false);
+  assert.equal(ehAdminSetorAdm(semPapel, liberado), false);
+  // Admin do Atendimento sem o checkbox não entra, então não administra.
+  assert.equal(ehAdminSetorAdm(admin, semAcesso), false);
 });

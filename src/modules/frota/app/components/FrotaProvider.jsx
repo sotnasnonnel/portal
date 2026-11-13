@@ -100,7 +100,7 @@ export default function FrotaProvider({ children }) {
   const abrirForm = useCallback((col, id, init) => setDrawer({ modo: 'form', col, id: id || null, init }), []);
   const fecharDrawer = useCallback(() => setDrawer(null), []);
 
-  const podeEscrever = ehTimeSetorAdm(modules);
+  const podeEscrever = ehTimeSetorAdm(user);
   const isAdmin = ehAdminSetorAdm(modules, user);
   // Cadastro-mestre só o admin exclui (policies frota_*_delete).
   const podeExcluir = useCallback((col) => (

@@ -12,54 +12,34 @@ import { Car, BedDouble } from 'lucide-react';
  */
 
 /**
- * Trava de lançamento, no mesmo molde de MOBILIZACAO_EM_BREVE. Enquanto `true`,
- * o card some da Home e as rotas devolvem para o início — exceto para a lista
- * abaixo. Para abrir ao time, além de pôr `false`, troque o corpo dos helpers em
- * supabase_migration_setor_adm_acesso.sql; sem isso o time entra e vê tudo vazio.
- */
-export const SETOR_ADM_EM_BREVE = true;
-
-/**
- * Só e-mail CORPORATIVO: o login é OAuth Microsoft.
+ * O acesso é liberado PESSOA POR PESSOA, no checkbox "Frota e Alojamentos" da
+ * tela de Gerenciamento de acessos (coluna colaboradores.setor_adm_acesso).
+ * Antes era uma lista de e-mails chumbada aqui e repetida no corpo de
+ * app_private.setor_adm_liberado(): liberar alguém pedia deploy e SQL.
  *
- * Esta lista só decide o que a tela mostra. Quem protege o dado é a cópia dela em
- * app_private.setor_adm_liberado() (supabase_migration_setor_adm_acesso.sql):
- * mudou aqui, muda lá.
+ * Esta função só decide o que a TELA mostra. Quem protege CNH, custos e
+ * moradores é a RLS de frota_* e alojamentos*, via app_private.setor_adm_time /
+ * setor_adm_admin — que leem a MESMA coluna.
+ *
+ * Diferente da Mobilização, aqui não há nada de consulta geral: o módulo é só
+ * para quem foi liberado, sem versão esmaecida para os outros.
  */
-export const SETOR_ADM_LIBERADOS = [
-  'marcus.guimaraes@phdengenharia.eng.br',
-  'lennon.santos@phdengenharia.eng.br',
-  'jarbas.junior@phdengenharia.eng.br',
-  'perla.passos@phdengenharia.eng.br',
-  'edijane.rodrigues@phdengenharia.eng.br',
-];
+export const podeAcessarSetorAdm = (user) => user?.setorAdmAcesso === true;
 
 /**
- * Reusa o papel do Atendimento DE PROPÓSITO, sem coluna nova em colaboradores:
- * é o mesmo time, como na Mobilização. A RLS das tabelas frota_* e alojamentos*
- * usa app_private.setor_adm_time / setor_adm_admin.
+ * Quem ESCREVE em frota_* e alojamentos*: o mesmo checkbox, de propósito.
+ * Enquanto "entrar" e "ver dado" eram coisas diferentes — o checkbox de um lado,
+ * papel no Atendimento do outro — quem fosse liberado sem o papel entrava e
+ * encontrava tudo vazio.
  */
-export const ehTimeSetorAdm = (modules) =>
-  modules?.administrativo === 'admin' || modules?.administrativo === 'atendente';
-
-const estaNaLista = (user) => SETOR_ADM_LIBERADOS.includes((user?.email || '').trim().toLowerCase());
+export const ehTimeSetorAdm = (user) => podeAcessarSetorAdm(user);
 
 /**
- * Quem mexe nas configurações e exclui cadastros-mestre. Em lançamento restrito,
- * os liberados com papel no Atendimento, mesmo 'atendente': o poder extra vale só
- * nestes dois módulos. Mesma regra de app_private.setor_adm_admin().
+ * Quem mexe nas configurações e exclui cadastros-mestre: liberado no checkbox E
+ * admin do Atendimento. Mesma regra de app_private.setor_adm_admin().
  */
-export const ehAdminSetorAdm = (modules, user) => (SETOR_ADM_EM_BREVE
-  ? estaNaLista(user) && ehTimeSetorAdm(modules)
-  : modules?.administrativo === 'admin');
-
-/**
- * Diferente da Mobilização, aqui não há nada de consulta geral: são custos,
- * CNH e moradores, então depois de aberto o módulo continua só para o time.
- */
-export const podeAcessarSetorAdm = (user, modules) => (SETOR_ADM_EM_BREVE
-  ? estaNaLista(user)
-  : ehTimeSetorAdm(modules));
+export const ehAdminSetorAdm = (modules, user) => podeAcessarSetorAdm(user)
+  && modules?.administrativo === 'admin';
 
 /** Áreas do popup do card, mesmo formato de AREAS_ADMINISTRATIVO. */
 export const AREAS_SETOR_ADM = [

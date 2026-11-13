@@ -24,7 +24,7 @@ export default function Sidebar({ aberto = false, onFechar }) {
       titulo="Frota"
       Icon={Car}
       secoes={navSections({ isAdmin, contagens })}
-      papelLabel={ehTimeSetorAdm(modules) ? 'Gestão da frota' : 'Sem acesso aos dados'}
+      papelLabel={ehTimeSetorAdm(user) ? 'Gestão da frota' : 'Sem acesso aos dados'}
       aberto={aberto}
       onFechar={onFechar}
     />

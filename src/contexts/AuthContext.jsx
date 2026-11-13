@@ -174,6 +174,10 @@ export function AuthProvider({ children }) {
         // Idem para a tela de Ajustes de Valores — só que esta abre ESCRITA, e
         // a mesma regra está na RLS de precos_itens (ver config/valores.js).
         valoresAjuste: colab.valores_ajuste === true,
+        // Idem para Frota e Alojamentos (card "Administrativo"): libera entrar E
+        // escrever. Nada a ver com administrativo_role, que é o Atendimento —
+        // ver config/setorAdm.js e app_private.setor_adm_time().
+        setorAdmAcesso: colab.setor_adm_acesso === true,
         // 'admin' | 'gestor' | 'usuario' | null (ver config/plr.js).
         plrAcesso: plrRes?.error ? null : (plrRes?.data ?? null),
         authId: authUser.id,

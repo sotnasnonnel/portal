@@ -320,8 +320,8 @@ function MobilizacaoEmBreveRoute({ children }) {
 // Frota e Alojamentos (card "Administrativo"). Gate de UI — quem protege o dado
 // é a RLS (app_private.setor_adm_time).
 function SetorAdmRoute({ children }) {
-  const { user, modules } = useAuth();
-  if (!podeAcessarSetorAdm(user, modules)) return <Navigate to="/home" replace />;
+  const { user } = useAuth();
+  if (!podeAcessarSetorAdm(user)) return <Navigate to="/home" replace />;
   return children;
 }
 

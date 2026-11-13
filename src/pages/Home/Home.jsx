@@ -158,7 +158,7 @@ export default function Home() {
     // O SETOR administrativo: Frota e Alojamentos (config/setorAdm.js). É
     // rotina interna do time, então quem não tem acesso nem vê o card, em vez
     // de vê-lo com cadeado.
-    podeAcessarSetorAdm(user, modules) && {
+    podeAcessarSetorAdm(user) && {
       acao: () => setSetorAdmAberto(true),
       icon: Building2,
       tone: 'blue',
