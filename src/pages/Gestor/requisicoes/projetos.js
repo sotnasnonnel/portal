@@ -106,9 +106,11 @@ export function nomeProjeto(info, informado) {
 const CAMPO_PROJETO = {
   formulario_contratacao: 'codigo_proposta_projeto',
   nova_vaga: 'codigo_cliente',
+  mapeamento: 'codigo_proposta_cliente',
 };
 
-// Campo com o nome do cliente digitado no formulário (só a vaga tem).
+// Campo com o nome do cliente digitado no formulário (só a vaga tem). O
+// mapeamento pede apenas o código, então o nome dele vem só do cadastro.
 const CAMPO_NOME = { nova_vaga: 'nome_cliente' };
 
 /** Código do projeto como foi digitado, ou null se a requisição não tem/não é código. */
@@ -128,6 +130,7 @@ export function nomeInformado(s, det) {
 const ROTULO_GRUPO = {
   formulario_contratacao: ['contratação', 'contratações'],
   nova_vaga: ['vaga', 'vagas'],
+  mapeamento: ['mapeamento', 'mapeamentos'],
 };
 
 export function rotuloGrupo(tipo, n) {
@@ -150,8 +153,9 @@ export function funcaoDaRequisicao(s, det) {
 }
 
 /**
- * Chave que agrupa a requisição: tipo + código. Contratações e vagas do mesmo
- * projeto ficam em grupos separados — são etapas diferentes do processo.
+ * Chave que agrupa a requisição: tipo + código. Mapeamento, contratação e vaga
+ * do mesmo projeto ficam em grupos separados — são etapas diferentes do
+ * processo (o mapeamento é insumo da vaga, que precede a contratação).
  */
 export function codigoDeAgrupamento(s, det) {
   const cod = codigoProjetoTexto(s, det);
@@ -159,8 +163,9 @@ export function codigoDeAgrupamento(s, det) {
 }
 
 /**
- * Junta as contratações (e as vagas) do mesmo projeto. A lista mantém a ordem
- * original e o grupo entra no lugar da primeira (mais recente) requisição dele.
+ * Junta as requisições do mesmo projeto — mapeamentos, vagas e contratações,
+ * cada tipo no seu grupo. A lista mantém a ordem original e o grupo entra no
+ * lugar da primeira (mais recente) requisição dele.
  * Projeto com uma requisição só não vira grupo: fica como card comum.
  * Itens: { tipo: 'sol', sol } | { tipo: 'grupo', chave, tipoReq, codigo, nomeInformado, sols }.
  */

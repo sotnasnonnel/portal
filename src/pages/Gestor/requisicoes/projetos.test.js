@@ -93,6 +93,34 @@ test('vagas agrupam pelo Código do Cliente, separadas das contratações', () =
   assert.equal(nomeInformado({ tipo: 'formulario_contratacao' }, { nome_cliente: 'X' }), null);
 });
 
+test('mapeamentos agrupam pelo Código da proposta/cliente, no grupo deles', () => {
+  const lista = [
+    { id: 1, tipo: 'mapeamento' },
+    { id: 2, tipo: 'nova_vaga' },
+    { id: 3, tipo: 'mapeamento' },
+    { id: 4, tipo: 'mapeamento' },
+    { id: 5, tipo: 'mapeamento' },
+  ];
+  const det = {
+    1: { codigo_proposta_cliente: 'ADMB-CT27' },
+    2: { codigo_cliente: 'ADMB-CT27' },         // mesmo projeto, outra etapa
+    3: { codigo_proposta_cliente: ' admb-ct27' },
+    4: { codigo_proposta_cliente: 'AURA-CT07' }, // sozinho: card comum
+    5: { codigo_proposta_cliente: 'N/A' },       // sem código: card comum
+  };
+  const out = agruparPorProjeto(lista, det);
+  assert.deepEqual(
+    out.map((i) => (i.tipo === 'grupo' ? `g:${i.chave}` : i.sol.id)),
+    ['g:mapeamento:ADMB-CT27', 2, 4, 5]
+  );
+  assert.equal(out[0].codigo, 'ADMB-CT27');
+  assert.deepEqual(out[0].sols.map((s) => s.id), [1, 3]);
+  // O mapeamento não tem campo de nome do cliente: o nome vem só do cadastro.
+  assert.equal(out[0].nomeInformado, null);
+  assert.equal(rotuloGrupo('mapeamento', 3), '3 mapeamentos');
+  assert.equal(rotuloGrupo('mapeamento', 1), '1 mapeamento');
+});
+
 test('nome digitado na vaga entra só quando o cadastro não achou o cliente', () => {
   assert.equal(nomeProjeto({ codigo: 'AURA-CT07', completo: 'AURA-CT07-ENBH', cliente: null }, 'Aura Minerals'), 'Aura Minerals · AURA-CT07-ENBH');
   assert.equal(nomeProjeto({ codigo: 'ADMB', completo: null, cliente: 'ADM DO BRASIL' }, 'ADM'), 'ADM DO BRASIL');

@@ -149,7 +149,9 @@ export default function AdminSolicitacoes() {
     const d = detalhes[s.id];
     const matchBusca = !termo || [
       s.colaborador?.nome, s.gestor?.nome, s.numero != null ? `#${s.numero}` : '',
-      d?.nome_profissional, d?.codigo_proposta_projeto, d?.codigo_cliente, d?.nome_cliente, funcaoDaRequisicao(s, d),
+      // O código vem por codigoProjetoTexto para não ter de listar aqui o campo
+      // de cada tipo (são três nomes diferentes para a mesma coisa).
+      d?.nome_profissional, codigoProjetoTexto(s, d), d?.nome_cliente, funcaoDaRequisicao(s, d),
     ].some((campo) => semAcento(campo).includes(termo));
     return matchStatus && matchBusca;
   });

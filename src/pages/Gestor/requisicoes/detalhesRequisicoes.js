@@ -7,7 +7,7 @@ import { criarResolvedorProjeto } from './projetos';
 const DETALHE_LISTA = {
   formulario_contratacao: { tabela: 'formularios_contratacao', colunas: 'solicitacao_id, codigo_proposta_projeto, cargo_nivel, nome_profissional' },
   nova_vaga: { tabela: 'vagas', colunas: 'solicitacao_id, funcao, codigo_cliente, nome_cliente' },
-  mapeamento: { tabela: 'mapeamentos', colunas: 'solicitacao_id, funcao' },
+  mapeamento: { tabela: 'mapeamentos', colunas: 'solicitacao_id, funcao, codigo_proposta_cliente' },
 };
 
 // IDs vão na URL do PostgREST: em lotes para não estourar o tamanho dela.
