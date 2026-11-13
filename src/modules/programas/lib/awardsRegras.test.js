@@ -118,9 +118,9 @@ test('a comissão é a média dos critérios, com peso, vezes 10; sem todas as n
   assert.equal(notaDaComissao({ a: 8 }, []), null);
 });
 
-test('a nota final é 70% votação e 30% comissão; sem critérios, só a votação', () => {
+test('a nota final é metade votação, metade comissão; sem critérios, só a votação', () => {
   const criterios = [{ chave: 'a', label: 'A' }];
-  assert.equal(notaFinal(100, 50, criterios), 85);
+  assert.equal(notaFinal(100, 50, criterios), 75);
   assert.equal(notaFinal(100, null, criterios), null);
   assert.equal(notaFinal(80, null, []), 80);
 });
@@ -128,14 +128,16 @@ test('a nota final é 70% votação e 30% comissão; sem critérios, só a vota�
 test('com a comissão, a ordem segue a nota final e o empate é nela', () => {
   const criterios = [{ chave: 'a', label: 'A' }];
   const linha = (id, pontos) => ({ projeto_id: id, pontos, primeiro: 0, segundo: 0, terceiro: 0 });
-  // a: 100*0.7 + 20*0.3 = 76 · b e c: 50*0.7 + 100*0.3 = 65 · d: sem nota da comissão
+  // b e c: 50*0.5 + 100*0.5 = 75 · a: 100*0.5 + 20*0.5 = 60 · d: sem nota da comissão.
+  // O mais votado (a) perde para quem a comissão avaliou melhor: é o efeito do 50/50.
   const r = rankingDaCategoria(
     [linha('a', 10), linha('b', 5), linha('c', 5), linha('d', 10)],
     { a: { a: 2 }, b: { a: 10 }, c: { a: 10 } },
     criterios,
   );
-  assert.deepEqual(r.map((l) => l.projeto_id), ['a', 'b', 'c', 'd']);
-  assert.deepEqual(r.map((l) => l.empate), [false, true, true, false]);
-  assert.equal(r[0].final, 76);
+  assert.deepEqual(r.map((l) => l.projeto_id), ['b', 'c', 'a', 'd']);
+  assert.deepEqual(r.map((l) => l.empate), [true, true, false, false]);
+  assert.equal(r[0].final, 75);
+  assert.equal(r[2].final, 60);
   assert.equal(r[3].final, null);
 });

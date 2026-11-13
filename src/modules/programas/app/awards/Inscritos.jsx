@@ -3,7 +3,8 @@ import { Link, Navigate } from 'react-router-dom';
 import { AlertCircle, AlertTriangle, CheckCircle2, ListChecks, Loader2 } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import {
-  AWARDS_CATEGORIAS, AWARDS_CATEGORIA_LABEL, AWARDS_CRITERIOS, AWARDS_FASES, ehAvaliadorAwards,
+  AWARDS_CATEGORIAS, AWARDS_CATEGORIA_LABEL, AWARDS_CRITERIOS, AWARDS_FASES, AWARDS_PESO_COMISSAO,
+  AWARDS_PESO_VOTACAO, ehAvaliadorAwards, percentual,
 } from '../../../../config/programas';
 import {
   buscarEstado, buscarResultado, confirmarPodio, listarNotas, listarPodio, listarProjetos, mudarFase,
@@ -284,7 +285,7 @@ function PainelFase({ estado, inscritos, semVotos, onMudar, onReiniciar }) {
 
 /**
  * Resultado por categoria: votos, nota da votação, nota da comissão e nota final
- * (70/30). Com a votação encerrada, o pódio a confirmar.
+ * (pelos pesos de AWARDS_PESO_*). Com a votação encerrada, o pódio a confirmar.
  */
 function Resultado({
   fase, resultado, projetos, podioSalvo, notas, onVer, onAvaliar, onConfirmar,
@@ -359,8 +360,8 @@ function Resultado({
                   <th className="num">Em 2º</th>
                   <th className="num">Em 3º</th>
                   <th className="num">Pontos</th>
-                  <th className="num">Votação (70%)</th>
-                  {temCriterios && <th className="num">Comissão (30%)</th>}
+                  <th className="num">Votação ({percentual(AWARDS_PESO_VOTACAO)})</th>
+                  {temCriterios && <th className="num">Comissão ({percentual(AWARDS_PESO_COMISSAO)})</th>}
                   <th className="num">Nota final</th>
                 </tr>
               </thead>

@@ -2,7 +2,8 @@
 -- ============================================================================
 -- PHD Awards: nota da comissão (Lucas, 12/11).
 --
--- Nota final = 70% votação + 30% comissão. A comissão dá UMA nota de consenso
+-- Nota final = 50% votação + 50% comissão (era 70/30 até 13/11; o peso mora
+-- no front, AWARDS_PESO_*). A comissão dá UMA nota de consenso
 -- por projeto (não cada um a sua), de 0 a 10 em cada critério. Os critérios
 -- moram no front (AWARDS_CRITERIOS em src/config/programas.js); aqui fica só
 -- a nota de cada (projeto, critério). A conta da nota final é feita na tela.

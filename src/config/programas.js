@@ -244,13 +244,16 @@ export const AWARDS_LIMITE_ARQUIVO = 100 * 1024 * 1024;
 export const AWARDS_LIMITE_VIDEO = 300 * 1024 * 1024;
 
 /**
- * Nota final (Lucas, 12/11): 70% votação + 30% comissão. Na votação, o mais votado
+ * Nota final: 50% votação + 50% comissão (Lucas, 13/11; antes era 70/30). Na votação, o mais votado
  * da categoria fica com 100 e os outros proporcionais aos pontos. A comissão dá
  * UMA nota de consenso (não cada um a sua), de 0 a 10 em cada critério; a média
  * dos critérios, vezes 10, é a nota da comissão.
  */
-export const AWARDS_PESO_VOTACAO = 0.7;
-export const AWARDS_PESO_COMISSAO = 0.3;
+export const AWARDS_PESO_VOTACAO = 0.5;
+export const AWARDS_PESO_COMISSAO = 0.5;
+
+/** "50%": para os textos da tela saírem dos pesos acima, e não ficarem para trás. */
+export const percentual = (peso) => `${Math.round(peso * 100)}%`;
 
 /**
  * Critérios da comissão: o Lucas ainda vai mandar. Formato de cada um:
@@ -280,7 +283,7 @@ export const AWARDS_FASES = {
   },
   encerrada: {
     label: 'Votação encerrada',
-    dica: 'Ninguém vota mais. Dê a nota da comissão em cada projeto, confira a nota final (70% votação + 30% comissão), resolva os empates e confirme o pódio. A revelação é feita em Projetos do Ano, no botão "Revelar vencedores!". Reabrir a votação apaga o pódio confirmado.',
+    dica: 'Ninguém vota mais. Dê a nota da comissão em cada projeto, confira a nota final (votação + comissão, metade cada), resolva os empates e confirme o pódio. A revelação é feita em Projetos do Ano, no botão "Revelar vencedores!". Reabrir a votação apaga o pódio confirmado.',
   },
   revelada: {
     label: 'Vencedores revelados',

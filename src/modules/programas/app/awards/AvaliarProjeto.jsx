@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { AWARDS_CRITERIOS } from '../../../../config/programas';
+import {
+  AWARDS_CRITERIOS, AWARDS_PESO_COMISSAO, AWARDS_PESO_VOTACAO, percentual,
+} from '../../../../config/programas';
 import { salvarNotas } from '../../lib/awards';
 import { notaDaComissao } from '../../lib/awardsRegras';
 import { Casca } from '../components/Detalhe';
@@ -56,7 +58,8 @@ export default function AvaliarProjeto({ projeto, notas, colaboradorId, onSalvo,
       )}
     >
       <p className="pg-aw-dica">
-        Nota de consenso da comissão, de 0 a 10 em cada critério. Ela vale 30% da nota final; a votação vale 70%.
+        Nota de consenso da comissão, de 0 a 10 em cada critério. Ela vale {percentual(AWARDS_PESO_COMISSAO)} da nota
+        final; a votação vale {percentual(AWARDS_PESO_VOTACAO)}.
       </p>
       {erro && <div className="pg-aviso tom-erro"><AlertCircle size={16} /> {erro}</div>}
 

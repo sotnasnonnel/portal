@@ -127,7 +127,7 @@ export function notaDaComissao(notas = {}, criterios = AWARDS_CRITERIOS) {
 }
 
 /**
- * 70% votação + 30% comissão. Sem critérios definidos, vale só a votação; com
+ * Votação e comissão pelos pesos de AWARDS_PESO_*. Sem critérios definidos, vale só a votação; com
  * critérios e sem a nota da comissão, ainda não há nota final (null).
  */
 export function notaFinal(votacao, comissao, criterios = AWARDS_CRITERIOS) {
