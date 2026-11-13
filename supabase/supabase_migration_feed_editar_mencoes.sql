@@ -5,8 +5,8 @@
 --
 -- feed_editar ganha p_mencoes. As marcações passam pela mesma checagem do
 -- feed_postar (feed_mencoes_validas) e substituem as antigas. Só quem ENTROU
--- agora recebe aviso: quem já estava marcado não é avisado de novo a cada
--- edição.
+-- agora e nunca foi avisado deste post recebe aviso; post oculto não avisa
+-- ninguém; "@todos" na edição fica no texto mas não dispara o aviso geral.
 --
 -- p_mencoes nulo mantém as marcações como estão: o front antigo, que chama
 -- feed_editar(p_id, p_texto), continua funcionando com este SQL aplicado.
@@ -48,11 +48,22 @@ begin
      set texto = v_texto, mencoes = v_mencoes, editado_em = now()
    where id = p_id;
 
-  -- Aviso só para quem não estava marcado antes.
+  -- Post oculto pela moderação não avisa ninguém (só o autor e a moderação o veem).
+  if v_post.oculto then
+    return;
+  end if;
+
+  -- Aviso só para quem entrou agora e nunca foi avisado deste post: tirar e
+  -- pôr a marcação de volta não vira spam. O "@todos" não é reenviado na
+  -- edição (o aviso geral só sai ao publicar).
   select coalesce(jsonb_agg(m), '[]'::jsonb) into v_novas
     from jsonb_array_elements(v_mencoes) m
-   where not exists (select 1 from jsonb_array_elements(coalesce(v_post.mencoes, '[]'::jsonb)) a
-                      where a->>'id' = m->>'id');
+   where m->>'id' <> 'todos'
+     and not exists (select 1 from jsonb_array_elements(coalesce(v_post.mencoes, '[]'::jsonb)) a
+                      where a->>'id' = m->>'id')
+     and not exists (select 1 from public.notificacoes n
+                      where n.destinatario_id::text = m->>'id'
+                        and n.referencia_id = p_id and n.modulo = 'feed' and n.tipo = 'mencao');
   if jsonb_array_length(v_novas) > 0 then
     perform app_private.feed_avisar_mencoes(v_novas, v_eu, p_id, p_id, v_texto, false);
   end if;
