@@ -172,7 +172,11 @@
 }
 .feed-vermais:hover { color: var(--blue); text-decoration: underline; }
 
-.feed-autor { display: flex; align-items: center; gap: 10px; }
+.feed-autor { display: flex; align-items: center; gap: 12px; }
+/* A moldura é um anel 12% por fora da bolinha (pontos.css): sem esta folga
+   ela encostava no nome. O selo de canto sai ainda mais para a direita. */
+.feed-autor > .feed-av.pts-ring { margin: 0 4px 0 6px; }
+.feed-autor > .feed-av.pts-ring:has(.pts-selo.is-canto) { margin-right: 12px; }
 .feed-av {
   position: relative; flex: none; width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center;
   background: var(--blue-soft); color: var(--blue); font-size: var(--font-size-xs); font-weight: 700;
@@ -210,8 +214,20 @@
 }
 .feed-tag { display: inline-block; margin-top: 4px; font-size: var(--font-size-2xs); color: #8a5a00; }
 
-.feed-editar { margin-top: 10px; }
-.feed-editar-acoes { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+.feed-editar { margin-top: 12px; }
+.feed-editar-barra { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.feed-editar-dica { font-size: var(--font-size-xs); color: var(--muted); }
+.feed-editar-acoes { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+/* Cancelar: pílula clara ao lado do Salvar (que é a mesma do Publicar). */
+.feed-btn-cancelar {
+  display: inline-flex; align-items: center; justify-content: center; height: var(--ctl-h-sm); padding: 0 18px;
+  border: 1px solid var(--border-strong); border-radius: 999px; background: #fff; color: var(--ink-soft);
+  font: inherit; font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; transition: background .15s, color .15s;
+}
+.feed-btn-cancelar:hover:not(:disabled) { background: #f1f5f9; color: var(--ink); }
+.feed-btn-cancelar:focus-visible { box-shadow: var(--focus-ring); outline: none; }
+.feed-btn-cancelar:disabled { opacity: .6; cursor: default; }
+.feed-btn-publicar.is-compacto { min-width: 104px; height: var(--ctl-h-sm); padding: 0 18px; font-size: var(--font-size-sm); }
 
 /* Uma foto: inteira e centralizada no card. */
 .feed-fotos.is-1 { display: flex; justify-content: center; margin: 12px 0 0; }

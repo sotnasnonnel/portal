@@ -32,8 +32,9 @@ export async function postar(texto, midia = [], mencoes = []) {
   return data;
 }
 
-export async function editarPost(id, texto) {
-  const { error } = await supabase.rpc('feed_editar', { p_id: id, p_texto: texto });
+/** `mencoes` substitui as marcações do post; o banco só avisa quem entrou agora. */
+export async function editarPost(id, texto, mencoes = []) {
+  const { error } = await supabase.rpc('feed_editar', { p_id: id, p_texto: texto, p_mencoes: mencoes });
   checar(error);
 }
 

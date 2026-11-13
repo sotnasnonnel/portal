@@ -1,14 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   AtSign, Heart, MessageCircle, MoreHorizontal, Pin, PinOff, Pencil, Trash2, Flag, EyeOff, Eye, X,
-  ChevronLeft, ChevronRight, Loader2,
+  ChevronLeft, ChevronRight, Loader2, Check,
 } from 'lucide-react';
-import { MENCAO_TODOS, midiaEhVideo, plural, resumoCurtidas, tempoRelativo, TEXTO_MAX } from '../../config/feed';
+import {
+  MENCAO_TODOS, mencoesNoTexto, midiaEhVideo, plural, resumoCurtidas, tempoRelativo, TEXTO_MAX,
+} from '../../config/feed';
 import { usePontos } from '../../contexts/PontosContext';
 import * as api from '../../services/feed';
 import { nomeProprio } from '../../utils/pessoas';
 import Autor, { AvatarFeed } from './Autor';
+import CampoMencoes from './CampoMencoes';
 import Comentarios from './Comentarios';
+import EmojiPicker from './EmojiPicker';
 import TextoComLinks from './TextoComLinks';
 
 /** Foto em tela cheia, com setas entre as fotos do post. */
@@ -206,7 +210,10 @@ export default function PostCard({
   const { recarregar } = usePontos();
   const [menu, setMenu] = useState(false);
   const [editando, setEditando] = useState(false);
-  const [textoEd, setTextoEd] = useState(post.texto);
+  const [textoEd, setTextoEd] = useState(post.texto || '');
+  const [mencoesEd, setMencoesEd] = useState([]);
+  const [salvando, setSalvando] = useState(false);
+  const textoEdRef = useRef(null);
   const [verComents, setVerComents] = useState(destaque);
   const [foto, setFoto] = useState(null);
   const [verCurtidas, setVerCurtidas] = useState(false);
@@ -243,13 +250,40 @@ export default function PostCard({
     }
   };
 
-  const salvarEdicao = async () => {
-    try {
-      await api.editarPost(post.id, textoEd);
-      onMudou({ ...post, texto: textoEd.trim(), editado_em: new Date().toISOString() });
-      setEditando(false);
-    } catch (e) { erro(e); }
+  const abrirEdicao = () => {
+    setMenu(false);
+    setTextoEd(post.texto || '');
+    setMencoesEd(post.mencoes || []);
+    setEditando(true);
   };
+
+  const salvarEdicao = async () => {
+    const texto = textoEd.trim();
+    if (!texto && !(post.midia || []).length) { onErro('O post não pode ficar vazio.'); return; }
+    const mencoes = mencoesNoTexto(textoEd, mencoesEd);
+    setSalvando(true);
+    try {
+      await api.editarPost(post.id, textoEd, mencoes);
+      onMudou({ ...post, texto, mencoes, editado_em: new Date().toISOString() });
+      setEditando(false);
+    } catch (e) { erro(e); } finally { setSalvando(false); }
+  };
+
+  // Emoji entra onde está o cursor, como no Publicar.
+  const inserirEmoji = (emoji) => {
+    const el = textoEdRef.current;
+    const ini = el?.selectionStart ?? textoEd.length;
+    const fim = el?.selectionEnd ?? textoEd.length;
+    const novo = textoEd.slice(0, ini) + emoji + textoEd.slice(fim);
+    if (novo.length > TEXTO_MAX) return;
+    setTextoEd(novo);
+    requestAnimationFrame(() => {
+      el?.focus();
+      el?.setSelectionRange(ini + emoji.length, ini + emoji.length);
+    });
+  };
+  const mudouEdicao = textoEd !== (post.texto || '')
+    || JSON.stringify(mencoesNoTexto(textoEd, mencoesEd)) !== JSON.stringify(post.mencoes || []);
 
   const acaoMenu = (fn) => async () => {
     setMenu(false);
@@ -301,7 +335,7 @@ export default function PostCard({
             {menu && (
               <div className="feed-menu-lista" role="menu" onMouseLeave={() => setMenu(false)}>
                 {meu && (
-                  <button type="button" role="menuitem" onClick={() => { setMenu(false); setTextoEd(post.texto); setEditando(true); }}>
+                  <button type="button" role="menuitem" onClick={abrirEdicao}>
                     <Pencil size={14} /> Editar
                   </button>
                 )}
@@ -331,11 +365,27 @@ export default function PostCard({
 
       {editando ? (
         <div className="feed-editar">
-          <textarea value={textoEd} maxLength={TEXTO_MAX} rows={4} onChange={(e) => setTextoEd(e.target.value)}
-            aria-label="Texto do post" />
-          <div className="feed-editar-acoes">
-            <button type="button" className="btn btn-outline btn-sm" onClick={() => setEditando(false)}>Cancelar</button>
-            <button type="button" className="btn btn-primary btn-sm" onClick={salvarEdicao}>Salvar</button>
+          <CampoMencoes inputRef={textoEdRef} value={textoEd} onChange={setTextoEd} mencoes={mencoesEd}
+            onMencoes={setMencoesEd} rows={4} maxLength={TEXTO_MAX} disabled={salvando} autoFocus
+            placeholder="Escreva algo. Use @ para marcar alguém." aria-label="Texto do post"
+            onKeyDown={(e) => {
+              if (e.key === 'Escape' && !salvando) setEditando(false);
+              if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !salvando) salvarEdicao();
+            }} />
+          <div className="feed-editar-barra">
+            <EmojiPicker onEscolher={inserirEmoji} desabilitado={salvando} />
+            <span className="feed-editar-dica">Use @ para marcar pessoas</span>
+            <div className="feed-editar-acoes">
+              <button type="button" className="feed-btn-cancelar" onClick={() => setEditando(false)} disabled={salvando}>
+                Cancelar
+              </button>
+              <button type="button" className="feed-btn-publicar is-compacto" onClick={salvarEdicao}
+                disabled={salvando || !mudouEdicao} aria-busy={salvando}>
+                {salvando
+                  ? <><Loader2 size={15} className="feed-spin" /> Salvando…</>
+                  : <><Check size={15} /> Salvar</>}
+              </button>
+            </div>
           </div>
         </div>
       ) : (
@@ -351,7 +401,7 @@ export default function PostCard({
         )
       )}
 
-      {!editando && <MidiasDoPost midias={midias} links={links} onAbrir={setFoto} />}
+      <MidiasDoPost midias={midias} links={links} onAbrir={setFoto} />
 
       {/* data-tour: o passo a passo do feed aponta as ações do primeiro post. */}
       <div className="feed-post-acoes" data-tour="post-acoes">
