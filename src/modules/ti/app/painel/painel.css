@@ -1,0 +1,122 @@
+/* ==========================================================================
+   TI · Painel. Estilos só desta aba (prefixo ti-painel-). Base, cartão e
+   botão vêm do ti.css; tipografia e alturas, dos tokens de styles/ui.css.
+   ========================================================================== */
+
+/* Foco visível em tudo que é clicável no painel (o ti.css não desenha foco
+   nos botões nem nos cartões). */
+.ti-painel-page :is(button, a):focus-visible {
+  outline: 2px solid var(--mod-accent);
+  outline-offset: 2px;
+}
+
+.ti-painel-sr {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+/* ---------- números de cima: termo (prioridade) + ativos + custo ---------- */
+.ti-painel-topo {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+}
+.ti-painel-num {
+  display: flex; flex-direction: column; gap: 6px; min-width: 0;
+  text-align: left; font-family: inherit; color: inherit;
+}
+button.ti-painel-num { cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
+button.ti-painel-num:hover { border-color: var(--f-primary-line); box-shadow: var(--f-shadow-md); }
+
+.ti-painel-num-l {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: var(--font-size-xs); font-weight: var(--fw-semibold); color: var(--f-muted);
+  text-transform: uppercase; letter-spacing: var(--ls-wide);
+}
+.ti-painel-num-n {
+  display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;
+  font-size: var(--font-size-4xl); font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-tight); line-height: var(--lh-tight);
+  font-variant-numeric: tabular-nums; overflow-wrap: anywhere;
+}
+.ti-painel-num-n small { font-size: var(--font-size-md); font-weight: var(--fw-semibold); letter-spacing: normal; }
+.ti-painel-num-s { font-size: var(--font-size-sm); color: var(--f-muted); line-height: var(--lh-normal); }
+.ti-painel-num-s b { color: var(--f-ink); font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; }
+.ti-painel-cta {
+  display: inline-flex; align-items: center; gap: 2px; margin-top: auto; padding-top: 4px;
+  font-size: var(--font-size-sm); font-weight: var(--fw-semibold); color: var(--mod-accent-ink);
+}
+
+/* Cartão do termo: é o que pede ação do time, por isso vem primeiro e com cor.
+   A cor fica na borda e no número; o texto de apoio continua sobre branco para
+   manter o contraste. */
+.ti-painel-prioridade { border-left-width: 4px; }
+.ti-painel-prioridade.is-warn { border-left-color: var(--f-amber); }
+.ti-painel-prioridade.is-warn .ti-painel-num-n { color: var(--f-amber); }
+.ti-painel-prioridade.is-warn .ti-painel-num-l { color: var(--f-amber); }
+.ti-painel-prioridade.is-ok { border-left-color: var(--f-green); }
+.ti-painel-prioridade.is-ok .ti-painel-num-n { color: var(--f-green); }
+
+.ti-painel-meta { display: flex; flex-direction: column; gap: 4px; margin-top: 2px; }
+.ti-painel-medidor { display: block; height: 8px; border-radius: 999px; background: var(--f-gray-100); overflow: hidden; }
+.ti-painel-medidor > span { display: block; height: 100%; border-radius: 999px; background: var(--f-green); }
+.ti-painel-meta-t { font-size: var(--font-size-xs); color: var(--f-muted); font-variant-numeric: tabular-nums; }
+.ti-painel-meta-t b { color: var(--f-ink); }
+
+/* ---------- barras (fornecedor, situação, tipo, termo) ---------- */
+.ti-painel-barras { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.ti-painel-barra {
+  display: flex; flex-direction: column; gap: 6px; width: 100%;
+  min-height: var(--ctl-h); padding: 8px 10px; border-radius: var(--ctl-radius-sm);
+  background: none; border: 1px solid transparent; text-align: left;
+  font-family: inherit; color: inherit;
+}
+.ti-painel-barra.is-link { cursor: pointer; }
+.ti-painel-barra.is-link:hover { background: var(--f-gray-100); border-color: var(--f-border); }
+.ti-painel-barra-topo { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: var(--font-size-sm); }
+.ti-painel-barra-l { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: var(--fw-medium); }
+.ti-painel-barra-v { display: inline-flex; align-items: baseline; gap: 6px; flex: none; font-variant-numeric: tabular-nums; }
+.ti-painel-barra-p { min-width: 4ch; text-align: right; font-size: var(--font-size-xs); color: var(--f-muted); }
+.ti-painel-barra-extra { font-size: var(--font-size-xs); color: var(--f-muted); font-variant-numeric: tabular-nums; margin-top: -4px; }
+.ti-painel-seta { flex: none; color: var(--f-muted); }
+.ti-painel-barra.is-link:hover .ti-painel-seta { color: var(--mod-accent); }
+.ti-painel-trilho { display: block; height: 6px; border-radius: 999px; background: var(--f-gray-100); overflow: hidden; }
+.ti-painel-trilho > span { display: block; height: 100%; border-radius: 999px; background: var(--mod-accent); }
+
+.ti-painel-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--neutral-border-strong); }
+.ti-painel-dot.ok { background: var(--f-green); }
+.ti-painel-dot.info { background: var(--mod-accent); }
+.ti-painel-dot.brand { background: var(--terracotta); }
+.ti-painel-dot.crit { background: var(--f-red); }
+
+.ti-painel-rodape { margin-top: 12px; width: 100%; }
+.ti-painel-vazio-sec { margin: 0; color: var(--f-muted); font-size: var(--font-size-sm); }
+
+/* ---------- estados: erro e lista vazia ---------- */
+.ti-painel-estado {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 32px 20px; text-align: center; color: var(--f-muted); font-size: var(--font-size-md);
+}
+.ti-painel-estado p { margin: 0; max-width: 60ch; line-height: var(--lh-normal); }
+.ti-painel-estado strong { color: var(--f-ink); }
+.ti-painel-estado .ti-btn { margin-top: 4px; }
+
+.ti-painel-skel-card { display: flex; flex-direction: column; gap: 10px; }
+.ti-skel.ti-painel-skel-n { width: 30%; height: 28px; }
+
+/* ---------- responsivo ---------- */
+@media (max-width: 1024px) {
+  /* Termo ocupa a linha inteira; ativos e custo dividem a de baixo. */
+  .ti-painel-topo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ti-painel-topo > .ti-painel-prioridade { grid-column: 1 / -1; }
+}
+@media (max-width: 560px) {
+  .ti-painel-topo { grid-template-columns: minmax(0, 1fr); }
+  .ti-painel-num-n { font-size: var(--font-size-3xl); }
+}
+@media (max-width: 768px) {
+  .ti-painel-barra { min-height: var(--ctl-h-lg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  button.ti-painel-num { transition: none; }
+}

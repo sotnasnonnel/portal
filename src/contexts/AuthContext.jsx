@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { supabase } from '../services/supabase';
+import { supabase, setSupabaseVerComo } from '../services/supabase';
 import { horasRoleFromPerfil, perfilEfetivoDp } from '../config/horasPapel';
 import { clearSupabaseCache as clearReembolsoCache } from '../modules/reembolso/lib/supabaseCache.js';
 import { resetPreload } from '../modules/reembolso/services/dataPreload.js';
@@ -7,6 +7,8 @@ import { clearSolicIdentity } from '../modules/solic/lib/identity.ts';
 import { clearSupabaseCache as clearSolicCache } from '../modules/solic/lib/supabaseCache.ts';
 import { carregarFotoMicrosoft, fotoEmCache, limparFotoMicrosoft } from '../services/fotoMicrosoft';
 import { PLR_ANO } from '../config/plr';
+import { montarUsuario } from './montarUsuario';
+import { CHAVE_SESSAO_VER_COMO, podeVerComo } from '../config/verComo';
 
 const AuthContext = createContext(null);
 
@@ -78,6 +80,43 @@ async function resolveSolicProfile(authUser) {
   return data ?? null;
 }
 
+function montarModules(user, reembolsoProfile, solicProfile) {
+  return {
+    // DP liberado para gestor, coordenador e admin (RH); usuário comum fica bloqueado.
+    dp: ['gestor', 'coordenador', 'admin', 'rh'].includes(user?.perfil) ? user.perfil : null,
+    // Reembolso liberado: acesso pelo papel cadastrado em reembolso_profiles.
+    // O time do Financeiro (financeiro_role = 'admin') entra como admin mesmo
+    // sem cadastro lá — enxerga todos os pedidos e gera o PDF com as notas.
+    reembolso: reembolsoProfile?.role ?? (user?.financeiroRole === 'admin' ? 'admin' : null), // user | admin
+    solic: solicProfile?.role ?? null,         // user | admin
+    // Gestão de Horas: aberto a todos os logados. O papel DERIVA do perfil da
+    // Gestão de Pessoas (mesma hierarquia); quem enxerga a equipe são os
+    // superiores da árvore (garantido pela RLS). O super-admin também tem passe
+    // livre no banco.
+    horas: user ? horasRoleFromPerfil(user.perfil, user.horasRole) : null,
+    // Financeiro: aberto a todos os logados (como o Atendimento e o
+    // Programas). Era restrito a quem tinha CARGO de diretor, gerente ou
+    // coordenador, e a restrição não se sustentava: pedir cartão é demanda de
+    // quem executa, e quem ficava de fora acabava pedindo pelo gestor — sem
+    // rastro de quem realmente precisava. A RLS já é por colaborador (cada um
+    // enxerga e edita os PRÓPRIOS pedidos), então abrir a porta não abre dado
+    // de ninguém. 'admin' = time do Financeiro (executa/configura fluxos), via
+    // financeiro_role (Gerenciar acessos), e continua restrito.
+    financeiro: user ? (user.financeiroRole || 'user') : null,
+    // Atendimento: aberto a todos os logados (como a Gestão de Horas) —
+    // qualquer um abre chamado. 'atendente'/'admin' são o time do Adm, que
+    // enxerga a fila; vêm de administrativo_role (Gerenciar acessos).
+    administrativo: user ? (user.administrativoRole || 'user') : null,
+    // Programas: aberto a todos os logados — qualquer um registra ideia e
+    // indica oportunidade. 'comercial'/'admin' são quem avalia a Alavanca e
+    // enxerga o painel dela; vêm de programas_role (Gerenciar acessos).
+    programas: user ? (user.programasRole || 'user') : null,
+    // PLR: fechado. O papel vem do banco: 'admin', 'gestor' (o setor dele) ou
+    // 'usuario' (a própria linha). Ver config/plr.js.
+    plr: user?.plrAcesso ?? null,
+  };
+}
+
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [user, setUser] = useState(null);          // colaborador (formato legado: id, nome, email, perfil, funcao, dataAdmissao)
@@ -142,46 +181,10 @@ export function AuthProvider({ children }) {
         return;
       }
       setBlocked(null);
-      const rhDp = colab.rh_dp === true;
-      // Perfil efetivo no DP: RH que não é gestor/admin navega como 'rh' (perfil real fica no banco).
-      const perfilEfetivo = perfilEfetivoDp(colab.perfil, rhDp);
-      setUser({
-        id: colab.id,
-        nome: colab.nome,
-        email: colab.email,
-        perfil: perfilEfetivo,
-        rhDp,
-        // Leitura da Ausência Programada e do Humor da empresa (veAusenciaTodos).
-        veAusenciaHumor: colab.ve_ausencia_humor === true,
-        solicVistoEm: colab.solic_visto_em || null,
-        // Última versão de "Novidades" que a pessoa já viu (config/novidades.js).
-        novidadesVistoId: colab.novidades_visto_id || null,
-        funcao: colab.funcao || null,
-        dataAdmissao: colab.data_admissao || null,
-        // Só para o destaque de aniversário da própria pessoa na Home.
-        dataNascimento: colab.data_nascimento || null,
-        horasGerenciaId: colab.horas_gerencia_id || null,  // gerência p/ ver projetos ao apontar
-        horasRole: colab.horas_role || null,               // elevação só-do-Horas (ver horasRoleFromPerfil)
-        financeiroRole: colab.financeiro_role || null,     // acesso ao módulo Financeiro
-        administrativoRole: colab.administrativo_role || null, // time do Adm (atendente/admin)
-        // Capacidade avulsa: trocar o responsável de um chamado do Adm. Não é
-        // papel — quem a tem pode ser admin ou atendente. O banco também barra.
-        admReatribui: colab.administrativo_reatribui === true,
-        programasRole: colab.programas_role || null,           // time comercial dos Programas
-        // Capacidade avulsa, como admReatribui: abre SÓ a Consulta do
-        // Organograma para quem não tem perfil de DP (ver config/organograma.js).
-        organogramaConsulta: colab.organograma_consulta === true,
-        // Idem para a tela de Ajustes de Valores — só que esta abre ESCRITA, e
-        // a mesma regra está na RLS de precos_itens (ver config/valores.js).
-        valoresAjuste: colab.valores_ajuste === true,
-        // Idem para Frota e Alojamentos (card "Administrativo"): libera entrar E
-        // escrever. Nada a ver com administrativo_role, que é o Atendimento —
-        // ver config/setorAdm.js e app_private.setor_adm_time().
-        setorAdmAcesso: colab.setor_adm_acesso === true,
-        // 'admin' | 'gestor' | 'usuario' | null (ver config/plr.js).
+      setUser(montarUsuario(colab, {
         plrAcesso: plrRes?.error ? null : (plrRes?.data ?? null),
         authId: authUser.id,
-      });
+      }));
       setReembolsoProfile(reemRes.data ?? null);
       setSolicProfile(solic);
       setLoading(false);
@@ -225,6 +228,9 @@ export function AuthProvider({ children }) {
     clearSolicIdentity();
     clearSolicCache();
     limparFotoMicrosoft();
+    setSupabaseVerComo(false);
+    setSimulado(null);
+    try { window.sessionStorage.removeItem(CHAVE_SESSAO_VER_COMO); } catch { /* sem storage */ }
     await supabase.auth.signOut();
     setUser(null); setReembolsoProfile(null); setSolicProfile(null); setFotoUrl(null);
   }, []);
@@ -278,49 +284,107 @@ export function AuthProvider({ children }) {
     });
   }, [session]);
 
-  const modules = useMemo(() => ({
-    // DP liberado para gestor, coordenador e admin (RH); usuário comum fica bloqueado.
-    dp: ['gestor', 'coordenador', 'admin', 'rh'].includes(user?.perfil) ? user.perfil : null,
-    // Reembolso liberado: acesso pelo papel cadastrado em reembolso_profiles.
-    // O time do Financeiro (financeiro_role = 'admin') entra como admin mesmo
-    // sem cadastro lá — enxerga todos os pedidos e gera o PDF com as notas.
-    reembolso: reembolsoProfile?.role ?? (user?.financeiroRole === 'admin' ? 'admin' : null), // user | admin
-    solic: solicProfile?.role ?? null,         // user | admin
-    // Gestão de Horas: aberto a todos os logados. O papel DERIVA do perfil da
-    // Gestão de Pessoas (mesma hierarquia); quem enxerga a equipe são os
-    // superiores da árvore (garantido pela RLS). O super-admin também tem passe
-    // livre no banco.
-    horas: user ? horasRoleFromPerfil(user.perfil, user.horasRole) : null,
-    // Financeiro: aberto a todos os logados (como o Atendimento e o
-    // Programas). Era restrito a quem tinha CARGO de diretor, gerente ou
-    // coordenador, e a restrição não se sustentava: pedir cartão é demanda de
-    // quem executa, e quem ficava de fora acabava pedindo pelo gestor — sem
-    // rastro de quem realmente precisava. A RLS já é por colaborador (cada um
-    // enxerga e edita os PRÓPRIOS pedidos), então abrir a porta não abre dado
-    // de ninguém. 'admin' = time do Financeiro (executa/configura fluxos), via
-    // financeiro_role (Gerenciar acessos), e continua restrito.
-    financeiro: user ? (user.financeiroRole || 'user') : null,
-    // Atendimento: aberto a todos os logados (como a Gestão de Horas) —
-    // qualquer um abre chamado. 'atendente'/'admin' são o time do Adm, que
-    // enxerga a fila; vêm de administrativo_role (Gerenciar acessos).
-    administrativo: user ? (user.administrativoRole || 'user') : null,
-    // Programas: aberto a todos os logados — qualquer um registra ideia e
-    // indica oportunidade. 'comercial'/'admin' são quem avalia a Alavanca e
-    // enxerga o painel dela; vêm de programas_role (Gerenciar acessos).
-    programas: user ? (user.programasRole || 'user') : null,
-    // PLR: fechado. O papel vem do banco: 'admin', 'gestor' (o setor dele) ou
-    // 'usuario' (a própria linha). Ver config/plr.js.
-    plr: user?.plrAcesso ?? null,
-  }), [user, reembolsoProfile, solicProfile]);
+  const modulesReais = useMemo(
+    () => montarModules(user, reembolsoProfile, solicProfile),
+    [user, reembolsoProfile, solicProfile],
+  );
+
+  // --- Ver como (config/verComo.js) -----------------------------------------
+  // `simulado` = { user, reembolsoProfile, solicProfile } da pessoa escolhida.
+  // As telas recebem o dela; `usuarioReal` fica só para a faixa e o gate.
+  const [simulado, setSimulado] = useState(null);
+  const liberadoVerComo = podeVerComo(user);
+  const emVerComo = !!simulado && liberadoVerComo;
+  const modulesSimulados = useMemo(
+    () => (simulado ? montarModules(simulado.user, simulado.reembolsoProfile, simulado.solicProfile) : null),
+    [simulado],
+  );
+
+  // A trava de escrita do cliente acompanha o estado (services/supabase.js).
+  // Ligada já no render, e não num efeito: a primeira consulta das telas da
+  // pessoa simulada sai no mesmo ciclo.
+  setSupabaseVerComo(emVerComo);
+
+  const limparCachesDosModulos = () => {
+    clearReembolsoCache();
+    resetPreload();
+    clearSolicIdentity();
+    clearSolicCache();
+  };
+
+  const iniciarVerComo = useCallback(async (colabId) => {
+    if (!liberadoVerComo) return { ok: false, erro: 'Só o super admin usa o ver como.' };
+    if (!colabId || colabId === user?.id) {
+      setSimulado(null);
+      try { window.sessionStorage.removeItem(CHAVE_SESSAO_VER_COMO); } catch { /* sem storage */ }
+      return { ok: true };
+    }
+    const { data: colab, error } = await supabase.from('colaboradores').select('*').eq('id', colabId).maybeSingle();
+    if (error || !colab) return { ok: false, erro: 'Não foi possível carregar o cadastro dessa pessoa.' };
+    const [reem, solic] = await Promise.all([
+      colab.auth_id
+        ? supabase.from('reembolso_profiles').select('*').eq('id', colab.auth_id).maybeSingle()
+        : Promise.resolve({ data: null }),
+      colab.email
+        ? supabase.from('solic_profiles').select('*').ilike('email', colab.email).maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
+    limparCachesDosModulos();
+    setSimulado({
+      user: montarUsuario(colab, {
+        // O acesso real ao PLR vem de uma RPC que só responde pelo logado;
+        // aqui vale o papel gravado (Gerenciar acessos), que cobre o caso comum.
+        plrAcesso: colab.plr_role || null,
+        authId: colab.auth_id || null,
+      }),
+      reembolsoProfile: reem?.data ?? null,
+      solicProfile: solic?.data ?? null,
+    });
+    try { window.sessionStorage.setItem(CHAVE_SESSAO_VER_COMO, colabId); } catch { /* sem storage */ }
+    return { ok: true };
+  }, [liberadoVerComo, user?.id]);
+
+  const encerrarVerComo = useCallback(() => {
+    clearReembolsoCache();
+    resetPreload();
+    clearSolicIdentity();
+    clearSolicCache();
+    setSimulado(null);
+    try { window.sessionStorage.removeItem(CHAVE_SESSAO_VER_COMO); } catch { /* sem storage */ }
+  }, []);
+
+  // Depois do F5: o usuário real chegou e havia um ver como aberto nesta aba.
+  useEffect(() => {
+    if (!liberadoVerComo || simulado) return;
+    let id = null;
+    try { id = window.sessionStorage.getItem(CHAVE_SESSAO_VER_COMO); } catch { /* sem storage */ }
+    if (id) iniciarVerComo(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- gatilho é só o usuário real
+  }, [liberadoVerComo]);
+
+  const userDasTelas = emVerComo ? simulado.user : user;
+  const modules = emVerComo ? modulesSimulados : modulesReais;
 
   const value = useMemo(() => ({
-    user, session, modules, reembolsoProfile, solicProfile, fotoUrl,
+    user: userDasTelas,
+    session,
+    modules,
+    reembolsoProfile: emVerComo ? simulado.reembolsoProfile : reembolsoProfile,
+    solicProfile: emVerComo ? simulado.solicProfile : solicProfile,
+    // A foto do Microsoft é a de quem está logado: no ver como, iniciais.
+    fotoUrl: emVerComo ? null : fotoUrl,
     blocked, loading, error,
     signInWithMicrosoft, logout, refreshReembolsoProfile, markSolicVisto, refreshHorasIdentity,
     marcarNovidadesVistas,
-  }), [user, session, modules, reembolsoProfile, solicProfile, fotoUrl, blocked, loading, error,
+    // Ver como: só a faixa/botão e o gate usam estes.
+    usuarioReal: user,
+    podeVerComo: liberadoVerComo,
+    verComo: emVerComo ? simulado.user : null,
+    iniciarVerComo,
+    encerrarVerComo,
+  }), [userDasTelas, session, modules, emVerComo, simulado, reembolsoProfile, solicProfile, fotoUrl, blocked, loading, error,
        signInWithMicrosoft, logout, refreshReembolsoProfile, markSolicVisto, refreshHorasIdentity,
-       marcarNovidadesVistas]);
+       marcarNovidadesVistas, user, liberadoVerComo, iniciarVerComo, encerrarVerComo]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

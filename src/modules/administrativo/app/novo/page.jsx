@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useParams, useNavigate, Navigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, Navigate, Link } from 'react-router-dom';
 import {
   ArrowLeft, Paperclip, X, Send, AlertCircle, FileText, CheckCircle2, Loader2, Star,
   Layers, Clock,
@@ -11,6 +11,7 @@ import {
   listarProjetos, buscarAvaliacaoPendente, buscarCentroDeCusto, listarCentrosDeCusto,
 } from '../../lib/chamados';
 import { desdobrarMobilizacao } from '../../lib/desdobramento';
+import { valoresDaUrl } from '../../lib/preenchimento';
 import { validarCamposExtras, limparValores, mesclarComExtras } from '../../lib/camposExtras';
 import { errosDoEsquema, errosDoServico, ariaDoErro } from '../../lib/errosDeCampo';
 import CampoExtra from './CampoExtra';
@@ -50,6 +51,7 @@ const preencheuAlgo = (valores, inicial) => Object.entries(valores).some(([k, v]
 
 export default function NovoChamadoAdm() {
   const { classe, servico } = useParams();
+  const [params] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const inputArquivo = useRef(null);
@@ -83,7 +85,9 @@ export default function NovoChamadoAdm() {
   // Serviço com formulário próprio (mobilização) traz o estado inicial dele;
   // os demais começam com os campos extras cadastrados, que são chave/valor.
   const form = formDoServico(classe, servico);
-  const [extras, setExtras] = useState(() => (form ? form.estadoInicial() : {}));
+  // Sem formulário próprio, a URL pode trazer valores iniciais (o módulo TI abre
+  // a troca de equipamento já com série e tipo; ver lib/preenchimento.js).
+  const [extras, setExtras] = useState(() => (form ? form.estadoInicial() : valoresDaUrl(classe, servico, params)));
   // Para quem é o chamado. A pessoa é confrontada com a Folga de Campo e a
   // Ausência Programada: se estiver fora, o SLA só começa na volta dela.
   const [paraQuem, setParaQuem] = useState(PARA_MIM);

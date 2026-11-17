@@ -86,7 +86,7 @@ export default function PortalAdmin() {
     setLoading(true);
     setErr("");
     const [colab, reemb, solic] = await Promise.all([
-      supabase.from("colaboradores").select("id, nome, email, perfil, rh_dp, organograma_consulta, valores_ajuste, setor_adm_acesso, horas_role, financeiro_role, administrativo_role, programas_role, plr_role, auth_id, ativo").order("nome"),
+      supabase.from("colaboradores").select("id, nome, email, perfil, rh_dp, organograma_consulta, valores_ajuste, setor_adm_acesso, ti_acesso, horas_role, financeiro_role, administrativo_role, programas_role, plr_role, auth_id, ativo").order("nome"),
       supabase.from("reembolso_profiles").select("id, email, role"),
       supabase.from("solic_profiles").select("id, email, role"),
     ]);
@@ -117,6 +117,8 @@ export default function PortalAdmin() {
         // Idem, para Frota e Alojamentos (card "Administrativo" da Home). NÃO é
         // o mesmo que admRole, que é o Atendimento. Ver config/setorAdm.js.
         setorAdmAcesso: c.setor_adm_acesso === true,
+        // Idem, para o módulo TI (config/ti.js).
+        tiAcesso: c.ti_acesso === true,
         // 'usuario' e NULL são a mesma coisa (sem elevação) — o select mostra
         // ambos como "Pela hierarquia".
         horasRole: c.horas_role && c.horas_role !== "usuario" ? c.horas_role : "",
@@ -168,6 +170,10 @@ export default function PortalAdmin() {
       // Atendimento — a coluna ao lado.
       res = await supabase.from("colaboradores").update({ setor_adm_acesso: value }).eq("id", row.colabId);
       patch = { setorAdmAcesso: value };
+    } else if (app === "ti") {
+      // Booleana: libera entrar E escrever no módulo TI (ativos e termos).
+      res = await supabase.from("colaboradores").update({ ti_acesso: value }).eq("id", row.colabId);
+      patch = { tiAcesso: value };
     } else if (app === "reembolso") {
       res = await supabase.from("reembolso_profiles").update({ role: value }).eq("id", row.reembId);
       patch = { reembRole: value };
@@ -345,6 +351,27 @@ export default function PortalAdmin() {
     );
   }
 
+  // Módulo TI: booleana, como Frota e Alojamentos. Quem não está marcado nem
+  // vê o card; a RLS de ti_* lê a mesma coluna.
+  function TiCheck({ row }) {
+    const key = `${row.email}:ti`;
+    const saving = savingKey === key;
+    return (
+      <label
+        className="pa-efetivo pa-check"
+        title="Abre o módulo TI (controle de ativos e termos) para esta pessoa, com permissão de escrita."
+      >
+        <input
+          type="checkbox"
+          checked={row.tiAcesso}
+          disabled={saving}
+          onChange={(e) => changeRole(row, "ti", e.target.checked)}
+        />
+        TI
+      </label>
+    );
+  }
+
   function RoleSelect({ row, app, value, options, hasAccess }) {
     const key = `${row.email}:${app}`;
     const saving = savingKey === key;
@@ -457,7 +484,7 @@ export default function PortalAdmin() {
                 <th>Atendimento</th>
                 {/* O SETOR, não o módulo de chamados da coluna anterior: Frota e
                     Alojamentos (config/setorAdm.js). */}
-                <th>Administrativo (setor)</th>
+                <th>Administrativo (setor) e TI</th>
                 <th>Programas</th>
                 <th>Resultados</th>
               </tr>
@@ -538,6 +565,7 @@ export default function PortalAdmin() {
                   </td>
                   <td>
                     <SetorAdmCheck row={row} />
+                    <TiCheck row={row} />
                   </td>
                   <td>
                     <RoleSelect row={row} app="programas" value={row.progRole ?? ""} options={PROGRAMAS_ROLES} hasAccess />

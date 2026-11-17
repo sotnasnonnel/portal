@@ -1,0 +1,47 @@
+/* "Ver como" (components/VerComo). Âmbar, como no HUB PHD: é um estado de
+   exceção e tem de saltar aos olhos em qualquer módulo. Tokens de ui.css. */
+.vercomo-faixa {
+  /* Embaixo, e não no topo: no topo cobriria o cabeçalho e as sidebars fixas
+     dos módulos. O body ganha a mesma folga (VerComo.jsx). */
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  padding: 6px 16px; background: #fffbeb; border-top: 1px solid #fcd34d;
+  color: #92400e; font-size: var(--font-size-sm); line-height: var(--lh-normal);
+  box-shadow: 0 -2px 8px rgba(15, 23, 42, 0.08);
+}
+/* Lista de troca abre para cima: embaixo dela não há tela. */
+.vercomo-faixa .ss2-pop { top: auto; bottom: calc(100% + 4px); }
+body.em-vercomo { padding-bottom: 56px; }
+.vercomo-texto { flex: 1 1 320px; min-width: 0; }
+.vercomo-acoes { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-left: auto; }
+.vercomo-trocar { width: 260px; max-width: 100%; }
+.vercomo-sair, .vercomo-botao {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: var(--ctl-h-sm); padding: 0 12px; border-radius: 999px;
+  font-size: var(--font-size-xs); font-weight: var(--fw-semibold); font-family: inherit; cursor: pointer;
+}
+.vercomo-sair { color: #92400e; background: #fff; border: 1px solid #fcd34d; }
+.vercomo-sair:hover { background: #fef3c7; }
+.vercomo-erro { width: 100%; color: #b91c1c; font-size: var(--font-size-xs); }
+
+.vercomo-flutuante { position: fixed; z-index: 1000; touch-action: none; }
+.vercomo-botao {
+  color: var(--blue, #26405d); background: #fff; border: 1px solid #cbd5e1;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
+}
+.vercomo-botao.arrastando, .vercomo-alca.arrastando { cursor: grabbing; }
+.vercomo-painel {
+  display: flex; flex-direction: column; gap: 8px; width: 320px; max-width: calc(100vw - 32px);
+  padding: 12px; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+}
+.vercomo-painel-h { display: flex; align-items: center; justify-content: space-between; }
+.vercomo-titulo {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: var(--font-size-xs); font-weight: var(--fw-bold); color: var(--blue, #26405d);
+}
+.vercomo-alca { display: flex; color: #94a3b8; cursor: grab; }
+.vercomo-x { display: flex; background: none; border: none; cursor: pointer; color: #64748b; }
+.vercomo-hint { font-size: var(--font-size-xs); color: #64748b; }
+
+@media print { .vercomo-faixa, .vercomo-flutuante { display: none; } }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, BarChart3, Clock, CreditCard, Headset, Sparkles, ShieldCheck, LogOut, ArrowRight, Lock, Hourglass, Blocks, MessageSquarePlus, Megaphone, Radar, Star, Newspaper, Target, Building2 } from 'lucide-react';
+import { Users, BarChart3, Clock, CreditCard, Headset, Sparkles, ShieldCheck, LogOut, ArrowRight, Lock, Hourglass, Blocks, MessageSquarePlus, Megaphone, Radar, Star, Newspaper, Target, Building2, MonitorSmartphone } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePontos } from '../../contexts/PontosContext';
 import { novidadesDoFeed } from '../../services/feed';
@@ -10,6 +10,7 @@ import { NOME_TITULO } from '../../config/pontos';
 import { isSuperAdmin } from '../../config/superAdmin';
 import { areasAdministrativoDe } from '../../config/administrativo';
 import { podeAcessarSetorAdm } from '../../config/setorAdm';
+import { podeAcessarTi, podeEditarTi } from '../../config/ti';
 import { podeAcessarProgramas } from '../../config/programas';
 import { podeVerTorre } from '../../config/torre';
 import { podeVerPlr, rotaInicialPlr, veSetoresPlr, veTodosSetoresPlr } from '../../config/plr';
@@ -164,6 +165,17 @@ export default function Home() {
       tone: 'blue',
       title: 'Administrativo',
       desc: 'Gestão de frota e de alojamentos',
+    },
+    // TI (config/ti.js): aberto a todos. O time de TI vê tudo; os demais
+    // consultam os equipamentos deles e da equipe abaixo na hierarquia.
+    podeAcessarTi(user) && {
+      to: podeEditarTi(user) ? '/ti/painel' : '/ti/modelos',
+      icon: MonitorSmartphone,
+      tone: 'slate',
+      title: 'TI',
+      desc: podeEditarTi(user)
+        ? 'Controle de ativos e termos de responsabilidade'
+        : 'Seus equipamentos e os da sua equipe',
     },
     {
       // Aberto a todos os logados, como a Gestão de Horas (lançado em

@@ -1,0 +1,149 @@
+/* ==========================================================================
+   TI · Ver ativos — lista, ficha e formulário (gaveta lateral).
+   Complementa ti.css sem editá-lo: tudo aqui tem prefixo ti-ativos- e vive sob
+   .tiRoot (a gaveta é montada dentro dela, no AppShell). Tipografia, alturas e
+   neutros vêm de styles/ui.css; cores, dos tokens --f-* / --mod-accent da raiz.
+   ========================================================================== */
+
+/* Só para leitor de tela. */
+.tiRoot .ti-ativos-sr {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ============================ lista ============================ */
+/* Linha de resultado: quantos, quanto custa e o atalho para limpar. */
+.ti-ativos-res {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--ctl-gap) 12px;
+  padding-top: 12px; border-top: 1px solid var(--f-border);
+  font-size: var(--font-size-sm); color: var(--f-muted);
+}
+.ti-ativos-res b { color: var(--f-ink); font-variant-numeric: tabular-nums; }
+.ti-ativos-res > span:first-child { flex: 1; min-width: 0; }
+.ti-ativos-limpar { height: var(--ctl-h-sm); font-size: var(--font-size-sm); }
+.ti-ativos-ordem-m { display: none; align-items: center; gap: 6px; font-size: var(--font-size-xs); font-weight: var(--fw-semibold); }
+
+/* Cabeçalho ordenável: o botão herda o desenho do th (caixa alta, 11px). */
+.ti-ativos-sort {
+  display: inline-flex; align-items: center; gap: 4px; padding: 0; margin: 0;
+  background: none; border: 0; cursor: pointer;
+  color: inherit; font: inherit; text-transform: inherit; letter-spacing: inherit;
+}
+.ti-ativos-sort svg { opacity: 0.45; flex: none; }
+.ti-ativos-sort:hover, .ti-ativos-sort.on { color: var(--f-ink); }
+.ti-ativos-sort.on svg { opacity: 1; color: var(--mod-accent); }
+.ti-ativos-t th.n .ti-ativos-sort { flex-direction: row-reverse; }
+
+.ti-ativos-serie-txt { font-variant-numeric: tabular-nums; letter-spacing: 0.01em; }
+.ti-ativos-corta { max-width: 28ch; overflow: hidden; text-overflow: ellipsis; }
+.ti-ativos-m-only { display: none; }
+
+/* Linha cuja ficha está aberta: o olho acha de volta onde estava. */
+.ti-ativos-t tr.ti-ativos-aberto td { background: var(--f-primary-soft); }
+.ti-ativos-t tr.ti-ativos-aberto td:first-child { box-shadow: inset 3px 0 0 var(--mod-accent); }
+
+.ti-ativos-vazio-sub { display: block; margin-top: 2px; }
+
+/* Celular: a tabela de 7 colunas vira cartões, um por ativo, sem rolagem
+   lateral. O cabeçalho some (a ordem vai para o seletor "Ordenar por"). */
+@media (max-width: 768px) {
+  .ti-ativos-ordem-m { display: inline-flex; }
+  .ti-ativos-m-only { display: inline; }
+  .ti-ativos-t, .ti-ativos-t tbody, .ti-ativos-t tfoot { display: block; width: 100%; }
+  .ti-ativos-t thead { display: none; }
+  .ti-ativos-t tbody tr.ti-click {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px;
+    grid-template-areas:
+      "serie valor"
+      "tipo  forn"
+      "resp  resp"
+      "sit   termo";
+    padding: 12px 14px; border-bottom: 1px solid var(--f-border);
+  }
+  .ti-ativos-t tbody tr.ti-click:last-child { border-bottom: none; }
+  .ti-ativos-t tbody tr.ti-click td {
+    display: block; padding: 0; border: 0; white-space: normal; min-width: 0; background: transparent;
+  }
+  .ti-ativos-t tbody tr.ti-click:hover, .ti-ativos-t tbody tr.ti-ativos-aberto { background: var(--f-primary-soft); }
+  .ti-ativos-t tbody tr.ti-ativos-aberto { box-shadow: inset 3px 0 0 var(--mod-accent); }
+  .ti-ativos-t tr.ti-ativos-aberto td:first-child { box-shadow: none; }
+  .ti-ativos-c-serie { grid-area: serie; }
+  .ti-ativos-c-serie .p { font-size: var(--font-size-md); font-weight: var(--fw-semibold); }
+  .ti-ativos-c-valor { grid-area: valor; justify-self: end; }
+  .ti-ativos-c-tipo { grid-area: tipo; }
+  .ti-ativos-c-tipo .p, .ti-ativos-c-tipo .s { display: inline; }
+  .ti-ativos-c-tipo .s::before { content: ' · '; }
+  .ti-ativos-c-forn { grid-area: forn; justify-self: end; color: var(--f-muted); font-size: var(--font-size-xs); }
+  .ti-ativos-c-resp { grid-area: resp; }
+  .ti-ativos-c-sit { grid-area: sit; }
+  .ti-ativos-c-termo { grid-area: termo; justify-self: end; }
+  .ti-ativos-corta { max-width: none; }
+  .ti-ativos-t tbody tr:not(.ti-click) td { display: block; }
+  .ti-ativos-t tfoot { position: sticky; bottom: 0; z-index: 2; }
+  .ti-ativos-t tfoot tr { display: flex; justify-content: space-between; }
+  .ti-tbl .ti-ativos-t tfoot td { position: static; box-shadow: none; border-top: 1px solid var(--f-border); flex: 1; }
+  .ti-ativos-res > span:first-child { flex-basis: 100%; }
+}
+
+/* ============================ gaveta ============================ */
+.ti-ativos-drawer:focus { outline: none; }
+
+.ti-ativos-serie { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ti-ativos-serie h2 { overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.ti-ativos-cab-pills { margin-top: 10px; }
+
+.ti-ativos-dl-full { grid-column: 1 / -1; }
+.ti-ativos-texto { white-space: pre-line; font-weight: var(--fw-regular); line-height: var(--lh-normal); }
+.ti-ativos-vazio { color: var(--f-muted); font-weight: var(--fw-regular); font-style: italic; }
+.ti-ativos-pessoa { display: inline-flex; flex-direction: column; min-width: 0; }
+.ti-ativos-sub { font-size: var(--font-size-xs); color: var(--f-muted); font-weight: var(--fw-regular); }
+a.ti-ativos-sub { color: var(--mod-accent-ink); text-decoration: none; overflow-wrap: anywhere; }
+a.ti-ativos-sub:hover { text-decoration: underline; }
+.ti-ativos-link { display: inline-flex; align-items: center; gap: 4px; color: var(--mod-accent-ink); }
+.ti-ativos-rodape-dica { flex: 1 1 220px; }
+
+/* Histórico em linha do tempo: data em cima, cada mudança numa linha. */
+.ti-ativos-tl { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.ti-ativos-tl li {
+  position: relative; display: flex; flex-direction: column; gap: 2px;
+  padding-left: 16px; font-size: var(--font-size-sm);
+}
+.ti-ativos-tl li::before {
+  content: ''; position: absolute; left: 0; top: 6px; width: 8px; height: 8px;
+  border-radius: 50%; background: var(--mod-accent);
+}
+.ti-ativos-tl li:not(:last-child)::after {
+  content: ''; position: absolute; left: 3px; top: 18px; bottom: -10px; width: 2px; background: var(--f-primary-line);
+}
+.ti-ativos-tl-data { font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; }
+.ti-ativos-tl-mud { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ti-ativos-tl-mud svg { color: var(--f-muted); flex: none; }
+.ti-ativos-tl-obs { color: var(--f-ink); font-style: italic; }
+.ti-ativos-mais { margin-top: 12px; }
+
+.ti-ativos-termos { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ti-ativos-termos li { display: flex; align-items: center; gap: 10px; font-size: var(--font-size-sm); }
+.ti-ativos-termos li > svg { color: var(--f-muted); flex: none; }
+.ti-ativos-termos-tx { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ti-ativos-termos-tx b { font-weight: var(--fw-medium); overflow-wrap: anywhere; }
+
+/* ============================ formulário ============================ */
+.ti-ativos-obrig { color: var(--f-red); }
+.ti-ativos-msg { font-size: var(--font-size-xs); color: var(--f-red); font-weight: var(--fw-medium); }
+.ti-ativos-dica { font-size: var(--font-size-xs); color: var(--f-muted); line-height: var(--lh-normal); }
+.ti-ativos-dica.aviso { color: var(--f-amber); }
+.ti-fld.ti-ativos-inv .ti-inp { border-color: var(--f-red); }
+.ti-fld.ti-ativos-inv .ti-inp:focus { outline-color: var(--f-red-bg); }
+.ti-fld.ti-ativos-inv label { color: var(--f-red); }
+
+.ti-ativos-moeda { position: relative; }
+.ti-ativos-moeda > span {
+  position: absolute; left: var(--ctl-pad-x); top: 50%; transform: translateY(-50%);
+  color: var(--f-muted); font-size: var(--font-size-sm); pointer-events: none;
+}
+.ti-ativos-moeda .ti-inp { padding-left: calc(var(--ctl-pad-x) + 24px); }
+
+.ti-ativos-erro-geral { flex: 1 1 100%; }
+@media (min-width: 769px) {
+  .ti-ativos-erro-geral { flex: 0 1 auto; }
+}

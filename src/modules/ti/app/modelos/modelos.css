@@ -1,0 +1,129 @@
+/* ==========================================================================
+   TI — Resumo (/ti/modelos). Só classes ti-res-*; o resto vem de ti.css.
+   Tipografia e alturas por token (styles/ui.css); acento via --mod-accent.
+   ========================================================================== */
+
+/* Só para leitor de tela. */
+.ti-res-sr {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ---------- aviso do termo ---------- */
+.ti-res-termo {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+  padding: 14px 16px; border-radius: 12px; border: 1px solid transparent;
+  line-height: var(--lh-normal);
+}
+.ti-res-termo.warn {
+  background: var(--f-amber-bg); border-color: color-mix(in srgb, var(--f-amber) 30%, transparent);
+  border-left: 4px solid var(--f-amber);
+}
+.ti-res-termo.ok {
+  background: var(--f-green-bg); color: var(--f-green);
+  padding: 10px 14px; font-size: var(--font-size-sm);
+}
+.ti-res-termo-ic { display: inline-flex; flex: none; }
+.ti-res-termo.warn .ti-res-termo-ic {
+  align-self: flex-start; padding: 8px; border-radius: 10px;
+  background: var(--f-surface); color: var(--f-amber);
+}
+.ti-res-termo-tx { flex: 1 1 260px; min-width: 0; margin: 0; }
+.ti-res-termo-tx h2 { margin: 0 0 2px; font-size: var(--font-size-lg); font-weight: var(--fw-semibold); color: var(--f-ink); }
+.ti-res-termo-tx p { margin: 0; font-size: var(--font-size-sm); color: var(--f-ink); }
+.ti-res-termo-a { flex: none; }
+.ti-res-termo-link { margin: 0 0 0 auto; color: var(--f-green); }
+
+/* ---------- seções ---------- */
+.ti-res-sec .ti-card-h { flex-wrap: wrap; }
+.ti-res-nota { align-items: center; margin-bottom: 12px; }
+.ti-res-nota svg { flex: none; }
+.ti-res-filtros { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin-bottom: 12px; }
+.ti-res-filtros .ti-fld { flex: 1 1 240px; }
+.ti-res-filtros .ti-chips { min-height: var(--ctl-h); }
+
+/* ---------- equipamentos ---------- */
+.ti-res-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ti-res-eq {
+  display: flex; align-items: stretch; gap: 8px;
+  border: 1px solid var(--f-border); border-left: 3px solid var(--mod-accent);
+  border-radius: var(--ctl-radius); background: var(--f-surface);
+}
+.ti-res-eq-main {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px;
+  min-height: var(--ctl-h-lg); padding: 10px 12px;
+  background: none; border: 0; border-radius: var(--ctl-radius); text-align: left;
+  font-family: inherit; color: inherit; cursor: pointer;
+}
+.ti-res-eq-main:hover { background: var(--f-gray-100); }
+.ti-res-eq-main:focus-visible, .ti-res-troca:focus-visible, .ti-res-pessoa summary:focus-visible, .ti-res-a:focus-visible {
+  outline: 2px solid var(--mod-accent); outline-offset: 2px;
+}
+.ti-res-eq-ic {
+  display: inline-flex; flex: none; padding: 8px; border-radius: 10px;
+  background: var(--mod-accent-soft); color: var(--mod-accent-ink);
+}
+.ti-res-eq-tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: var(--font-size-sm); }
+.ti-res-eq-tx b { font-size: var(--font-size-md); font-weight: var(--fw-semibold); overflow-wrap: anywhere; }
+.ti-res-eq-tx span { color: var(--f-muted); font-size: var(--font-size-xs); overflow-wrap: anywhere; }
+.ti-res-serie { font-variant-numeric: tabular-nums; letter-spacing: var(--ls-wide); }
+.ti-res-eq-st { flex: none; }
+.ti-res-eq-seta { flex: none; color: var(--f-muted); }
+.ti-res-troca { flex: none; align-self: center; margin-right: 10px; text-decoration: none; }
+
+.ti-res-rodape {
+  display: flex; align-items: flex-start; gap: 8px; margin: 14px 0 0;
+  padding-top: 12px; border-top: 1px dashed var(--f-border);
+  font-size: var(--font-size-sm); color: var(--f-muted); line-height: var(--lh-normal);
+}
+.ti-res-rodape svg { flex: none; margin-top: 2px; }
+.ti-res-a { color: var(--mod-accent-ink); font-weight: var(--fw-medium); text-underline-offset: 2px; }
+
+/* ---------- equipe ---------- */
+.ti-res-pessoas { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.ti-res-pessoa { border: 1px solid var(--f-border); border-radius: var(--ctl-radius); background: var(--f-surface); }
+.ti-res-pessoa[open] { border-color: var(--mod-accent-soft); box-shadow: var(--f-shadow-sm); }
+.ti-res-pessoa summary {
+  display: flex; align-items: center; gap: 10px; min-height: var(--ctl-h-lg); padding: 8px 12px;
+  list-style: none; cursor: pointer; border-radius: var(--ctl-radius);
+}
+.ti-res-pessoa summary::-webkit-details-marker { display: none; }
+.ti-res-pessoa summary:hover { background: var(--f-gray-100); }
+.ti-res-pessoa-tx { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: var(--font-size-sm); }
+.ti-res-pessoa-tx b { font-weight: var(--fw-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ti-res-pessoa-tx span { color: var(--f-muted); font-size: var(--font-size-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ti-res-pessoa-seta { flex: none; color: var(--f-muted); transition: transform 0.15s ease; }
+.ti-res-pessoa[open] .ti-res-pessoa-seta { transform: rotate(90deg); }
+.ti-res-lista-in { padding: 4px 12px 12px; }
+
+/* ---------- tabela do time de TI ---------- */
+/* O nome da pessoa é um th de grupo (rowSpan): tira o visual de cabeçalho
+   (caixa alta, fundo cinza, sticky) que ti.css dá a todo th. */
+.ti-tbl .ti-t.ti-res-t tbody th {
+  position: static; box-shadow: none; background: var(--f-surface);
+  text-transform: none; letter-spacing: normal; white-space: normal;
+  font-size: var(--table-fs); color: var(--f-ink); vertical-align: top;
+  min-width: 200px; border-bottom: 1px solid var(--f-border);
+}
+.ti-tbl .ti-res-t tbody tr.ti-click:hover > * { background: var(--mod-accent-soft); }
+.ti-res-pes .nm, .ti-res-pes .em { display: block; }
+.ti-res-pes .nm { font-weight: var(--fw-semibold); }
+.ti-res-pes .em { font-weight: var(--fw-regular); font-size: var(--font-size-xs); color: var(--f-muted); overflow-wrap: anywhere; }
+.ti-res-pes .ti-pill { margin-top: 4px; }
+.ti-res-t tbody.ti-res-grp + tbody.ti-res-grp tr:first-child > * { border-top: 2px solid var(--f-border); }
+.ti-res-t tbody.ti-res-grp tr:last-child td { border-bottom: 1px solid var(--f-border); }
+.ti-res-t tbody.parado th, .ti-res-t tbody.parado td { background: var(--f-gray-100); }
+.ti-res-vazio { display: block; }
+
+@media (max-width: 768px) {
+  .ti-res-termo-a { width: 100%; min-height: var(--ctl-h-lg); }
+  .ti-res-termo-link { margin-left: 0; }
+  /* Celular: o botão de troca desce para baixo do equipamento, largura cheia. */
+  .ti-res-eq { flex-direction: column; gap: 0; }
+  .ti-res-troca { margin: 0 12px 12px; align-self: stretch; }
+  .ti-res-eq-main { flex-wrap: wrap; }
+  .ti-res-eq-st { order: 3; flex-basis: 100%; padding-left: 46px; }
+  .ti-res-eq-seta { display: none; }
+  .ti-res-pessoa summary { flex-wrap: wrap; }
+  .ti-res-pessoa summary .ti-pill { order: 3; margin-left: 42px; }
+}

@@ -5,6 +5,7 @@ import { podeAcessarMobilizacao } from './mobilizacao';
 import { podeVerTorre } from './torre';
 import { podeVerPlr } from './plr';
 import { areasFinanceiroDe } from './financeiro';
+import { podeAcessarTi } from './ti';
 
 // Os módulos que uma pessoa ENXERGA no portal, em uma lista só.
 //
@@ -30,6 +31,7 @@ export function modulosVisiveis(user, modules) {
   if (podeAcessarMobilizacao(user)) nomes.push('Mobilização');
   if (podeVerTorre(user, modules)) nomes.push('Torre de Controle');
   if (podeVerPlr(modules)) nomes.push('Resultados');
+  if (podeAcessarTi(user)) nomes.push('TI');
 
   // O card "Financeiro" cobre duas rotinas sem relação uma com a outra, e quem
   // relata pensa em uma delas — não no card. Por isso entram separadas, e só a

@@ -1,6 +1,6 @@
 import {
-  Aperture, AtSign, Award, BellRing, Cake, ClipboardCheck, Fingerprint, HardHat, Heart, ImagePlus, Laugh,
-  LayoutDashboard, Link2, MessageCircle, MessageSquareHeart, Newspaper, Palette, Paperclip, Ruler, Smile, Star, Type,
+  Aperture, AtSign, Award, BellRing, Cake, ClipboardCheck, FileSignature, Fingerprint, HardHat, Heart, ImagePlus, Laptop, Laugh,
+  LayoutDashboard, Link2, MessageCircle, MessageSquareHeart, MonitorSmartphone, Newspaper, Palette, Paperclip, Replace, Ruler, Smile, Star, Type,
 } from 'lucide-react';
 import { COMO_GANHAR } from './pontos.js';
 
@@ -47,6 +47,33 @@ const PONTOS_POST = COMO_GANHAR.find((g) => g.o === 'Postar no feed')?.p;
  * Serve para a novidade que só se entende vendo onde clicar.
  */
 export const NOVIDADES = [
+  {
+    // Módulo TI (config/ti.js) aberto a todos, e o termo de responsabilidade
+    // aceito no portal (supabase_migration_ti_termo_aceite.sql; lembrete diário
+    // pela edge function notify-termo-ti).
+    id: '2026-11-17-ti',
+    data: '2026-11-17',
+    itens: [
+      {
+        icon: MonitorSmartphone,
+        modulo: 'TI',
+        marca: 'Novidade',
+        titulo: 'Módulo TI',
+        texto: 'Veja os equipamentos que estão com você (e com a sua equipe) e peça troca direto pelo portal.',
+        opcoes: [
+          { icon: Laptop, label: 'Seus equipamentos' },
+          { icon: FileSignature, label: 'Termo de responsabilidade' },
+          { icon: Replace, label: 'Pedir troca' },
+        ],
+      },
+      {
+        icon: FileSignature,
+        modulo: 'TI',
+        titulo: 'Termo de responsabilidade no portal',
+        texto: 'Quem está com equipamento da PHD lê e aceita o termo em TI › Termo de responsabilidade, sem papel.',
+      },
+    ],
+  },
   {
     // Avisos do portal (pages/Avisos): qualquer colaborador publica, com o
     // banner no template de manchete da Comunicação. Depende da migração

@@ -1,0 +1,242 @@
+/* ==========================================================================
+   TI — Termo de responsabilidade (/ti/termos). Só classes ti-termo-*, escopadas
+   em .tiRoot. Substitui o bloco "termo de responsabilidade" de ti.css (as regras
+   antigas .ti-termo, .ti-termo-t, .ti-termo-p e .ti-termo-eq não são mais usadas
+   por esta página). Tipografia e alturas só por token (styles/ui.css).
+   ========================================================================== */
+
+/* Leitura: o documento e o aceite numa coluna de largura confortável. */
+.tiRoot .ti-termo-coluna { max-width: 880px; }
+
+.tiRoot .ti-termo-sr {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+.tiRoot .ti-termo-ic { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ----------------------------------------------------------- abas */
+.tiRoot .ti-termo-abas {
+  display: flex; gap: 4px; border-bottom: 1px solid var(--f-border);
+  overflow-x: auto; scrollbar-width: none;
+}
+.tiRoot .ti-termo-aba {
+  display: inline-flex; align-items: center; gap: 8px; flex: none;
+  min-height: var(--ctl-h); padding: 0 14px; margin-bottom: -1px;
+  background: none; border: none; border-bottom: 2px solid transparent;
+  color: var(--f-muted); font: inherit; font-size: var(--font-size-md); font-weight: var(--fw-semibold);
+  cursor: pointer;
+}
+.tiRoot .ti-termo-aba:hover { color: var(--f-ink); }
+.tiRoot .ti-termo-aba.on { color: var(--mod-accent-ink); border-bottom-color: var(--mod-accent); }
+.tiRoot .ti-termo-aba:focus-visible { outline: 2px solid var(--f-primary-line); outline-offset: -2px; border-radius: var(--ctl-radius-sm); }
+.tiRoot .ti-termo-aba-n {
+  font-size: var(--font-size-2xs); font-weight: var(--fw-bold);
+  background: var(--f-amber-bg); color: var(--f-amber); border-radius: 999px; padding: 1px 8px;
+}
+
+/* ----------------------------------------------------------- erro com ação */
+.tiRoot .ti-termo-erro, .tiRoot .ti-termo-eu { align-items: center; flex-wrap: wrap; justify-content: space-between; }
+.tiRoot .ti-termo-erro .ti-btn, .tiRoot .ti-termo-eu .ti-btn { height: var(--ctl-h-sm); }
+
+/* ----------------------------------------------------------- 1. introdução */
+.tiRoot .ti-termo-intro {
+  display: flex; flex-direction: column; gap: 14px;
+  border-top: 3px solid var(--mod-accent);
+}
+.tiRoot .ti-termo-intro-t { font-size: var(--font-size-xl); font-weight: var(--fw-bold); margin: 0; line-height: var(--lh-tight); }
+.tiRoot .ti-termo-intro-p { font-size: var(--font-size-md); line-height: var(--lh-relaxed); margin: 0; max-width: 68ch; }
+.tiRoot .ti-termo-lst { list-style: none; margin: 0; padding: 0; }
+.tiRoot .ti-termo-passos {
+  list-style: none; counter-reset: passo; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;
+}
+.tiRoot .ti-termo-passos li {
+  counter-increment: passo; position: relative;
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 10px 12px 10px 44px; border-radius: var(--ctl-radius); background: var(--f-gray-100);
+  font-size: var(--font-size-sm); line-height: var(--lh-normal);
+}
+.tiRoot .ti-termo-passos li::before {
+  content: counter(passo);
+  position: absolute; left: 12px; top: 10px;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 999px;
+  background: var(--mod-accent); color: #fff;
+  font-size: var(--font-size-xs); font-weight: var(--fw-bold);
+}
+.tiRoot .ti-termo-passos span { color: var(--f-muted); font-size: var(--font-size-xs); }
+.tiRoot .ti-termo-intro-pe { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+
+/* ----------------------------------------------------------- 2. documento */
+.tiRoot .ti-termo-doc { padding: 32px 40px; line-height: var(--lh-relaxed); }
+.tiRoot .ti-termo-doc-h { text-align: center; margin-bottom: 8px; }
+.tiRoot .ti-termo-kicker {
+  margin: 0 0 6px; color: var(--f-muted);
+  font-size: var(--font-size-2xs); font-weight: var(--fw-bold); letter-spacing: var(--ls-wide); text-transform: uppercase;
+}
+.tiRoot .ti-termo-titulo { font-size: var(--font-size-xl); font-weight: var(--fw-bold); margin: 0; line-height: var(--lh-tight); }
+.tiRoot .ti-termo-doc h3 {
+  font-size: var(--font-size-sm); font-weight: var(--fw-bold); letter-spacing: 0.02em;
+  margin: 28px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--f-border);
+}
+.tiRoot .ti-termo-par { font-size: var(--font-size-md); margin: 20px 0 0; max-width: 72ch; }
+.tiRoot .ti-termo-local { color: var(--f-muted); }
+.tiRoot .ti-termo-itens {
+  margin: 0; padding-left: 20px; max-width: 72ch;
+  display: flex; flex-direction: column; gap: 8px; font-size: var(--font-size-md);
+}
+.tiRoot .ti-termo-itens li::marker { color: var(--mod-accent); }
+
+/* quadros "rótulo: valor" (identificação, cadastro e equipamentos) */
+.tiRoot .ti-termo-quadro, .tiRoot .ti-termo-cad, .tiRoot .ti-termo-equip {
+  margin: 0; display: grid; font-size: var(--font-size-sm); line-height: var(--lh-normal);
+}
+.tiRoot .ti-termo-quadro, .tiRoot .ti-termo-equip {
+  border: 1px solid var(--f-border); border-radius: var(--ctl-radius); overflow: hidden;
+}
+.tiRoot .ti-termo-quadro > div, .tiRoot .ti-termo-equip > div {
+  display: grid; grid-template-columns: minmax(0, 15rem) minmax(0, 1fr); gap: 12px;
+  padding: 7px 12px; border-top: 1px solid var(--f-border);
+}
+.tiRoot .ti-termo-quadro > div:first-child, .tiRoot .ti-termo-equip > div:first-child { border-top: none; }
+.tiRoot .ti-termo-quadro dt, .tiRoot .ti-termo-equip dt { color: var(--f-muted); font-weight: var(--fw-semibold); }
+.tiRoot .ti-termo-quadro dd, .tiRoot .ti-termo-equip dd { margin: 0; overflow-wrap: anywhere; }
+.tiRoot .ti-termo-vazio {
+  display: inline-block; color: var(--f-amber); background: var(--f-amber-bg);
+  border-radius: 6px; padding: 0 6px; font-size: var(--font-size-xs); font-weight: var(--fw-semibold);
+}
+.tiRoot .ti-termo-equips { display: flex; flex-direction: column; gap: 10px; }
+
+/* ----------------------------------------------------------- 3. dados e aceite */
+.tiRoot .ti-termo-aceite {
+  display: flex; flex-direction: column; gap: 16px;
+  border-top: 3px solid var(--mod-accent); scroll-margin-top: 16px;
+}
+.tiRoot .ti-termo-aceite:focus { outline: none; }
+.tiRoot .ti-termo-aceite:focus-visible { outline: 2px solid var(--f-primary-line); outline-offset: 2px; }
+.tiRoot .ti-termo-sec-t { font-size: var(--font-size-lg); font-weight: var(--fw-bold); margin: 0; }
+.tiRoot .ti-termo-why {
+  display: flex; gap: 8px; margin: 0; color: var(--f-muted);
+  font-size: var(--font-size-sm); line-height: var(--lh-normal);
+}
+.tiRoot .ti-termo-why svg { flex: none; margin-top: 2px; color: var(--mod-accent); }
+.tiRoot .ti-termo-cad {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px 16px;
+  padding: 12px 14px; border-radius: var(--ctl-radius); background: var(--f-gray-100);
+}
+.tiRoot .ti-termo-cad > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tiRoot .ti-termo-cad dt { font-size: var(--font-size-xs); font-weight: var(--fw-semibold); color: var(--f-muted); }
+.tiRoot .ti-termo-cad dd { margin: 0; overflow-wrap: anywhere; }
+
+.tiRoot .ti-termo-form { border: none; margin: 0; padding: 0; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+.tiRoot .ti-termo-legenda {
+  padding: 0; margin-bottom: 10px; color: var(--f-muted);
+  font-size: var(--font-size-2xs); font-weight: var(--fw-bold); letter-spacing: var(--ls-wide); text-transform: uppercase;
+}
+.tiRoot .ti-termo-inp-err { border-color: var(--f-red); }
+.tiRoot .ti-termo-inp-err:focus { outline-color: var(--f-red-bg); border-color: var(--f-red); }
+.tiRoot .ti-termo-err { margin: 0; color: var(--f-red); font-size: var(--font-size-xs); font-weight: var(--fw-medium); }
+
+/* "Li e concordo": a caixa inteira é o alvo de toque. */
+.tiRoot .ti-termo-concordo {
+  display: flex; align-items: flex-start; gap: 12px;
+  min-height: var(--ctl-h-lg); padding: 12px 14px;
+  border: var(--ctl-border) solid var(--f-border); border-radius: var(--ctl-radius);
+  background: var(--f-surface); cursor: pointer;
+  font-size: var(--font-size-md); font-weight: var(--fw-medium); line-height: var(--lh-normal);
+}
+.tiRoot .ti-termo-concordo:hover { border-color: var(--f-primary-line); }
+.tiRoot .ti-termo-concordo.on { border-color: var(--mod-accent); background: var(--mod-accent-soft); }
+.tiRoot .ti-termo-concordo.err { border-color: var(--f-red); }
+.tiRoot .ti-termo-concordo input { flex: none; margin: 3px 0 0; accent-color: var(--mod-accent); transform: scale(1.25); transform-origin: top left; }
+.tiRoot .ti-termo-concordo:has(input:focus-visible) { outline: 2px solid var(--f-primary-line); outline-offset: 2px; }
+
+.tiRoot .ti-termo-aceite-a { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.tiRoot .ti-termo-btn-aceitar { height: var(--ctl-h-lg); padding: 0 22px; font-weight: var(--fw-semibold); }
+.tiRoot .ti-termo-aceite-a .ti-hint { max-width: 64ch; line-height: var(--lh-normal); }
+
+/* ----------------------------------------------------------- confirmação */
+.tiRoot .ti-termo-ok {
+  display: flex; gap: 14px; align-items: flex-start;
+  border-top: 3px solid var(--f-green);
+}
+.tiRoot .ti-termo-ok-ic {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: 48px; height: 48px; border-radius: 999px; background: var(--f-green-bg); color: var(--f-green);
+}
+.tiRoot .ti-termo-ok-tx { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.tiRoot .ti-termo-ok-tx h2 { font-size: var(--font-size-xl); font-weight: var(--fw-bold); margin: 0; line-height: var(--lh-tight); }
+.tiRoot .ti-termo-ok-tx h2:focus { outline: none; }
+.tiRoot .ti-termo-ok-tx p { margin: 0; font-size: var(--font-size-md); line-height: var(--lh-normal); }
+.tiRoot .ti-termo-ok-tx .ti-hint { font-size: var(--font-size-xs); }
+.tiRoot .ti-termo-ok-a { margin-top: 6px; }
+
+/* ----------------------------------------------------------- equipe */
+.tiRoot .ti-termo-resumo { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px; }
+.tiRoot .ti-termo-resumo-tx { display: flex; flex-direction: column; gap: 8px; flex: 1 1 320px; min-width: 0; }
+.tiRoot .ti-termo-resumo-n { margin: 0; font-size: var(--font-size-lg); font-weight: var(--fw-medium); }
+.tiRoot .ti-termo-resumo-n b { font-size: var(--font-size-2xl); font-weight: var(--fw-bold); letter-spacing: var(--ls-tight); font-variant-numeric: tabular-nums; }
+.tiRoot .ti-termo-barra { height: 8px; border-radius: 999px; background: var(--f-amber-bg); overflow: hidden; max-width: 420px; }
+.tiRoot .ti-termo-barra i { display: block; height: 100%; background: var(--f-green); border-radius: inherit; }
+.tiRoot .ti-termo-resumo-a { display: flex; flex-wrap: wrap; gap: var(--ctl-gap); }
+.tiRoot .ti-termo-filtros { display: flex; flex-direction: column; gap: 12px; }
+
+.tiRoot .ti-termo-lista tr.pend td:first-child { box-shadow: inset 3px 0 0 var(--f-amber); }
+.tiRoot .ti-termo-series { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.tiRoot .ti-termo-serie {
+  background: none; border: none; padding: 0; cursor: pointer;
+  color: var(--mod-accent-ink); font: inherit; font-size: var(--font-size-sm);
+  font-variant-numeric: tabular-nums; text-decoration: underline; text-underline-offset: 2px;
+}
+.tiRoot .ti-termo-serie:hover { color: var(--mod-accent); }
+.tiRoot .ti-termo-serie:focus-visible { outline: 2px solid var(--f-primary-line); outline-offset: 2px; border-radius: 4px; }
+.tiRoot .ti-termo-acoes { text-align: right; }
+.tiRoot .ti-termo-btn-pdf { height: var(--ctl-h-sm); padding: 0 10px; font-size: var(--font-size-sm); }
+
+/* ----------------------------------------------------------- celular */
+@media (max-width: 768px) {
+  .tiRoot .ti-termo-passos { grid-template-columns: minmax(0, 1fr); }
+  .tiRoot .ti-termo-intro-pe .ti-btn,
+  .tiRoot .ti-termo-btn-aceitar,
+  .tiRoot .ti-termo-ok-a .ti-btn,
+  .tiRoot .ti-termo-resumo-a .ti-btn { width: 100%; }
+  .tiRoot .ti-termo-ok-a, .tiRoot .ti-termo-resumo-a { width: 100%; }
+
+  /* documento: corpo maior para ler no celular, sem rolagem lateral */
+  .tiRoot .ti-termo-doc { padding: 20px 16px; }
+  .tiRoot .ti-termo-par, .tiRoot .ti-termo-itens { font-size: var(--font-size-lg); }
+  .tiRoot .ti-termo-itens { padding-left: 18px; }
+  .tiRoot .ti-termo-quadro > div, .tiRoot .ti-termo-equip > div { grid-template-columns: minmax(0, 1fr); gap: 0; }
+
+  /* 16px no campo evita o zoom automático do iPhone ao focar */
+  .tiRoot .ti-termo-form .ti-inp { font-size: var(--font-size-lg); height: var(--ctl-h-lg); }
+
+  .tiRoot .ti-termo-ok { flex-direction: column; }
+
+  /* lista da equipe vira cartões: nada de tabela larga rolando de lado */
+  .tiRoot .ti-termo-tbl.ti-tbl { max-height: none; overflow: visible; background: none; border: none; box-shadow: none; }
+  .tiRoot .ti-termo-lista thead {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0);
+  }
+  .tiRoot .ti-termo-lista, .tiRoot .ti-termo-lista tbody, .tiRoot .ti-termo-lista tr, .tiRoot .ti-termo-lista td { display: block; width: 100%; }
+  .tiRoot .ti-termo-lista tbody { display: flex; flex-direction: column; gap: 10px; }
+  .tiRoot .ti-termo-lista tr {
+    background: var(--f-surface); border: 1px solid var(--f-border); border-radius: 12px;
+    padding: 12px 14px; box-shadow: var(--f-shadow-sm);
+  }
+  .tiRoot .ti-termo-lista tr.pend { border-left: 3px solid var(--f-amber); }
+  .tiRoot .ti-termo-lista tr.pend td:first-child { box-shadow: none; }
+  .tiRoot .ti-termo-lista td,
+  .tiRoot .ti-t.ti-termo-lista td.wrap { padding: 4px 0; border: none; white-space: normal; min-width: 0; }
+  .tiRoot .ti-termo-lista td[data-label] { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); gap: 8px; align-items: center; }
+  .tiRoot .ti-termo-lista td[data-label]::before {
+    content: attr(data-label); color: var(--f-muted);
+    font-size: var(--font-size-xs); font-weight: var(--fw-semibold);
+  }
+  .tiRoot .ti-termo-lista td.ti-termo-pessoa { padding-bottom: 8px; overflow-wrap: anywhere; }
+  .tiRoot .ti-termo-lista td.ti-termo-acoes { text-align: left; padding-top: 8px; }
+  .tiRoot .ti-termo-lista td.ti-termo-acoes:empty { display: none; }
+  .tiRoot .ti-termo-btn-pdf { height: var(--ctl-h-lg); width: 100%; }
+  .tiRoot .ti-termo-acoes > span { display: block; }
+  .tiRoot .ti-termo-serie { min-height: var(--ctl-h-sm); }
+}

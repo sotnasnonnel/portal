@@ -1,0 +1,433 @@
+/* ==========================================================================
+   Módulo TI — estilos escopados em .tiRoot (base copiada da Frota). Não vazam para o
+   resto do portal. A sidebar é a compartilhada (components/Layout/ModuleSidebar);
+   daqui sai só o acento. Escala tipográfica, alturas de controle e neutros vêm de
+   styles/ui.css — nenhum valor solto.
+   ========================================================================== */
+.tiRoot {
+  /* acento consumido pela sidebar compartilhada (ModuleSidebar) */
+  --mod-accent: #4f46e5;
+  --mod-accent-soft: #e0e7ff;
+  --mod-accent-ink: #3730a3;
+
+  --f-primary: #4f46e5;
+  --f-primary-soft: #e0e7ff;
+  --f-primary-line: #c7d2fe;
+  --f-ink: var(--neutral-ink);
+  --f-muted: var(--neutral-muted);
+  --f-border: var(--neutral-border);
+  --f-bg: var(--neutral-bg);
+  --f-surface: var(--neutral-surface);
+  --f-gray-100: #f1f5f9;
+  --f-red: #b91c1c;
+  --f-red-bg: #fee2e2;
+  --f-amber: #b45309;
+  --f-amber-bg: #fef3c7;
+  --f-green: #047857;
+  --f-green-bg: #d1fae5;
+  --f-s1: #4f46e5;
+  --f-s2: var(--green);
+  --f-s3: var(--terracotta);
+  --f-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --f-shadow-md: 0 10px 28px rgba(15, 23, 42, 0.14);
+
+  display: flex;
+  min-height: 100vh;
+  background: var(--f-bg);
+  color: var(--f-ink);
+  font-size: var(--font-size-md);
+}
+.tiRoot * { box-sizing: border-box; }
+
+.tiCol { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.tiMain {
+  flex: 1; min-width: 0; width: 100%;
+  padding: var(--shell-main-pad-y) var(--shell-main-pad-x) var(--shell-main-pad-bottom);
+}
+
+/* ============================ página ============================ */
+/* Sem teto de largura, como Financeiro e Gestão de Horas: a página ocupa o <main>
+   inteiro e a margem lateral é só a do shell (--shell-main-pad-x). */
+.ti-page, .ti-page-wide { min-width: 0; }
+.ti-stack { display: flex; flex-direction: column; gap: 16px; }
+.ti-grid.g2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.ti-mt { margin-top: 14px; }
+.ti-sp { flex: 1; }
+.ti-muted { color: var(--f-muted); font-size: var(--font-size-sm); margin: 0; }
+.ti-hint { color: var(--f-muted); font-size: var(--font-size-xs); margin: 0; }
+
+.ti-ph { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.ti-ph-a { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ctl-gap); }
+.ti-title {
+  display: flex; align-items: center; gap: 10px;
+  font-size: var(--font-size-3xl); font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-tight); margin: 0 0 4px;
+}
+.ti-sub { font-size: var(--font-size-md); color: var(--f-muted); line-height: var(--lh-normal); margin: 0; max-width: 72ch; }
+
+/* ============================ cartão ============================ */
+.ti-card {
+  background: var(--f-surface); border: 1px solid var(--f-border);
+  border-radius: 12px; padding: 16px 18px; box-shadow: var(--f-shadow-sm);
+}
+.ti-card-h { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.ti-card-h h2, .ti-card-h h3 { font-size: var(--font-size-lg); font-weight: var(--fw-semibold); margin: 0; }
+.ti-card-nota { margin-left: auto; color: var(--f-muted); font-size: var(--font-size-xs); }
+.ti-card-s { color: var(--f-muted); font-size: var(--font-size-sm); margin: -6px 0 12px; }
+.ti-count {
+  font-size: var(--font-size-xs); font-weight: var(--fw-semibold); color: var(--f-muted);
+  background: var(--f-gray-100); border-radius: 999px; padding: 1px 8px;
+}
+
+/* ============================ botões ============================ */
+.ti-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: var(--ctl-h); padding: 0 var(--ctl-pad-x);
+  background: var(--f-surface); color: var(--f-ink);
+  border: var(--ctl-border) solid var(--f-border); border-radius: var(--ctl-radius);
+  font-size: var(--font-size-md); font-weight: var(--fw-medium); cursor: pointer; white-space: nowrap;
+}
+.ti-btn:hover { background: var(--f-gray-100); }
+.ti-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.ti-btn.primary { background: var(--f-primary); border-color: var(--f-primary); color: #fff; }
+.ti-btn.primary:hover { background: var(--mod-accent-ink); }
+.ti-btn.danger { color: var(--f-red); border-color: var(--f-red-bg); }
+.ti-btn.danger:hover { background: var(--f-red-bg); }
+.ti-btn.danger.solid { background: var(--f-red); border-color: var(--f-red); color: #fff; }
+.ti-ibtn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: var(--ctl-h-sm); height: var(--ctl-h-sm); flex: none;
+  background: var(--f-surface); color: var(--f-muted);
+  border: 1px solid var(--f-border); border-radius: var(--ctl-radius-sm); cursor: pointer;
+}
+.ti-ibtn:hover { color: var(--f-ink); background: var(--f-gray-100); }
+
+/* ============================ filtros ============================ */
+.ti-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; align-items: end; }
+.ti-fld { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ti-fld.wide { grid-column: span 2; }
+.ti-fld label, .ti-lbl { font-size: var(--font-size-xs); font-weight: var(--fw-semibold); color: var(--f-muted); }
+.ti-inp {
+  width: 100%; height: var(--ctl-h); padding: 0 var(--ctl-pad-x);
+  background: var(--f-surface); color: var(--f-ink);
+  border: var(--ctl-border) solid var(--f-border); border-radius: var(--ctl-radius);
+  font-family: inherit; font-size: var(--font-size-md);
+}
+.ti-inp:focus { outline: 2px solid var(--f-primary-line); border-color: var(--f-primary); }
+.ti-inp.num { text-align: right; font-variant-numeric: tabular-nums; }
+.ti-inp.upper { text-transform: uppercase; }
+textarea.ti-inp { height: auto; min-height: 84px; padding: var(--ctl-pad-y) var(--ctl-pad-x); line-height: var(--lh-normal); resize: vertical; }
+.ti-comp { width: auto; min-width: 130px; height: var(--ctl-h-sm); padding: 0 8px; font-size: var(--font-size-sm); }
+.ti-search { position: relative; }
+.ti-search svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--f-muted); pointer-events: none; }
+.ti-search .ti-inp { padding-left: 32px; }
+
+.ti-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ti-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: var(--ctl-h-sm); padding: 0 10px;
+  background: var(--f-surface); color: var(--f-ink);
+  border: 1px solid var(--f-border); border-radius: 999px;
+  font-size: var(--font-size-xs); font-weight: var(--fw-medium); cursor: pointer;
+}
+.ti-chip:hover { background: var(--f-gray-100); }
+.ti-chip.on { background: var(--f-primary-soft); border-color: var(--f-primary-line); color: var(--mod-accent-ink); }
+.ti-chip .c { font-weight: var(--fw-bold); }
+.ti-chip-sep { width: 1px; align-self: stretch; background: var(--f-border); margin: 0 4px; }
+
+/* ============================ indicadores ============================ */
+.ti-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.ti-kpis.compacto { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+.ti-kpi {
+  display: flex; flex-direction: column; gap: 4px; text-align: left; min-width: 0;
+  background: var(--f-surface); border: 1px solid var(--f-border); border-radius: 12px;
+  padding: 14px 16px; box-shadow: var(--f-shadow-sm); font-family: inherit; color: inherit;
+}
+button.ti-kpi { cursor: pointer; }
+button.ti-kpi:hover { border-color: var(--f-primary-line); }
+.ti-kpi.hl { border-color: var(--f-primary-line); background: var(--f-primary-soft); }
+.ti-kpi-l { font-size: var(--font-size-xs); font-weight: var(--fw-semibold); color: var(--f-muted); }
+.ti-kpi-n { font-size: var(--font-size-2xl); font-weight: var(--fw-bold); letter-spacing: var(--ls-tight); line-height: var(--lh-tight); font-variant-numeric: tabular-nums; }
+.ti-kpi-n.ok { color: var(--f-green); }
+.ti-kpi-n.warn { color: var(--f-amber); }
+.ti-kpi-n.crit { color: var(--f-red); }
+.ti-kpi-s { font-size: var(--font-size-xs); color: var(--f-muted); line-height: var(--lh-normal); }
+
+.ti-pill {
+  display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
+  font-size: var(--font-size-2xs); font-weight: var(--fw-semibold);
+  border-radius: 999px; padding: 2px 8px;
+  background: var(--f-gray-100); color: var(--f-muted);
+}
+.ti-pill.ok { background: var(--f-green-bg); color: var(--f-green); }
+.ti-pill.warn { background: var(--f-amber-bg); color: var(--f-amber); }
+.ti-pill.crit { background: var(--f-red-bg); color: var(--f-red); }
+.ti-pill.info { background: var(--f-primary-soft); color: var(--mod-accent-ink); }
+.ti-pill.brand { background: #fbeadf; color: var(--terracotta); }
+
+.ti-plate {
+  display: inline-block; flex: none; white-space: nowrap;
+  font-size: var(--font-size-xs); font-weight: var(--fw-bold); letter-spacing: var(--ls-wide);
+  background: var(--f-surface); border: 1.5px solid var(--f-ink); border-radius: 4px; padding: 1px 6px;
+}
+.ti-plate.none { border-style: dashed; border-color: var(--f-border); color: var(--f-muted); font-weight: var(--fw-medium); letter-spacing: normal; }
+.ti-avatar {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: var(--ctl-h-sm); height: var(--ctl-h-sm); border-radius: 50%;
+  background: var(--f-primary-soft); color: var(--mod-accent-ink);
+  font-size: var(--font-size-xs); font-weight: var(--fw-bold);
+}
+.ti-cellv { display: flex; align-items: center; gap: 10px; min-width: 0; }
+
+/* ============================ tabelas ============================ */
+/* overflow-x aqui, e não só na .table-scroll do TableScroll: aquela regra mora em
+   components/UI/Components.css, que a Frota não importa. Sem ela, tabela larga
+   vazava do cartão e empurrava a página inteira para o lado. */
+.ti-tbl { overflow: auto; max-height: max(320px, 62dvh); overscroll-behavior: contain; background: var(--f-surface); border: 1px solid var(--f-border); border-radius: 12px; box-shadow: var(--f-shadow-sm); }
+/* A lista rola dentro do cartão (a altura acima), então o cabeçalho e o total ficam
+   sempre à vista. A sombra faz o papel da borda: com border-collapse, a borda da
+   célula não acompanha o sticky. */
+.ti-tbl .ti-t th { position: sticky; top: 0; z-index: 2; box-shadow: inset 0 -1px 0 var(--f-border); }
+.ti-tbl .ti-t tfoot td { position: sticky; bottom: 0; z-index: 2; box-shadow: inset 0 1px 0 var(--f-border); }
+@media print { .ti-tbl { max-height: none; overflow: visible; } }
+.tiRoot .table-scroll-top { overflow-x: auto; overflow-y: hidden; }
+.tiRoot .table-scroll-top > div { height: 1px; }
+
+/* Ocorrências: texto de tamanho imprevisível (descrição, dois condutores), então
+   as células quebram linha e alinham pelo topo; a descrição para em duas linhas e
+   o texto inteiro fica no detalhe e no title. */
+.ti-t-oc { min-width: 920px; }
+.ti-t.ti-t-oc td { vertical-align: top; white-space: normal; }
+.ti-t.ti-t-oc td.nw { white-space: nowrap; }
+.ti-t-oc .ti-cellv { flex-direction: column; align-items: flex-start; gap: 3px; }
+.ti-oc-col { width: 42%; }
+.ti-oc-tit { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 2px; }
+.ti-oc-desc {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+  font-size: var(--font-size-xs); color: var(--f-muted); line-height: var(--lh-normal);
+}
+.ti-t, .ti-mini { width: 100%; border-collapse: collapse; font-size: var(--table-fs); }
+.ti-t th, .ti-mini th {
+  text-align: left; white-space: nowrap; color: var(--f-muted);
+  font-size: var(--table-head-fs); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: var(--ls-wide);
+  padding: var(--table-cell-pad); border-bottom: 1px solid var(--f-border); background: var(--f-gray-100);
+}
+.ti-t td, .ti-mini td { padding: var(--table-cell-pad); border-bottom: 1px solid var(--f-border); vertical-align: middle; white-space: nowrap; }
+.ti-t td.wrap { white-space: normal; min-width: 240px; }
+.ti-t tbody tr:last-child td, .ti-mini tbody tr:last-child td { border-bottom: none; }
+.ti-t .n, .ti-mini .n { text-align: right; font-variant-numeric: tabular-nums; }
+.ti-t tfoot td, .ti-mini tfoot td { font-weight: var(--fw-semibold); border-top: 1px solid var(--f-border); border-bottom: none; background: var(--f-gray-100); }
+.ti-click { cursor: pointer; }
+.ti-click:hover td { background: var(--f-primary-soft); }
+.ti-click:focus-visible { outline: 2px solid var(--f-primary); outline-offset: -2px; }
+.ti-t .p { font-weight: var(--fw-medium); }
+.ti-t .s, .ti-mini .s { font-size: var(--font-size-xs); color: var(--f-muted); }
+.ti-km { display: inline-flex; align-items: center; gap: 8px; font-size: var(--font-size-xs); font-variant-numeric: tabular-nums; }
+.ti-km.fim { justify-content: flex-end; }
+.ti-meter { display: inline-block; flex: none; height: 6px; border-radius: 999px; background: var(--f-gray-100); overflow: hidden; }
+.ti-meter i { display: block; height: 100%; background: var(--f-primary); border-radius: 999px; }
+.ti-meter.warn i { background: var(--f-amber); }
+.ti-meter.crit i { background: var(--f-red); }
+.ti-obs { display: inline-flex; color: var(--f-amber); }
+
+.ti-empty { padding: 20px; text-align: center; color: var(--f-muted); font-size: var(--font-size-sm); white-space: normal; }
+.ti-empty strong { display: block; color: var(--f-ink); margin-bottom: 2px; }
+.ti-skel { height: 14px; border-radius: 6px; background: var(--f-gray-100); }
+
+.ti-note {
+  display: flex; gap: 8px; padding: 10px 12px; border-radius: var(--ctl-radius);
+  background: var(--f-primary-soft); color: var(--mod-accent-ink); font-size: var(--font-size-sm); line-height: var(--lh-normal);
+}
+.ti-note.warn { background: var(--f-amber-bg); color: var(--f-amber); }
+.ti-note.crit { background: var(--f-red-bg); color: var(--f-red); }
+.ti-note .pre { white-space: pre-line; }
+.ti-note.ok { background: var(--f-green-bg); color: var(--f-green); align-items: center; }
+
+/* Foco pelo teclado visível em todo o módulo. */
+.tiRoot :is(.ti-btn, .ti-ibtn, .ti-chip, .ti-kpi, .ti-al, .ti-pessoa, .ti-link):focus-visible {
+  outline: 2px solid var(--mod-accent); outline-offset: 2px;
+}
+/* iPhone dá zoom em campo com fonte menor que 16px. */
+@media (max-width: 768px) { .tiRoot .ti-inp { font-size: var(--font-size-lg); } }
+
+.ti-link {
+  background: none; border: none; padding: 0; margin-right: 8px; cursor: pointer;
+  color: var(--mod-accent-ink); font: inherit; font-size: var(--font-size-sm); text-decoration: underline; text-underline-offset: 2px;
+}
+
+/* ============================ faturas ============================ */
+.ti-fat-resumo { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+.ti-fat-resumo .tx { flex: 1; min-width: 180px; display: flex; flex-direction: column; gap: 2px; }
+.ti-fat-resumo .v { font-size: var(--font-size-xl); font-weight: var(--fw-bold); font-variant-numeric: tabular-nums; }
+.ti-fat-resumo .s { font-size: var(--font-size-xs); color: var(--f-muted); }
+.ti-fat-resumo .st { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.ti-fat-resumo .dif, .ti-t .dif { color: var(--f-red); }
+.ti-chips .sep { width: 1px; align-self: stretch; background: var(--f-border); margin: 0 4px; }
+
+/* ============================ painel ============================ */
+/* Duas colunas independentes, em vez de duas linhas: em linhas, a lista de
+   pontos de atenção empurrava a linha de baixo e abria um buraco sob os gráficos
+   mais baixos. As colunas terminam juntas porque os cartões .is-fill absorvem a
+   diferença: a lista mostra mais itens e o gráfico de evolução fica mais alto. */
+.ti-grid.g2.ti-painel { align-items: stretch; }
+.ti-card.is-fill { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+/* A base fixa impede que uma lista longa dite a altura da coluna: o que passar do
+   espaço do cartão rola dentro dele. */
+.ti-alerts { display: flex; flex-direction: column; gap: 6px; flex: 1 1 320px; min-height: 0; overflow: auto; }
+/* flex: none: a lista tem altura limitada e rola. Sem isto, no celular os itens
+   encolhiam até o alvo de toque e o texto vazava do botão. */
+.ti-al {
+  flex: none; display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  background: none; border: 1px solid var(--f-border); border-radius: var(--ctl-radius);
+  padding: 8px 10px; cursor: pointer; font-family: inherit; color: inherit;
+}
+.ti-al:hover { background: var(--f-gray-100); }
+.ti-al .ic { display: inline-flex; padding: 6px; border-radius: 8px; background: var(--f-primary-soft); color: var(--f-primary); flex: none; }
+.ti-al .ic.warn { background: var(--f-amber-bg); color: var(--f-amber); }
+.ti-al .ic.crit { background: var(--f-red-bg); color: var(--f-red); }
+.ti-al .tx { display: flex; flex-direction: column; min-width: 0; flex: 1; font-size: var(--font-size-sm); }
+.ti-al .tx span { color: var(--f-muted); font-size: var(--font-size-xs); }
+
+.ti-stackbar { display: flex; height: 14px; border-radius: 999px; overflow: hidden; background: var(--f-gray-100); gap: 2px; }
+.ti-legend { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; font-size: var(--font-size-sm); }
+.ti-legend span { display: flex; align-items: center; gap: 8px; }
+.ti-legend i { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.ti-legend b { margin-left: auto; font-variant-numeric: tabular-nums; }
+
+/* O teto de largura mantém as colunas juntas quando há poucos meses; sem ele, três
+   competências ficavam espalhadas pelo cartão inteiro. "safe" evita cortar os
+   primeiros meses quando são tantos que a faixa precisa rolar. */
+.ti-cols { display: flex; justify-content: safe center; gap: 8px; flex: 1 1 auto; min-height: 170px; overflow-x: auto; padding-top: 4px; }
+.ti-cols .c { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1 1 52px; min-width: 52px; max-width: 96px; }
+/* Altura por proporção de flex (ver o JSX): a coluna acompanha a altura do cartão
+   e continua partindo do zero, então o tamanho da barra segue fiel ao valor. */
+.ti-cols .area { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1 1 auto; min-height: 0; width: 100%; }
+.ti-cols .folga, .ti-cols .bar { flex-basis: 0; }
+.ti-cols .val, .ti-cols .x { font-size: var(--font-size-2xs); color: var(--f-muted); white-space: nowrap; }
+.ti-cols .bar { width: 100%; max-width: 40px; min-height: 2px; border-radius: 4px 4px 0 0; background: var(--f-primary); }
+.ti-cols .bar.apagada { opacity: 0.55; }
+
+.ti-hbars { display: flex; flex-direction: column; gap: 8px; }
+.ti-hb { display: grid; grid-template-columns: minmax(0, 150px) 1fr auto; align-items: center; gap: 10px; font-size: var(--font-size-xs); }
+.ti-hb .l { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ti-hb .tr { height: 8px; background: var(--f-gray-100); border-radius: 999px; overflow: hidden; }
+.ti-hb .fi { display: block; height: 100%; background: var(--f-primary); border-radius: 999px; }
+.ti-hb .v { font-variant-numeric: tabular-nums; font-weight: var(--fw-medium); }
+
+/* ============================ relatórios ============================ */
+.ti-rep-types { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
+.ti-rtype {
+  display: flex; align-items: flex-start; gap: 10px; text-align: left;
+  background: var(--f-surface); border: 1px solid var(--f-border); border-radius: 12px;
+  padding: 12px; cursor: pointer; font-family: inherit; color: inherit;
+}
+.ti-rtype:hover { border-color: var(--f-primary-line); }
+.ti-rtype.on { background: var(--f-primary-soft); border-color: var(--f-primary); }
+.ti-rtype .ic { display: inline-flex; padding: 6px; border-radius: 8px; background: var(--f-gray-100); color: var(--f-primary); flex: none; }
+.ti-rtype b { display: block; font-size: var(--font-size-sm); }
+.ti-rtype span span { font-size: var(--font-size-xs); color: var(--f-muted); }
+
+/* ============================ painel lateral ============================ */
+.ti-scrim { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); z-index: 200; }
+.ti-scrim.alto { z-index: 220; }
+.ti-drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 210;
+  width: min(760px, 100vw); display: flex; flex-direction: column;
+  background: var(--f-bg); box-shadow: var(--f-shadow-md);
+}
+.ti-dr-h { display: flex; align-items: flex-start; gap: 12px; padding: 16px 20px; background: var(--f-surface); border-bottom: 1px solid var(--f-border); }
+.ti-dr-t { flex: 1; min-width: 0; }
+.ti-dr-t h2 { font-size: var(--font-size-xl); font-weight: var(--fw-bold); margin: 0; }
+.ti-dr-t p { font-size: var(--font-size-sm); color: var(--f-muted); margin: 2px 0 0; }
+.ti-dr-b { flex: 1; overflow-y: auto; padding: 18px 20px; display: flex; flex-direction: column; gap: 16px; }
+.ti-dr-f { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ctl-gap); padding: 12px 20px; background: var(--f-surface); border-top: 1px solid var(--f-border); }
+
+.ti-form { gap: 20px; }
+.ti-fsec h3 { font-size: var(--font-size-md); font-weight: var(--fw-semibold); margin: 0 0 10px; }
+.ti-fgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.ti-fld.full { grid-column: 1 / -1; }
+.ti-dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; margin: 0; }
+.ti-dl dt { font-size: var(--font-size-xs); color: var(--f-muted); }
+.ti-dl dd { margin: 0; font-size: var(--font-size-sm); font-weight: var(--fw-medium); overflow-wrap: anywhere; }
+.ti-hist { display: flex; flex-direction: column; gap: 6px; font-size: var(--font-size-sm); }
+.ti-hist .h { padding-left: 10px; border-left: 2px solid var(--f-primary-line); }
+.ti-hist .ti-muted { font-size: var(--font-size-xs); }
+.ti-doc { padding: 14px 16px; }
+.ti-doc-txt { font-size: var(--font-size-sm); color: var(--f-muted); line-height: var(--lh-normal); margin-bottom: 10px; }
+.ti-doc-txt b { color: var(--f-ink); }
+
+.ti-files { display: flex; flex-direction: column; gap: 8px; }
+.ti-file { display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: var(--f-surface); border: 1px solid var(--f-border); border-radius: var(--ctl-radius-sm); }
+.ti-file .fn { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: var(--font-size-sm); }
+.ti-file .fn b { font-weight: var(--fw-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ti-file .fn span { font-size: var(--font-size-xs); color: var(--f-muted); }
+.ti-up-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ti-upl {
+  position: relative; display: flex; align-items: center; gap: 8px; flex: 1; min-width: 220px; min-height: var(--ctl-h);
+  padding: 6px 12px; background: var(--f-surface); color: var(--f-muted);
+  border: 1.5px dashed var(--f-border); border-radius: var(--ctl-radius); font-size: var(--font-size-sm); cursor: pointer;
+}
+.ti-upl:hover { border-color: var(--f-primary); color: var(--f-primary); }
+.ti-upl.busy { opacity: 0.6; cursor: progress; }
+.ti-upl input { position: absolute; inset: 0; opacity: 0; cursor: inherit; }
+
+.ti-modal {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 230;
+  width: min(460px, calc(100vw - 32px)); background: var(--f-surface);
+  border-radius: 14px; padding: 20px; box-shadow: var(--f-shadow-md);
+}
+.ti-modal h3 { font-size: var(--font-size-lg); font-weight: var(--fw-bold); margin: 0 0 8px; }
+.ti-modal p { font-size: var(--font-size-md); color: var(--f-muted); line-height: var(--lh-normal); margin: 0 0 16px; }
+.ti-modal-a { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+
+.ti-toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 240;
+  max-width: min(560px, calc(100vw - 32px)); padding: 10px 16px; border-radius: var(--ctl-radius);
+  background: var(--f-ink); color: #fff; font-size: var(--font-size-sm); box-shadow: var(--f-shadow-md);
+}
+.ti-toast.err { background: var(--f-red); }
+
+@media (max-width: 1024px) {
+  .ti-grid.g2 { grid-template-columns: minmax(0, 1fr); }
+  /* Empilhado não há coluna vizinha para acompanhar: a lista fica do tamanho do
+     conteúdo, com teto para não empurrar os gráficos para longe. */
+  .ti-alerts { flex: none; max-height: 420px; }
+}
+@media (max-width: 768px) {
+  .tiMain { padding: var(--shell-main-pad-mobile); }
+  .ti-title { font-size: var(--font-size-xl); }
+  .ti-fld.wide { grid-column: 1 / -1; }
+  .ti-fgrid, .ti-dl { grid-template-columns: minmax(0, 1fr); }
+  .ti-btn, .ti-chip { min-height: var(--ctl-h-lg); }
+  .ti-dr-b { padding: 14px 16px; }
+  .ti-dr-h, .ti-dr-f { padding-left: 16px; padding-right: 16px; }
+}
+
+/* ============================ TI: termos (lista de pessoas + painel) ============================ */
+.ti-split { display: grid; grid-template-columns: minmax(280px, 380px) minmax(0, 1fr); gap: 16px; align-items: start; }
+.ti-pessoas { display: flex; flex-direction: column; gap: 6px; max-height: max(360px, 66dvh); overflow: auto; overscroll-behavior: contain; padding-right: 2px; }
+.ti-pessoa {
+  flex: none; display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  background: var(--f-surface); border: 1px solid var(--f-border); border-radius: var(--ctl-radius);
+  padding: 8px 10px; cursor: pointer; font-family: inherit; color: inherit;
+}
+.ti-pessoa:hover { background: var(--f-gray-100); }
+.ti-pessoa.on { background: var(--f-primary-soft); border-color: var(--f-primary-line); }
+.ti-pessoa .tx { display: flex; flex-direction: column; min-width: 0; flex: 1; font-size: var(--font-size-sm); }
+.ti-pessoa .tx b { font-weight: var(--fw-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ti-pessoa .tx span { color: var(--f-muted); font-size: var(--font-size-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ti-check { display: inline-flex; align-items: center; gap: 6px; font-size: var(--font-size-sm); cursor: pointer; }
+.ti-equip { display: flex; flex-direction: column; gap: 8px; }
+.ti-equip-i { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid var(--f-border); border-left: 3px solid var(--f-primary); border-radius: var(--ctl-radius); background: var(--f-surface); }
+.ti-equip-i.off { border-left-color: var(--f-border); opacity: 0.7; }
+.ti-equip-i .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: var(--font-size-sm); }
+.ti-equip-i .tx span { color: var(--f-muted); font-size: var(--font-size-xs); }
+.ti-sel { display: flex; flex-wrap: wrap; gap: 6px; }
+.ti-sel .ti-chip { gap: 6px; }
+
+@media (max-width: 1024px) {
+  .ti-split { grid-template-columns: minmax(0, 1fr); }
+  .ti-pessoas { max-height: 320px; }
+}
+.ti-outro { display: flex; gap: var(--ctl-gap); }
+.ti-outro .ti-inp { flex: 1; min-width: 0; }

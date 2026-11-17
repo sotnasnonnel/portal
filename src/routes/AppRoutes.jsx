@@ -23,6 +23,8 @@ import { podeAcessarMobilizacao } from '../config/mobilizacao';
 import FrotaShell from '../modules/frota/app/components/AppShell';
 import AlojamentosShell from '../modules/alojamentos/app/components/AppShell';
 import { podeAcessarSetorAdm } from '../config/setorAdm';
+import TiShell from '../modules/ti/app/components/AppShell';
+import { podeAcessarTi, podeEditarTi } from '../config/ti';
 import TorreShell from '../modules/torre/app/components/AppShell';
 import { podeVerTorre } from '../config/torre';
 import PlrShell from '../modules/plr/app/components/AppShell';
@@ -31,6 +33,7 @@ import { podeAcessarFechamentoPj } from '../config/fechamentoPj';
 import { isAusenciaRh, veAprovacoes, veAusenciaTodos } from '../config/ausenciaProgramada';
 import { veFeed } from '../config/feed';
 import { TourProvider } from '../components/Tour/TourContext';
+import VerComo from '../components/VerComo/VerComo';
 import { MODULOS_AUSENCIA } from '../config/modulosAusencia';
 import {
   ROTA_FOLGA_CAMPO, isFolgaCampoRh, podeAcessarFolgaCampo,
@@ -180,6 +183,12 @@ const PagamentosAloj = lazyPagina(() => import('../modules/alojamentos/app/pagam
 const FaturasAloj = lazyPagina(() => import('../modules/alojamentos/app/faturas/page'));
 const MobiliarioAloj = lazyPagina(() => import('../modules/alojamentos/app/mobiliario/page'));
 
+const PainelTi = lazyPagina(() => import('../modules/ti/app/painel/page'));
+const AtivosTi = lazyPagina(() => import('../modules/ti/app/ativos/page'));
+const MovimentarTi = lazyPagina(() => import('../modules/ti/app/movimentar/page'));
+const TermosTi = lazyPagina(() => import('../modules/ti/app/termos/page'));
+const ModelosTi = lazyPagina(() => import('../modules/ti/app/modelos/page'));
+
 const MapaTorre = lazyPagina(() => import('../modules/torre/app/mapa/page'));
 const QuadroTorre = lazyPagina(() => import('../modules/torre/app/quadro/page'));
 const EtapasTorre = lazyPagina(() => import('../modules/torre/app/etapas/page'));
@@ -325,6 +334,27 @@ function SetorAdmRoute({ children }) {
   return children;
 }
 
+// TI (controle de ativos). Gate de UI — quem protege o dado é a RLS
+// (app_private.ti_time), que lê a mesma coluna colaboradores.ti_acesso.
+function TiRoute({ children }) {
+  const { user } = useAuth();
+  if (!podeAcessarTi(user)) return <Navigate to="/home" replace />;
+  return children;
+}
+
+// Telas só do time de TI (painel, ativos). Quem consulta fica com Resumo e
+// Termo de responsabilidade.
+function TiTimeRoute({ children }) {
+  const { user } = useAuth();
+  if (!podeEditarTi(user)) return <Navigate to="/ti/modelos" replace />;
+  return children;
+}
+
+function TiInicio() {
+  const { user } = useAuth();
+  return <Navigate to={podeEditarTi(user) ? '/ti/painel' : '/ti/modelos'} replace />;
+}
+
 // Fechamento PJ: DP + lista de liberados enquanto em lançamento. Gate de UI —
 // quem protege é app_private.pode_fechamento_pj() (mesma regra, mesma lista).
 function FechamentoPjRoute({ children }) {
@@ -426,6 +456,8 @@ export default function AppRoutes() {
       {/* Passo a passo vivo (components/Tour): dentro do router, porque cada
           passo depende da rota, e em volta das rotas, porque o tutorial
           atravessa telas (o do feed começa na Home) e não pode recomeçar a cada troca. */}
+      {/* Ver como (só super admin, config/verComo.js): por cima de todas as telas. */}
+      <VerComo />
       <TourProvider>
         <Routes>
           <Route
@@ -1095,6 +1127,27 @@ export default function AppRoutes() {
             <Route path="pagamentos/faturas" element={<LazyPage><FaturasAloj /></LazyPage>} />
             <Route path="faturas" element={<Navigate to="/alojamentos/pagamentos/faturas" replace />} />
             <Route path="mobiliario" element={<LazyPage><MobiliarioAloj /></LazyPage>} />
+          </Route>
+
+          {/* TI: controle de ativos e termos de responsabilidade (config/ti.js). */}
+          <Route
+            path="/ti"
+            element={
+              <ProtectedRoute>
+                <TiRoute>
+                  <TiShell />
+                </TiRoute>
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<TiInicio />} />
+            <Route path="painel" element={<TiTimeRoute><LazyPage><PainelTi /></LazyPage></TiTimeRoute>} />
+            <Route path="ativos" element={<TiTimeRoute><LazyPage><AtivosTi /></LazyPage></TiTimeRoute>} />
+            <Route path="movimentar" element={<LazyPage><MovimentarTi /></LazyPage>} />
+            {/* Pendências de termos virou a lista da tela de termos. */}
+            <Route path="pendencias" element={<Navigate to="/ti/termos" replace />} />
+            <Route path="termos" element={<LazyPage><TermosTi /></LazyPage>} />
+            <Route path="modelos" element={<LazyPage><ModelosTi /></LazyPage>} />
           </Route>
 
           {/* Torre de Controle: a mesma visão da torre da Mobilização, servida

@@ -203,7 +203,7 @@ export const SCHEMAS = {
   'ti/troca-equipamentos': [
     cc(),
     { chave: 'tipo', rotulo: 'Tipo', tipo: 'selecao', obrigatorio: true, opcoes: TIPOS_EQUIP_TI },
-    { chave: 'numero_serie', rotulo: 'Número de série', tipo: 'texto', obrigatorio: false },
+    { chave: 'numero_serie', rotulo: 'Número de série', tipo: 'texto', obrigatorio: true },
     { chave: 'patrimonio', rotulo: 'Patrimônio', tipo: 'texto', obrigatorio: false },
     { chave: 'motivo', rotulo: 'Motivo', tipo: 'selecao', obrigatorio: true, opcoes: ['Upgrade', 'Quebra'] },
     dataNecessidade(),
