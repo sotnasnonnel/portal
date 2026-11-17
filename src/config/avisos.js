@@ -17,6 +17,16 @@ export const BLOCOS_MAX = 40;
 export const ANEXO_BYTES_MAX = 20 * 1024 * 1024;
 export const POR_PAGINA = 12;
 
+// A Home só mostra os avisos das últimas duas semanas, para o carrossel não
+// acumular notícia velha. Em /avisos continuam todos.
+export const DIAS_NA_HOME = 14;
+
+/** Avisos postados nos últimos DIAS_NA_HOME dias, contados a partir de `agora`. */
+export function recentesParaHome(avisos = [], agora = new Date()) {
+  const corte = agora.getTime() - DIAS_NA_HOME * 24 * 60 * 60 * 1000;
+  return avisos.filter((a) => new Date(a.criado_em).getTime() >= corte);
+}
+
 // Quem edita e exclui aviso dos outros: só o super admin (o banco usa
 // app_private.avisos_moderador()). O autor sempre pode mexer no próprio.
 export const ehModeradorAvisos = (user) => isSuperAdmin(user);

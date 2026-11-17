@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
-import { ROTA_AVISOS, semMarcas } from '../../config/avisos';
+import { ROTA_AVISOS, semMarcas, recentesParaHome } from '../../config/avisos';
 import { listarAvisos, linksDosArquivos } from '../../services/avisos';
 import { nomeProprio } from '../../utils/pessoas';
 import { dataDoAviso } from './datas';
@@ -12,12 +12,14 @@ const NA_HOME = 5;
 const TROCA_MS = 8000;
 
 /**
- * Os avisos mais recentes no topo da Home, um banner por vez, como o carrossel
+ * Os avisos das últimas duas semanas (até 5) no topo da Home, um banner por vez, como o carrossel
  * de notícias do SharePoint. Passa sozinho a cada 8 s, menos com o mouse em
  * cima; as setas e os pontos trocam na mão.
  */
 export default function AvisosHome() {
   const [avisos, setAvisos] = useState(null);
+  // Há aviso publicado, mesmo que nenhum caiba nas duas semanas da Home.
+  const [temAntigos, setTemAntigos] = useState(false);
   const [links, setLinks] = useState({});
   const [atual, setAtual] = useState(0);
   const [parado, setParado] = useState(false);
@@ -25,8 +27,10 @@ export default function AvisosHome() {
   useEffect(() => {
     let vivo = true;
     listarAvisos({ limite: NA_HOME })
-      .then(async (lista) => {
+      .then(async (todos) => {
         if (!vivo) return;
+        setTemAntigos(todos.length > 0);
+        const lista = recentesParaHome(todos);
         setAvisos(lista);
         const fotos = lista.map((a) => a.foto_path).filter(Boolean);
         if (fotos.length) {
@@ -57,13 +61,13 @@ export default function AvisosHome() {
         <h2>Avisos</h2>
         <span className="home-avisos-links">
           <Link to={`${ROTA_AVISOS}/novo`}><Plus size={14} style={{ verticalAlign: '-2px' }} /> Publicar</Link>
-          {total > 0 && <Link to={ROTA_AVISOS}>Ver todos</Link>}
+          {temAntigos && <Link to={ROTA_AVISOS}>Ver todos</Link>}
         </span>
       </div>
 
       {total === 0 ? (
         <div className="home-avisos-vazio">
-          Nenhum aviso por enquanto. Tem algo para contar à empresa?
+          {temAntigos ? 'Nenhum aviso nas últimas duas semanas.' : 'Nenhum aviso por enquanto.'} Tem algo para contar à empresa?
           <Link to={`${ROTA_AVISOS}/novo`} className="btn btn-primary btn-sm"><Plus size={14} /> Publicar aviso</Link>
         </div>
       ) : (

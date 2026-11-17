@@ -3,7 +3,20 @@ import assert from 'node:assert/strict';
 import {
   validarAviso, blocoVazio, normalizarUrl, urlValida, tamanhoManchete, semMarcas,
   pedacosFormatados, blocosDoTexto, aplicarMarca, prefixarLinhas, arquivosDoAviso,
+  recentesParaHome,
 } from './avisos.js';
+
+test('recentesParaHome: só os avisos das últimas duas semanas', () => {
+  const agora = new Date('2026-11-17T12:00:00-03:00');
+  const lista = [
+    { id: 1, criado_em: '2026-11-16T09:00:00-03:00' },
+    { id: 2, criado_em: '2026-11-03T12:00:00-03:00' }, // 14 dias certos: entra
+    { id: 3, criado_em: '2026-11-03T11:59:00-03:00' }, // um minuto antes: sai
+    { id: 4, criado_em: '2026-10-01T10:00:00-03:00' },
+  ];
+  assert.deepEqual(recentesParaHome(lista, agora).map((a) => a.id), [1, 2]);
+  assert.deepEqual(recentesParaHome([], agora), []);
+});
 
 test('validarAviso: manchete obrigatória e foto quando o fundo é foto', () => {
   assert.match(validarAviso({ manchete: '  ' }), /manchete/);
