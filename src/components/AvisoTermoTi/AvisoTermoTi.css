@@ -1,0 +1,69 @@
+/* Aviso de entrada do termo de TI (Home). Acento do módulo TI (índigo). */
+.termo-aviso-overlay {
+  position: fixed; inset: 0; z-index: 300;
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+  background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);
+}
+.termo-aviso {
+  position: relative; width: 100%; max-width: 440px; max-height: min(88vh, 640px); overflow: auto;
+  padding: 24px 24px 20px; border-radius: 20px;
+  background: var(--neutral-surface, #fff); color: var(--neutral-ink, #1b2735);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+  animation: termo-aviso-in 0.18s ease-out;
+}
+@keyframes termo-aviso-in { from { opacity: 0; transform: translateY(8px) scale(0.98); } }
+@media (prefers-reduced-motion: reduce) { .termo-aviso { animation: none; } }
+
+.termo-aviso-x {
+  position: absolute; top: 12px; right: 12px;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: var(--ctl-h); height: var(--ctl-h); border: none; border-radius: 10px;
+  background: none; color: var(--neutral-muted, #6b7280); cursor: pointer;
+}
+.termo-aviso-x:hover { background: #f1f5f9; color: var(--neutral-ink, #1b2735); }
+
+.termo-aviso-topo { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.termo-aviso-ic {
+  display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px;
+  background: #e0e7ff; color: #4f46e5;
+}
+.termo-aviso-tag {
+  font-size: var(--font-size-2xs); font-weight: var(--fw-bold); letter-spacing: 0.06em; text-transform: uppercase;
+  color: #b45309; background: #fef3c7; border-radius: 999px; padding: 3px 10px;
+}
+.termo-aviso h2 {
+  margin: 0 0 8px; font-size: var(--font-size-xl); font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-tight); line-height: 1.25;
+}
+.termo-aviso p { margin: 0; font-size: var(--font-size-md); line-height: var(--lh-normal); color: var(--neutral-muted, #475569); }
+
+.termo-aviso-lista { list-style: none; margin: 16px 0 12px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.termo-aviso-lista li {
+  display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+  border: 1px solid var(--neutral-border, #e3e3e3); border-left: 3px solid #4f46e5; border-radius: 10px;
+  color: #4f46e5;
+}
+.termo-aviso-lista .tx { display: flex; flex-direction: column; min-width: 0; color: var(--neutral-ink, #1b2735); }
+.termo-aviso-lista .tx b { font-size: var(--font-size-sm); font-weight: var(--fw-semibold); overflow-wrap: anywhere; }
+.termo-aviso-lista .tx span { font-size: var(--font-size-xs); color: var(--neutral-muted, #6b7280); }
+.termo-aviso-lista li.mais { border-left-color: var(--neutral-border, #e3e3e3); color: var(--neutral-muted, #6b7280); font-size: var(--font-size-sm); }
+
+.termo-aviso p.termo-aviso-nota { font-size: var(--font-size-xs); }
+
+.termo-aviso-acoes { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+.termo-aviso-acoes button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: var(--ctl-h-lg); padding: 0 18px; border-radius: 12px;
+  font: inherit; font-size: var(--font-size-md); font-weight: var(--fw-semibold); cursor: pointer;
+}
+.termo-aviso-sec { background: none; border: 1px solid var(--neutral-border, #e3e3e3); color: var(--neutral-ink, #1b2735); }
+.termo-aviso-sec:hover { background: #f1f5f9; }
+.termo-aviso-pri { background: #4f46e5; border: 1px solid #4f46e5; color: #fff; }
+.termo-aviso-pri:hover { background: #3730a3; }
+.termo-aviso button:focus-visible { outline: 2px solid #4f46e5; outline-offset: 2px; }
+
+@media (max-width: 480px) {
+  .termo-aviso { padding: 20px 16px 16px; }
+  .termo-aviso-acoes { flex-direction: column-reverse; }
+  .termo-aviso-acoes button { width: 100%; }
+}

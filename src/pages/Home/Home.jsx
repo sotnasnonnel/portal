@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Users, BarChart3, Clock, CreditCard, Headset, Sparkles, ShieldCheck, LogOut, ArrowRight, Lock, Hourglass, Blocks, MessageSquarePlus, Megaphone, Radar, Star, Newspaper, Target, Building2, MonitorSmartphone } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePontos } from '../../contexts/PontosContext';
@@ -35,6 +35,8 @@ import AvisosHome from '../Avisos/AvisosHome';
 import { iniciais, nomeProprio } from '../../utils/pessoas';
 import { areasGestaoPessoas } from '../../components/Layout/nav';
 import NovidadesModal from '../../components/Novidades/NovidadesModal';
+import AvisoTermoTi from '../../components/AvisoTermoTi/AvisoTermoTi';
+import { avisoTermoJaVisto, marcarAvisoTermoVisto, meusEquipamentosSemTermo } from '../../modules/ti/lib/avisoTermo';
 import SinoNotificacoes from '../../components/Notificacoes/SinoNotificacoes';
 import AtalhoAprovacoes from '../../modules/aprovacoes/AtalhoAprovacoes';
 import AvatarUsuario from '../../components/UI/AvatarUsuario';
@@ -76,6 +78,22 @@ export default function Home() {
   // Estado inicial e não efeito: a Home só monta com o usuário já carregado
   // (ProtectedRoute), então o que abre sozinho se decide no primeiro render.
   const [novidades, setNovidades] = useState(() => (naoVistas.length ? { itens: naoVistas, historico: false } : null));
+
+  // Termo de responsabilidade da TI: quem está com equipamento e ainda não
+  // aceitou vê um aviso ao entrar (uma vez por sessão). Espera as Novidades
+  // fecharem para não abrir um popup por cima do outro.
+  const navigate = useNavigate();
+  const [termoPendente, setTermoPendente] = useState([]);
+  useEffect(() => {
+    if (!user?.email || avisoTermoJaVisto(user.email)) return undefined;
+    let vivo = true;
+    meusEquipamentosSemTermo(user.email).then((lista) => { if (vivo) setTermoPendente(lista); });
+    return () => { vivo = false; };
+  }, [user?.email]);
+  const fecharAvisoTermo = () => {
+    marcarAvisoTermoVisto(user?.email);
+    setTermoPendente([]);
+  };
 
   const fecharNovidades = () => {
     // O aviso que abriu sozinho e traz um passo a passo (o `tutorial` da
@@ -419,6 +437,13 @@ export default function Home() {
       {admAberto && <AdministrativoModal areas={areasAdm} onClose={() => setAdmAberto(false)} />}
       {setorAdmAberto && <SetorAdmModal onClose={() => setSetorAdmAberto(false)} />}
       {gpAberto && <GestaoPessoasModal onClose={() => setGpAberto(false)} />}
+      {!novidades && termoPendente.length > 0 && (
+        <AvisoTermoTi
+          ativos={termoPendente}
+          onClose={fecharAvisoTermo}
+          onAceitar={() => { fecharAvisoTermo(); navigate('/ti/termos'); }}
+        />
+      )}
       {novidades && (
         <NovidadesModal
           novidades={novidades.itens}
