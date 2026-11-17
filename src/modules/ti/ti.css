@@ -429,5 +429,26 @@ button.ti-kpi:hover { border-color: var(--f-primary-line); }
   .ti-split { grid-template-columns: minmax(0, 1fr); }
   .ti-pessoas { max-height: 320px; }
 }
+/* Lista suspensa com busca (components/Combo.jsx). */
+.ti-combo { position: relative; min-width: 0; }
+.ti-combo .ti-inp { padding-right: 32px; text-overflow: ellipsis; }
+.ti-combo-seta { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--f-muted); pointer-events: none; }
+.ti-combo-x {
+  position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  display: inline-flex; align-items: center; justify-content: center;
+  width: var(--ctl-h-sm); height: var(--ctl-h-sm); border: none; background: none; color: var(--f-muted); cursor: pointer; border-radius: var(--ctl-radius-sm);
+}
+.ti-combo-x:hover { color: var(--f-ink); background: var(--f-gray-100); }
+.ti-combo-lista {
+  position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 4px);
+  margin: 0; padding: 4px; list-style: none; max-height: 280px; overflow: auto; overscroll-behavior: contain;
+  background: var(--f-surface); border: 1px solid var(--f-border); border-radius: var(--ctl-radius); box-shadow: var(--f-shadow-md);
+}
+.ti-combo-lista li { padding: 8px 10px; border-radius: var(--ctl-radius-sm); font-size: var(--font-size-sm); cursor: pointer; overflow-wrap: anywhere; }
+.ti-combo-lista li.ativo { background: var(--f-primary-soft); color: var(--mod-accent-ink); }
+.ti-combo-lista li[aria-selected="true"] { font-weight: var(--fw-semibold); }
+.ti-combo-lista li.extra { color: var(--f-muted); font-style: italic; }
+.ti-combo-lista li.nada { color: var(--f-muted); cursor: default; }
+@media (max-width: 768px) { .ti-combo-lista li { padding: 12px 10px; } }
 .ti-outro { display: flex; gap: var(--ctl-gap); }
 .ti-outro .ti-inp { flex: 1; min-width: 0; }

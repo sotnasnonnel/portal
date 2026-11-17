@@ -1,6 +1,6 @@
-import { useState } from 'react';
 import { Search } from 'lucide-react';
 import { useTi } from './TiContext';
+import Combo from './Combo';
 
 // Peças de tela da TI, no mesmo desenho das da Frota.
 
@@ -87,10 +87,7 @@ export function Selecao({
   return (
     <div className="ti-fld">
       <label htmlFor={id}>{label}</label>
-      <select id={id} className="ti-inp" value={valor} onChange={(e) => onChange(e.target.value)}>
-        <option value="">{todos}</option>
-        {opcoes.map((o) => <option key={o} value={o}>{o}</option>)}
-      </select>
+      <Combo id={id} valor={valor} onChange={onChange} opcoes={opcoes} vazio={todos} />
     </div>
   );
 }
@@ -147,42 +144,26 @@ export function Secao({
   );
 }
 
-const OUTRO = '__outro__';
-
 /**
- * Lista suspensa para campo com valores conhecidos. `opcoes`: strings ou
- * {v, l}. Com `livre`, a última opção é "Outro…", que abre um campo de texto
- * para o valor que ainda não está na lista. Valor salvo fora da lista (dado
- * antigo da planilha) também cai no modo texto, para não sumir da tela.
+ * Lista suspensa para campo com valores conhecidos, com busca (Combo). `opcoes`:
+ * strings ou {v, l}. Com `livre`, aceita valor fora da lista ("Usar “...”"):
+ * serve para o valor que ainda não apareceu e para dado antigo da planilha,
+ * que continua aparecendo como está.
  */
 export function ListaSuspensa({
-  id, valor, onChange, opcoes, vazio = '—', livre = true, placeholderOutro = 'Digite o valor',
+  id, valor, onChange, opcoes, vazio = '—', livre = true, placeholderOutro, invalido, descricao,
 }) {
-  const lista = opcoes.map((o) => (typeof o === 'string' ? { v: o, l: o } : o));
-  const naLista = lista.some((o) => o.v === valor);
-  const [digitando, setDigitando] = useState(livre && !!valor && !naLista);
-
-  if (digitando) {
-    return (
-      <div className="ti-outro">
-        <input id={id} className="ti-inp" value={valor} onChange={(e) => onChange(e.target.value)} placeholder={placeholderOutro} autoComplete="off" autoFocus />
-        <button type="button" className="ti-btn" onClick={() => { setDigitando(false); onChange(''); }}>Voltar à lista</button>
-      </div>
-    );
-  }
   return (
-    <select
+    <Combo
       id={id}
-      className="ti-inp"
-      value={naLista ? valor : ''}
-      onChange={(e) => {
-        if (e.target.value === OUTRO) { setDigitando(true); onChange(''); return; }
-        onChange(e.target.value);
-      }}
-    >
-      <option value="">{vazio}</option>
-      {lista.map((o) => <option key={o.v} value={o.v}>{o.l}</option>)}
-      {livre && <option value={OUTRO}>Outro…</option>}
-    </select>
+      valor={valor || ''}
+      onChange={onChange}
+      opcoes={opcoes}
+      vazio={vazio}
+      livre={livre}
+      placeholder={livre && placeholderOutro ? `Busque ou digite (${placeholderOutro})` : undefined}
+      invalido={invalido}
+      descricao={descricao}
+    />
   );
 }

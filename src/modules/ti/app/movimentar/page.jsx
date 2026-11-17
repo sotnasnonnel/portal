@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { SITUACOES } from '../../../../config/ti';
 import { opcoesDePessoas } from '../../lib/campos';
+import Combo from '../components/Combo';
 import { useTi } from '../components/TiContext';
 import {
   Estado, ListaSuspensa, PageHead, Pill, Secao,
@@ -246,12 +247,14 @@ export default function MovimentarTi() {
             <div className="ti-stack">
               <div className="ti-fld">
                 <label htmlFor="tm-origem">Trazer tudo o que está com…</label>
-                <select id="tm-origem" className="ti-inp" value="" onChange={(e) => trazerDe(e.target.value)}>
-                  <option value="">Escolha uma pessoa (opcional)</option>
-                  {comResp.map((p) => (
-                    <option key={p.email} value={p.email}>{p.nome} ({equip(p.n)})</option>
-                  ))}
-                </select>
+                <Combo
+                  id="tm-origem"
+                  valor=""
+                  onChange={(v) => v && trazerDe(v)}
+                  opcoes={comResp.map((p) => ({ v: p.email, l: `${p.nome} (${equip(p.n)})` }))}
+                  vazio={null}
+                  placeholder="Busque a pessoa pelo nome ou e-mail (opcional)"
+                />
               </div>
               <div className="ti-fld">
                 <label htmlFor="tm-q">Ou localize por número de série, modelo ou responsável</label>
@@ -360,10 +363,13 @@ export default function MovimentarTi() {
             <div className="ti-fgrid">
               <div className="ti-fld">
                 <label htmlFor="tm-sit">Nova situação</label>
-                <select id="tm-sit" className="ti-inp" value={situacao} onChange={(e) => { setSituacao(e.target.value); mexeu(); }}>
-                  <option value="">{novoResp ? 'Em utilização (padrão)' : 'Manter a atual'}</option>
-                  {SITUACOES.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
+                <Combo
+                  id="tm-sit"
+                  valor={situacao}
+                  onChange={(v) => { setSituacao(v); mexeu(); }}
+                  opcoes={SITUACOES}
+                  vazio={novoResp ? 'Em utilização (padrão)' : 'Manter a atual'}
+                />
               </div>
               <div className="ti-fld">
                 <label htmlFor="tm-data">Data da movimentação</label>
