@@ -180,7 +180,14 @@ begin
     )),
     v_eu.data_admissao, coalesce(v_cidade, 'BELO HORIZONTE'),
     v_hoje, v_ativos, 'Assinado', v_hoje, nullif(trim(p_versao), ''), now(),
-    left(split_part(coalesce(v_headers->>'x-forwarded-for', v_headers->>'x-real-ip', ''), ',', 1), 64),
+    -- IP de quem aceitou: o que a Cloudflare do Supabase preenche (o cliente
+    -- não forja; x-real-ip fica de fora porque pode vir do cliente); sem ele, o ÚLTIMO item do x-forwarded-for, que é o que o
+    -- proxy acrescentou. O primeiro item quem escreve é o próprio navegador.
+    left(trim(coalesce(
+      nullif(v_headers->>'cf-connecting-ip', ''),
+      (regexp_split_to_array(coalesce(v_headers->>'x-forwarded-for', ''), '\s*,\s*'))[
+        array_length(regexp_split_to_array(coalesce(v_headers->>'x-forwarded-for', ''), '\s*,\s*'), 1)]
+    )), 64),
     left(v_headers->>'user-agent', 400)
   )
   returning * into v_termo;
