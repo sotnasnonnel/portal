@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  agruparPorModelo, resumoPorPessoa, cpfValido, formatarCpf, pendenteTermo, pessoasComAtivos, resumoPainel, listaTermos,
+  agruparPorModelo, resumoPorPessoa, cpfValido, formatarCpf, pendenteTermo, pessoasComAtivos, resumoPainel, listaTermos, pessoasSemEquipamento, disponivel, diasAtras,
 } from './regras.js';
 
 const a = (extra) => ({
@@ -90,6 +90,22 @@ test('termos: pendente primeiro, aceito com a data mais recente, sem equipamento
     ['Bia', 'pendente', null, 1],
     ['Ana', 'aceito', '2026-11-12', 0],
   ]);
+});
+
+test('alocar: quem está sem equipamento, recém-admitidos primeiro', () => {
+  const ativos = [a({ responsavel: 'ana@phd.com.br' }), a({ responsavel: 'bia@phd.com.br', situacao: 'Recolhido' })];
+  const pessoas = [
+    { email: 'ana@phd.com.br', nome: 'Ana', data_admissao: '2026-11-01' },
+    { email: 'Bia@phd.com.br', nome: 'Bia', data_admissao: '2026-11-10' },
+    { email: 'caio@phd.com.br', nome: 'Caio', data_admissao: '2020-01-01' },
+    { email: 'dani@phd.com.br', nome: 'Dani', data_admissao: '2026-11-12', ativo: false },
+    { email: 'edu@phd.com.br', nome: 'Edu' },
+  ];
+  assert.deepEqual(pessoasSemEquipamento(ativos, pessoas).map((p) => p.nome), ['Bia', 'Caio', 'Edu']);
+  assert.deepEqual(pessoasSemEquipamento(ativos, pessoas, { desde: '2026-10-01' }).map((p) => p.email), ['bia@phd.com.br']);
+  assert.equal(disponivel(a({ situacao: 'Aguardando atribuição' })), true);
+  assert.equal(disponivel(a()), false);
+  assert.equal(diasAtras(10, new Date(2026, 10, 17)), '2026-11-07');
 });
 
 test('CPF: máscara e dígito verificador', () => {

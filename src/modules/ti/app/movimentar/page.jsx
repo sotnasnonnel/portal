@@ -40,8 +40,10 @@ export default function MovimentarTi() {
   } = useTi();
   const [sel, setSel] = useState(() => (params.get('ativo') ? [params.get('ativo')] : []));
   const [q, setQ] = useState('');
-  const [para, setPara] = useState('');
-  const [situacao, setSituacao] = useState('');
+  // ?para=e-mail vem de Alocar equipamentos: a pessoa já escolhida, e o
+  // equipamento entra em uso com ela.
+  const [para, setPara] = useState(() => params.get('para') || '');
+  const [situacao, setSituacao] = useState(() => (params.get('para') ? 'Em utilização' : ''));
   const [data, setData] = useState(todayISO());
   const [obs, setObs] = useState('');
   const [revisando, setRevisando] = useState(false);

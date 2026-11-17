@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Laptop, ArrowLeftRight, FileSignature, Layers, Replace,
+  LayoutDashboard, Laptop, ArrowLeftRight, FileSignature, Layers, Replace, UserPlus,
 } from 'lucide-react';
 import { ROTA_TROCA_EQUIPAMENTO } from '../../lib/regras';
 
@@ -42,6 +42,7 @@ export function navSections({ contagens = {}, podeEscrever = false } = {}) {
       Icon: Laptop,
       items: [
         { label: 'Ver ativos', href: '/ti/ativos', Icon: Laptop },
+        { label: 'Alocar equipamentos', href: '/ti/alocar', Icon: UserPlus, badge: contagens.alocar },
         { label: 'Movimentar ativo', href: '/ti/movimentar', Icon: ArrowLeftRight },
         { label: 'Resumo por pessoa', href: '/ti/modelos', Icon: Layers },
       ],

@@ -170,6 +170,32 @@ export function listaTermos(ativos, pessoas) {
       || a.nome.localeCompare(b.nome, 'pt-BR'));
 }
 
+/** Situações de quem está livre para ir para alguém (o "estoque" da TI). */
+export const SITUACOES_DISPONIVEIS = ['Aguardando atribuição', 'Em preparação', 'Parado'];
+export const disponivel = (a) => SITUACOES_DISPONIVEIS.includes(a.situacao);
+
+/**
+ * Quem está no cadastro, ativo, e sem nenhum equipamento em uso. Com `desde`
+ * (ISO), só quem foi admitido a partir dessa data: é a fila de quem acabou de
+ * entrar e precisa de equipamento. Mais recentes primeiro; sem data, no fim.
+ */
+export function pessoasSemEquipamento(ativos, pessoas, { desde = null } = {}) {
+  const comEquip = new Set(ativos.filter(emUso).map((a) => emailChave(a.responsavel)));
+  return pessoas
+    .filter((p) => p.email && p.ativo !== false && !comEquip.has(emailChave(p.email)))
+    .filter((p) => !desde || (p.data_admissao && p.data_admissao >= desde))
+    .map((p) => ({ ...p, email: emailChave(p.email) }))
+    .sort((a, b) => String(b.data_admissao || '').localeCompare(String(a.data_admissao || ''))
+      || String(a.nome).localeCompare(String(b.nome), 'pt-BR'));
+}
+
+/** Data ISO de `dias` atrás (a partir de hoje, no fuso do navegador). */
+export function diasAtras(dias, hoje = new Date()) {
+  const d = new Date(hoje);
+  d.setDate(d.getDate() - dias);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 /** Busca livre num ativo: série, responsável, modelo, descrição, contrato, NF. */
 export function casaBusca(a, q) {
   if (!q) return true;

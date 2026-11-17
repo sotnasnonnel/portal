@@ -1,0 +1,18 @@
+.ti-alocar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.ti-alocar-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ti-alocar-item {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  border: 1px solid var(--f-border); border-radius: var(--ctl-radius); background: var(--f-surface);
+}
+.ti-alocar-item .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: var(--font-size-sm); text-align: left; }
+.ti-alocar-item .tx b { font-weight: var(--fw-medium); overflow-wrap: anywhere; }
+.ti-alocar-item .tx span { color: var(--f-muted); font-size: var(--font-size-xs); overflow-wrap: anywhere; }
+.ti-alocar-ficha { background: none; border: none; padding: 0; cursor: pointer; color: inherit; font: inherit; }
+.ti-alocar-ficha:hover b { text-decoration: underline; text-underline-offset: 2px; }
+.ti-alocar-ficha:focus-visible { outline: 2px solid var(--mod-accent); outline-offset: 2px; border-radius: 4px; }
+
+@media (max-width: 1024px) { .ti-alocar { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 768px) {
+  .ti-alocar-item { flex-wrap: wrap; }
+  .ti-alocar-item .ti-btn { width: 100%; justify-content: center; min-height: var(--ctl-h-lg); }
+}

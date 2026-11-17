@@ -37,7 +37,7 @@ function tomStatusTermo(s) {
 export default function DetalheAtivo({ id }) {
   const navigate = useNavigate();
   const {
-    dados, setDados, trocarAtivos, toast, fecharDrawer, abrirForm, podeEscrever, nomeDe,
+    dados, setDados, trocarAtivos, toast, fecharDrawer, abrirForm, podeEscrever, nomeDe, meuEmail,
   } = useTi();
   const a = dados.ativos.find((x) => x.id === id);
   const [confirmar, setConfirmar] = useState(false);
@@ -204,7 +204,9 @@ export default function DetalheAtivo({ id }) {
         </section>
       ))}
 
-      {(podeEscrever || anexos.length > 0) && (
+      {/* Anexo pode ser o termo assinado (tem CPF): fora do time de TI, só o
+          responsável atual vê (mesma regra da policy ti_anexos_select). */}
+      {(podeEscrever || (anexos.length > 0 && emailChave(a.responsavel) === meuEmail)) && (
         <section className="ti-card" aria-label="Anexos">
           <div className="ti-card-h"><h3>Anexos</h3><span className="ti-count">{anexos.length}</span></div>
           <div className="ti-files">

@@ -1,7 +1,9 @@
 import { useMemo } from 'react';
 import { MonitorSmartphone } from 'lucide-react';
 import ModuleSidebar from '../../../../components/Layout/ModuleSidebar';
-import { emailChave, pendenteTermo } from '../../lib/regras';
+import {
+  diasAtras, emailChave, pendenteTermo, pessoasSemEquipamento,
+} from '../../lib/regras';
 import { useTi } from './TiContext';
 import { navSections } from './nav';
 
@@ -10,7 +12,9 @@ export default function Sidebar({ aberto = false, onFechar }) {
   const { dados, podeEscrever } = useTi();
   const contagens = useMemo(() => ({
     termos: new Set(dados.ativos.filter(pendenteTermo).map((a) => emailChave(a.responsavel))).size,
-  }), [dados.ativos]);
+    // Admitidos nos últimos 60 dias ainda sem equipamento (tela Alocar).
+    alocar: podeEscrever ? pessoasSemEquipamento(dados.ativos, dados.pessoas, { desde: diasAtras(60) }).length : 0,
+  }), [dados.ativos, dados.pessoas, podeEscrever]);
 
   return (
     <ModuleSidebar

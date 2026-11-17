@@ -188,6 +188,7 @@ const AtivosTi = lazyPagina(() => import('../modules/ti/app/ativos/page'));
 const MovimentarTi = lazyPagina(() => import('../modules/ti/app/movimentar/page'));
 const TermosTi = lazyPagina(() => import('../modules/ti/app/termos/page'));
 const ModelosTi = lazyPagina(() => import('../modules/ti/app/modelos/page'));
+const AlocarTi = lazyPagina(() => import('../modules/ti/app/alocar/page'));
 
 const MapaTorre = lazyPagina(() => import('../modules/torre/app/mapa/page'));
 const QuadroTorre = lazyPagina(() => import('../modules/torre/app/quadro/page'));
@@ -1143,6 +1144,7 @@ export default function AppRoutes() {
             <Route index element={<TiInicio />} />
             <Route path="painel" element={<TiTimeRoute><LazyPage><PainelTi /></LazyPage></TiTimeRoute>} />
             <Route path="ativos" element={<TiTimeRoute><LazyPage><AtivosTi /></LazyPage></TiTimeRoute>} />
+            <Route path="alocar" element={<TiTimeRoute><LazyPage><AlocarTi /></LazyPage></TiTimeRoute>} />
             <Route path="movimentar" element={<LazyPage><MovimentarTi /></LazyPage>} />
             {/* Pendências de termos virou a lista da tela de termos. */}
             <Route path="pendencias" element={<Navigate to="/ti/termos" replace />} />

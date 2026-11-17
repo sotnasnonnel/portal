@@ -19,6 +19,7 @@ const FILTROS_INICIAIS = {
   // aba '' = automática (o meu termo, se pendente; senão a equipe).
   termos: { q: '', status: '', aba: '' },
   modelos: { fornecedor: '', tipo: '' },
+  alocar: { q: '', janela: '60' },
 };
 
 /**
