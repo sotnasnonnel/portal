@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Plus, Trash2, Archive, ArchiveRestore } from 'lucide-react';
+import { Plus, Pencil, Trash2, Archive, ArchiveRestore } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import {
   fetchGerencias,
@@ -11,6 +11,7 @@ import {
 } from '../../lib/data';
 import { isGestao, isHorasAdmin } from '../../lib/roles';
 import ConfirmModal from '../components/ConfirmModal';
+import Modal from '../components/Modal';
 import SeletorCor from '../components/SeletorCor';
 import { CORES } from '../../lib/cores';
 import Aviso, { Carregando } from '../components/Aviso';
@@ -31,6 +32,7 @@ export default function ConfigPage() {
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState('');
   const [novo, setNovo] = useState({ nome: '', cliente: '', cor: CORES[0] });
+  const [aEditar, setAEditar] = useState(null);
   const [aExcluir, setAExcluir] = useState(null);
 
   // Áreas que este usuário pode editar: o admin/super vê todas; o líder vê a(s)
@@ -101,6 +103,21 @@ export default function ConfigPage() {
       setErro(e?.message || 'Falha ao salvar.');
       await carregar();
     }
+  }
+
+  // Edição de um projeto já criado. Diferente do salvarProjeto (cor, arquivar),
+  // aqui o erro sobe: é o modal que mostra e mantém o que foi digitado.
+  async function salvarEdicao(patch) {
+    const p = aEditar;
+    if (!p) return;
+    try {
+      await updateProjeto(p.id, patch);
+    } catch (e) {
+      await carregar();
+      throw e;
+    }
+    setProjetos((prev) => prev.map((x) => (x.id === p.id ? { ...x, ...patch } : x)));
+    setAEditar(null);
   }
 
   async function confirmarExclusao() {
@@ -251,6 +268,15 @@ export default function ConfigPage() {
                   <button
                     className="horas-btn-icon"
                     type="button"
+                    title="Editar"
+                    aria-label={`Editar ${p.nome}`}
+                    onClick={() => setAEditar(p)}
+                  >
+                    <Pencil size={15} />
+                  </button>
+                  <button
+                    className="horas-btn-icon"
+                    type="button"
                     title={p.arquivado ? 'Reativar' : 'Arquivar'}
                     aria-label={`${p.arquivado ? 'Reativar' : 'Arquivar'} ${p.nome}`}
                     onClick={() => salvarProjeto(p, { arquivado: !p.arquivado })}
@@ -280,6 +306,15 @@ export default function ConfigPage() {
         </table>
       </div>
 
+      {aEditar ? (
+        <EditarProjetoModal
+          key={aEditar.id}
+          projeto={aEditar}
+          onClose={() => setAEditar(null)}
+          onSalvar={salvarEdicao}
+        />
+      ) : null}
+
       <ConfirmModal
         open={!!aExcluir}
         title="Excluir projeto"
@@ -288,5 +323,70 @@ export default function ConfigPage() {
         onCancel={() => setAExcluir(null)}
       />
     </>
+  );
+}
+
+// Renomeia o projeto e ajusta o cliente. A cor continua sendo trocada direto na
+// linha da tabela — lá o efeito é imediato e não vale abrir um diálogo.
+function EditarProjetoModal({ projeto, onClose, onSalvar }) {
+  const [nome, setNome] = useState(projeto.nome || '');
+  const [cliente, setCliente] = useState(projeto.cliente || '');
+  const [erro, setErro] = useState('');
+  const [salvando, setSalvando] = useState(false);
+  const uid = useId();
+
+  async function submit() {
+    const n = nome.trim();
+    if (!n) {
+      setErro('O nome do projeto é obrigatório.');
+      return;
+    }
+    setErro('');
+    setSalvando(true);
+    try {
+      await onSalvar({ nome: n, cliente: cliente.trim() || null });
+    } catch (e) {
+      setErro(e?.message || 'Falha ao salvar.');
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <Modal titulo="Editar projeto" onClose={salvando ? undefined : onClose} className="horas-modal-sm">
+      <div className="horas-fld">
+        <label htmlFor={`${uid}-nome`}>Nome</label>
+        <input
+          id={`${uid}-nome`}
+          type="text"
+          value={nome}
+          onChange={(e) => setNome(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && submit()}
+          aria-invalid={erro ? true : undefined}
+          autoFocus
+        />
+      </div>
+      <div className="horas-fld">
+        <label htmlFor={`${uid}-cliente`}>
+          Cliente <span className="horas-muted">(opcional)</span>
+        </label>
+        <input
+          id={`${uid}-cliente`}
+          type="text"
+          placeholder="Cliente"
+          value={cliente}
+          onChange={(e) => setCliente(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && submit()}
+        />
+      </div>
+      {erro ? <Aviso tom="erro">{erro}</Aviso> : null}
+      <div className="horas-modal-acoes">
+        <button className="horas-btn2" type="button" onClick={onClose} disabled={salvando}>
+          Cancelar
+        </button>
+        <button className="horas-btn" type="button" onClick={submit} disabled={salvando}>
+          {salvando ? 'Salvando…' : 'Salvar'}
+        </button>
+      </div>
+    </Modal>
   );
 }
