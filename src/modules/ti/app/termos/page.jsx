@@ -2,7 +2,7 @@ import {
   useEffect, useMemo, useRef, useState,
 } from 'react';
 import {
-  ArrowDown, CheckCircle2, Copy, Download, FileSignature, Link2, Mail, ShieldCheck,
+  ArrowDown, CheckCircle2, Download, FileSignature, Mail, ShieldCheck,
 } from 'lucide-react';
 import TableScroll from '../../../../components/UI/TableScroll';
 import { useAuth } from '../../../../contexts/AuthContext';
@@ -550,14 +550,9 @@ function Campo({
 // ------------------------------------------------------------------ equipe
 const FILTROS_STATUS = [['', 'Todos'], ['pendente', 'Pendentes'], ['aceito', 'Aceitaram']];
 
-async function copiar(texto) {
-  if (!navigator.clipboard) throw new Error('O navegador não permitiu copiar.');
-  await navigator.clipboard.writeText(texto);
-}
-
 function Equipe({ lista, euPendente, irParaMeu }) {
   const {
-    dados, filtros, setFiltro, podeEscrever, abrirAtivo, toast,
+    dados, filtros, setFiltro, podeEscrever, abrirAtivo,
   } = useTi();
   const f = filtros.termos;
   const set = (patch) => setFiltro('termos', patch);
@@ -580,13 +575,6 @@ function Equipe({ lista, euPendente, irParaMeu }) {
   const rows = lista.filter((p) => (!f.status || p.situacao === f.status)
     && (!f.q || norm(`${p.nome} ${p.email} ${p.ativos.map((a) => a.numero_serie).join(' ')}`).includes(norm(f.q))));
   const colunas = podeEscrever ? 6 : 4;
-
-  const copiarEmails = () => copiar(pendentes.map((p) => p.email).join('; '))
-    .then(() => toast(`${plural(pendentes.length, 'e-mail copiado', 'e-mails copiados')}. Cole no Outlook ou no Teams.`))
-    .catch((e) => toast(e.message, 'err'));
-  const copiarLink = () => copiar(`${window.location.origin}${window.location.pathname}#/ti/termos`)
-    .then(() => toast('Link do termo copiado.'))
-    .catch((e) => toast(e.message, 'err'));
 
   if (!lista.length) {
     return (
@@ -628,16 +616,6 @@ function Equipe({ lista, euPendente, irParaMeu }) {
               ? `${plural(contagem.pendente, 'pessoa pendente', 'pessoas pendentes')}. Cada uma recebe um lembrete por e-mail por dia até aceitar.`
               : 'Todo mundo com equipamento já aceitou o termo.'}
           </p>
-        </div>
-        <div className="ti-termo-resumo-a">
-          {contagem.pendente > 0 && (
-            <button type="button" className="ti-btn" onClick={copiarEmails}>
-              <Copy size={15} aria-hidden="true" /> Copiar e-mails dos pendentes
-            </button>
-          )}
-          <button type="button" className="ti-btn" onClick={copiarLink}>
-            <Link2 size={15} aria-hidden="true" /> Copiar link do termo
-          </button>
         </div>
       </section>
 

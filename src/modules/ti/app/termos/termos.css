@@ -178,7 +178,6 @@
 .tiRoot .ti-termo-resumo-n b { font-size: var(--font-size-2xl); font-weight: var(--fw-bold); letter-spacing: var(--ls-tight); font-variant-numeric: tabular-nums; }
 .tiRoot .ti-termo-barra { height: 8px; border-radius: 999px; background: var(--f-amber-bg); overflow: hidden; max-width: 420px; }
 .tiRoot .ti-termo-barra i { display: block; height: 100%; background: var(--f-green); border-radius: inherit; }
-.tiRoot .ti-termo-resumo-a { display: flex; flex-wrap: wrap; gap: var(--ctl-gap); }
 .tiRoot .ti-termo-filtros { display: flex; flex-direction: column; gap: 12px; }
 
 .tiRoot .ti-termo-lista tr.pend td:first-child { box-shadow: inset 3px 0 0 var(--f-amber); }
@@ -198,9 +197,8 @@
   .tiRoot .ti-termo-passos { grid-template-columns: minmax(0, 1fr); }
   .tiRoot .ti-termo-intro-pe .ti-btn,
   .tiRoot .ti-termo-btn-aceitar,
-  .tiRoot .ti-termo-ok-a .ti-btn,
-  .tiRoot .ti-termo-resumo-a .ti-btn { width: 100%; }
-  .tiRoot .ti-termo-ok-a, .tiRoot .ti-termo-resumo-a { width: 100%; }
+  .tiRoot .ti-termo-ok-a .ti-btn { width: 100%; }
+  .tiRoot .ti-termo-ok-a { width: 100%; }
 
   /* documento: corpo maior para ler no celular, sem rolagem lateral */
   .tiRoot .ti-termo-doc { padding: 20px 16px; }
