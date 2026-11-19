@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { FileText, Loader2, AlertTriangle, DollarSign } from 'lucide-react';
 import { useRequisicaoForm } from './useRequisicaoForm';
 import { camposVisiveis, estadoInicial, validar, montarPayload } from '../../../config/formularioContratacao';
-import { chavePreco, formatarPreco } from '../../../config/precosItens';
-import { carregarPrecosMap } from '../../../services/precosItens';
+import { chavePreco, formatarPreco, comItensExtras } from '../../../config/precosItens';
+import { carregarCatalogoPrecos } from '../../../services/precosItens';
 import '../../../components/UI/Components.css';
 import '../Gestor.css';
 import './Requisicoes.css';
@@ -22,14 +22,15 @@ export default function FormContratacao() {
   const [form, setForm] = useState(estadoInicial);
   const [faltando, setFaltando] = useState([]);
   const [precos, setPrecos] = useState({});
+  const [extras, setExtras] = useState({});   // itens cadastrados em Ajustes de Valores
 
   const semFluxo = fluxoOk === false;
 
-  // Preços configurados em Ajustes de Valores — best-effort (não bloqueia o form).
+  // Preços e itens novos de Ajustes de Valores — best-effort (não bloqueia o form).
   useEffect(() => {
     let vivo = true;
-    carregarPrecosMap()
-      .then((mapa) => { if (vivo) setPrecos(mapa); })
+    carregarCatalogoPrecos()
+      .then((r) => { if (vivo) { setPrecos(r.precos); setExtras(r.extras); } })
       .catch(() => {});
     return () => { vivo = false; };
   }, []);
@@ -97,9 +98,10 @@ export default function FormContratacao() {
       );
     }
     const catalogo = CATALOGO_POR_CAMPO[c.id];
+    const opcoes = catalogo ? comItensExtras(c.opcoes, extras[catalogo]) : c.opcoes;
     return (
       <div className="contratacao-opcoes contratacao-opcoes-col">
-        {c.opcoes.map((opt) => {
+        {opcoes.map((opt) => {
           const checked = Array.isArray(val) && val.includes(opt);
           const preco = catalogo ? precos[chavePreco(catalogo, opt)] : null;
           return (

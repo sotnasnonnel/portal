@@ -8,8 +8,8 @@ import {
   CAMPOS_NOVA_VAGA, SECOES_NOVA_VAGA, estadoInicialNovaVaga, validarNovaVaga, montarPayloadNovaVaga,
 } from '../../../config/novaVaga';
 import { UFS } from '../../../config/mapeamento';
-import { chavePreco, formatarPreco } from '../../../config/precosItens';
-import { carregarPrecosMap } from '../../../services/precosItens';
+import { chavePreco, formatarPreco, comItensExtras } from '../../../config/precosItens';
+import { carregarCatalogoPrecos } from '../../../services/precosItens';
 import CurrencyInput from '../../../components/CurrencyInput';
 import '../../../components/UI/Components.css';
 import '../Gestor.css';
@@ -34,6 +34,7 @@ export default function FormNovaVaga() {
   const [funcoes, setFuncoes] = useState([]);
   const [loadingFuncoes, setLoadingFuncoes] = useState(true);
   const [precos, setPrecos] = useState({});
+  const [equipamentosExtras, setEquipamentosExtras] = useState([]);   // cadastrados em Ajustes de Valores
   const anexos = useAnexos({ bucket: BUCKET, maxMb: ANEXO_MAX_MB });
 
   const semFluxo = fluxoOk === false;
@@ -48,11 +49,11 @@ export default function FormNovaVaga() {
     return () => { vivo = false; };
   }, []);
 
-  // Preços dos equipamentos (configurados em Ajustes de Valores) — best-effort.
+  // Preços e equipamentos novos (configurados em Ajustes de Valores) — best-effort.
   useEffect(() => {
     let vivo = true;
-    carregarPrecosMap()
-      .then((mapa) => { if (vivo) setPrecos(mapa); })
+    carregarCatalogoPrecos()
+      .then((r) => { if (vivo) { setPrecos(r.precos); setEquipamentosExtras(r.extras.equipamento || []); } })
       .catch(() => {});
     return () => { vivo = false; };
   }, []);
@@ -163,7 +164,8 @@ export default function FormNovaVaga() {
       );
     }
     if (c.tipo === 'select') {
-      const opcoes = typeof c.opcoes === 'function' ? c.opcoes(form) : c.opcoes;
+      const base = typeof c.opcoes === 'function' ? c.opcoes(form) : c.opcoes;
+      const opcoes = c.id === 'equipamento' ? comItensExtras(base, equipamentosExtras) : base;
       return (
         <select className="form-select" value={val}
           onChange={(e) => {
