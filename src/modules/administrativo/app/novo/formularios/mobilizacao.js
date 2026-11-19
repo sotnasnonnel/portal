@@ -195,3 +195,29 @@ export function desmobDaMovimentacao(v, numeroMovimentacao) {
     movimentacao_numero: numeroMovimentacao ? String(numeroMovimentacao) : '',
   };
 }
+
+/**
+ * Itens de uma Contratação (Requisições do DP) que já entram marcados na
+ * Mobilização aberta a partir dela (botão "Abrir Mobilização").
+ *
+ * Só entra o que a Mobilização oferece: item fora das listas dela (inclusive
+ * "Outra" e os cadastrados em Ajustes de Valores) ficaria marcado sem aparecer
+ * na tela. Benefícios não existem na Mobilização e não vão. A "2° tela", que a
+ * Contratação lista em Softwares, aqui é Equipamento (ver opcoes.js).
+ *
+ * `opcoes` = { equipamento, software, epi }, as listas de opcoes.js — recebidas
+ * por parâmetro para este arquivo continuar sem imports.
+ */
+export function itensDaContratacao(det, opcoes) {
+  const lista = (v) => (Array.isArray(v) ? v : []);
+  const tem = (chave, item) => lista(opcoes?.[chave]).includes(item);
+  const out = { equipamentos: [], softwares: [], epis: [] };
+  for (const item of lista(det?.softwares_extras)) {
+    if (tem('equipamento', item)) out.equipamentos.push(item);
+    else if (tem('software', item)) out.softwares.push(item);
+  }
+  for (const item of lista(det?.epis)) {
+    if (tem('epi', item)) out.epis.push(item);
+  }
+  return out;
+}

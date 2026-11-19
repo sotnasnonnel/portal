@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useParams, useNavigate, useSearchParams, Navigate, Link } from 'react-router-dom';
+import {
+  useParams, useNavigate, useSearchParams, useLocation, Navigate, Link,
+} from 'react-router-dom';
 import {
   ArrowLeft, Paperclip, X, Send, AlertCircle, FileText, CheckCircle2, Loader2, Star,
   Layers, Clock,
@@ -87,7 +89,14 @@ export default function NovoChamadoAdm() {
   const form = formDoServico(classe, servico);
   // Sem formulário próprio, a URL pode trazer valores iniciais (o módulo TI abre
   // a troca de equipamento já com série e tipo; ver lib/preenchimento.js).
-  const [extras, setExtras] = useState(() => (form ? form.estadoInicial() : valoresDaUrl(classe, servico, params)));
+  // Com formulário próprio, a navegação pode trazer itens já marcados: a
+  // Contratação do DP abre a Mobilização com softwares, EPIs e 2ª tela
+  // (BotaoAbrirMobilizacao). `origem` só identifica de onde vieram, para o aviso.
+  const location = useLocation();
+  const preenchido = form ? location.state?.preenchido : null;
+  const [extras, setExtras] = useState(() => (form
+    ? { ...form.estadoInicial(), ...(preenchido?.valores || {}) }
+    : valoresDaUrl(classe, servico, params)));
   // Para quem é o chamado. A pessoa é confrontada com a Folga de Campo e a
   // Ausência Programada: se estiver fora, o SLA só começa na volta dela.
   const [paraQuem, setParaQuem] = useState(PARA_MIM);
@@ -534,6 +543,15 @@ export default function NovoChamadoAdm() {
                   começa a contar na volta dela.
                 </span>
               )}
+            </div>
+          )}
+
+          {preenchido?.origem && (
+            <div className="adm-aviso tom-info">
+              <FileText size={16} aria-hidden="true" />
+              <span>
+                Itens trazidos da {preenchido.origem}. Confira os marcados e complete o restante.
+              </span>
             </div>
           )}
 

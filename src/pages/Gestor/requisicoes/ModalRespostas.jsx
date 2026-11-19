@@ -6,6 +6,7 @@ import { CAMPOS_AJUDA_CUSTO } from '../../../config/ajudaCusto';
 import { CAMPOS_NOVA_VAGA } from '../../../config/novaVaga';
 import BotaoPdfRequisicao from '../../../components/BotaoPdfRequisicao';
 import BotaoGerarNovaVaga from './BotaoGerarNovaVaga';
+import BotaoAbrirMobilizacao from './BotaoAbrirMobilizacao';
 import '../../../components/UI/Components.css';
 
 /**
@@ -89,6 +90,7 @@ export default function ModalRespostas({ respostas, onClose, sol, nomeColaborado
           {sol && <BotaoPdfRequisicao sol={sol} nomeColaborador={nomeColaborador} nomeSolicitante={nomeSolicitante} />}
           {/* Abrir o Mapeamento é justamente quando o gestor decide virá-lo em vaga. */}
           {sol && <BotaoGerarNovaVaga sol={sol} onAntesDeIr={onClose} />}
+          {sol && <BotaoAbrirMobilizacao sol={sol} onAntesDeIr={onClose} />}
           <button className="btn btn-outline" onClick={onClose}>Fechar</button>
         </div>
       </div>

@@ -12,6 +12,7 @@ import {
 } from '../../../config/aprovacao';
 import ModalRespostas, { DETALHE, buscarRespostas } from './ModalRespostas';
 import BotaoGerarNovaVaga from './BotaoGerarNovaVaga';
+import BotaoAbrirMobilizacao from './BotaoAbrirMobilizacao';
 import AcoesEditarRequisicao from './AcoesEditarRequisicao';
 import RequisicoesRh from './RequisicoesRh';
 import { REQUISICOES } from '../../../config/requisicoes';
@@ -277,10 +278,11 @@ export default function AcompanharRequisicoes() {
                 <FileText size={14} /> Ver respostas
               </button>
             )}
-            {/* Estas duas só aparecem para o SOLICITANTE da requisição
-                (ver podeEditarRequisicao / podeGerarNovaVaga). */}
+            {/* Estas três só aparecem para o SOLICITANTE da requisição
+                (ver podeEditarRequisicao / podeGerarNovaVaga / BotaoAbrirMobilizacao). */}
             <AcoesEditarRequisicao sol={s} onFeito={fetchParticipa} />
             <BotaoGerarNovaVaga sol={s} />
+            <BotaoAbrirMobilizacao sol={s} />
           </div>
           {podeAprovar && (
             <div className="req-card-acoes-dec">

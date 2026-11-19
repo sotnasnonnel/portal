@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   MOVIMENTOS, eDesmobilizacao, inicialMobilizacao, aoTrocarMovimento, validarMobilizacao,
-  desmobDaMovimentacao, precisaDesmob,
+  desmobDaMovimentacao, precisaDesmob, itensDaContratacao,
 } from './mobilizacao.js';
 
 const mobilizacaoCheia = () => ({
@@ -200,4 +200,25 @@ test('o chamado de desmobilização leva só quem sai, quando e o crachá', () =
   assert.equal(d.cliente, undefined);
   assert.equal(d.contato_nome, undefined);
   assert.equal(validarMobilizacao(d), '', 'passa na validação da desmobilização');
+});
+
+test('itensDaContratacao: só o que a Mobilização oferece, 2ª tela vira equipamento', () => {
+  const opcoes = {
+    equipamento: ['Notebook Padrão', '2° tela'],
+    software: ['MS Project', 'Power BI'],
+    epi: ['Capacete', 'Jaleco'],
+  };
+  const det = {
+    softwares_extras: ['MS Project', '2° tela', 'Outra', 'Software novo'],
+    epis: ['Capacete', 'Outra'],
+    beneficios: ['Vale Transporte (VT)'],
+  };
+  assert.deepEqual(itensDaContratacao(det, opcoes), {
+    equipamentos: ['2° tela'], softwares: ['MS Project'], epis: ['Capacete'],
+  });
+});
+
+test('itensDaContratacao: contratação sem itens devolve listas vazias', () => {
+  assert.deepEqual(itensDaContratacao({ softwares_extras: null }, {}), { equipamentos: [], softwares: [], epis: [] });
+  assert.deepEqual(itensDaContratacao(null, {}), { equipamentos: [], softwares: [], epis: [] });
 });

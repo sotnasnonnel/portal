@@ -6,6 +6,7 @@ import { resumoAndamento, badgeDeStatus } from '../../../config/aprovacao';
 import FluxoTimeline from '../../../components/Solicitacoes/FluxoTimeline';
 import ModalRespostas, { DETALHE, buscarRespostas } from './ModalRespostas';
 import BotaoGerarNovaVaga from './BotaoGerarNovaVaga';
+import BotaoAbrirMobilizacao from './BotaoAbrirMobilizacao';
 import AcoesEditarRequisicao from './AcoesEditarRequisicao';
 import '../../../components/UI/Components.css';
 import '../Gestor.css';
@@ -103,6 +104,7 @@ export default function HistoricoRequisicoes({ req }) {
                   )}
                   <AcoesEditarRequisicao sol={s} onFeito={carregar} />
                   <BotaoGerarNovaVaga sol={s} />
+                  <BotaoAbrirMobilizacao sol={s} />
                 </div>
               </div>
             );
