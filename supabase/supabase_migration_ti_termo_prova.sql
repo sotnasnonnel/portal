@@ -151,6 +151,9 @@ begin
     raise exception 'Seu termo já está aceito.' using errcode = '22023';
   end if;
 
+  -- Só esta função grava aceite: o gatilho do passo 4 recusa insert com
+  -- aceite que não venha com esta marca (vale só nesta transação).
+  perform set_config('app.ti_aceite', '1', true);
   insert into public.ti_termos (
     pessoa_email, pessoa_nome, cpf, vinculo, modelo, identificacao, data_admissao, cidade,
     data_termo, ativos, status, data_assinatura, versao_texto, aceite_em, aceite_ip, aceite_user_agent,
@@ -179,6 +182,7 @@ begin
     v_texto, (select auth.uid()), v_eu.id
   )
   returning * into v_termo;  -- o hash sai no gatilho de insert (passo 4)
+  perform set_config('app.ti_aceite', '', true);
 
   update public.ti_ativos
      set situacao_termo = 'Assinado',
@@ -194,12 +198,22 @@ revoke execute on function public.ti_aceitar_termo(text, jsonb, text, jsonb) fro
 grant execute on function public.ti_aceitar_termo(text, jsonb, text, jsonb) to authenticated;
 
 -- 4) Hash no insert ----------------------------------------------------------
+-- Aceite só nasce pelo ti_aceitar_termo (marca app.ti_aceite). Insert direto
+-- (o time de TI tem permissão de insert) com qualquer campo de prova é
+-- recusado: senão daria para forjar um aceite com hora, IP e conta inventados.
 create or replace function app_private.ti_termo_carimbar_hash()
 returns trigger language plpgsql set search_path = '' as $$
 begin
-  if new.aceite_em is not null then
-    new.aceite_hash := app_private.ti_termo_hash(new);
+  if coalesce(current_setting('app.ti_aceite', true), '') <> '1' then
+    if new.aceite_em is not null or new.texto_aceito is not null or new.aceite_hash is not null
+       or new.aceite_auth_id is not null or new.colaborador_id is not null
+       or new.aceite_ip is not null or new.aceite_user_agent is not null or new.texto_retroativo then
+      raise exception 'Aceite de termo só pode ser registrado pela própria pessoa no portal.'
+        using errcode = '42501';
+    end if;
+    return new;
   end if;
+  new.aceite_hash := app_private.ti_termo_hash(new);
   return new;
 end;
 $$;
@@ -237,6 +251,15 @@ returns trigger language plpgsql set search_path = '' as $$
 begin
   if old.aceite_em is not null then
     raise exception 'Termo aceito não pode ser alterado nem apagado: é a prova do aceite. Para corrigir, a pessoa aceita um termo novo.'
+      using errcode = '42501';
+  end if;
+  -- Termo antigo (gerado em PDF, sem aceite) não vira "aceito" por update.
+  if tg_op = 'UPDATE' and (
+       new.aceite_em is not null or new.texto_aceito is not null or new.aceite_hash is not null
+    or new.aceite_auth_id is not null or new.colaborador_id is not null
+    or new.aceite_ip is not null or new.aceite_user_agent is not null or new.texto_retroativo
+  ) then
+    raise exception 'Aceite de termo só pode ser registrado pela própria pessoa no portal.'
       using errcode = '42501';
   end if;
   return case when tg_op = 'DELETE' then old else new end;
