@@ -15,7 +15,7 @@ import {
   cpfValido, emUso, emailChave, formatarCnpj, formatarCpf, listaTermos, norm, pendenteTermo,
 } from '../../lib/regras';
 import {
-  TITULO_TERMO, VERSAO_TERMO, camposIdentificacao, linhaAceite, linhasEquipamento, localEData, modeloDoVinculo, textoDoModelo,
+  TITULO_TERMO, VERSAO_TERMO, camposIdentificacao, linhaAceite, linhasEquipamento, localEData, modeloDoVinculo, textoDoModelo, textoParaAceite,
 } from '../../lib/termoTexto';
 import { aceitarTermo, carregarLembretes, carregarMeuTermo } from '../../lib/ti';
 import './termos.css';
@@ -344,7 +344,9 @@ function AceitarTermo({ meus, onAceito }) {
           razao_social: form.razao_social, cnpj: form.cnpj, representante: form.representante, cpf_representante: form.cpf_representante,
         }
         : modelo === 'Sócio Cotista' ? { area_atuacao: form.area_atuacao } : {};
-      await aceitarTermo({ cpf: form.cpf, identificacao, versao: `${modelo} ${VERSAO_TERMO}` });
+      await aceitarTermo({
+        cpf: form.cpf, identificacao, versao: `${modelo} ${VERSAO_TERMO}`, texto: textoParaAceite(modelo),
+      });
       onAceito();
       await recarregar();
       toast('Termo aceito. Obrigado!');

@@ -5,6 +5,7 @@ import {
 } from '../../lib/campos';
 import { salvarAtivo } from '../../lib/ti';
 import { ehEmail } from '../../lib/regras';
+import { PRAZO_MESES, somarMeses } from '../../lib/multa';
 import CascaDrawer from './CascaDrawer';
 import Confirmar from './Confirmar';
 import { ListaSuspensa } from './Pecas';
@@ -50,7 +51,9 @@ export default function FormAtivo({ id, init }) {
   const [erros, setErros] = useState({});
   const [sair, setSair] = useState(null); // ação de saída à espera de "descartar?"
   const set = (k, v) => {
-    setR((x) => ({ ...x, [k]: v }));
+    // O vencimento acompanha o início do prazo (24 meses); dá para corrigir à mão depois.
+    const venc = k === 'inicio_contrato' && v ? { vencimento_contrato: somarMeses(v, PRAZO_MESES) || '' } : {};
+    setR((x) => ({ ...x, [k]: v, ...venc }));
     if (erros[k]) {
       setErros((atual) => {
         const resto = { ...atual };

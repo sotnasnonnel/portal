@@ -2,7 +2,7 @@
 // (jsPDF pesa e só é usado quando alguém baixa um termo).
 import { jsPDF } from 'jspdf';
 import {
-  TITULO_TERMO, camposIdentificacao, linhaAceite, linhasEquipamento, localEData, textoDoModelo,
+  TITULO_TERMO, camposIdentificacao, linhaAceite, linhasEquipamento, localEData, textoDoTermo,
 } from './termoTexto';
 
 /**
@@ -43,7 +43,8 @@ export function gerarTermoPdf(termo) {
     y += 13;
   };
 
-  const txt = textoDoModelo(termo.modelo);
+  // O texto que a pessoa aceitou, não o atual do código.
+  const txt = textoDoTermo(termo);
   doc.setTextColor(20, 20, 20);
   paragrafo(TITULO_TERMO, { size: 13, bold: true, gap: 12 });
   paragrafo(txt.identificacao, { size: 10, bold: true, gap: 6 });
@@ -107,6 +108,8 @@ export function gerarTermoPdf(termo) {
     doc.setFontSize(7.5);
     doc.setTextColor(130, 130, 130);
     doc.text(`Página ${p} de ${total}`, W - M, H - 24, { align: 'right' });
+    // Impressão digital do registro: confere com ti_termo_integro(id) no banco.
+    if (termo.aceite_hash) doc.text(`Registro ${termo.id} · SHA-256 ${termo.aceite_hash}`, M, H - 24, { maxWidth: larg - 70 });
   }
   return doc;
 }

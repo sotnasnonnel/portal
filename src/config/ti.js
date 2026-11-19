@@ -48,5 +48,8 @@ export const SITUACOES_TERMO = [
 
 export const TERMO_ASSINADO = 'Assinado';
 
+/** Situações em que o equipamento foi devolvido: entrar nelas grava data_devolucao. */
+export const SITUACOES_DEVOLVIDO = ['Devolução', 'Recolhido'];
+
 export const FORNECEDORES = ['Selbet', 'EMC', 'Próprio'];
 export const TIPOS = ['Notebook', 'Monitor', 'Impressora', 'Tablet', 'Serviço', 'Licença'];

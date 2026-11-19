@@ -5,7 +5,11 @@
 // Qual modelo vale para cada pessoa sai de colaboradores.formato
 // (modeloDoVinculo; a mesma regra de app_private.ti_modelo_termo no banco).
 //
-// Mudou o texto? Suba VERSAO_TERMO: o aceite guarda a versão que a pessoa leu.
+// Mudou o texto? Suba VERSAO_TERMO E cadastre a versão nova como vigente em
+// app_private.ti_termo_textos (ver supabase_migration_ti_termo_prova.sql), no
+// mesmo deploy: o aceite grava o texto OFICIAL do banco e recusa se a tela
+// mostrar outro. O PDF de um termo aceito sai do texto guardado no aceite
+// (ti_termos.texto_aceito): mudar este arquivo não muda termo já aceito.
 
 export const EMPRESA_TERMO = 'PHD SOLUCOES EM ENGENHARIA LTDA';
 export const TITULO_TERMO = 'TERMO DE EMPRÉSTIMO DE EQUIPAMENTOS';
@@ -207,6 +211,20 @@ const TEXTOS = { CLT, PJ, 'Sócio Cotista': SOCIO };
 
 /** Texto completo de um modelo (cai no CLT se vier vazio, como os termos antigos). */
 export const textoDoModelo = (modelo) => TEXTOS[modelo] || CLT;
+
+/**
+ * O texto como vai para o banco no aceite (ti_termos.texto_aceito): só o que a
+ * pessoa leu, no formato que o PDF usa. É a prova do conteúdo aceito.
+ */
+export function textoParaAceite(modelo) {
+  const t = textoDoModelo(modelo);
+  return {
+    identificacao: t.identificacao, abertura: t.abertura, clausulas: t.clausulas, declaracao: t.declaracao, assinatura: t.assinatura,
+  };
+}
+
+/** Texto de um termo já registrado: o aceito, se guardado; senão o do modelo. */
+export const textoDoTermo = (termo) => termo?.texto_aceito || textoDoModelo(termo?.modelo);
 
 const fmtData = (iso) => {
   const [y, m, d] = String(iso || '').slice(0, 10).split('-');

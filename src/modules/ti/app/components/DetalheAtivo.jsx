@@ -7,7 +7,10 @@ import { SECOES_ATIVO } from '../../lib/campos';
 import {
   enviarAnexo, excluirAtivo, removerAnexos, salvarAtivo, urlDoAnexo,
 } from '../../lib/ti';
-import { emailChave, ehEmail, linkTrocaEquipamento } from '../../lib/regras';
+import {
+  emailChave, ehEmail, linkTrocaEquipamento, todayISO,
+} from '../../lib/regras';
+import { multaDevolucao } from '../../lib/multa';
 import CascaDrawer from './CascaDrawer';
 import Confirmar from './Confirmar';
 import { Pill } from './Pecas';
@@ -55,6 +58,8 @@ export default function DetalheAtivo({ id }) {
     .filter((t) => (t.ativos || []).some((x) => x.id === a.id))
     .sort((x, y) => String(y.data_termo).localeCompare(String(x.data_termo)));
   const anexos = a.anexos || [];
+  // Devolvido: multa na data da devolução. Ainda com alguém: simulação para hoje.
+  const multa = a.fornecedor === 'Próprio' ? null : multaDevolucao(a, a.data_devolucao || todayISO());
 
   const excluir = async () => {
     try {
@@ -203,6 +208,37 @@ export default function DetalheAtivo({ id }) {
           </dl>
         </section>
       ))}
+
+      {podeEscrever && multa && (
+        <section className="ti-card" aria-label="Multa por devolução antecipada">
+          <div className="ti-card-h"><h3>Multa por devolução antecipada</h3></div>
+          <dl className="ti-dl">
+            <div>
+              <dt>{a.data_devolucao ? 'Devolvido em' : 'Se devolver hoje'}</dt>
+              <dd>{fmtDate(multa.devolucao)}</dd>
+            </div>
+            <div>
+              <dt>Vencimento{multa.estimado ? ' (sem início do prazo)' : ''}</dt>
+              <dd>{fmtDate(multa.vencimento)}</dd>
+            </div>
+            <div>
+              <dt>Meses restantes</dt>
+              <dd>{multa.meses}</dd>
+            </div>
+            <div>
+              <dt>Multa</dt>
+              <dd><b>{money(multa.valor)}</b></dd>
+            </div>
+            <div className="ti-ativos-dl-full">
+              <dt>Conta</dt>
+              <dd>{money(multa.mensal)} × 3 ÷ 24 × {multa.meses} {multa.meses === 1 ? 'mês' : 'meses'}</dd>
+            </div>
+          </dl>
+          {multa.estimado && (
+            <p className="ti-hint">Sem o início do prazo, a conta usa o vencimento gravado. Preencha o início (entrega) em Editar para o prazo de 24 meses.</p>
+          )}
+        </section>
+      )}
 
       {/* Anexo pode ser o termo assinado (tem CPF): fora do time de TI, só o
           responsável atual vê (mesma regra da policy ti_anexos_select). */}

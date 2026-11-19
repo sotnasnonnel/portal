@@ -1,5 +1,6 @@
 import { supabase } from '../../../services/supabase';
 import { emailChave } from './regras';
+import { SITUACOES_DEVOLVIDO } from '../../../config/ti.js';
 
 export const BUCKET_TI = 'ti-anexos';
 
@@ -90,8 +91,14 @@ export async function movimentar(ativos, {
   const atualizados = [];
   for (const a of ativos) {
     const trocouPessoa = novoResp && emailChave(a.responsavel) !== novoResp;
+    // Saiu da mão de alguém: a data é a da devolução, base da multa. Voltou a
+    // uso: não está mais devolvido.
+    let devolucao = {};
+    if (SITUACOES_DEVOLVIDO.includes(situacao) && !SITUACOES_DEVOLVIDO.includes(a.situacao)) devolucao = { data_devolucao: data };
+    else if (situacao === 'Em utilização' && a.data_devolucao) devolucao = { data_devolucao: null };
     const patch = {
       ultima_movimentacao: data,
+      ...devolucao,
       ...(novoResp ? { responsavel: novoResp } : {}),
       ...(situacao ? { situacao } : {}),
       ...(trocouPessoa ? {
@@ -123,9 +130,11 @@ export async function carregarMeuTermo() {
  * Aceite eletrônico. O banco (ti_aceitar_termo) pega os equipamentos em uso
  * com a pessoa, guarda a cópia, a hora e o IP, e marca todos como assinados.
  */
-export async function aceitarTermo({ cpf, identificacao, versao }) {
+export async function aceitarTermo({
+  cpf, identificacao, versao, texto,
+}) {
   const { data, error } = await supabase.rpc('ti_aceitar_termo', {
-    p_cpf: cpf, p_ident: identificacao, p_versao: versao,
+    p_cpf: cpf, p_ident: identificacao, p_versao: versao, p_texto: texto,
   });
   if (error) throw new Error(error.message);
   return data;

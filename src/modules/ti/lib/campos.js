@@ -47,10 +47,17 @@ export const SECOES_ATIVO = [
       {
         k: 'cnpj', l: 'CNPJ', lista: true, ph: '00.000.000/0000-00',
       },
-      { k: 'inicio_contrato', l: 'Início do contrato', t: 'date' },
+      {
+        k: 'inicio_contrato', l: 'Início do prazo (entrega)', t: 'date',
+        dica: 'Prazo de 24 meses a partir daqui. Preencher calcula o vencimento.',
+      },
       { k: 'vencimento_contrato', l: 'Vencimento do contrato', t: 'date' },
       {
         k: 'valor_mensal', l: 'Valor mensal', t: 'money', ph: '0,00',
+      },
+      {
+        k: 'data_devolucao', l: 'Data da devolução', t: 'date',
+        dica: 'Movimentar para Devolução ou Recolhido preenche sozinho. Base da multa.',
       },
       { k: 'nfe_remessa', l: 'NFe remessa' },
     ],
