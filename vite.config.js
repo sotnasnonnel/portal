@@ -46,6 +46,21 @@ function nfExtractPlugin(env) {
   }
 }
 
+// Versão deste build (horário do build), para o aviso "saiu uma versão nova"
+// (src/utils/versaoApp.js). Vai para dois lugares: dentro do JS (VITE_VERSAO_APP)
+// e num version.json solto, que as abas já abertas releem para descobrir que
+// houve publicação. O deploy/portal.sftp envia o version.json ANTES do index.html.
+function versaoDoBuild() {
+  const versao = String(Date.now())
+  return {
+    name: 'versao-do-build',
+    config: () => ({ define: { 'import.meta.env.VITE_VERSAO_APP': JSON.stringify(versao) } }),
+    generateBundle() {
+      this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ versao }) })
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '') // '' = carrega tambem vars sem prefixo VITE_
@@ -53,7 +68,7 @@ export default defineConfig(({ mode }) => {
     // base relativo: faz os assets carregarem a partir da pasta do index.html,
     // funcionando em qualquer subpasta sem precisar saber o nome dela.
     base: './',
-    plugins: [react(), nfExtractPlugin(env)],
+    plugins: [react(), nfExtractPlugin(env), versaoDoBuild()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, 'src/modules/solic'),

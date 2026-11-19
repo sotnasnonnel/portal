@@ -1,0 +1,71 @@
+/* Cartão "versão nova, atualize a página" — canto inferior direito, por cima de tudo. */
+.aviso-versao {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 9000;
+  width: min(300px, calc(100vw - 32px));
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--ctl-radius);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
+  padding: 12px 14px;
+  display: grid;
+  gap: 8px;
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+}
+
+.aviso-versao__titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+}
+
+.aviso-versao__titulo svg { color: var(--terracotta); }
+
+.aviso-versao__texto {
+  margin: 0;
+  color: var(--muted);
+  line-height: var(--lh-normal);
+}
+
+.aviso-versao__acoes {
+  display: flex;
+  gap: 6px;
+}
+
+/* Botões próprios: o .btn de components/UI/Components.css só é carregado em
+   alguns módulos, e o cartão aparece em todas as telas. */
+.aviso-versao__btn {
+  height: var(--ctl-h-sm);
+  padding: 0 var(--ctl-pad-x);
+  border-radius: var(--ctl-radius-sm);
+  border: var(--ctl-border) solid transparent;
+  font-family: inherit;
+  font-size: var(--font-size-xs);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+}
+
+.aviso-versao__btn--primario {
+  background: var(--terracotta);
+  color: #fff;
+}
+
+.aviso-versao__btn--primario:hover { background: var(--terracotta-dark); }
+
+.aviso-versao__btn--secundario {
+  background: transparent;
+  color: var(--muted);
+  border-color: var(--border);
+}
+
+.aviso-versao__btn--secundario:hover { background: var(--bg-soft); }
+
+.aviso-versao__btn:focus-visible {
+  outline: 2px solid var(--terracotta);
+  outline-offset: 2px;
+}

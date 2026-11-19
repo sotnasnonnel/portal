@@ -2,4 +2,5 @@ cd portal
 lcd dist
 put -r assets
 put logo_so_phd.png
+put version.json
 put index.html

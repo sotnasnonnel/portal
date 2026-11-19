@@ -34,6 +34,7 @@ import { isAusenciaRh, veAprovacoes, veAusenciaTodos } from '../config/ausenciaP
 import { veFeed } from '../config/feed';
 import { TourProvider } from '../components/Tour/TourContext';
 import VerComo from '../components/VerComo/VerComo';
+import AvisoVersaoNova from '../components/AvisoVersaoNova/AvisoVersaoNova';
 import { MODULOS_AUSENCIA } from '../config/modulosAusencia';
 import {
   ROTA_FOLGA_CAMPO, isFolgaCampoRh, podeAcessarFolgaCampo,
@@ -459,6 +460,8 @@ export default function AppRoutes() {
           atravessa telas (o do feed começa na Home) e não pode recomeçar a cada troca. */}
       {/* Ver como (só super admin, config/verComo.js): por cima de todas as telas. */}
       <VerComo />
+      {/* Cartão "versão nova, atualize a página": aparece sozinho após uma publicação. */}
+      <AvisoVersaoNova />
       <TourProvider>
         <Routes>
           <Route
