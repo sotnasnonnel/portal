@@ -6,7 +6,7 @@ import {
 import { useAuth } from '../../../../contexts/AuthContext';
 import { buscarIdeia } from '../../lib/ideias';
 import {
-  FACILIDADE, PRAZO_RELATORIO, UNIDADES, VALIDACAO_LABEL,
+  FACILIDADE, PRAZO_RELATORIO, REQUISITOS, UNIDADES, VALIDACAO_LABEL,
   buscarFicha, calcularFinanceiro, calcularTempo, elegibilidade, notaFacilidade,
   prontidao, salvarFicha,
 } from '../../lib/roi';
@@ -165,6 +165,9 @@ export default function FichaRoi() {
           <span>
             <strong>{VALIDACAO_LABEL[ficha.validacao]} pela equipe de Inovação.</strong>
             {ficha.parecer && <> {ficha.parecer}</>}
+            {REQUISITOS.some((r) => typeof ficha[r.campo] === 'boolean') && (
+              <> Requisitos: {REQUISITOS.map((r) => `${ficha[r.campo] === true ? '✓' : ficha[r.campo] === false ? '✗' : '–'} ${r.label}`).join(' · ')}.</>
+            )}
             {podeEditar && ficha.validacao === 'validada' && (
               <> Alterar a ficha a devolve para validação.</>
             )}

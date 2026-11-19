@@ -1011,6 +1011,17 @@
 .pg-roi-revisar { margin: 8px 0 0; font-size: var(--font-size-xs); color: #b91c1c; line-height: 1.5; }
 .pg-roi-pts { font-weight: 500; color: var(--p-muted); }
 
+/* Requisitos do parecer: ✓ / ✗ por linha. */
+.pg-roi-requisitos { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.pg-roi-requisitos li {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  font-size: var(--font-size-sm); color: var(--p-ink);
+}
+.pg-roi-requisitos li .pg-chips { flex-wrap: nowrap; }
+.pg-roi-requisitos .pg-chip { padding: 0 10px; }
+.pg-chip.pg-req-sim.is-on { background: #ecfdf5; border-color: #047857; color: #047857; }
+.pg-chip.pg-req-nao.is-on { background: #fef2f2; border-color: #b91c1c; color: #b91c1c; }
+
 .pg-roi-checklist { list-style: none; margin: 0 0 14px; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px 16px; }
 .pg-roi-checklist li { display: flex; align-items: center; gap: 8px; font-size: var(--font-size-sm); color: var(--p-muted); }
 .pg-roi-checklist li.is-ok { color: var(--p-ink); }

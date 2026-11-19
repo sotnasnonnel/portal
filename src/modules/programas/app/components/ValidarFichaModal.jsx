@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertCircle, CheckCircle2, Loader2, X } from 'lucide-react';
+import { AlertCircle, Check, CheckCircle2, Loader2, X } from 'lucide-react';
 import {
-  VALIDACAO_LABEL, calcularFinanceiro, calcularTempo, notaFacilidade, pendencias,
+  REQUISITOS, VALIDACAO_LABEL, calcularFinanceiro, calcularTempo, notaFacilidade, pendencias,
 } from '../../lib/roi';
 
 /**
@@ -12,6 +12,9 @@ import {
  * Os números calculados ficam à vista no próprio modal: validar é conferir
  * esses três valores contra as evidências, e abrir a ficha inteira para isso
  * seria o caminho longo. A ficha completa fica a um link.
+ *
+ * Os 4 requisitos (✓ atende = +1 ponto no ranking) são obrigatórios para
+ * validar: sem marcar, a ficha entraria com 0 nesses pontos por esquecimento.
  */
 
 const pct = new Intl.NumberFormat('pt-BR', { style: 'percent', maximumFractionDigits: 1 });
@@ -20,6 +23,9 @@ const fmtPct = (r) => (r.estado !== 'ok' ? '—' : r.reducao === null ? 'n.a.' :
 export default function ValidarFichaModal({ ficha, registro, onFechar, onValidar }) {
   const [validacao, setValidacao] = useState(ficha.validacao === 'pendente' ? 'validada' : ficha.validacao);
   const [parecer, setParecer] = useState(ficha.parecer || '');
+  const [requisitos, setRequisitos] = useState(
+    () => Object.fromEntries(REQUISITOS.map((r) => [r.campo, ficha[r.campo] ?? null]))
+  );
   const [erro, setErro] = useState('');
   const [salvando, setSalvando] = useState(false);
 
@@ -30,6 +36,9 @@ export default function ValidarFichaModal({ ficha, registro, onFechar, onValidar
   }, [onFechar, salvando]);
 
   const faltam = pendencias(ficha);
+  const semMarcar = REQUISITOS.filter((r) => typeof requisitos[r.campo] !== 'boolean').length;
+  const atendidos = REQUISITOS.filter((r) => requisitos[r.campo] === true).length;
+  const marcar = (campo, valor) => setRequisitos((atual) => ({ ...atual, [campo]: valor }));
 
   const enviar = async (e) => {
     e.preventDefault();
@@ -41,10 +50,14 @@ export default function ValidarFichaModal({ ficha, registro, onFechar, onValidar
       setErro(`A ficha ainda tem ${faltam} pendência(s) de preenchimento. Ficha incompleta não entra no ranking.`);
       return;
     }
+    if (validacao === 'validada' && semMarcar) {
+      setErro(`Marque ✓ ou ✗ em todos os requisitos antes de validar (falta${semMarcar > 1 ? 'm' : ''} ${semMarcar}).`);
+      return;
+    }
     setSalvando(true);
     setErro('');
     try {
-      await onValidar({ validacao, parecer });
+      await onValidar({ validacao, parecer, requisitos });
     } catch (err) {
       setErro(err.message);
       setSalvando(false);
@@ -79,6 +92,40 @@ export default function ValidarFichaModal({ ficha, registro, onFechar, onValidar
               <dd>{notaFacilidade(ficha).completa ? `${notaFacilidade(ficha).nota}/8` : '—'}</dd>
             </div>
           </dl>
+
+          <div className="pg-campo pg-roi-depois">
+            <label>Requisitos <span className="pg-roi-pts">· {atendidos}/4 pt{atendidos === 1 ? '' : 's'}</span></label>
+            <p className="pg-campo-dica">Cada requisito atendido soma 1 ponto no ranking.</p>
+            <ul className="pg-roi-requisitos">
+              {REQUISITOS.map((r) => (
+                <li key={r.campo}>
+                  <span>{r.label}</span>
+                  <span className="pg-chips">
+                    <button
+                      type="button"
+                      className={`pg-chip pg-req-sim ${requisitos[r.campo] === true ? 'is-on' : ''}`}
+                      aria-pressed={requisitos[r.campo] === true}
+                      aria-label={`${r.label}: atende`}
+                      title="Atende (+1 ponto)"
+                      onClick={() => marcar(r.campo, true)}
+                    >
+                      <Check size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      className={`pg-chip pg-req-nao ${requisitos[r.campo] === false ? 'is-on' : ''}`}
+                      aria-pressed={requisitos[r.campo] === false}
+                      aria-label={`${r.label}: não atende`}
+                      title="Não atende"
+                      onClick={() => marcar(r.campo, false)}
+                    >
+                      <X size={14} />
+                    </button>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
 
           {erro && <div className="pg-aviso tom-erro"><AlertCircle size={16} /> {erro}</div>}
 

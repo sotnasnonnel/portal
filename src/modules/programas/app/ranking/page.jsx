@@ -128,8 +128,11 @@ export default function Ranking() {
           <div className="pg-card">
             <h2 className="pg-card-tit">Classificação</h2>
             <p className="pg-campo-dica">
-              Em cada critério, 1º lugar leva 3 pontos, 2º leva 2 e 3º leva 1 — máximo de 9. Os três primeiros
-              no total são os vencedores. Empate no total: prevalece quem mais engajou no Campo de Ideias.
+              Em cada critério, 1º lugar leva 3 pontos, 2º leva 2 e 3º leva 1 — máximo de 9. Somam-se até 4
+              pontos dos requisitos avaliados pela equipe de Inovação (1 por requisito atendido): continuidade
+              garantida, aplicado em mais de uma obra, não tem iniciativas semelhantes já
+              implementadas e resolve o problema da obra. Máximo de 13. Os três primeiros no total são os
+              vencedores. Empate no total: prevalece quem mais engajou no Campo de Ideias.
             </p>
 
             {ranking.length === 0 ? (
@@ -148,6 +151,7 @@ export default function Ranking() {
                       <th>Redução de custo</th>
                       <th>Redução de tempo</th>
                       <th>Facilidade</th>
+                      <th>Requisitos</th>
                       <th>Pontos</th>
                       {souAdmin && <th className="col-acoes">Ações</th>}
                     </tr>
@@ -178,6 +182,14 @@ export default function Ranking() {
                         </td>
                         <td className="num">
                           <Criterio valor={`${i.facilidade}/8`} pos={i.pos.facilidade} pontos={i.pontos.facilidade} />
+                        </td>
+                        <td className="num">
+                          <span className="pg-roi-valor">{i.requisitos.nota}/4</span>
+                          <span className="pg-motivo">
+                            {i.requisitos.avaliados
+                              ? `${i.requisitos.nota} pt${i.requisitos.nota === 1 ? '' : 's'}`
+                              : 'Falta avaliar'}
+                          </span>
                         </td>
                         <td className="num"><strong className="pg-roi-total">{i.total}</strong></td>
                         {acaoValidar(i.ficha, i.registro)}

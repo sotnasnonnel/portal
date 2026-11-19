@@ -61,6 +61,25 @@ export const FACILIDADE = [
   },
 ];
 
+/**
+ * Os 4 requisitos que a equipe de Inovação marca no parecer: ✓ atende (+1
+ * ponto no ranking) ou ✗ não atende. `null` = ainda não avaliado, vale 0.
+ */
+export const REQUISITOS = [
+  { campo: 'req_continuidade', label: 'Tem continuidade garantida' },
+  { campo: 'req_qtd_obras', label: 'Aplicado em mais de uma obra' },
+  { campo: 'req_semelhantes', label: 'Não tem iniciativas semelhantes já implementadas' },
+  { campo: 'req_resolve_obra', label: 'Resolve o problema da obra' },
+];
+
+export function notaRequisitos(f) {
+  const marcados = REQUISITOS.map((r) => f[r.campo]);
+  return {
+    avaliados: marcados.every((v) => v === true || v === false),
+    nota: marcados.filter((v) => v === true).length,
+  };
+}
+
 export const VALIDACAO_LABEL = {
   pendente: 'Aguardando validação',
   validada: 'Validada',
@@ -193,7 +212,8 @@ function posicoes(itens, valor) {
 /**
  * Monta o ranking: só ficha VALIDADA, completa e elegível. Em cada critério
  * (redução de custo, redução de tempo, facilidade) o 1º leva 3 pontos, o 2º 2 e
- * o 3º 1. Máximo 9.
+ * o 3º 1 (máximo 9). Somam-se os requisitos da equipe de Inovação, 1 ponto
+ * por requisito atendido (máximo 4). Total máximo: 13.
  *
  * Empate no total: prevalece quem mais engajou — aqui medido pelos registros
  * do autor no Campo de Ideias, o único dado de engajamento que o sistema tem
@@ -220,6 +240,7 @@ export function montarRanking(registros, fichas) {
         custo: calcularFinanceiro(f).reducao,
         tempo: calcularTempo(f).reducao,
         facilidade: notaFacilidade(f).nota,
+        requisitos: notaRequisitos(f),
         engajamento: registrosPorAutor.get(registro.autor_id) || 0,
       };
     });
@@ -241,7 +262,10 @@ export function montarRanking(registros, fichas) {
       tempo: PONTOS_POSICAO[pos.tempo] || 0,
       facilidade: PONTOS_POSICAO[pos.facilidade] || 0,
     };
-    return { ...i, pos, pontos, total: pontos.custo + pontos.tempo + pontos.facilidade };
+    return {
+      ...i, pos, pontos,
+      total: pontos.custo + pontos.tempo + pontos.facilidade + i.requisitos.nota,
+    };
   });
 
   pontuados.sort((a, b) => b.total - a.total
@@ -272,6 +296,7 @@ const COLUNAS = `
   tempo_antes, tempo_depois, tempo_unidade, tempo_execucoes, detalhe_tempo,
   gasto_descricao, gasto_antes, gasto_atual, custo_solucao, detalhe_financeiro,
   fac_desenvolver, fac_implantar, fac_treinamento, fac_autonomia,
+  req_continuidade, req_qtd_obras, req_semelhantes, req_resolve_obra,
   validacao, parecer, validado_por, validado_em, criado_em, updated_at
 `;
 
@@ -336,14 +361,17 @@ export async function salvarFicha(ideiaId, fichaAtual, valores, autorId) {
   return data;
 }
 
-/** Parecer da equipe de Inovação (admin do módulo). */
-export async function validarFicha(ficha, { validacao, parecer }, validadorId) {
+/** Parecer da equipe de Inovação (admin do módulo), com os 4 requisitos. */
+export async function validarFicha(ficha, { validacao, parecer, requisitos = {} }, validadorId) {
   const decidida = validacao !== 'pendente';
   const { data, error } = await supabase
     .from('programas_roi')
     .update({
       validacao,
       parecer: texto(parecer),
+      ...Object.fromEntries(REQUISITOS.map((r) => [
+        r.campo, typeof requisitos[r.campo] === 'boolean' ? requisitos[r.campo] : null,
+      ])),
       validado_por: decidida ? validadorId : null,
       validado_em: decidida ? new Date().toISOString() : null,
     })
