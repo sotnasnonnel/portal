@@ -91,9 +91,12 @@ export default function AdminListagem() {
   });
 
   const filtrados = todosColaboradores.filter((u) => {
+    // Desligado antigo pode estar sem e-mail no cadastro: compara sempre sobre
+    // texto, nunca sobre null — era o que apagava a tela ao digitar na busca.
+    const termo = busca.toLowerCase();
     const matchBusca =
-      u.nome.toLowerCase().includes(busca.toLowerCase()) ||
-      u.email.toLowerCase().includes(busca.toLowerCase());
+      (u.nome || '').toLowerCase().includes(termo) ||
+      (u.email || '').toLowerCase().includes(termo);
     const matchFiltro =
       filtro === 'todos' ||
       (filtro === 'ativo' && u.ativo) ||
