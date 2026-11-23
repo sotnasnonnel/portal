@@ -344,6 +344,14 @@
   font-size: var(--font-size-sm);
 }
 
+/* O anel de foco do portal desenhava um retângulo laranja DENTRO da caixa de
+   busca, sobre a borda dela. Quem indica o foco aqui é a borda da própria
+   caixa (:focus-within acima), então o anel sai. */
+.table-search input:focus,
+.table-search input:focus-visible {
+  outline: none;
+}
+
 .table-search input::placeholder {
   color: var(--color-text-muted);
 }
