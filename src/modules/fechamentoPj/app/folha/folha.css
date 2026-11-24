@@ -127,6 +127,7 @@
 .pj-folha-nav { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .pj-folha-nav-botoes { display: flex; gap: 4px; }
 .pj-folha-pessoa { padding: 12px 14px; border: 1px solid var(--color-border-light); border-radius: var(--radius-md); }
+.pj-folha-pessoa .form-select { margin-top: 2px; font-size: var(--font-size-sm); font-weight: 600; }
 .pj-folha-badges { display: inline-flex; gap: 4px; flex-wrap: wrap; }
 .pj-folha-rodape-status { margin-right: auto; display: inline-flex; align-items: center; gap: 8px; }
 .pj-folha-badge-inline { margin-left: 6px; }

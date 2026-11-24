@@ -8,7 +8,10 @@ import { useFechamentoPj } from '../components/contexto';
 import {
   Modal, Aviso, Abas, Badge, Moeda, Campo, Vazio, Carregando,
 } from '../components/ui';
-import { gravarEnvelopes, auditar, listarCalculos, nomesColaboradores } from '../../lib/dados';
+import {
+  gravarEnvelopes, auditar, listarCalculos, nomesColaboradores, salvarPrestador,
+} from '../../lib/dados';
+import { EMPRESAS } from '../prestadores/comum';
 import {
   calcularEnvelope, proporcionalidade, totaisEventos, ajustarPorResolucao, RESOLUCOES, TIPOS_DIVERGENCIA,
   EVENTO_BRUTO, EVENTO_OUTROS_DESCONTOS,
@@ -30,7 +33,7 @@ export default function Envelope({
 }) {
   const ctx = useFechamentoPj();
   const {
-    config, rateios, encerramentos, centrosMapa, aberta, competencia, notificar, prestadores,
+    config, rateios, encerramentos, centrosMapa, aberta, competencia, notificar, prestadores, recarregar,
   } = ctx;
   const [aba, setAba] = useState(ABAS.includes(abaInicial) ? abaInicial : 'eventos');
   const [ocupado, setOcupado] = useState('');
@@ -100,6 +103,23 @@ export default function Envelope({
     if (r) notificar(r.conferencia === 'divergente' ? 'Envelope recalculado, com divergência.' : 'Envelope recalculado.', r.conferencia === 'divergente' ? 'alerta' : 'sucesso');
   }
 
+  // A empresa é do cadastro do prestador: dela saem o tomador do termo e a coligada.
+  async function trocarEmpresa(empresa) {
+    if (!empresa || empresa === prestador.empresa) return;
+    setOcupado('Salvando empresa…');
+    try {
+      await salvarPrestador({ id: prestador.id, empresa });
+      await auditar('Empresa alterada no envelope', `${pessoa.codigo} - ${pessoa.nome} • ${prestador.empresa || '—'} → ${empresa}`,
+        { competencia, prestadorId: prestador.id });
+      await recarregar();
+      notificar('Empresa atualizada no cadastro do prestador.', 'sucesso');
+    } catch (e) {
+      notificar(e.message, 'erro');
+    } finally {
+      setOcupado('');
+    }
+  }
+
   const ir = (i) => {
     const alvo = linhas[i];
     if (alvo) onTrocar(alvo.envelope.id);
@@ -166,7 +186,16 @@ export default function Envelope({
         <div className="pj-pares pj-folha-pessoa">
           <div className="pj-par"><small>Código</small><b>{pessoa.codigo}</b></div>
           <div className="pj-par"><small>Prestador</small><b>{pessoa.nome}</b></div>
-          <div className="pj-par"><small>Empresa</small><b>{pessoa.empresa || '—'}</b></div>
+          <div className="pj-par">
+            <small>Empresa</small>
+            {aberta && prestador ? (
+              <select className="form-select" value={prestador.empresa || ''} onChange={(e) => trocarEmpresa(e.target.value)}
+                disabled={Boolean(ocupado)} aria-label="Empresa">
+                {!EMPRESAS.some(([v]) => v === prestador.empresa) && <option value="">Escolha a empresa</option>}
+                {EMPRESAS.map(([v]) => <option key={v} value={v}>{v}</option>)}
+              </select>
+            ) : <b>{pessoa.empresa || '—'}</b>}
+          </div>
           <div className="pj-par"><small>Razão social</small><b>{pessoa.razaoSocial || '—'}</b></div>
           <div className="pj-par"><small>CNPJ</small><b>{pessoa.cnpj ? mascararCnpj(pessoa.cnpj) : '—'}</b></div>
           <div className="pj-par"><small>Bruto</small><b><Moeda valor={envelope.bruto} /></b></div>
