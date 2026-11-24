@@ -13,6 +13,7 @@ import {
 } from '../../lib/formato';
 import { REPORTS } from '../../lib/relatorios';
 import { exportarLinhas } from '../../lib/exportar';
+import RelatoriosPlataformas from '../components/RelatoriosPlataformas';
 
 export default function CombustivelFrota() {
   const {
@@ -62,6 +63,7 @@ export default function CombustivelFrota() {
           <span>Saldo e consumo de {compLabel(comp)} ainda não foram lançados. Abra o lançamento do veículo e preencha “Saldo remanescente” no fechamento do cartão.</span>
         </div>
       )}
+      <RelatoriosPlataformas area="combustivel" comp={comp} />
       <div className="frota-card">
         <div className="frota-filters">
           <Busca id="cf-q" valor={f.q} onChange={(q) => set({ q })} placeholder="Condutor, placa ou CT" />

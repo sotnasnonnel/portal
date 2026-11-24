@@ -20,6 +20,7 @@ const CONTAGENS = [
   ['ocorrencias', 'Multas e avarias'],
   ['condutores', 'Condutores'],
   ['manutencoes', 'Manutenções'],
+  ['arquivos', 'Relatórios anexados'],
 ];
 
 export default function ConfiguracoesFrota() {

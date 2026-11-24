@@ -8,7 +8,7 @@ import {
   Busca, Chip, Esqueleto, Estado, Kpi, LinhaVazia, PageHead, Pill, Placa,
 } from '../components/Pecas';
 import {
-  conformidade, norm, ocsDe, sum,
+  conformidade, norm, ocsDe, sum, vinculoDoCondutor,
 } from '../../lib/regras';
 import {
   fmtDate, iniciais, linhaClicavel, money,
@@ -27,8 +27,9 @@ export default function CondutoresFrota() {
   const rows = useMemo(() => {
     const q = norm(f.q);
     return cs
-      .map((c) => ({ c, k: conformidade(c, dados.veiculos, cfg) }))
-      .filter(({ c, k }) => (!f.sit || c.situacao === f.sit)
+      .map((c) => ({ c, k: conformidade(c, dados.veiculos, cfg), vc: vinculoDoCondutor(c, dados.veiculos) }))
+      .filter(({ c, k, vc }) => (!f.sit || c.situacao === f.sit)
+        && (!f.tipo || vc?.tipo === f.tipo)
         && (!f.conf || (f.conf === 'pend' ? k.geral.lvl > 0 : k.geral.label === f.conf))
         && (!q || norm([c.nome, c.email, c.cnh_categoria, k.placaAtual, c.ct].join(' ')).includes(q)))
       .sort((a, b) => b.k.geral.lvl - a.k.geral.lvl || a.c.nome.localeCompare(b.c.nome, 'pt-BR'));
@@ -74,6 +75,10 @@ export default function CondutoresFrota() {
           <Chip ativo={f.conf === 'pend'} onClick={() => set({ conf: 'pend' })}>Com pendência</Chip>
           <Chip ativo={f.conf === 'Regular'} onClick={() => set({ conf: 'Regular' })}>Regulares</Chip>
           <Chip ativo={f.conf === 'Irregular'} onClick={() => set({ conf: 'Irregular' })}>Irregulares</Chip>
+          <span className="sep" aria-hidden="true" />
+          <Chip ativo={!f.tipo} onClick={() => set({ tipo: '' })}>Principais e adicionais</Chip>
+          <Chip ativo={f.tipo === 'Principal'} onClick={() => set({ tipo: 'Principal' })}>Principais</Chip>
+          <Chip ativo={f.tipo === 'Adicional'} onClick={() => set({ tipo: 'Adicional' })}>Adicionais</Chip>
         </div>
       </div>
       {carregando ? <Esqueleto /> : (
@@ -81,16 +86,19 @@ export default function CondutoresFrota() {
           <table className="frota-t">
             <thead>
               <tr>
-                <th>Condutor</th><th>Veículo atual</th><th>CNH</th><th>Termo de responsabilidade</th><th>Situação</th><th className="n">Ocorrências</th><th aria-label="Ações" />
+                <th>Condutor</th><th>Vínculo</th><th>CNH</th><th>Termo de responsabilidade</th><th>Situação</th><th className="n">Ocorrências</th><th aria-label="Ações" />
               </tr>
             </thead>
             <tbody>
-              {rows.length ? rows.map(({ c, k }) => {
+              {rows.length ? rows.map(({ c, k, vc }) => {
                 const oc = ocsDe(c.nome, dados.ocorrencias);
                 return (
                   <tr key={c.id} className="frota-click" {...linhaClicavel(() => abrirDetalhe('condutores', c.id))}>
                     <td><div className="frota-cellv"><span className="frota-avatar">{iniciais(c.nome)}</span><div><div className="p">{c.nome}</div><div className="s">{c.email || c.situacao || ''}</div></div></div></td>
-                    <td>{k.placaAtual ? <Placa placa={k.placaAtual} /> : <span className="frota-muted">—</span>}</td>
+                    <td>
+                      {k.placaAtual ? <Placa placa={k.placaAtual} /> : <span className="frota-muted">—</span>}
+                      {vc && <div className="s"><Pill tone={vc.tipo === 'Principal' ? 'info' : 'neutral'}>{vc.tipo}</Pill></div>}
+                    </td>
                     <td>
                       <Pill tone={k.cnh.tone}>{k.cnh.label}</Pill>
                       <div className="s">

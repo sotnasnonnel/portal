@@ -1,0 +1,21 @@
+/* Importação do relatório "Distância percorrida" do Cobli (cartão + modal).
+   Só complementa o frota.css; tamanhos sempre por token. */
+.frota-cobli .frota-card-h .frota-pill { margin-left: auto; }
+.frota-cobli > .frota-hint { margin: -4px 0 12px; }
+
+.frota-cobli-upl { justify-content: center; padding: 18px 16px; text-align: center; }
+.frota-cobli-upl b { color: var(--f-ink); }
+.frota-cobli-upl.arrastando { border-color: var(--f-primary); background: var(--f-primary-soft); color: var(--f-primary); }
+
+.frota-cobli-per { font-size: var(--font-size-lg); }
+.frota-kpi-s.warn { color: var(--f-amber); font-weight: var(--fw-semibold); }
+
+.frota-cobli-opcoes { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 20px; }
+.frota-cobli-opcoes .frota-fld { width: 190px; }
+.frota-cobli-chk {
+  display: flex; align-items: center; gap: 8px; min-height: var(--ctl-h);
+  font-size: var(--font-size-sm); cursor: pointer;
+}
+
+.frota-cobli-tbl { max-height: 340px; box-shadow: none; flex: none; }
+.frota-cobli-tbl tr.apagada td { opacity: 0.6; }

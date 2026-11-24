@@ -110,17 +110,39 @@ export function combOf(m) {
 export const totalOf = (m) => n0(m.custo_locacao) + n0(m.gps_valor) + extrasOf(m);
 
 /**
- * Km rodado no mês, pela diferença do hodômetro para a competência anterior.
- * Diferença negativa, zerada ou acima de 15 mil km é erro de leitura ou troca de
- * veículo com a mesma placa: não vira número.
+ * Km rodado no mês. O informado (relatório da Cobli ou da locadora, coluna
+ * km_rodado_inf) vale primeiro, sem trava de faixa. Sem ele, a diferença do
+ * hodômetro para a competência anterior: negativa, zerada ou acima de 15 mil km é
+ * erro de leitura ou troca de veículo com a mesma placa, e não vira número.
  */
 export function kmRodado(m, mensal) {
+  if (isNum(m.km_rodado_inf)) return m.km_rodado_inf;
   if (!m.placa || !isNum(m.km_atual)) return null;
   const anterior = compPrev(m.competencia);
   const prev = mensal.find((x) => x.competencia === anterior && x.placa === m.placa);
   if (!prev || !isNum(prev.km_atual)) return null;
   const d = m.km_atual - prev.km_atual;
   return (d > 0 && d < 15000) ? d : null;
+}
+
+/** Hodômetro do mês anterior da mesma placa, ou null. */
+export function kmAnterior(m, mensal) {
+  if (!m.placa) return null;
+  const anterior = compPrev(m.competencia);
+  const prev = mensal.find((x) => x.competencia === anterior && x.placa === m.placa);
+  return prev && isNum(prev.km_atual) ? prev.km_atual : null;
+}
+
+/** Km acima do contratado no mês (0 quando dentro), ou null sem os dois números. */
+export function kmExcedente(m, mensal) {
+  const kr = kmRodado(m, mensal);
+  return kr != null && isNum(m.km_contratado) ? Math.max(0, kr - m.km_contratado) : null;
+}
+
+/** De onde saiu o km rodado, para a tela de Quilometragem. */
+export function origemDoKm(m, mensal) {
+  if (isNum(m.km_rodado_inf)) return m.km_fonte === 'Cobli' ? 'Cobli' : 'informado';
+  return kmRodado(m, mensal) != null ? 'pelo hodômetro' : 'sem leitura';
 }
 
 // ---------------------------------------------------------------- revisão
@@ -156,11 +178,106 @@ export function revisao(v, cfg = DEFAULT_CFG) {
 /** O campo condutor pode trazer dois nomes: "A / B". */
 const nomesDe = (condutor) => norm(condutor).split(' / ');
 
-export function placaAtualDe(nome, veiculos) {
+// Vínculo condutor -> veículo (v3): placa_vinculada + tipo_condutor no cadastro
+// do condutor. Cada placa tem 1 Principal e até 5 Adicionais entre os Ativos.
+export const MAX_ADICIONAIS = 5;
+
+/** O vínculo que vale: condutor Ativo, com placa, e o veículo Ativo ou Reservado. */
+export function vinculoDoCondutor(c, veiculos) {
+  if (!c || c.situacao !== 'Ativo' || !c.placa_vinculada) return null;
+  const v = veiculos.find((x) => x.placa === c.placa_vinculada);
+  if (!v || (v.status !== 'Ativo' && v.status !== 'Reservado')) return null;
+  return { placa: c.placa_vinculada, tipo: c.tipo_condutor || 'Principal' };
+}
+
+export const vinculoDe = (nome, condutores, veiculos) => {
+  const k = norm(nome);
+  return vinculoDoCondutor(condutores.find((c) => norm(c.nome) === k), veiculos);
+};
+
+/** Quem está vinculado a uma placa (fora `exceptoId`, o próprio condutor no formulário). */
+export function vinculosPlaca(placa, condutores, exceptoId) {
+  const cs = condutores.filter((c) => c.id !== exceptoId && c.situacao === 'Ativo' && c.placa_vinculada === placa);
+  return {
+    principal: cs.find((c) => (c.tipo_condutor || 'Principal') === 'Principal') || null,
+    adicionais: cs.filter((c) => c.tipo_condutor === 'Adicional'),
+  };
+}
+
+/**
+ * Placa atual do condutor: a do vínculo e, sem ele, a do veículo ativo ou
+ * reservado em que o nome aparece como condutor (a regra de antes da v3).
+ * `condutor` é o cadastro, quando quem chama já o tem.
+ */
+export function placaAtualDe(nome, veiculos, condutor) {
+  const vc = vinculoDoCondutor(condutor, veiculos);
+  if (vc) return vc.placa;
   const k = norm(nome);
   const v = veiculos.find((x) => (x.status === 'Ativo' || x.status === 'Reservado') && x.placa && nomesDe(x.condutor).includes(k));
   return v ? v.placa : '';
 }
+/**
+ * Valida e completa o vínculo ao salvar um condutor: sem tipo vira Principal;
+ * placa com principal ou com 5 adicionais recusa; termo sem placa recebe a do
+ * vínculo. Devolve { vals } ou { erro }.
+ */
+export function prepararVinculo(vals, id, condutores) {
+  const out = { ...vals };
+  const placa = out.placa_vinculada;
+  if (!placa) {
+    out.tipo_condutor = null;
+    return { vals: out };
+  }
+  if (!out.tipo_condutor) out.tipo_condutor = 'Principal';
+  if (out.situacao === 'Ativo') {
+    const vp = vinculosPlaca(placa, condutores, id);
+    if (out.tipo_condutor === 'Principal' && vp.principal) {
+      return { erro: `${placa} já tem condutor principal (${vp.principal.nome}). Marque este como Adicional ou altere o principal primeiro.` };
+    }
+    if (out.tipo_condutor === 'Adicional' && vp.adicionais.length >= MAX_ADICIONAIS) {
+      const nomes = vp.adicionais.map((c) => String(c.nome).split(/\s+/)[0]).join(', ');
+      return { erro: `${placa} já tem ${MAX_ADICIONAIS} condutores adicionais (${nomes}).` };
+    }
+  }
+  if (!out.termo_placa) out.termo_placa = placa;
+  return { vals: out };
+}
+
+/**
+ * Condutor salvo como principal ativo de uma placa: o veículo passa a ter ele
+ * como condutor, e quem estava vai para o histórico. null se nada muda.
+ */
+export function trocaDeCondutor(vals, veiculos, hoje = todayISO()) {
+  if (vals.situacao !== 'Ativo' || vals.tipo_condutor !== 'Principal' || !vals.placa_vinculada) return null;
+  const v = veiculos.find((x) => x.placa === vals.placa_vinculada);
+  if (!v || norm(v.condutor) === norm(vals.nome)) return null;
+  const historico = [...(v.historico || [])];
+  if (v.condutor) {
+    historico.push({
+      condutor: v.condutor, contrato: v.contrato || null, retirada: v.retirada || null, devolucao: hoje,
+      locadora: v.locadora || null, ct: v.ct || null, fonte: 'Troca de condutor principal',
+    });
+  }
+  return { id: v.id, patch: { condutor: vals.nome, historico } };
+}
+
+/**
+ * Veículo salvo com condutor novo (ou veículo novo com condutor): o cadastro do
+ * condutor de mesmo nome vira o principal da placa, e o principal anterior perde
+ * o vínculo. Em ordem: primeiro solta o antigo (o banco só aceita um principal).
+ */
+export function vinculoPeloVeiculo(vals, anterior, condutores) {
+  if (!vals.placa || !vals.condutor) return [];
+  if (anterior && anterior.placa === vals.placa && norm(anterior.condutor) === norm(vals.condutor)) return [];
+  const c = condutores.find((x) => norm(x.nome) === norm(vals.condutor));
+  const { principal } = vinculosPlaca(vals.placa, condutores);
+  const out = [];
+  if (principal && principal.id !== c?.id) out.push({ id: principal.id, patch: { placa_vinculada: null, tipo_condutor: null } });
+  const jaE = c && c.situacao === 'Ativo' && c.placa_vinculada === vals.placa && (c.tipo_condutor || 'Principal') === 'Principal';
+  if (c && !jaE) out.push({ id: c.id, patch: { placa_vinculada: vals.placa, tipo_condutor: 'Principal', situacao: 'Ativo' } });
+  return out;
+}
+
 export const ocsDe = (nome, ocorrencias) => {
   const k = norm(nome);
   return ocorrencias.filter((o) => nomesDe(o.condutor).includes(k));
@@ -181,7 +298,7 @@ export function conformidade(c, veiculos = [], cfg = DEFAULT_CFG) {
 
   const tv = termoValidade(c, cfg);
   const dt = daysUntil(tv);
-  const pa = placaAtualDe(c.nome, veiculos);
+  const pa = placaAtualDe(c.nome, veiculos, c);
   if (!c.termo_assinatura && !c.termo_arquivo) termo = { tone: 'crit', label: 'Termo pendente', lvl: 2 };
   else if (dt != null && dt < 0) termo = { tone: 'crit', label: 'Termo vencido', lvl: 2 };
   else if (!c.termo_arquivo) termo = { tone: 'warn', label: 'Termo sem anexo', lvl: 1 };
@@ -261,6 +378,20 @@ export function duplicado(col, vals, id, dados) {
 }
 
 export const PLACA_RE = /^[A-Z]{3}\d[A-Z0-9]\d{2}$/;
+
+// ---------------------------------------------------------------- arquivos externos
+/** Placa dentro de um texto qualquer de planilha: "abc-1d23 (Onix)" -> ABC1D23. */
+export function placaDe(v) {
+  const m = String(v ?? '').toUpperCase().match(/[A-Z]{3}-?\s?\d[A-Z0-9]\d{2}/);
+  return m ? m[0].replace(/[^A-Z0-9]/g, '') : '';
+}
+
+/** Número de célula de planilha: número passa direto; texto vai pelo parseBR. */
+export function numDe(v) {
+  if (isNum(v)) return v;
+  const s = String(v ?? '').replace(/[^\d,.-]/g, '');
+  return s ? parseBR(s) : null;
+}
 
 // ---------------------------------------------------------------- agregações
 export function groupSum(rows, keyFn, valFn, top = 8) {

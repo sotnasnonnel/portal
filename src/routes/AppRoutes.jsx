@@ -170,6 +170,7 @@ const VeiculosFrota = lazyPagina(() => import('../modules/frota/app/veiculos/pag
 const FaturasFrota = lazyPagina(() => import('../modules/frota/app/faturas/page'));
 const MensalFrota = lazyPagina(() => import('../modules/frota/app/mensal/page'));
 const CombustivelFrota = lazyPagina(() => import('../modules/frota/app/combustivel/page'));
+const QuilometragemFrota = lazyPagina(() => import('../modules/frota/app/quilometragem/page'));
 const ManutencaoFrota = lazyPagina(() => import('../modules/frota/app/manutencao/page'));
 const OcorrenciasFrota = lazyPagina(() => import('../modules/frota/app/ocorrencias/page'));
 const CondutoresFrota = lazyPagina(() => import('../modules/frota/app/condutores/page'));
@@ -1105,6 +1106,7 @@ export default function AppRoutes() {
             <Route path="faturas" element={<LazyPage><FaturasFrota /></LazyPage>} />
             <Route path="mensal" element={<LazyPage><MensalFrota /></LazyPage>} />
             <Route path="combustivel" element={<LazyPage><CombustivelFrota /></LazyPage>} />
+            <Route path="quilometragem" element={<LazyPage><QuilometragemFrota /></LazyPage>} />
             <Route path="manutencao" element={<LazyPage><ManutencaoFrota /></LazyPage>} />
             <Route path="ocorrencias" element={<LazyPage><OcorrenciasFrota /></LazyPage>} />
             <Route path="condutores" element={<LazyPage><CondutoresFrota /></LazyPage>} />

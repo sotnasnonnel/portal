@@ -11,6 +11,8 @@ export const TABELAS = {
   condutores: 'frota_condutores',
   manutencoes: 'frota_manutencoes',
   faturas: 'frota_faturas',
+  // Relatórios mensais das plataformas (v3): Ticket Log, Cobli, GPS da locadora.
+  arquivos: 'frota_arquivos_mensais',
 };
 
 /**
@@ -18,7 +20,7 @@ export const TABELAS = {
  * à parte (supabase_migration_frota_faturas.sql). Sem ela, o resto da Frota abre
  * e só a tela de Faturas avisa.
  */
-const OPCIONAIS = ['faturas'];
+const OPCIONAIS = ['faturas', 'arquivos'];
 // PGRST205: tabela fora do cache do PostgREST; 42P01: tabela inexistente.
 const TABELA_AUSENTE = ['PGRST205', '42P01'];
 
@@ -106,17 +108,35 @@ export async function salvarConfig(cfg) {
 const TIPOS_OK = {
   pdf: 'application/pdf', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif',
 };
+/** Relatórios das plataformas: também planilha e texto (o bucket aceita desde a v3). */
+const TIPOS_PLANILHA = {
+  csv: 'text/csv', txt: 'text/plain',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  xls: 'application/vnd.ms-excel',
+  ods: 'application/vnd.oasis.opendocument.spreadsheet',
+};
+export const ACEITA_RELATORIO = '.pdf,.csv,.xlsx,.xls,.ods,.txt,.png,.jpg,.jpeg,.webp,.gif';
 const LIMITE_BYTES = 20 * 1024 * 1024;
 
-function tipoDoArquivo(file) {
-  if (Object.values(TIPOS_OK).includes(file.type)) return file.type;
-  return TIPOS_OK[String(file.name).split('.').pop().toLowerCase()] || '';
+/** Pela extensão primeiro: o navegador deixa o tipo vazio em vários arquivos do Office. */
+function tipoDoArquivo(file, planilhas) {
+  const aceitos = planilhas ? { ...TIPOS_OK, ...TIPOS_PLANILHA } : TIPOS_OK;
+  const ext = String(file.name).split('.').pop().toLowerCase();
+  if (aceitos[ext]) return aceitos[ext];
+  return Object.values(aceitos).includes(file.type) ? file.type : '';
 }
 
-/** Sobe um arquivo e devolve o que vai para o jsonb do registro. */
-export async function enviarAnexo(col, file, tipoDoc) {
-  const tipo = tipoDoArquivo(file);
-  if (!tipo) throw new Error('Formato não aceito. Use PDF, JPG, PNG ou WEBP.');
+/**
+ * Sobe um arquivo e devolve o que vai para o jsonb do registro. `planilhas`
+ * aceita também CSV, Excel, ODS e TXT (relatórios das plataformas).
+ */
+export async function enviarAnexo(col, file, tipoDoc, { planilhas = false } = {}) {
+  const tipo = tipoDoArquivo(file, planilhas);
+  if (!tipo) {
+    throw new Error(planilhas
+      ? 'Formato não aceito. Use PDF, Excel, CSV ou imagem.'
+      : 'Formato não aceito. Use PDF, JPG, PNG ou WEBP.');
+  }
   if (file.size > LIMITE_BYTES) throw new Error('Arquivo acima de 20 MB.');
   const nomeSeguro = String(file.name).normalize('NFD').replace(/[^\w.-]+/g, '_');
   const path = `${col}/${crypto.randomUUID()}-${nomeSeguro}`;

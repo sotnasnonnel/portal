@@ -3,7 +3,7 @@
 // ctx = { dados, cfg }.
 import {
   compLabel, extrasOf, totalOf, combOf, kmRodado, revisao, conformidade, termoValidade, placaAtualDe, ocsDe,
-  norm, sum,
+  norm, sum, vinculoDoCondutor, kmAnterior as kmAnteriorDe, kmExcedente,
 } from './regras.js';
 import { fatDif, fatVenc } from './faturas.js';
 
@@ -48,7 +48,9 @@ export const COLS_OC = [
 
 export const COLS_COND = [
   { k: 'nome', l: 'Condutor' }, { k: 'situacao', l: 'Situação' }, { k: 'email', l: 'E-mail' },
-  { k: '_placa', l: 'Veículo atual', v: (c, ctx) => placaAtualDe(c.nome, ctx.dados.veiculos) }, { k: 'ct', l: 'CT' },
+  { k: '_placa', l: 'Veículo vinculado', v: (c, ctx) => placaAtualDe(c.nome, ctx.dados.veiculos, c) },
+  { k: '_tipo', l: 'Tipo de condutor', v: (c, ctx) => vinculoDoCondutor(c, ctx.dados.veiculos)?.tipo || c.tipo_condutor || '' },
+  { k: 'ct', l: 'CT' },
   { k: 'cnh_categoria', l: 'Categoria CNH' }, { k: 'cnh_validade', l: 'Validade CNH', t: 'date' },
   { k: '_cnh', l: 'Status CNH', v: (c, ctx) => conformidade(c, ctx.dados.veiculos, ctx.cfg).cnh.label },
   { k: 'termo_assinatura', l: 'Termo assinado em', t: 'date' }, { k: '_tv', l: 'Termo válido até', t: 'date', v: (c, ctx) => termoValidade(c, ctx.cfg) },
@@ -60,8 +62,8 @@ export const COLS_COND = [
 ];
 
 export const COLS_FAT = [
-  { k: 'competencia', l: 'Mês de referência', v: (f) => compLabel(f.competencia) }, { k: 'vencimento', l: 'Vencimento', t: 'date' },
-  { k: '_sv', l: 'Situação do vencimento', v: (f) => fatVenc(f).label }, { k: 'status', l: 'Conferência' },
+  { k: 'vencimento', l: 'Vencimento', t: 'date' }, { k: '_sv', l: 'Situação do vencimento', v: (f) => fatVenc(f).label },
+  { k: 'competencia', l: 'Mês de referência', v: (f) => compLabel(f.competencia) }, { k: 'status', l: 'Conferência' },
   { k: 'numero_fatura', l: 'Nº da fatura' }, { k: 'tipo', l: 'Tipo de cobrança' }, { k: 'placa', l: 'Placa' },
   { k: '_mod', l: 'Modelo', v: (f, ctx) => (ctx.dados.veiculos.find((v) => v.placa === f.placa) || {}).modelo || '' },
   { k: 'locadora', l: 'Locadora' }, { k: 'contrato', l: 'Nº contrato' }, { k: 'condutor', l: 'Condutor' }, { k: 'ct', l: 'CT / Centro de custo' },
@@ -71,7 +73,19 @@ export const COLS_FAT = [
   { k: 'envio_financeiro', l: 'Enviada ao Financeiro', t: 'date' }, { k: 'conferido_por_nome', l: 'Conferido por' },
   { k: '_confem', l: 'Conferido em', t: 'date', v: (f) => (f.conferido_em ? String(f.conferido_em).slice(0, 10) : '') },
   { k: 'data_pagamento', l: 'Data de pagamento', t: 'date' }, { k: 'obs_conferencia', l: 'Observação da conferência' },
-  { k: '_anx', l: 'Anexos', v: (f) => (f.anexos || []).length || '' }, { k: 'obs', l: 'Observações' },
+  { k: '_anx', l: 'Documentos anexados', v: (f) => (f.anexos || []).map((a) => a.tipo_doc || a.nome).join(', ') },
+  { k: 'obs', l: 'Observações' },
+];
+
+/** Exportação da tela Quilometragem. */
+export const COLS_KM = [
+  { k: 'competencia', l: 'Competência', v: (m) => compLabel(m.competencia) }, { k: 'condutor', l: 'Condutor' },
+  { k: 'placa', l: 'Placa' }, { k: 'locadora', l: 'Locadora' }, { k: 'ct', l: 'CT / Centro de custo' },
+  { k: '_ka', l: 'Km anterior', t: 'int', v: (m, ctx) => kmAnteriorDe(m, ctx.dados.mensal) },
+  { k: 'km_atual', l: 'Km atual', t: 'int' },
+  { k: '_kr', l: 'Km rodado', v: (m, ctx) => kmRodado(m, ctx.dados.mensal) },
+  { k: 'km_contratado', l: 'Km contratado', t: 'int' },
+  { k: '_ex', l: 'Km excedente', v: (m, ctx) => kmExcedente(m, ctx.dados.mensal) },
 ];
 
 export const REPORTS = {

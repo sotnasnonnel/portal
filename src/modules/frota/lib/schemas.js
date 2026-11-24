@@ -1,6 +1,9 @@
 // Formulários da Frota, dirigidos por esquema como no protótipo: `sec` abre uma
 // seção; `t` é o tipo do campo (texto quando omitido); `list` é um datalist de
 // listasDoForm; `upper` guarda em caixa alta. Sem React, sem Supabase.
+// Tipos: money (2 casas), int, dec (decimal com 2 casas, ex.: km do Cobli),
+// date, month, select, area, files, veic (veículo ativo da fatura) e vinc
+// (veículo ativo do vínculo do condutor, com a ocupação da placa).
 import {
   OC_STATUS, TIPOS_MAN, CAT_MULTA, CAT_AVARIA, parseBR, uniq, isNum,
 } from './regras.js';
@@ -28,9 +31,10 @@ export const SCHEMAS = {
     { k: 'km_contratado', l: 'Km contratado por mês', t: 'int' },
     { k: 'custo_mensal', l: 'Locação (R$/mês)', t: 'money' },
     { k: 'valor_km_excedente', l: 'R$ por km excedente', t: 'money' },
+    { k: 'dia_vencimento_fatura', l: 'Dia de vencimento da fatura', t: 'int', hint: 'Dia do mês (1 a 31). Usado para gerar as faturas previstas todo mês' },
     { k: 'proxima_fatura', l: 'Próxima fatura', t: 'date' },
     { sec: 'Alocação' },
-    { k: 'condutor', l: 'Condutor principal', list: 'condutores' },
+    { k: 'condutor', l: 'Condutor principal', list: 'condutores', hint: 'Condutores adicionais (até 5) são vinculados em Condutores e termos' },
     { k: 'ct', l: 'CT / Centro de custo', list: 'cts' },
     { k: 'custo_resp', l: 'Custo por conta de', t: 'select', opts: ['PHD', 'Cliente'] },
     { k: 'cidade', l: 'Cidade de atuação' },
@@ -80,6 +84,7 @@ export const SCHEMAS = {
     { sec: 'Quilometragem' },
     { k: 'km_contratado', l: 'Km contratado', t: 'int' },
     { k: 'km_atual', l: 'Km atual (hodômetro)', t: 'int' },
+    { k: 'km_rodado_inf', l: 'Km rodado no mês (relatório)', t: 'dec', hint: 'Em branco = calculado pela diferença do hodômetro' },
     { k: 'km_ultima_manutencao', l: 'Km última manutenção', t: 'int' },
     { k: 'data_ultima_revisao', l: 'Última revisão', t: 'date' },
     { k: 'data_proxima_revisao', l: 'Próxima revisão', t: 'date' },
@@ -133,6 +138,9 @@ export const SCHEMAS = {
     { k: 'email', l: 'E-mail corporativo' },
     { k: 'ct', l: 'CT / Centro de custo', list: 'cts' },
     { k: 'gestor', l: 'Gestor responsável' },
+    { sec: 'Vínculo com veículo' },
+    { k: 'tipo_condutor', l: 'Tipo de condutor', t: 'select', opts: ['Principal', 'Adicional'] },
+    { k: 'placa_vinculada', l: 'Veículo vinculado (somente ativos)', t: 'vinc', full: true, hint: 'Cada placa aceita 1 condutor principal e até 5 adicionais' },
     { sec: 'CNH' },
     { k: 'cnh_categoria', l: 'Categoria', t: 'select', opts: ['A', 'B', 'AB', 'C', 'D', 'E', 'AC', 'AD', 'AE'] },
     { k: 'cnh_validade', l: 'Validade da CNH', t: 'date' },
@@ -212,7 +220,7 @@ export function textosDoRegistro(col, doc) {
   for (const f of camposDe(col)) {
     if (f.t === 'files') continue;
     const v = doc?.[f.k];
-    if (f.t === 'money') out[f.k] = isNum(v) ? fmtDec.format(v) : '';
+    if (f.t === 'money' || f.t === 'dec') out[f.k] = isNum(v) ? fmtDec.format(v) : '';
     else if (f.t === 'int') out[f.k] = isNum(v) ? String(v) : '';
     else out[f.k] = v == null ? '' : String(v);
   }
@@ -225,7 +233,7 @@ export function valoresDoForm(col, textos) {
   for (const f of camposDe(col)) {
     if (f.t === 'files') continue;
     let v = String(textos[f.k] ?? '').trim();
-    if (f.t === 'money') v = parseBR(v);
+    if (f.t === 'money' || f.t === 'dec') v = parseBR(v);
     else if (f.t === 'int') {
       v = parseBR(v);
       v = v == null ? null : Math.round(v);

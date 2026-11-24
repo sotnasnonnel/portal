@@ -4,6 +4,8 @@ import {
   DEFAULT_CFG, extrasOf, combOf, totalOf, kmRodado, revisao, termoValidade, conformidade, ocAberta,
   patchVeiculo, gerarCompetencia, duplicado, groupSum, parseBR, addMonths, todayISO, compLabel, compLong,
   compNext, compPrev, lastComp, placaAtualDe, ocsDe, contagensNav, OC_STATUS, TIPOS_MAN, CAT_MULTA, CAT_AVARIA,
+  kmAnterior, origemDoKm, vinculoDe, vinculosPlaca, placaDe, numDe, prepararVinculo, trocaDeCondutor,
+  vinculoPeloVeiculo,
   PLACA_RE, norm,
 } from './regras.js';
 
@@ -256,4 +258,89 @@ test('listas de constantes do protótipo', () => {
   assert.equal(TIPOS_MAN.length, 8);
   assert.equal(CAT_MULTA.length, 9);
   assert.equal(CAT_AVARIA.length, 10);
+});
+
+test('km rodado informado vale sobre o hodômetro, sem trava de faixa', () => {
+  const ant = { competencia: '2026-01', placa: 'AAA1A11', km_atual: 10000 };
+  const m = { competencia: '2026-02', placa: 'AAA1A11', km_atual: 12000 };
+  assert.equal(kmRodado({ ...m, km_rodado_inf: 1834.5 }, [ant]), 1834.5);
+  assert.equal(kmRodado({ ...m, km_rodado_inf: 20000 }, [ant]), 20000);
+  assert.equal(kmRodado(m, [ant]), 2000);
+  assert.equal(kmAnterior(m, [ant]), 10000);
+  assert.equal(kmAnterior({ ...m, placa: null }, [ant]), null);
+  assert.equal(origemDoKm({ ...m, km_rodado_inf: 5, km_fonte: 'Cobli' }, [ant]), 'Cobli');
+  assert.equal(origemDoKm({ ...m, km_rodado_inf: 5 }, [ant]), 'informado');
+  assert.equal(origemDoKm(m, [ant]), 'pelo hodômetro');
+  assert.equal(origemDoKm({ ...m, km_atual: null }, [ant]), 'sem leitura');
+});
+
+test('vínculo condutor-veículo: vale com condutor e veículo ativos; sem ele, a regra antiga', () => {
+  const veiculos = [
+    { placa: 'AAA1A11', status: 'Ativo', condutor: 'Outro' },
+    { placa: 'BBB2B22', status: 'Inativo', condutor: 'Bia' },
+    { placa: 'CCC3C33', status: 'Reservado', condutor: 'Caio' },
+  ];
+  const condutores = [
+    { id: 1, nome: 'Ana', situacao: 'Ativo', placa_vinculada: 'AAA1A11', tipo_condutor: 'Adicional' },
+    { id: 2, nome: 'Bia', situacao: 'Ativo', placa_vinculada: 'BBB2B22' },
+    { id: 3, nome: 'Caio', situacao: 'Ativo' },
+    { id: 4, nome: 'Davi', situacao: 'Ativo', placa_vinculada: 'AAA1A11', tipo_condutor: 'Principal' },
+    { id: 5, nome: 'Eva', situacao: 'Inativo', placa_vinculada: 'AAA1A11', tipo_condutor: 'Adicional' },
+  ];
+  assert.deepEqual(vinculoDe('ana', condutores, veiculos), { placa: 'AAA1A11', tipo: 'Adicional' });
+  assert.equal(vinculoDe('Bia', condutores, veiculos), null, 'veículo inativo');
+  assert.equal(placaAtualDe('Ana', veiculos, condutores[0]), 'AAA1A11');
+  assert.equal(placaAtualDe('Caio', veiculos, condutores[2]), 'CCC3C33', 'regra antiga');
+  const vp = vinculosPlaca('AAA1A11', condutores);
+  assert.equal(vp.principal.nome, 'Davi');
+  assert.deepEqual(vp.adicionais.map((c) => c.nome), ['Ana']);
+  assert.equal(vinculosPlaca('AAA1A11', condutores, 4).principal, null);
+});
+
+test('placa e número em célula de planilha', () => {
+  assert.equal(placaDe('abc-1d23 (Onix)'), 'ABC1D23');
+  assert.equal(placaDe('ABC 1234'), 'ABC1234');
+  assert.equal(placaDe('sem placa'), '');
+  assert.equal(numDe(1234.5), 1234.5);
+  assert.equal(numDe('1.234,5 km'), 1234.5);
+  assert.equal(numDe('21.000'), 21000);
+  assert.equal(numDe(''), null);
+});
+
+test('vínculo ao salvar o condutor: tipo padrão, limites e placa do termo', () => {
+  const conds = [
+    { id: 1, nome: 'Davi', situacao: 'Ativo', placa_vinculada: 'AAA1A11', tipo_condutor: 'Principal' },
+    ...[2, 3, 4, 5, 6].map((id) => ({ id, nome: `Adic ${id}`, situacao: 'Ativo', placa_vinculada: 'BBB2B22', tipo_condutor: 'Adicional' })),
+  ];
+  assert.match(prepararVinculo({ situacao: 'Ativo', placa_vinculada: 'AAA1A11' }, 9, conds).erro, /já tem condutor principal \(Davi\)/);
+  assert.equal(prepararVinculo({ situacao: 'Ativo', placa_vinculada: 'AAA1A11' }, 1, conds).vals.tipo_condutor, 'Principal', 'o próprio principal salva');
+  assert.match(prepararVinculo({ situacao: 'Ativo', placa_vinculada: 'BBB2B22', tipo_condutor: 'Adicional' }, 9, conds).erro, /5 condutores adicionais/);
+  const ok = prepararVinculo({ situacao: 'Ativo', placa_vinculada: 'AAA1A11', tipo_condutor: 'Adicional' }, 9, conds).vals;
+  assert.equal(ok.termo_placa, 'AAA1A11');
+  assert.equal(prepararVinculo({ situacao: 'Inativo', placa_vinculada: 'AAA1A11' }, 9, conds).erro, undefined, 'inativo não conta');
+  assert.equal(prepararVinculo({ situacao: 'Ativo', placa_vinculada: null, tipo_condutor: 'Adicional' }, 9, conds).vals.tipo_condutor, null);
+});
+
+test('troca de condutor principal leva o anterior para o histórico do veículo', () => {
+  const veiculos = [{ id: 'v1', placa: 'AAA1A11', condutor: 'Velho', contrato: 'C1', locadora: 'Movida', historico: [] }];
+  const t = trocaDeCondutor({ situacao: 'Ativo', tipo_condutor: 'Principal', placa_vinculada: 'AAA1A11', nome: 'Novo' }, veiculos, '2026-11-18');
+  assert.equal(t.patch.condutor, 'Novo');
+  assert.deepEqual(t.patch.historico[0], {
+    condutor: 'Velho', contrato: 'C1', retirada: null, devolucao: '2026-11-18', locadora: 'Movida', ct: null, fonte: 'Troca de condutor principal',
+  });
+  assert.equal(trocaDeCondutor({ situacao: 'Ativo', tipo_condutor: 'Adicional', placa_vinculada: 'AAA1A11', nome: 'Novo' }, veiculos), null);
+  assert.equal(trocaDeCondutor({ situacao: 'Ativo', tipo_condutor: 'Principal', placa_vinculada: 'AAA1A11', nome: 'velho' }, veiculos), null);
+});
+
+test('veículo com condutor novo vira o vínculo principal, soltando o antigo primeiro', () => {
+  const conds = [
+    { id: 1, nome: 'Velho', situacao: 'Ativo', placa_vinculada: 'AAA1A11', tipo_condutor: 'Principal' },
+    { id: 2, nome: 'Novo', situacao: 'Ativo' },
+  ];
+  assert.deepEqual(vinculoPeloVeiculo({ placa: 'AAA1A11', condutor: 'Novo' }, { placa: 'AAA1A11', condutor: 'Velho' }, conds), [
+    { id: 1, patch: { placa_vinculada: null, tipo_condutor: null } },
+    { id: 2, patch: { placa_vinculada: 'AAA1A11', tipo_condutor: 'Principal', situacao: 'Ativo' } },
+  ]);
+  assert.deepEqual(vinculoPeloVeiculo({ placa: 'AAA1A11', condutor: 'Velho' }, { placa: 'AAA1A11', condutor: 'Velho' }, conds), []);
+  assert.deepEqual(vinculoPeloVeiculo({ placa: 'AAA1A11', condutor: 'Velho' }, null, conds), [], 'já é o principal');
 });

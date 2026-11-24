@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  FileText, Pencil, TriangleAlert, Trash2, Wrench,
+  FileText, Pencil, TriangleAlert, Trash2, UserPlus, Wrench,
 } from 'lucide-react';
 import { useFrota } from './FrotaContext';
 import CascaDrawer from './CascaDrawer';
@@ -9,9 +9,10 @@ import {
   Kpi, LinhaAuditoria, Pill, Placa,
 } from './Pecas';
 import {
-  combOf, compLabel, isNum, lastComp, ocTone, revisao, stTone, sum, todayISO, totalOf,
+  MAX_ADICIONAIS, combOf, compLabel, conformidade, isNum, ocTone, revisao, stTone, sum, todayISO, totalOf,
+  vinculosPlaca,
 } from '../../lib/regras';
-import { fatTone } from '../../lib/faturas';
+import { fatAberta, fatTone, fatVenc } from '../../lib/faturas';
 import {
   fmtDate, fmtInt, int, km, linhaClicavel, money, money0,
 } from '../../lib/formato';
@@ -26,7 +27,7 @@ const porDataDesc = (a, b) => String(b.data || '').localeCompare(String(a.data |
 /** Ficha do veículo, com o que aconteceu com a placa. */
 export default function DetalheVeiculo({ id }) {
   const {
-    dados, cfg, abrirDetalhe, abrirForm, fecharDrawer, recarregar, toast, podeEscrever, podeExcluir,
+    dados, cfg, filtros, abrirDetalhe, abrirForm, fecharDrawer, recarregar, toast, podeEscrever, podeExcluir,
   } = useFrota();
   const [confirma, setConfirma] = useState(false);
   const v = dados.veiculos.find((x) => x.id === id);
@@ -42,6 +43,15 @@ export default function DetalheVeiculo({ id }) {
     .sort((a, b) => String(b.vencimento || b.competencia).localeCompare(String(a.vencimento || a.competencia)));
   // Fatura nova só para veículo ativo com placa, como no formulário.
   const aceitaFatura = v.status === 'Ativo' && v.placa;
+  // Próxima fatura (v3): a em aberto com vencimento mais próximo.
+  const proxima = fs.filter((f) => fatAberta(f) && f.vencimento)
+    .sort((a, b) => a.vencimento.localeCompare(b.vencimento))[0];
+  const pvVenc = proxima ? fatVenc(proxima) : null;
+  // Condutores vinculados a esta placa (v3).
+  const vp = v.placa ? vinculosPlaca(v.placa, dados.condutores) : { principal: null, adicionais: [] };
+  const vinculados = [vp.principal, ...vp.adicionais].filter(Boolean);
+  const podeVincular = podeEscrever && v.status === 'Ativo' && v.placa && vp.adicionais.length < MAX_ADICIONAIS;
+  const tipoNovo = vp.principal ? 'Adicional' : 'Principal';
 
   const excluir = async () => {
     try {
@@ -74,7 +84,7 @@ export default function DetalheVeiculo({ id }) {
           )}
           <span className="frota-sp" />
           {aceitaFatura && (
-            <button type="button" className="frota-btn" onClick={() => abrirForm('faturas', null, { placa: v.placa, competencia: lastComp(dados.mensal) || todayISO().slice(0, 7), tipo: 'Locação mensal', status: 'Aguardando conferência' })}><FileText size={15} /> Fatura</button>
+            <button type="button" className="frota-btn" onClick={() => abrirForm('faturas', null, { placa: v.placa, competencia: filtros.faturas.mes || todayISO().slice(0, 7), tipo: 'Locação mensal', status: 'Aguardando conferência' })}><FileText size={15} /> Fatura</button>
           )}
           <button type="button" className="frota-btn" onClick={() => abrirForm('manutencoes', null, { placa: v.placa, data: todayISO(), tipo: 'Revisão preventiva', km: v.km_atual, condutor: v.condutor })}><Wrench size={15} /> Manutenção</button>
           <button type="button" className="frota-btn" onClick={() => abrirForm('ocorrencias', null, { placa: v.placa, status: 'Aberta', tipo: 'Multa', data: todayISO(), condutor: v.condutor, modelo: v.modelo, locadora: v.locadora })}><TriangleAlert size={15} /> Ocorrência</button>
@@ -92,7 +102,47 @@ export default function DetalheVeiculo({ id }) {
           <Kpi label="Locação/mês" valor={money0(v.custo_mensal)} sub={v.custo_resp ? `por conta: ${v.custo_resp}` : ''} />
           <Kpi label="Km atual" valor={int(v.km_atual)} sub={isNum(v.km_contratado) ? `${fmtInt.format(v.km_contratado)} km/mês contratados` : ''} />
           <Kpi label="Revisão" valor={<Pill tone={r.tone}>{r.label}</Pill>} sub={r.prox != null ? `próxima em ${km(r.prox)}` : ''} />
+          <Kpi
+            label="Próxima fatura"
+            valor={proxima ? fmtDate(proxima.vencimento) : '—'}
+            sub={proxima
+              ? <><Pill tone={pvVenc.tone}>{pvVenc.label}</Pill> {money(proxima.valor)}</>
+              : (isNum(v.dia_vencimento_fatura) ? `vence todo dia ${v.dia_vencimento_fatura}` : 'sem fatura em aberto')}
+          />
         </div>
+
+        {v.placa && (
+          <section className="frota-fsec">
+            <h3>Condutores vinculados · {vp.principal ? 1 : 0} principal · {vp.adicionais.length}/{MAX_ADICIONAIS} adicionais</h3>
+            {vinculados.length ? (
+              <table className="frota-mini">
+                <thead><tr><th>Condutor</th><th>Tipo</th><th>CNH</th><th>Termo</th></tr></thead>
+                <tbody>
+                  {vinculados.map((c) => {
+                    const k = conformidade(c, dados.veiculos, cfg);
+                    return (
+                      <tr key={c.id} className="frota-click" {...linhaClicavel(() => abrirDetalhe('condutores', c.id))}>
+                        <td>{c.nome}</td>
+                        <td><Pill tone={(c.tipo_condutor || 'Principal') === 'Principal' ? 'info' : 'neutral'}>{c.tipo_condutor || 'Principal'}</Pill></td>
+                        <td><Pill tone={k.cnh.tone}>{k.cnh.label}</Pill></td>
+                        <td><Pill tone={k.termo.tone}>{k.termo.label}</Pill></td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            ) : <p className="frota-muted">Nenhum condutor vinculado a esta placa.</p>}
+            {podeVincular && (
+              <button
+                type="button"
+                className="frota-btn sm"
+                onClick={() => abrirForm('condutores', null, { situacao: 'Ativo', tipo_condutor: tipoNovo, placa_vinculada: v.placa })}
+              >
+                <UserPlus size={14} /> Vincular novo condutor {tipoNovo === 'Principal' ? 'principal' : 'adicional'}
+              </button>
+            )}
+          </section>
+        )}
 
         <section className="frota-fsec">
           <h3>Contrato de locação</h3>
@@ -103,6 +153,7 @@ export default function DetalheVeiculo({ id }) {
             <Dado label="Código de reserva">{v.codigo_reserva}</Dado>
             <Dado label="Tipo de contrato">{v.tipo_contrato}</Dado>
             <Dado label="R$ por km excedente">{isNum(v.valor_km_excedente) ? money(v.valor_km_excedente) : ''}</Dado>
+            <Dado label="Dia de vencimento da fatura">{isNum(v.dia_vencimento_fatura) ? `todo dia ${v.dia_vencimento_fatura}` : ''}</Dado>
             <Dado label="Retirada">{fmtDate(v.retirada)}</Dado>
             <Dado label="Devolução">{v.devolucao ? fmtDate(v.devolucao) : ''}</Dado>
             <Dado label="Próxima fatura">{v.proxima_fatura ? fmtDate(v.proxima_fatura) : ''}</Dado>

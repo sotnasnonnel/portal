@@ -6,7 +6,7 @@ import { ArquivoLinha, EnviarArquivo } from './Anexos';
 import Confirmar from './Confirmar';
 import { LinhaAuditoria, Pill, Placa } from './Pecas';
 import {
-  conformidade, norm, ocsDe, ocTone, placaAtualDe, stTone, sum, todayISO,
+  conformidade, norm, ocsDe, ocTone, placaAtualDe, stTone, sum, todayISO, vinculoDoCondutor,
 } from '../../lib/regras';
 import {
   fmtDate, iniciais, linhaClicavel, money,
@@ -48,6 +48,7 @@ export default function DetalheCondutor({ id }) {
   if (!c) return null;
 
   const k = conformidade(c, dados.veiculos, cfg);
+  const vinculo = vinculoDoCondutor(c, dados.veiculos);
   const oc = ocsDe(c.nome, dados.ocorrencias).sort((a, b) => String(b.data || '').localeCompare(String(a.data || '')));
   const nk = norm(c.nome);
   const dirige = (nome) => norm(nome).split(' / ').includes(nk);
@@ -64,7 +65,7 @@ export default function DetalheCondutor({ id }) {
           patch.termo_assinatura = todayISO();
           patch.termo_validade = null;
         }
-        if (!c.termo_placa) patch.termo_placa = placaAtualDe(c.nome, dados.veiculos) || null;
+        if (!c.termo_placa) patch.termo_placa = placaAtualDe(c.nome, dados.veiculos, c) || null;
       }
       await salvarRegistro('condutores', id, patch);
       if (c[campo]?.path && c[campo].path !== a.path) removerAnexos([c[campo].path]);
@@ -160,7 +161,15 @@ export default function DetalheCondutor({ id }) {
             <div><dt>E-mail</dt><dd>{c.email || '—'}</dd></div>
             <div><dt>CT / Centro de custo</dt><dd>{c.ct || '—'}</dd></div>
             <div><dt>Gestor</dt><dd>{c.gestor || '—'}</dd></div>
-            <div><dt>Veículo atual</dt><dd>{k.placaAtual ? <Placa placa={k.placaAtual} /> : '—'}</dd></div>
+            <div><dt>Veículo vinculado</dt><dd>{k.placaAtual ? <Placa placa={k.placaAtual} /> : '—'}</dd></div>
+            <div>
+              <dt>Tipo de condutor</dt>
+              <dd>
+                {vinculo
+                  ? <Pill tone={vinculo.tipo === 'Principal' ? 'info' : 'neutral'}>{vinculo.tipo}</Pill>
+                  : (c.tipo_condutor || '—')}
+              </dd>
+            </div>
           </dl>
           {c.obs && <div className="frota-note"><span className="pre">{c.obs}</span></div>}
         </section>

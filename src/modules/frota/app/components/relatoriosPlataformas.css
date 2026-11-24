@@ -1,0 +1,19 @@
+/* Relatórios das plataformas (Combustível e Quilometragem). Só o que frota.css
+   não tem; tokens de styles/ui.css, nenhum valor solto de fonte ou altura. */
+.frota-rp-btn { height: var(--ctl-h-sm); padding: 0 10px; font-size: var(--font-size-sm); }
+.frota-rp-vazio { margin-bottom: 10px; }
+.frota-rp-files { margin-bottom: 10px; }
+.frota-rp-files:empty { display: none; }
+
+/* Prévia da planilha e tabela do que será importado: rolam dentro do modal. */
+.frota-rp-previa { max-height: 300px; }
+.frota-rp-previa .frota-t { font-size: var(--font-size-xs); }
+.frota-rp-previa .frota-t th { text-transform: none; letter-spacing: normal; }
+.frota-rp-previa .frota-t td { max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+.frota-rp-letra { color: var(--f-primary); font-weight: var(--fw-bold); margin-right: 4px; }
+.frota-rp-casamento { max-height: 220px; }
+.frota-rp-linhas { font-size: var(--font-size-sm); min-height: var(--ctl-h); display: flex; align-items: center; }
+.frota-rp-imp { display: flex; flex-direction: column; gap: 12px; }
+.frota-modal .frota-rp-imp h3 { font-size: var(--font-size-md); font-weight: var(--fw-semibold); margin: 0; }
+/* .frota-modal p põe fonte grande e margem embaixo; aqui é nota de rodapé. */
+.frota-modal .frota-rp-frase { font-size: var(--font-size-xs); margin: 0; }

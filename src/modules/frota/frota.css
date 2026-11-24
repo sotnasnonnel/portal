@@ -366,6 +366,17 @@ button.frota-kpi:hover { border-color: var(--f-primary-line); }
 .frota-modal h3 { font-size: var(--font-size-lg); font-weight: var(--fw-bold); margin: 0 0 8px; }
 .frota-modal p { font-size: var(--font-size-md); color: var(--f-muted); line-height: var(--lh-normal); margin: 0 0 16px; }
 .frota-modal-a { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+/* Modal largo (v3): prévia de planilha e importação da Cobli. O corpo rola; o
+   título e os botões ficam fixos. */
+.frota-modal.largo {
+  width: min(1040px, calc(100vw - 32px)); max-height: calc(100dvh - 48px);
+  display: flex; flex-direction: column; padding: 0;
+}
+.frota-modal.largo > .frota-modal-h { padding: 18px 20px 12px; border-bottom: 1px solid var(--f-border); }
+.frota-modal.largo > .frota-modal-h h3 { margin: 0; }
+.frota-modal.largo > .frota-modal-h p { margin: 4px 0 0; font-size: var(--font-size-sm); }
+.frota-modal.largo > .frota-modal-b { flex: 1; min-height: 0; overflow: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; }
+.frota-modal.largo > .frota-modal-a { padding: 12px 20px; border-top: 1px solid var(--f-border); }
 
 .frota-toast {
   position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 240;
@@ -388,4 +399,63 @@ button.frota-kpi:hover { border-color: var(--f-primary-line); }
   .frota-btn, .frota-chip { min-height: var(--ctl-h-lg); }
   .frota-dr-b { padding: 14px 16px; }
   .frota-dr-h, .frota-dr-f { padding-left: 16px; padding-right: 16px; }
+}
+
+/* ---------------------------------------------------------------- v3 do protótipo */
+.frota-btn.sm { height: var(--ctl-h-sm); padding: 0 10px; font-size: var(--font-size-sm); }
+
+/* Quilometragem */
+.frota-km-origem { font-size: var(--font-size-xs); }
+.frota-crit-txt { color: var(--f-red); font-weight: var(--fw-semibold); }
+
+/* Faturas: barra de mês, ordenação, documentos e linha pintada pelo vencimento */
+.frota-mesbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.frota-mesbar-t { display: flex; flex-direction: column; min-width: 180px; }
+.frota-mesbar-t strong { font-size: var(--font-size-lg); }
+.frota-seg { display: inline-flex; border: 1px solid var(--f-border); border-radius: var(--ctl-radius); overflow: hidden; }
+.frota-seg button {
+  height: var(--ctl-h-sm); padding: 0 12px; border: none; background: var(--f-surface); color: var(--f-muted);
+  font-size: var(--font-size-sm); font-weight: var(--fw-medium); cursor: pointer;
+}
+.frota-seg button + button { border-left: 1px solid var(--f-border); }
+.frota-seg button.on { background: var(--f-primary-soft); color: var(--mod-accent-ink); }
+.frota-th-sort { background: none; border: none; padding: 0; font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit; cursor: pointer; }
+.frota-docs { display: inline-flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.frota-doc-link {
+  background: var(--f-primary-soft); color: var(--mod-accent-ink); border: none; border-radius: 6px;
+  padding: 2px 8px; font-size: var(--font-size-xs); font-weight: var(--fw-semibold); cursor: pointer;
+}
+.frota-doc-link:hover { text-decoration: underline; }
+.frota-t tr.lv3 td { background: var(--f-red-bg); }
+.frota-t tr.lv2 td { background: #fff1f1; }
+.frota-t tr.lv1 td { background: #fffbeb; }
+.frota-note .frota-btn.sm { margin-left: auto; }
+.frota-dr-venc { margin-top: 6px; }
+
+/* Painel: caixa "Vencimentos de faturas" */
+.frota-venc-acoes { display: inline-flex; align-items: center; gap: 8px; }
+.frota-pill-btn { border: none; cursor: pointer; font: inherit; }
+.frota-venc { display: flex; flex-direction: column; gap: 12px; }
+.frota-venc-faixa { border: 1px solid var(--f-border); border-left-width: 4px; border-radius: 10px; padding: 10px 12px; }
+.frota-venc-faixa.crit { border-left-color: var(--f-red); }
+.frota-venc-faixa.warn { border-left-color: var(--f-amber); }
+.frota-venc-cab { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 8px; }
+.frota-venc-cab > div { display: flex; flex-direction: column; flex: 1; min-width: 220px; }
+.frota-venc-cab > div span { font-size: var(--font-size-xs); color: var(--f-muted); }
+.frota-venc-tot { font-size: var(--font-size-sm); font-weight: var(--fw-semibold); }
+.frota-venc ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.frota-venc li button {
+  width: 100%; display: grid; grid-template-columns: 110px auto 1fr auto; align-items: center; gap: 10px;
+  background: none; border: none; border-radius: 8px; padding: 6px 8px; text-align: left; cursor: pointer; font: inherit; color: inherit;
+}
+.frota-venc li button:hover { background: var(--f-gray-100); }
+.frota-venc .d { display: flex; flex-direction: column; font-weight: var(--fw-semibold); }
+.frota-venc .d small { font-size: var(--font-size-xs); font-weight: var(--fw-medium); color: var(--f-muted); }
+.frota-venc .t { display: flex; flex-direction: column; min-width: 0; }
+.frota-venc .t span { font-size: var(--font-size-xs); color: var(--f-muted); }
+.frota-venc .v { font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; }
+.frota-venc-nada { margin: 0; }
+@media (max-width: 640px) {
+  .frota-venc li button { grid-template-columns: 1fr auto; }
+  .frota-venc .t { grid-column: 1 / -1; }
 }

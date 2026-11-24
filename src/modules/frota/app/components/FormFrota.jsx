@@ -6,15 +6,18 @@ import { useFrota } from './FrotaContext';
 import CascaDrawer from './CascaDrawer';
 import CampoArquivos from './Anexos';
 import Confirmar from './Confirmar';
-import { LinhaAuditoria } from './Pecas';
+import { LinhaAuditoria, Pill } from './Pecas';
 import ResumoFatura from './ResumoFatura';
 import {
   SCHEMAS, COL_NAME, FEM, fmtDec, listasDoForm, textosDoRegistro, valoresDoForm, faltando, tituloDe, pathsDosAnexos,
 } from '../../lib/schemas';
 import {
-  PLACA_RE, compLabel, duplicado, lastComp, patchVeiculo, todayISO,
+  MAX_ADICIONAIS, PLACA_RE, compLabel, duplicado, isNum, lastComp, patchVeiculo, prepararVinculo, todayISO,
+  trocaDeCondutor, vinculoPeloVeiculo, vinculosPlaca,
 } from '../../lib/regras';
-import { autoPreencher, prepararFatura, veiculosParaFatura } from '../../lib/faturas';
+import {
+  autoPreencher, fatVenc, prepararFatura, veiculosParaFatura,
+} from '../../lib/faturas';
 import { fmtDate } from '../../lib/formato';
 import { excluirRegistro, removerAnexos, salvarRegistro } from '../../lib/frota';
 
@@ -22,6 +25,22 @@ const listaDe = (v) => {
   if (v == null) return [];
   return Array.isArray(v) ? v : [v];
 };
+
+/**
+ * Gravações em outros registros depois de salvar (v3): o condutor principal
+ * muda o condutor do veículo; o veículo com condutor novo muda o vínculo dos
+ * condutores. Em ordem. [{ col, id, patch }]
+ */
+function efeitosDoVinculo(col, vals, doc, dados) {
+  if (col === 'condutores') {
+    const t = trocaDeCondutor(vals, dados.veiculos);
+    return t ? [{ col: 'veiculos', ...t }] : [];
+  }
+  if (col === 'veiculos') {
+    return vinculoPeloVeiculo(vals, doc, dados.condutores).map((x) => ({ col: 'condutores', ...x }));
+  }
+  return [];
+}
 
 /** O que um registro salvo muda no cadastro do veículo (ver patchVeiculo). */
 function efeitoNoVeiculo(col, vals, dados) {
@@ -41,12 +60,29 @@ function efeitoNoVeiculo(col, vals, dados) {
 }
 
 function Campo({
-  campo, valor, onChange, veiculos,
+  campo, valor, onChange, veiculos, condutores, idAtual,
 }) {
   const id = `frota-fd-${campo.k}`;
   const mudar = (e) => onChange(e.target.value);
   let input;
-  if (campo.t === 'veic') {
+  if (campo.t === 'vinc') {
+    // Vínculo do condutor: só veículo ativo, com a ocupação da placa (sem contar o próprio condutor).
+    const ativos = veiculosParaFatura(veiculos);
+    input = (
+      <select id={id} className="frota-inp" value={valor} onChange={mudar}>
+        <option value="">Sem vínculo</option>
+        {ativos.map((v) => {
+          const vp = vinculosPlaca(v.placa, condutores, idAtual);
+          return (
+            <option key={v.id} value={v.placa}>
+              {v.placa} — {v.modelo || ''} · principal: {vp.principal?.nome || '—'} · {vp.adicionais.length}/{MAX_ADICIONAIS} adicionais
+            </option>
+          );
+        })}
+        {valor && !ativos.some((v) => v.placa === valor) && <option value={valor}>{valor} (não está ativo)</option>}
+      </select>
+    );
+  } else if (campo.t === 'veic') {
     const ativos = veiculosParaFatura(veiculos);
     input = (
       <select id={id} className="frota-inp" value={valor} onChange={mudar}>
@@ -71,12 +107,12 @@ function Campo({
     input = <textarea id={id} className="frota-inp" value={valor} onChange={mudar} />;
   } else if (campo.t === 'date' || campo.t === 'month') {
     input = <input id={id} className="frota-inp" type={campo.t} value={valor} onChange={mudar} />;
-  } else if (campo.t === 'money' || campo.t === 'int') {
+  } else if (campo.t === 'money' || campo.t === 'int' || campo.t === 'dec') {
     input = (
       <input
         id={id}
         className="frota-inp num"
-        inputMode={campo.t === 'money' ? 'decimal' : 'numeric'}
+        inputMode={campo.t === 'int' ? 'numeric' : 'decimal'}
         placeholder={campo.t === 'money' ? '0,00' : undefined}
         value={valor}
         onChange={mudar}
@@ -163,6 +199,20 @@ export default function FormFrota({ col, id, init }) {
       toast('Placa inválida. Use o formato ABC1D23 ou ABC1234.', 'err');
       return;
     }
+    if (col === 'veiculos' && isNum(vals.dia_vencimento_fatura) && (vals.dia_vencimento_fatura < 1 || vals.dia_vencimento_fatura > 31)) {
+      toast('Dia de vencimento deve ser entre 1 e 31.', 'err');
+      formRef.current?.querySelector('#frota-fd-dia_vencimento_fatura')?.focus();
+      return;
+    }
+    if (col === 'condutores') {
+      const r = prepararVinculo(vals, id, dados.condutores);
+      if (r.erro) {
+        toast(r.erro, 'err');
+        formRef.current?.querySelector('#frota-fd-placa_vinculada')?.focus();
+        return;
+      }
+      vals = r.vals;
+    }
     if (col === 'faturas') {
       const r = prepararFatura(vals, dados);
       if (r.erro) {
@@ -202,11 +252,25 @@ export default function FormFrota({ col, id, init }) {
         veiculoFicouPara = true;
       }
     }
+    // Vínculo condutor <-> veículo: em sequência, porque a ordem importa
+    // (soltar o principal antigo antes de marcar o novo).
+    const vinculos = efeitosDoVinculo(col, vals, doc, dados);
+    let vinculoFicouPara = false;
+    for (const x of vinculos) {
+      try {
+        await salvarRegistro(x.col, x.id, x.patch);
+      } catch {
+        vinculoFicouPara = true;
+        break;
+      }
+    }
 
     const nome = COL_NAME[col][0].toUpperCase() + COL_NAME[col].slice(1);
+    const recarregadas = [...new Set([col, ...(efeito?.patch ? ['veiculos'] : []), ...vinculos.map((x) => x.col)])];
     try {
-      await recarregar(efeito?.patch ? [col, 'veiculos'] : [col]);
+      await recarregar(recarregadas);
       if (veiculoFicouPara) toast(`${nome} ${FEM[col] ? 'salva' : 'salvo'}, mas o cadastro do veículo não foi atualizado. Ajuste o km por lá.`, 'err');
+      else if (vinculoFicouPara) toast(`${nome} ${FEM[col] ? 'salva' : 'salvo'}, mas o vínculo entre condutor e veículo não foi atualizado. Confira em Condutores e termos.`, 'err');
       else toast(`${nome} ${FEM[col] ? 'salva' : 'salvo'}`);
     } catch {
       toast(`${nome} ${FEM[col] ? 'salva' : 'salvo'}, mas a tela não atualizou. Recarregue a página.`, 'err');
@@ -250,6 +314,10 @@ export default function FormFrota({ col, id, init }) {
   const atalhosFatura = col === 'faturas' && id && podeEscrever;
 
   const titulo = doc ? tituloDe(col, doc, compLabel, fmtDate) : '';
+  // Fatura: o vencimento do que está no formulário, ao vivo (v3).
+  const vencAoVivo = col === 'faturas'
+    ? fatVenc({ vencimento: textos.vencimento, status: textos.status, data_pagamento: textos.data_pagamento })
+    : null;
   return (
     <CascaDrawer
       onFechar={cancelar}
@@ -257,6 +325,13 @@ export default function FormFrota({ col, id, init }) {
         <>
           <h2>{id ? 'Editar' : (FEM[col] ? 'Nova' : 'Novo')} {COL_NAME[col]}</h2>
           <p>{id ? titulo : 'Preencha os campos e salve.'}</p>
+          {vencAoVivo && (
+            <p className="frota-dr-venc">
+              {textos.vencimento
+                ? <Pill tone={vencAoVivo.tone}>Vencimento {fmtDate(textos.vencimento)} · {vencAoVivo.label}</Pill>
+                : <Pill tone="warn">Sem data de vencimento</Pill>}
+            </p>
+          )}
         </>
       )}
       rodape={(
@@ -296,7 +371,15 @@ export default function FormFrota({ col, id, init }) {
                   onChange={(lista) => setArquivos((a) => ({ ...a, [f.k]: lista }))}
                 />
               ) : (
-                <Campo key={f.k} campo={f} valor={textos[f.k]} veiculos={dados.veiculos} onChange={(v) => mudar(f.k, v)} />
+                <Campo
+                  key={f.k}
+                  campo={f}
+                  valor={textos[f.k]}
+                  veiculos={dados.veiculos}
+                  condutores={dados.condutores}
+                  idAtual={id}
+                  onChange={(v) => mudar(f.k, v)}
+                />
               )))}
             </div>
           </section>

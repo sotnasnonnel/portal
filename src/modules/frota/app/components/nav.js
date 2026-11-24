@@ -1,11 +1,11 @@
 import {
-  LayoutDashboard, Car, FileText, Receipt, Fuel, Wrench, TriangleAlert, ShieldCheck, Users, BarChart3, SlidersHorizontal,
+  LayoutDashboard, Car, FileText, Receipt, Fuel, Gauge, Wrench, TriangleAlert, ShieldCheck, Users, BarChart3, SlidersHorizontal,
 } from 'lucide-react';
 
 // Navegação da sidebar da Frota, na mesma divisão do protótipo. Fica fora do
 // Sidebar.jsx para não quebrar o fast refresh. `contagens` são os itens críticos
 // que o protótipo mostrava ao lado do menu (condutor irregular, revisão vencida,
-// fatura vencida sem pagamento).
+// fatura vencida ou que vence em até 2 dias).
 export function navSections({ isAdmin = false, contagens = {} } = {}) {
   const secoes = [
     {
@@ -23,6 +23,7 @@ export function navSections({ isAdmin = false, contagens = {} } = {}) {
         { label: 'Faturas', href: '/frota/faturas', Icon: FileText, badge: contagens.faturas },
         { label: 'Controle mensal', href: '/frota/mensal', Icon: Receipt },
         { label: 'Combustível', href: '/frota/combustivel', Icon: Fuel },
+        { label: 'Quilometragem', href: '/frota/quilometragem', Icon: Gauge },
         { label: 'Manutenção', href: '/frota/manutencao', Icon: Wrench, badge: contagens.manutencao },
       ],
     },

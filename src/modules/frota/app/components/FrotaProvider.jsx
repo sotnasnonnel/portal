@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { ehAdminSetorAdm, ehTimeSetorAdm } from '../../../../config/setorAdm';
 import { DEFAULT_CFG } from '../../lib/regras';
-import { FILTROS_FATURAS } from '../../lib/faturas';
+import { FILTROS_FATURAS, FILTROS_FATURAS_FIXOS } from '../../lib/faturas';
 import { carregarColecao, carregarConfig, carregarTudo } from '../../lib/frota';
 import { FrotaContext } from './FrotaContext';
 
@@ -20,14 +20,15 @@ const FILTROS_INICIAIS = {
   faturas: FILTROS_FATURAS,
   mensal: { comp: '', q: '', locadora: '', custo_resp: '' },
   combustivel: { comp: '', q: '' },
+  quilometragem: { comp: '', q: '' },
   manutencao: { q: '', st: '' },
   ocorrencias: FILTROS_OCORRENCIAS,
-  condutores: { q: '', sit: 'Ativo', conf: '' },
+  condutores: { q: '', sit: 'Ativo', conf: '', tipo: '' },
   relatorios: { tipo: 'custos', ...FILTROS_RELATORIOS },
   painel: { comp: '' },
 };
 const VAZIO = {
-  veiculos: [], mensal: [], ocorrencias: [], condutores: [], manutencoes: [], faturas: [],
+  veiculos: [], mensal: [], ocorrencias: [], condutores: [], manutencoes: [], faturas: [], arquivos: [],
 };
 
 /**
@@ -87,10 +88,13 @@ export default function FrotaProvider({ children }) {
   }, [navigate, setFiltro]);
 
   const limparFiltros = useCallback((tela) => {
-    setFiltros((f) => ({
-      ...f,
-      [tela]: tela === 'relatorios' ? { tipo: f.relatorios.tipo, ...FILTROS_RELATORIOS } : FILTROS_INICIAIS[tela],
-    }));
+    setFiltros((f) => {
+      let limpo = FILTROS_INICIAIS[tela];
+      if (tela === 'relatorios') limpo = { tipo: f.relatorios.tipo, ...FILTROS_RELATORIOS };
+      // Faturas: limpar não mexe no mês, na base (vencimento/referência) nem na ordem.
+      if (tela === 'faturas') limpo = { ...limpo, ...Object.fromEntries(FILTROS_FATURAS_FIXOS.map((k) => [k, f.faturas[k]])) };
+      return { ...f, [tela]: limpo };
+    });
   }, []);
 
   // Veículo e condutor têm ficha; o resto abre direto no formulário.

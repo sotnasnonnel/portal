@@ -10,12 +10,93 @@ import {
   combOf, compLabel, compLong, comps, conformidade, extrasOf, groupSum, isNum, kmRodado, mensalOf, ocAberta,
   revisao, sum, totalOf, uniq,
 } from '../../lib/regras';
-import { fatVencida } from '../../lib/faturas';
+import { faixasDeVencimento, fatAberta, fatVenc } from '../../lib/faturas';
 import {
   compResolvida, fmtDate, fmtInt, money, money0,
 } from '../../lib/formato';
 
 const TOM_ALERTA = { crit: 'Crítico', warn: 'Atenção' };
+
+const FAIXAS = [
+  {
+    k: 'vencidas', filtro: 'vencidas', tone: 'crit', titulo: 'Vencidas sem pagamento',
+    texto: 'Passaram do vencimento e ainda não foram marcadas como pagas.',
+  },
+  {
+    k: 'ate2', filtro: '2d', tone: 'crit', titulo: 'Vencem em até 2 dias',
+    texto: 'Prioridade de pagamento: confirme a conferência e envie para pagamento hoje.',
+  },
+  {
+    k: 'ate7', filtro: '7d', tone: 'warn', titulo: 'Vencem em 3 a 7 dias',
+    texto: 'Programe a conferência e o pagamento desta semana.',
+  },
+];
+const ddmm = (s) => (s ? String(s).slice(5, 10).split('-').reverse().join('/') : '—');
+
+/**
+ * Caixa "Vencimentos de faturas" (v3): as faturas em aberto em três faixas de
+ * urgência. "Ver na lista" abre Faturas já filtrada e SEM o filtro de mês, para
+ * a vencida de um mês anterior não ficar escondida.
+ */
+function CaixaVencimentos({ faturas, irPara, abrir }) {
+  const fx = faixasDeVencimento(faturas);
+  const algum = FAIXAS.some((x) => fx[x.k].length);
+  const verLista = (venc) => irPara('faturas', { venc, mes: '', status: '' });
+  return (
+    <Secao
+      titulo="Vencimentos de faturas"
+      nota={(
+        <span className="frota-venc-acoes">
+          {fx.semVencimento.length > 0 && (
+            <button type="button" className="frota-pill warn frota-pill-btn" onClick={() => verLista('sem')}>
+              {fx.semVencimento.length} sem data de vencimento
+            </button>
+          )}
+          <button type="button" className="frota-btn sm" onClick={() => irPara('faturas')}>Abrir faturas</button>
+        </span>
+      )}
+    >
+      {algum ? (
+        <div className="frota-venc">
+          {FAIXAS.filter((x) => fx[x.k].length).map((x) => (
+            <div key={x.k} className={`frota-venc-faixa ${x.tone}`}>
+              <div className="frota-venc-cab">
+                <div>
+                  <b>{x.titulo}</b>
+                  <span>{x.texto}</span>
+                </div>
+                <span className="frota-venc-tot">{fx[x.k].length} fatura(s) · {money(sum(fx[x.k], 'valor'))}</span>
+                <button type="button" className="frota-btn sm" onClick={() => verLista(x.filtro)}>Ver na lista</button>
+              </div>
+              <ul>
+                {fx[x.k].map((f) => (
+                  <li key={f.id}>
+                    <button type="button" onClick={() => abrir(f.id)}>
+                      <span className="d">{ddmm(f.vencimento)}<small>{fatVenc(f).label}</small></span>
+                      <span className="frota-plate"><b>{f.placa || 'sem placa'}</b></span>
+                      <span className="t">
+                        <b>{f.locadora || '—'} · Nº {f.numero_fatura || '—'}</b>
+                        <span>{f.tipo || '—'} · ref. {compLabel(f.competencia)} · {f.status}</span>
+                      </span>
+                      <span className="v">{money(f.valor)}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="frota-card-s frota-venc-nada">
+          Nenhuma fatura vence nos próximos 7 dias.
+          {fx.proxima && (
+            <> Próximo vencimento: <b>{fmtDate(fx.proxima.vencimento)}</b> — {fx.proxima.placa || 'sem placa'} · {fx.proxima.locadora || '—'} · {money(fx.proxima.valor)}.</>
+          )}
+        </p>
+      )}
+    </Secao>
+  );
+}
 
 export default function PainelFrota() {
   const {
@@ -67,26 +148,37 @@ export default function PainelFrota() {
         abrir: () => irPara('ocorrencias', { status: 'abertas' }),
       });
     }
-    const fVenc = dados.faturas.filter(fatVencida);
+    // Um alerta por fatura em aberto que vence em até 7 dias ou já venceu (v3).
+    dados.faturas.filter(fatAberta).forEach((f) => {
+      const vs = fatVenc(f);
+      if (!vs.lvl) return;
+      al.push({
+        id: `f-${f.id}`, lvl: vs.lvl >= 2 ? 2 : 1, tone: vs.lvl >= 2 ? 'crit' : 'warn', Icon: FileText,
+        t: `Fatura ${f.placa || 'sem placa'} · ${vs.label} (${fmtDate(f.vencimento)})`,
+        s: `${f.locadora || '—'} · Nº ${f.numero_fatura || '—'} · ${money(f.valor)} · ${f.status}`,
+        abrir: () => abrirDetalhe('faturas', f.id),
+      });
+    });
+    const fSem = dados.faturas.filter((f) => fatAberta(f) && !f.vencimento);
     const fDiv = dados.faturas.filter((f) => f.status === 'Divergência');
     const fAg = dados.faturas.filter((f) => f.status === 'Aguardando conferência');
-    if (fVenc.length) {
+    if (fSem.length) {
       al.push({
-        id: 'fv', lvl: 2, tone: 'crit', Icon: FileText, t: `${fVenc.length} fatura(s) vencida(s) sem pagamento`,
-        s: `${money(sum(fVenc, 'valor'))} — conferir com o Contas a Pagar`,
-        abrir: () => irPara('faturas', { venc: 'vencidas', status: '' }),
+        id: 'fs', lvl: 1, tone: 'warn', Icon: FileText, t: `${fSem.length} fatura(s) sem data de vencimento`,
+        s: 'Cadastre o vencimento para entrarem nos alertas',
+        abrir: () => irPara('faturas', { venc: 'sem', mes: '', status: '' }),
       });
     }
     if (fDiv.length) {
       al.push({
         id: 'fd', lvl: 1, tone: 'warn', Icon: FileText, t: `${fDiv.length} fatura(s) com divergência`,
-        s: money(sum(fDiv, 'valor')), abrir: () => irPara('faturas', { status: 'Divergência', venc: '' }),
+        s: money(sum(fDiv, 'valor')), abrir: () => irPara('faturas', { status: 'Divergência', venc: '', mes: '' }),
       });
     }
     if (fAg.length) {
       al.push({
         id: 'fa', lvl: 0, tone: 'info', Icon: FileText, t: `${fAg.length} fatura(s) aguardando conferência`,
-        s: money(sum(fAg, 'valor')), abrir: () => irPara('faturas', { status: 'Aguardando conferência', venc: '' }),
+        s: money(sum(fAg, 'valor')), abrir: () => irPara('faturas', { status: 'Aguardando conferência', venc: '', mes: '' }),
       });
     }
     const obsN = ms.filter((m) => m.obs).length;
@@ -155,6 +247,9 @@ export default function PainelFrota() {
     <div className="frota-page frota-stack">
       {cabecalho}
       <Estado />
+      {dados.faturas.length > 0 && (
+        <CaixaVencimentos faturas={dados.faturas} irPara={irPara} abrir={(id) => abrirDetalhe('faturas', id)} />
+      )}
       <div className="frota-kpis">
         <Kpi
           destaque
