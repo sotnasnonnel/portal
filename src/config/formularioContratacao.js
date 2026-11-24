@@ -19,7 +19,7 @@ const temMotivo = (motivo) => (f) =>
 
 export const CAMPOS = [
   { id: 'data_preenchimento', n: 1, label: 'Data de preenchimento do formulário', tipo: 'date', obrigatorio: true },
-  { id: 'nome_profissional', n: 2, label: 'Nome do profissional selecionado', tipo: 'text', obrigatorio: true },
+  { id: 'nome_profissional', n: 2, label: 'Nome do profissional selecionado', tipo: 'text', maiusculas: true, obrigatorio: true },
   { id: 'telefone', n: 3, label: 'Telefone de contato do profissional', tipo: 'text', obrigatorio: true },
   { id: 'email', n: 4, label: 'E-mail de contato do profissional', tipo: 'text', obrigatorio: true },
   { id: 'cidade_estado', n: 5, label: 'Cidade e Estado em que o profissional irá atuar', tipo: 'text', obrigatorio: true },
@@ -57,7 +57,7 @@ export const CAMPOS = [
   { id: 'passagem_deslocamento', n: 21, label: 'Passagem para deslocamento', tipo: 'bool', obrigatorio: true },
   { id: 'rota_viagem', n: 22, label: 'Rota de viagem para compra da passagem', tipo: 'text', obrigatorio: true, mostrar: (f) => f.passagem_deslocamento === true },
   { id: 'tipo_vaga', n: 23, label: 'Tipo de vaga', tipo: 'radio', obrigatorio: true, opcoes: ['Nova', 'Substituição'] },
-  { id: 'nome_substituido', n: 24, label: 'Nome do profissional que será substituído', tipo: 'text', obrigatorio: true, mostrar: (f) => f.tipo_vaga === 'Substituição' },
+  { id: 'nome_substituido', n: 24, label: 'Nome do profissional que será substituído', tipo: 'text', maiusculas: true, obrigatorio: true, mostrar: (f) => f.tipo_vaga === 'Substituição' },
   {
     id: 'softwares_extras', n: 25, label: 'Softwares Extras Necessários', tipo: 'checkbox', obrigatorio: false,
     opcoes: ['MS Project', 'Primavera P6', 'Acrobat Reader', 'Navisworks', 'DWG True View', 'Power BI', 'Pacote Office', '2° tela', 'Outra'],

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { valorMaiusculo } from '../../../../utils/pessoas';
 import {
   ArrowLeft, ChevronLeft, ChevronRight, Pencil, Save, X, CalendarX, FileText, Ban, HeartPulse, Stethoscope, Smile,
   FolderArchive,
@@ -276,7 +277,7 @@ function DetalheConteudo({ id }) {
     const { largura, obrigatorio, dica, ...resto } = props;
     return (
       <Campo rotulo={rotulo} obrigatorio={obrigatorio} dica={dica} erro={erros[campo]} largura={largura}>
-        <input className="form-input" value={form[campo] ?? ''} disabled={!editando} onChange={(e) => set(campo, e.target.value)} {...resto} />
+        <input className="form-input" value={form[campo] ?? ''} disabled={!editando} onChange={(e) => set(campo, campo === 'nome' ? valorMaiusculo(e) : e.target.value)} {...resto} />
       </Campo>
     );
   };

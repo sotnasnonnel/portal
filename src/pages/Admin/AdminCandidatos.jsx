@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { UserSearch, UserPlus, Pencil, BadgeCheck, Trash2, X, AlertCircle, CheckCircle } from 'lucide-react';
 import SearchSelect from '../../components/UI/SearchSelect';
+import { valorMaiusculo } from '../../utils/pessoas';
 import { listarPessoas } from '../../modules/administrativo/lib/chamados';
 import {
   listarCandidatos, salvarCandidato, promoverCandidato, descartarCandidato,
@@ -214,7 +215,7 @@ function ModalCandidato({ candidato, opcoesGestor, onClose, onSalvo }) {
     >
       <div className="form-group">
         <label className="form-label">Nome completo</label>
-        <input className="form-input" value={f.nome} onChange={set('nome')} placeholder="Como vai aparecer nos pedidos" />
+        <input className="form-input" value={f.nome} onChange={(e) => setF((x) => ({ ...x, nome: valorMaiusculo(e) }))} placeholder="Como vai aparecer nos pedidos" />
       </div>
       <div className="form-group">
         <label className="form-label">Função prevista (opcional)</label>

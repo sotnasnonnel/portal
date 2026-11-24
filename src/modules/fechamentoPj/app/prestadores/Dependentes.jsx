@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
+import { valorMaiusculo } from '../../../../utils/pessoas';
 import { useFechamentoPj } from '../components/contexto';
 import { Campo, Modal, Vazio } from '../components/ui';
 import { cpfValido, dataBr, digitos, mascararCpf, maiusculo } from '../../lib/formato';
@@ -169,7 +170,7 @@ export default function Dependentes({ prestador }) {
           <div className="pj-form-grid">
             <Campo rotulo="Nome" obrigatorio erro={erros.nome}>
               <input type="text" className="form-input" value={editando.form.nome}
-                onChange={(e) => set('nome', e.target.value)} />
+                onChange={(e) => set('nome', valorMaiusculo(e))} />
             </Campo>
             <Campo rotulo="CPF" erro={erros.cpf} dica="Deixe em branco se ainda não tiver.">
               <input type="text" className="form-input" inputMode="numeric" placeholder="000.000.000-00"

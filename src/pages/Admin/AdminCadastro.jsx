@@ -4,6 +4,7 @@ import { PERFIL_OPCOES, precisaSuperior, candidatosASuperior } from '../../confi
 import { UserPlus, CheckCircle, Loader2, UserCog } from 'lucide-react';
 import '../../components/UI/Components.css';
 import './Admin.css';
+import { valorMaiusculo } from '../../utils/pessoas';
 
 const FORMATO_OPCOES = ['CLT', 'PJ', 'Sócio Cotista', 'Diretoria'];
 
@@ -186,7 +187,7 @@ export default function AdminCadastro() {
                 <div className="form-group">
                   <label className="form-label">Nome Completo <span className="required">*</span></label>
                   {aba === 'novo' ? (
-                    <input className="form-input" name="nome" value={formData.nome} onChange={handleChange} placeholder="Ex: João da Silva" required />
+                    <input className="form-input" name="nome" value={formData.nome} onChange={(e) => setFormData((p) => ({ ...p, nome: valorMaiusculo(e) }))} placeholder="Ex: João da Silva" required />
                   ) : (
                     <input className="form-input" value={selecionado?.nome || ''} readOnly disabled />
                   )}

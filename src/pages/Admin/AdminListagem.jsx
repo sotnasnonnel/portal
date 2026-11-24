@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../services/supabase';
+import { valorMaiusculo } from '../../utils/pessoas';
 import { PERFIL_OPCOES, PERFIL_LABEL, precisaSuperior, candidatosASuperior } from '../../config/perfis';
 import { formatarData, formatarMoeda } from '../../utils/formatters';
 import { Search, Edit3, ToggleLeft, ToggleRight, Users, X, Loader2, FileSpreadsheet, CalendarClock } from 'lucide-react';
@@ -472,7 +473,7 @@ export default function AdminListagem() {
                       className="form-input"
                       name="nome"
                       value={editForm.nome}
-                      onChange={handleEditChange}
+                      onChange={(e) => setEditForm((p) => ({ ...p, nome: valorMaiusculo(e) }))}
                       required
                     />
                   </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { valorMaiusculo } from '../../../utils/pessoas';
 import { FileText, Loader2, AlertTriangle, DollarSign } from 'lucide-react';
 import { useRequisicaoForm } from './useRequisicaoForm';
 import { camposVisiveis, estadoInicial, validar, montarPayload } from '../../../config/formularioContratacao';
@@ -69,7 +70,7 @@ export default function FormContratacao() {
           className="form-input"
           type={c.tipo === 'number' ? 'number' : c.tipo === 'date' ? 'date' : 'text'}
           value={val}
-          onChange={(e) => set(c.id, e.target.value)}
+          onChange={(e) => set(c.id, c.maiusculas ? valorMaiusculo(e) : e.target.value)}
         />
       );
     }
