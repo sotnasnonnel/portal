@@ -434,8 +434,7 @@ export default function Pagina() {
             </button>
           )}
           {!aberta && competenciaAtual?.origem === 'app' && (
-            <button type="button" className="btn btn-outline" onClick={() => setDialogo('reabrir')} disabled={semAcao || existeAberta}
-              title={existeAberta ? 'Feche a competência em conferência antes de reabrir esta.' : undefined}>
+            <button type="button" className="btn btn-outline" onClick={() => setDialogo('reabrir')} disabled={semAcao}>
               <Unlock size={16} /> Reabrir
             </button>
           )}
