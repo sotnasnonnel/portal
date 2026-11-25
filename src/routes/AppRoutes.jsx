@@ -160,6 +160,7 @@ const KanbanMob = lazyPagina(() => import('../modules/mobilizacao/app/kanban/pag
 const FilaMob = lazyPagina(() => import('../modules/mobilizacao/app/fila/page'));
 const ProcessosMob = lazyPagina(() => import('../modules/mobilizacao/app/processos/page'));
 const MobilizadosMob = lazyPagina(() => import('../modules/mobilizacao/app/mobilizados/page'));
+const HistoricoMob = lazyPagina(() => import('../modules/mobilizacao/app/historico/page'));
 const ProcessoMob = lazyPagina(() => import('../modules/mobilizacao/app/processo/page'));
 const NovaMob = lazyPagina(() => import('../modules/mobilizacao/app/nova/page'));
 const DashboardMob = lazyPagina(() => import('../modules/mobilizacao/app/dashboard/page'));
@@ -1077,6 +1078,7 @@ export default function AppRoutes() {
             <Route path="fila" element={<LazyPage><FilaMob /></LazyPage>} />
             <Route path="processos" element={<LazyPage><ProcessosMob /></LazyPage>} />
             <Route path="mobilizados" element={<LazyPage><MobilizadosMob /></LazyPage>} />
+            <Route path="historico" element={<LazyPage><HistoricoMob /></LazyPage>} />
             <Route path="processo/:id" element={<LazyPage><ProcessoMob /></LazyPage>} />
             <Route path="nova" element={<LazyPage><NovaMob /></LazyPage>} />
             <Route path="dashboard" element={<LazyPage><DashboardMob /></LazyPage>} />

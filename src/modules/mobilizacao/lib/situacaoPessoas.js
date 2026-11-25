@@ -53,6 +53,22 @@ export const nomeNormalizado = (nome) => String(nome || '')
 
 export const chaveDaPessoa = (p) => p?.profissional_id || nomeNormalizado(p?.profissional_nome);
 
+/**
+ * Chave da pessoa dentro de um conjunto de processos: o id de um processo é
+ * emprestado aos processos da mesma pessoa que só têm nome (nome -> id, de
+ * quem tem os dois). Usada aqui e no Histórico, para as duas telas contarem
+ * as mesmas pessoas.
+ */
+export function chaveadorDePessoas(processos = []) {
+  const idDoNome = new Map();
+  for (const p of processos) {
+    const nome = nomeNormalizado(p.profissional_nome);
+    if (p.profissional_id && nome && !idDoNome.has(nome)) idDoNome.set(nome, p.profissional_id);
+  }
+  return (p) => p.profissional_id || idDoNome.get(nomeNormalizado(p.profissional_nome))
+    || nomeNormalizado(p.profissional_nome);
+}
+
 /** Data-base primeiro (é quando o fato aconteceu); a criação só desempata. */
 const momento = (p) => {
   const base = Date.parse(p?.data_base || '');
@@ -106,15 +122,7 @@ export function situacaoPorPessoa(processos = []) {
     && chaveDaPessoa(p)
   ));
 
-  // Nome -> id, de quem tem os dois. Junta o processo importado (só nome) ao
-  // aberto pelo portal (id).
-  const idDoNome = new Map();
-  for (const p of daPessoa) {
-    const nome = nomeNormalizado(p.profissional_nome);
-    if (p.profissional_id && nome && !idDoNome.has(nome)) idDoNome.set(nome, p.profissional_id);
-  }
-  const chave = (p) => p.profissional_id || idDoNome.get(nomeNormalizado(p.profissional_nome))
-    || nomeNormalizado(p.profissional_nome);
+  const chave = chaveadorDePessoas(daPessoa);
 
   const porPessoa = new Map();
   for (const p of daPessoa) {

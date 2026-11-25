@@ -1,5 +1,5 @@
 import {
-  LayoutGrid, ListChecks, FolderKanban, BarChart3, Settings2, Radar, Building2, Route, Users,
+  LayoutGrid, ListChecks, FolderKanban, BarChart3, Settings2, Radar, Building2, Route, Users, History,
 } from 'lucide-react';
 
 // Navegação da sidebar da Mobilização, na divisão padrão do portal (mesma do
@@ -26,6 +26,8 @@ export function navSections({ isTime = false, isAdmin = false, podeTorre = false
         // "Quem está na obra hoje" é pergunta de consulta, não de acompanhamento
         // de processo — por isso item próprio, e não um filtro dentro de Processos.
         { label: 'Quem está mobilizado', href: '/mobilizacao/mobilizados', Icon: Users },
+        // O estado de hoje fica acima; aqui, cada entrada e saída de cada pessoa.
+        { label: 'Histórico Mob / Desmob', href: '/mobilizacao/historico', Icon: History },
         { label: 'Indicadores', href: '/mobilizacao/dashboard', Icon: BarChart3 },
       ],
     },

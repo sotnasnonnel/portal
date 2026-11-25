@@ -177,6 +177,9 @@
 .mob-tabela td.is-vencido { color: var(--m-red); font-weight: var(--fw-bold); }
 .mob-tabela a { color: var(--m-primary); text-decoration: none; font-weight: var(--fw-semibold); }
 .mob-tabela a:hover { text-decoration: underline; }
+/* Nome que filtra (Histórico): parece link, porque age como um. */
+.mob-tabela .mob-link-btn { color: var(--m-primary); font-weight: var(--fw-semibold); text-align: left; }
+.mob-tabela .mob-link-btn:hover { text-decoration: underline; }
 
 /* ============================ semáforo de prazo ============================ */
 .mob-prazo {
