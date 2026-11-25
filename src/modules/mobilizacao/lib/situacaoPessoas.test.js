@@ -105,3 +105,62 @@ test('centrosDeCusto lista os CTs distintos, e a contagem cobre as quatro situa�
   assert.equal(contagem.length, 4);
   assert.equal(contagem.find((c) => c.chave === 'mobilizado').total, 3);
 });
+
+// Conferência da planilha MOBILIZADOS PORTAL (25/11/2026): a carga da planilha
+// não tem id, o que nasce no portal tem. Antes, a mesma pessoa virava duas
+// linhas — uma "Mobilizado" e outra "Desmobilizado".
+test('processo importado (só nome) e processo do portal (com id) são a mesma pessoa', () => {
+  const linhas = situacaoPorPessoa([
+    mob({ id: 'a', profissional_nome: 'Getúlio  Pedrosa', data_base: '2026-07-29' }),
+    mob({
+      id: 'b', fluxo: 'desmobilizacao_pessoa', profissional_id: 'uuid-g',
+      profissional_nome: 'GETULIO PEDROSA', data_base: '2026-10-16',
+    }),
+  ]);
+  assert.equal(linhas.length, 1);
+  assert.equal(linhas[0].situacao, 'desmobilizado');
+  assert.equal(linhas[0].processos, 2);
+});
+
+// Lucas Pedro: entra na Superus (CT novo) e só depois registram a saída da
+// obra antiga. Ele está mobilizado na Superus, não desmobilizado.
+test('desmobilização de OUTRA obra não tira a pessoa da obra atual', () => {
+  const [linha] = situacaoPorPessoa([
+    mob({ id: 'a', cod_ct: 'IMCS-CT09', data_base: '2026-04-06' }),
+    mob({ id: 'b', profissional_id: 'u1', cod_ct: 'SUPE-CT01', local_obra: 'VARGEM GRANDE', data_base: '2026-10-26' }),
+    mob({ id: 'c', profissional_id: 'u1', fluxo: 'desmobilizacao_pessoa', cod_ct: 'IMCS-CT09', data_base: '2026-10-28' }),
+  ]);
+  assert.equal(linha.situacao, 'mobilizado');
+  assert.equal(linha.cod_ct, 'SUPE-CT01');
+  assert.equal(linha.processoId, 'b');
+});
+
+// Hudson: mobilização nova em andamento + saída da obra antiga registrada depois.
+test('mobilização nova em andamento continua "em mobilização" após a saída da obra antiga', () => {
+  const [linha] = situacaoPorPessoa([
+    mob({ id: 'a', cod_ct: 'GCES-CT01', data_base: '2026-03-09' }),
+    mob({ id: 'b', profissional_id: 'u2', status: 'em_andamento', cod_ct: null, local_obra: 'Porteirão-GO', data_base: '2026-11-13', criado_em: '2026-10-26T10:00:00Z' }),
+    mob({ id: 'c', profissional_id: 'u2', fluxo: 'desmobilizacao_pessoa', cod_ct: 'GCES-CT01', data_base: '2026-11-13', criado_em: '2026-10-30T10:00:00Z' }),
+  ]);
+  assert.equal(linha.situacao, 'em_mobilizacao');
+  assert.equal(linha.local_obra, 'Porteirão-GO');
+});
+
+// A carga criou todos os processos no mesmo dia: a ordem tem de vir da data-base.
+test('a obra atual é a da data-base mais recente, não a da criação', () => {
+  const [linha] = situacaoPorPessoa([
+    mob({ id: 'a', cod_ct: 'VALE-CT05', data_base: '2026-07-31', criado_em: '2026-09-09T10:00:00Z' }),
+    mob({ id: 'b', cod_ct: 'ADMB-CT16', data_base: '2026-07-14', criado_em: '2026-09-09T10:00:01Z' }),
+  ]);
+  assert.equal(linha.cod_ct, 'VALE-CT05');
+});
+
+test('volta para a mesma obra depois da saída: mobilizado de novo', () => {
+  const [linha] = situacaoPorPessoa([
+    mob({ id: 'a', data_base: '2026-01-10' }),
+    mob({ id: 'b', fluxo: 'desmobilizacao_pessoa', data_base: '2026-03-10' }),
+    mob({ id: 'c', data_base: '2026-06-10' }),
+  ]);
+  assert.equal(linha.situacao, 'mobilizado');
+  assert.equal(linha.processoId, 'c');
+});
