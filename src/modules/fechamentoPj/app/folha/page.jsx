@@ -12,7 +12,7 @@ import {
 import { listarEnvelopes, gravarEnvelopes, marcarTermo, auditar, nomesColaboradores } from '../../lib/dados';
 import { indexar, loteCalculo } from '../../lib/lote';
 import {
-  competenciaRotulo, dataBr, dataHoraBr, fmtBRL, partesCompetencia, somar,
+  competenciaRotulo, dataBr, dataHoraBr, fmtBRL, partesCompetencia, somar, ultimoDiaCompetencia,
 } from '../../lib/formato';
 import { gravarXlsx } from '../../lib/arquivos';
 import { pessoaDoEnvelope, combinaBusca, naFolhaDaCompetencia, planilhaColigada } from './folhaUtil';
@@ -145,6 +145,18 @@ export default function Pagina() {
   };
 
   const selecionadas = linhas.filter((l) => ids.has(l.envelope.id));
+  // Ativos que já começaram até o fim do mês e ainda não têm envelope: o botão
+  // "Incluir prestador" mostra quantos são. Só conta depois que os envelopes
+  // do mês carregaram, senão todo mundo pareceria fora.
+  const faltamNaFolha = useMemo(() => {
+    if (!aberta || carregandoEnvelopes) return [];
+    const noMes = new Set(envelopes.map((e) => e.prestador_id));
+    const fim = ultimoDiaCompetencia(competencia);
+    return prestadores.filter((p) => p.situacao === 'ativo' && !noMes.has(p.id)
+      && (!p.data_inicio || p.data_inicio <= fim)
+      && (!p.data_fim || p.data_fim >= competencia));
+  }, [aberta, carregandoEnvelopes, envelopes, prestadores, competencia]);
+
   const outraAberta = competencias.find((c) => c.status === 'aberta' && c.competencia !== competencia) || null;
   const existeAberta = competencias.some((c) => c.status === 'aberta');
   const termosParaGerar = linhas.filter((l) => l.envelope.termo === 'disponivel' && l.envelope.conferencia === 'ok');
@@ -418,8 +430,16 @@ export default function Pagina() {
           onClick={() => abrirEnvio((ids.size ? selecionadas : termosParaEnviar).map((l) => l.envelope.id))}>
           <Send size={16} /> Enviar por e-mail
         </button>
-        <button type="button" className="btn btn-outline" onClick={() => setDialogo('incluir')} disabled={!aberta || semAcao} title={dicaFechada}>
+        <button type="button" className="btn btn-outline" onClick={() => setDialogo('incluir')} disabled={!aberta || semAcao}
+          title={faltamNaFolha.length
+            ? `Fora da folha de ${competenciaRotulo(competencia)}: ${faltamNaFolha.map((p) => `${p.codigo} - ${p.nome}`).join(', ')}`
+            : dicaFechada}>
           <UserPlus size={16} /> Incluir prestador
+          {faltamNaFolha.length > 0 && (
+            <span className="pj-aba-contador" aria-label={`${faltamNaFolha.length} prestador(es) ativo(s) fora da folha`}>
+              {faltamNaFolha.length}
+            </span>
+          )}
         </button>
         {/* Exportar é só leitura: vale também na competência fechada. */}
         <button type="button" className="btn btn-outline" disabled={semAcao || !linhas.length}
