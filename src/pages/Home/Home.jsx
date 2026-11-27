@@ -31,6 +31,7 @@ import HumorDoDia from './HumorDoDia';
 import AniversariantesMes from './AniversariantesMes';
 import DestaqueDoDia from './DestaqueDoDia';
 import AprovacoesHome from './AprovacoesHome';
+import BuscaPortal from './BuscaPortal';
 import AvisosHome from '../Avisos/AvisosHome';
 import { iniciais, nomeProprio } from '../../utils/pessoas';
 import { areasGestaoPessoas } from '../../components/Layout/nav';
@@ -356,6 +357,10 @@ export default function Home() {
             </div>
             <HumorDoDia />
           </div>
+
+          {/* Busca: acha qualquer tela, chamado ou ferramenta pelo nome, sem a
+              pessoa precisar saber em qual card mora. */}
+          <BuscaPortal onAcao={(a) => { if (a === 'solucoes') setSolucoesAbertas(true); }} />
 
           {/* A Central de Aprovações deixou de ser card: é a única coisa da
               Home que pede ação, então vem antes dos módulos. */}

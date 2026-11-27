@@ -1,0 +1,179 @@
+/* Busca da Home (BuscaPortal.jsx). Tamanhos sempre por token (styles/ui.css). */
+
+.hbusca {
+  position: relative;
+  margin: 22px 0 4px;
+  z-index: 5; /* a lista abre por cima dos avisos e dos cards */
+}
+
+.hbusca-campo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: var(--ctl-h-lg);
+  padding: 0 8px 0 14px;
+  border: var(--ctl-border) solid var(--border);
+  border-radius: 14px;
+  background: var(--bg);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.hbusca-campo:focus-within {
+  border-color: var(--terracotta);
+  box-shadow: var(--focus-ring);
+}
+
+.hbusca-lupa { flex: none; color: var(--muted); }
+.hbusca-campo:focus-within .hbusca-lupa { color: var(--terracotta); }
+
+.hbusca-input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--font-size-lg);
+}
+.hbusca-input::placeholder { color: var(--muted); }
+/* O X nativo do type=search duplicaria o nosso. */
+.hbusca-input::-webkit-search-cancel-button { display: none; }
+/* O anel de foco já está na caixa inteira. */
+.hbusca-input:focus-visible { box-shadow: none; }
+
+.hbusca-limpa {
+  display: grid;
+  place-items: center;
+  width: var(--ctl-h-sm);
+  height: var(--ctl-h-sm);
+  border: 0;
+  border-radius: var(--ctl-radius-sm);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.hbusca-limpa:hover { background: var(--bg-soft); color: var(--ink); }
+
+.hbusca kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  padding: 1px 5px;
+  border: 1px solid var(--border-strong);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  background: var(--bg);
+  color: var(--muted);
+  font-family: inherit;
+  font-size: var(--font-size-2xs);
+  line-height: var(--lh-normal);
+}
+.hbusca-atalho { margin-right: 6px; }
+
+/* ---- lista ---- */
+
+.hbusca-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg);
+  box-shadow: var(--shadow-lg);
+}
+
+.hbusca-lista {
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  max-height: min(420px, 60vh);
+  overflow-y: auto;
+}
+
+.hbusca-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: var(--ctl-radius);
+  cursor: pointer;
+}
+.hbusca-item.is-ativo { background: var(--terracotta-light); }
+
+.hbusca-ico {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: var(--ctl-h-icon);
+  height: var(--ctl-h-icon);
+  border-radius: var(--ctl-radius);
+  background: #eef2f7;
+  color: var(--blue);
+}
+.hbusca-ico.tipo-chamado { background: var(--terracotta-light); color: var(--terracotta); }
+.hbusca-ico.tipo-externo { background: #eef1f5; color: var(--muted); }
+.hbusca-item.is-ativo .hbusca-ico { background: var(--bg); }
+
+.hbusca-txt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.hbusca-txt strong,
+.hbusca-txt small {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.hbusca-txt strong {
+  color: var(--ink);
+  font-size: var(--font-size-md);
+  font-weight: var(--fw-semibold);
+}
+.hbusca-txt small {
+  color: var(--muted);
+  font-size: var(--font-size-xs);
+}
+
+.hbusca-tipo {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-size: var(--font-size-2xs);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-wide);
+}
+
+.hbusca-vazio {
+  margin: 0;
+  padding: 16px 18px;
+  color: var(--muted);
+  font-size: var(--font-size-sm);
+}
+
+.hbusca-dica {
+  display: flex;
+  gap: 16px;
+  margin: 0;
+  padding: 8px 14px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--muted);
+  font-size: var(--font-size-2xs);
+}
+.hbusca-dica span { display: inline-flex; align-items: center; gap: 4px; }
+
+/* No celular não há teclado físico: some o que só serve para ele. */
+@media (hover: none), (max-width: 640px) {
+  .hbusca-atalho,
+  .hbusca-dica { display: none; }
+  .hbusca-tipo { display: none; }
+}
