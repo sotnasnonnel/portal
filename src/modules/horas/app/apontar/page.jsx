@@ -26,6 +26,7 @@ import CamposApontamento from '../components/CamposApontamento';
 import ConfirmModal from '../components/ConfirmModal';
 import SearchableSelect from '../components/SearchableSelect';
 import Aviso, { AvisoTemporario, Carregando } from '../components/Aviso';
+import { lerFixados, useProjetosFixados } from '../../lib/projetosFixados';
 
 export default function ApontarPage() {
   const { user, modules } = useAuth();
@@ -40,9 +41,10 @@ export default function ApontarPage() {
   const [erro, setErro] = useState('');
   const [running, setRunning] = useState(null); // timer em andamento (do banco)
   const [busy, setBusy] = useState(false); // evita duplo clique em iniciar/encerrar
-  // O mês inteiro: a tabela mostra só hoje, mas os totais do topo precisam da
-  // semana e do mês, e é uma consulta só.
-  const [doMes, setDoMes] = useState([]);
+  // Os últimos 30 dias (ou o mês inteiro, o que for mais longo): a tabela mostra
+  // só hoje, mas os totais do topo precisam da semana e do mês, e os "Recentes"
+  // do seletor de projeto não podem zerar no dia 1º. É uma consulta só.
+  const [base, setBase] = useState([]);
   const [elapsed, setElapsed] = useState(0);
   const [showManual, setShowManual] = useState(false);
   const [aEditar, setAEditar] = useState(null);
@@ -53,6 +55,7 @@ export default function ApontarPage() {
   // Projeto e descrição são fixos do módulo; o miolo do formulário são os
   // campos da equipe, guardados por id do campo em `valores`.
   const [form, setForm] = useState({ projetoId: '', descricao: '' });
+  const [fixados, alternarFixado] = useProjetosFixados(colaboradorId);
   const [valores, setValores] = useState({});
 
   const proj = useMemo(() => lookupProjetos(projetos), [projetos]);
@@ -61,18 +64,26 @@ export default function ApontarPage() {
 
   const agora = Date.now();
   const listaHoje = useMemo(
-    () => doMes.filter((a) => a.inicio >= startOfDay(agora)),
-    [doMes, agora]
+    () => base.filter((a) => a.inicio >= startOfDay(agora)),
+    [base, agora]
   );
+  // Projetos do mais recente para o mais antigo (não confiamos na ordem do fetch).
+  const recentes = useMemo(() => {
+    const vistos = new Set();
+    return [...base]
+      .sort((a, b) => b.inicio - a.inicio)
+      .map((a) => a.projetoId)
+      .filter((id) => id && !vistos.has(id) && vistos.add(id));
+  }, [base]);
   // O cronômetro em andamento ainda não é apontamento, mas as horas de hoje só
   // fazem sentido com ele somado — senão o número fica parado enquanto se trabalha.
   const totais = useMemo(
     () => ({
       hoje: somaMs(listaHoje) + elapsed,
-      semana: somaMs(doMes.filter((a) => a.inicio >= startOfWeek(agora))) + elapsed,
-      mes: somaMs(doMes) + elapsed,
+      semana: somaMs(base.filter((a) => a.inicio >= startOfWeek(agora))) + elapsed,
+      mes: somaMs(base.filter((a) => a.inicio >= startOfMonth(agora))) + elapsed,
     }),
-    [doMes, listaHoje, agora, elapsed]
+    [base, listaHoje, agora, elapsed]
   );
 
   // Enquanto roda, dá para corrigir o que foi escolhido. O botão de salvar só
@@ -92,9 +103,9 @@ export default function ApontarPage() {
   const carregar = useCallback(async () => {
     if (!colaboradorId) return;
     try {
-      setDoMes(
-        await fetchApontamentos({ role: 'usuario', colaboradorId, sinceTs: startOfMonth(Date.now()) })
-      );
+      const agoraMs = Date.now();
+      const desde = Math.min(startOfMonth(agoraMs), startOfDay(agoraMs - 30 * 86400000));
+      setBase(await fetchApontamentos({ role: 'usuario', colaboradorId, sinceTs: desde }));
     } catch (e) {
       setErro(e?.message || 'Falha ao carregar apontamentos.');
     }
@@ -121,9 +132,10 @@ export default function ApontarPage() {
         setCampos(cps);
         setGerenciaNome(gers.find((g) => g.id === gerenciaId)?.nome || '');
         setRunning(timer);
-        // Único default é o projeto: os campos da equipe são escolha consciente
-        // de quem aponta, não têm um "primeiro" que faça sentido.
-        setForm((f) => ({ ...f, projetoId: f.projetoId || ps[0]?.id || '' }));
+        // Único default é o projeto (o primeiro fixado, se houver): os campos da
+        // equipe são escolha consciente de quem aponta, não têm um "primeiro".
+        const fixadoValido = lerFixados(colaboradorId).find((id) => ps.some((p) => p.id === id));
+        setForm((f) => ({ ...f, projetoId: f.projetoId || fixadoValido || ps[0]?.id || '' }));
         setValores((v) => (Object.keys(v).length ? v : valoresIniciais(cps)));
         await carregar();
       } catch (e) {
@@ -161,29 +173,33 @@ export default function ApontarPage() {
   // A diretoria supervisiona; não aponta horas (como no protótipo).
   if (!podeApontar(role)) return <Navigate to="/horas/dashboard" replace />;
 
+  // Para o cronômetro e grava o apontamento. Devolve se gravou algo.
+  async function encerrarEGravar() {
+    const run = await stopTimer(colaboradorId);
+    setRunning(null);
+    if (!run) return false;
+    await createApontamento({
+      colaboradorId,
+      gerenciaId: gerenciaDoProjeto(run.projetoId),
+      projetoId: run.projetoId,
+      // O que foi preenchido ao dar play, como estava naquele momento —
+      // se a equipe mexeu na configuração no meio, o registro não muda.
+      campos: run.campos,
+      descricao: run.descricao,
+      inicioTs: run.inicio,
+      fimTs: Date.now(),
+    });
+    await carregar();
+    return true;
+  }
+
   async function toggleTimer() {
     if (!colaboradorId || busy) return;
     setBusy(true);
     setErro('');
     try {
       if (running) {
-        const run = await stopTimer(colaboradorId);
-        setRunning(null);
-        if (run) {
-          await createApontamento({
-            colaboradorId,
-            gerenciaId: gerenciaDoProjeto(run.projetoId),
-            projetoId: run.projetoId,
-            // O que foi preenchido ao dar play, como estava naquele momento —
-            // se a equipe mexeu na configuração no meio, o registro não muda.
-            campos: run.campos,
-            descricao: run.descricao,
-            inicioTs: run.inicio,
-            fimTs: Date.now(),
-          });
-          await carregar();
-          setOk('Apontamento gravado.');
-        }
+        if (await encerrarEGravar()) setOk('Apontamento gravado.');
       } else {
         const run = await startTimer(colaboradorId, {
           projetoId: form.projetoId,
@@ -194,6 +210,64 @@ export default function ApontarPage() {
       }
     } catch (e) {
       setErro(e?.message || 'Falha ao atualizar o cronômetro.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // "Continuar" de uma linha (como no Clockify): o cronômetro volta a rodar com
+  // o mesmo projeto, campos e descrição. Se outro estiver rodando, ele é
+  // encerrado e gravado antes — é o caso de voltar de uma reunião. Os campos
+  // são relidos pela configuração ATUAL da equipe, como na edição.
+  const dadosDe = (a) => {
+    const vals = valoresIniciais(campos, a.campos);
+    return { vals, persistidos: paraPersistencia(campos, vals), faltam: faltando(campos, vals) };
+  };
+  const projetoVisivel = (id) => projetos.some((p) => p.id === id);
+  const jaRodando = (a) =>
+    !!running &&
+    (running.projetoId || '') === (a.projetoId || '') &&
+    (running.descricao || '') === (a.descricao || '') &&
+    JSON.stringify(running.campos || []) === JSON.stringify(dadosDe(a).persistidos);
+  const tituloContinuar = (a) => {
+    if (!projetoVisivel(a.projetoId)) return 'Projeto indisponível para apontar';
+    if (jaRodando(a)) return 'Já está rodando no cronômetro';
+    return running
+      ? 'Continuar: grava o que está rodando e volta a este'
+      : 'Continuar: inicia o cronômetro com os mesmos dados';
+  };
+
+  async function continuar(a) {
+    if (!colaboradorId || busy || jaRodando(a) || !projetoVisivel(a.projetoId)) return;
+    const { vals, persistidos, faltam } = dadosDe(a);
+    // A equipe passou a exigir um campo que o registro não tem: em vez de
+    // falhar, preenche o formulário e deixa a pessoa completar e dar Iniciar.
+    if (faltam.length) {
+      if (running) {
+        setErro(
+          `Para continuar este apontamento falta ${faltam.join(', ')}. Encerre o cronômetro atual e complete o formulário.`
+        );
+        return;
+      }
+      setForm({ projetoId: a.projetoId, descricao: a.descricao || '' });
+      setValores(vals);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    setBusy(true);
+    setErro('');
+    try {
+      const gravou = running ? await encerrarEGravar() : false;
+      setRunning(
+        await startTimer(colaboradorId, {
+          projetoId: a.projetoId,
+          campos: persistidos,
+          descricao: a.descricao || '',
+        })
+      );
+      setOk(gravou ? 'Apontamento anterior gravado. Cronômetro retomado.' : 'Cronômetro retomado.');
+    } catch (e) {
+      setErro(e?.message || 'Falha ao continuar o apontamento.');
     } finally {
       setBusy(false);
     }
@@ -336,6 +410,10 @@ export default function ApontarPage() {
               value={form.projetoId}
               placeholder="Selecione o projeto…"
               onChange={(v) => setForm((f) => ({ ...f, projetoId: v }))}
+              fixados={fixados}
+              onAlternarFixado={alternarFixado}
+              recentes={recentes}
+              rotuloTodos="Todos os projetos"
               options={projetos.map((p) => ({
                 value: p.id,
                 label: p.nome + (p.cliente ? ` — ${p.cliente}` : ''),
@@ -429,6 +507,9 @@ export default function ApontarPage() {
           onEdit={setAEditar}
           onDelete={setAExcluir}
           onDuplicate={setADuplicar}
+          onContinuar={continuar}
+          podeContinuar={(a) => !busy && projetoVisivel(a.projetoId) && !jaRodando(a)}
+          tituloContinuar={tituloContinuar}
         />
       </div>
 

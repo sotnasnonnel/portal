@@ -1,4 +1,4 @@
-import { Copy, Pencil, Trash2 } from 'lucide-react';
+import { Copy, Pencil, Play, Trash2 } from 'lucide-react';
 import { fmtData, fmtDur, fmtHoras } from '../../lib/format';
 
 // Data e horário em colunas próprias: "Início 06/11/2026 08:00 | Fim
@@ -30,6 +30,9 @@ function textoHorario(inicio, fim) {
 //    podeDuplicar(apont) for verdadeiro (sem ele, em todas). É separado de
 //    podeAlterar porque duplicar cria um registro NOVO, sempre em nome de quem
 //    está logado — a gestão edita o da equipe, mas só duplica os próprios.
+//  - onContinuar: se passado, mostra o play que reinicia o cronômetro com os
+//    mesmos dados da linha (como no Clockify). podeContinuar(apont) desabilita
+//    o botão; tituloContinuar(apont) diz por quê no title.
 //  - nameOf: se passado, mostra a coluna Colaborador (colaboradorId -> nome)
 //  - vazio: texto do estado vazio (cada tela diz o que fazer a seguir)
 //  - rodape: mostra uma linha de total (quantidade e soma das durações) no pé
@@ -40,13 +43,14 @@ function textoHorario(inicio, fim) {
 // title, que é o que dá sentido a uma tag solta como "PTA".
 export default function ApontamentosTable({
   list, projetoNome, projetoCor, onEdit, onDelete, onDuplicate, podeAlterar, podeDuplicar, nameOf,
+  onContinuar, podeContinuar, tituloContinuar,
   vazio = 'Nenhum apontamento.', rodape = false,
 }) {
   if (!list.length) {
     return <div className="horas-empty">{vazio}</div>;
   }
   const tags = (a) => a.campos || [];
-  const temAcoes = Boolean(onEdit || onDelete || onDuplicate);
+  const temAcoes = Boolean(onEdit || onDelete || onDuplicate || onContinuar);
   const totalMs = list.reduce((s, a) => s + (a.duracao || 0), 0);
   // Colunas antes da Duração (para o "Total" do rodapé ocupar a largura certa).
   const colsAntes = (nameOf ? 1 : 0) + 4;
@@ -115,6 +119,18 @@ export default function ApontamentosTable({
             </td>
             {temAcoes ? (
               <td className="horas-right horas-td-acao">
+                {onContinuar ? (
+                  <button
+                    className="horas-btn-icon is-play"
+                    title={tituloContinuar ? tituloContinuar(a) : 'Continuar'}
+                    aria-label="Continuar este apontamento no cronômetro"
+                    type="button"
+                    disabled={podeContinuar ? !podeContinuar(a) : false}
+                    onClick={() => onContinuar(a)}
+                  >
+                    <Play size={15} />
+                  </button>
+                ) : null}
                 {onDuplicate && (!podeDuplicar || podeDuplicar(a)) ? (
                   <button
                     className="horas-btn-icon"

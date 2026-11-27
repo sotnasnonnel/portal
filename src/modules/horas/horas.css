@@ -377,6 +377,11 @@
   background: var(--tone-erro-bg);
   color: var(--tone-erro-fg);
 }
+/* Continuar (play) na linha do apontamento: verde, como o Iniciar. */
+.horas-btn-icon.is-play:hover:not(:disabled) {
+  background: var(--tone-ok-bg);
+  color: var(--tone-ok-fg);
+}
 .horas-btn-icon:disabled {
   opacity: 0.35;
   cursor: not-allowed;
@@ -545,6 +550,60 @@
 .horas-ss-opt.is-sel {
   color: var(--h-primary);
   font-weight: 600;
+}
+/* Fixados e recentes no topo da lista (seletor de projeto do Apontar). */
+.horas-ss-grupo {
+  padding: 8px 10px 4px;
+  color: var(--h-gray-700);
+  font-size: var(--font-size-2xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.horas-ss-list > [role='group'] + [role='group'] {
+  border-top: 1px solid var(--h-border);
+  margin-top: 4px;
+}
+.horas-ss-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.horas-ss-row > .horas-ss-opt {
+  flex: 1;
+  min-width: 0;
+}
+/* O alfinete só aparece no hover da linha; fixado, fica sempre à vista. */
+.horas-ss-pin {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--ctl-h-icon);
+  height: var(--ctl-h-icon);
+  border: none;
+  border-radius: var(--ctl-radius-sm);
+  background: transparent;
+  color: var(--h-gray-700);
+  cursor: pointer;
+  opacity: 0;
+}
+.horas-ss-row:hover .horas-ss-pin,
+.horas-ss-pin:focus-visible,
+.horas-ss-pin.is-on {
+  opacity: 1;
+}
+.horas-ss-pin:hover {
+  background: var(--h-gray-100);
+  color: var(--h-primary);
+}
+.horas-ss-pin.is-on {
+  color: var(--h-primary);
+}
+@media (hover: none) {
+  .horas-ss-pin {
+    opacity: 1;
+  }
 }
 .horas-ss-empty {
   padding: 12px 10px;
