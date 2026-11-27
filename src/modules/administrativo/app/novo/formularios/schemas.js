@@ -16,6 +16,8 @@
  * tipo: texto | texto_longo | numero | data | hora | datahora | selecao | selecao_multipla | sim_nao | pessoa | cep
  */
 
+import { SCHEMA_PLANO_SAUDE, documentosDoPlano, motivoEscolhido } from './planoSaude.js';
+
 const TIPOS_EQUIP_TI = ['Notebook', 'Desktop', 'Monitor', 'Teclado', 'Mouse', 'Headset'];
 
 // A planilha escreve as opções separadas por hífen, como nos outros campos:
@@ -284,23 +286,11 @@ export const SCHEMAS = {
   ],
 
   // ---------------- Atendimento DP ----------------
+  // Segue a planilha Estrutura_Chamados_DP_SLA_v3: Tipo → Plano → Motivo, e o
+  // complemento que o motivo pede. Ver planoSaude.js.
+  'dp/plano-saude': SCHEMA_PLANO_SAUDE,
   // Versão enxuta, para tirar os pedidos do e-mail já. O DP refina os campos
   // depois; o detalhe do pedido vai na descrição, e documento vai no anexo.
-  'dp/plano-saude': [
-    {
-      chave: 'tipo', rotulo: 'Tipo', tipo: 'selecao', obrigatorio: true,
-      opcoes: ['Inclusão', 'Exclusão', 'Alteração'],
-    },
-    {
-      chave: 'plano', rotulo: 'Plano', tipo: 'selecao_multipla', obrigatorio: true,
-      opcoes: ['Saúde', 'Odontológico'],
-    },
-    {
-      chave: 'beneficiario', rotulo: 'Beneficiário', tipo: 'selecao', obrigatorio: true,
-      opcoes: ['Titular', 'Dependente'],
-    },
-    { chave: 'dependente', rotulo: 'Nome do dependente', tipo: 'texto', obrigatorio: false },
-  ],
   'dp/ponto': [
     {
       chave: 'tipo', rotulo: 'Tipo', tipo: 'selecao', obrigatorio: true,
@@ -362,6 +352,16 @@ const SEM_ANEXO = new Set([
 ]);
 
 /**
+ * Documentos que o serviço pede conforme o que foi preenchido, cada um com o
+ * seu campo de anexo. Só o plano de saúde tem (aba "Documentos Obrigatórios"
+ * da planilha do DP); nos demais fica o campo único de anexos, opcional.
+ */
+export function documentosDoServico(classe, servico, valores = {}) {
+  if (`${classe}/${servico}` === 'dp/plano-saude') return documentosDoPlano(valores);
+  return { documentos: [], aviso: '' };
+}
+
+/**
  * Rótulos dos campos dos formulários escritos em código. A tela de detalhe
  * mostra o que foi preenchido, e sem isto ela exibiria a chave crua
  * ("data_inicio_cliente") para quem só quer ler o pedido.
@@ -382,6 +382,8 @@ const ROTULOS_CODIFICADOS = {
   devolucao_descricao: 'O que será devolvido', treinamentos: 'Treinamentos',
   tipo: 'Tipo', tipo_livre: 'Peças e tamanhos', motivo: 'Motivo',
   observacao: 'Observação',
+  // Campos do plano de saúde antes da planilha do DP (até 27/11/2026).
+  plano: 'Plano', beneficiario: 'Beneficiário',
   // `localizacao` saiu dos dois serviços de equipamento (virou o bloco de
   // endereço), mas NÃO pode sair daqui: continua sendo campo de Saúde e
   // segurança, a mobilização ainda o grava nos filhos que abre, e os chamados
@@ -482,6 +484,16 @@ export function chavesDePessoa(classe, servico) {
 export const CAMPOS_OCULTOS = new Set(['profissional_id', 'projeto_id', 'itens']);
 
 export const usaDescricao = (classe, servico) => COM_DESCRICAO.has(`${classe}/${servico}`);
+
+/**
+ * Se a descrição e os anexos já podem aparecer. No plano de saúde, só depois
+ * do motivo: antes dele a pessoa não sabe o que descrever nem o que anexar, e
+ * a tela abria com tudo de uma vez. Nos demais serviços, sempre.
+ */
+export function detalhesLiberados(classe, servico, valores = {}) {
+  if (`${classe}/${servico}` === 'dp/plano-saude') return !!motivoEscolhido(valores);
+  return true;
+}
 export const usaAnexo = (classe, servico) => !SEM_ANEXO.has(`${classe}/${servico}`);
 
 /** Campo de pessoa exige carregar a lista de colaboradores. */

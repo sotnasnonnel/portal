@@ -422,6 +422,12 @@
   transition: background 0.15s, border-color 0.15s;
 }
 .adm-anexo-btn:hover { background: var(--a-primary-soft); border-color: var(--a-primary); }
+/* Qual documento é o arquivo (plano de saúde), na tela do chamado. */
+.adm-anexo-doc {
+  flex-shrink: 0; padding: 2px 8px; border-radius: 999px;
+  background: var(--a-primary-soft); color: var(--a-primary);
+  font-size: var(--font-size-xs); font-weight: 600;
+}
 .adm-anexo-lista { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .adm-anexo-item {
   display: flex; align-items: center; gap: 10px;

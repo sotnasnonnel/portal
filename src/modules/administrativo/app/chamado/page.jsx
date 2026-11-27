@@ -835,6 +835,7 @@ export default function ChamadoAdm() {
                     {chamado.anexos.map((a) => (
                       <li key={a.path} className="adm-anexo-item">
                         <FileText size={16} aria-hidden="true" />
+                        {a.documento && <span className="adm-anexo-doc">{a.documento}</span>}
                         <button type="button" className="adm-link" onClick={() => abrirAnexo(a.path)}>{a.nome}</button>
                       </li>
                     ))}

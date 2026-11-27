@@ -19,8 +19,8 @@ import { errosDoEsquema, errosDoServico, ariaDoErro } from '../../lib/errosDeCam
 import CampoExtra from './CampoExtra';
 import ErroCampo from './ErroCampo';
 import { formDoServico } from './formularios';
-import { usaDescricao, usaAnexo } from './formularios/schemas';
-import { formatarTamanho } from '../../lib/arquivo';
+import { usaDescricao, usaAnexo, documentosDoServico, detalhesLiberados } from './formularios/schemas';
+import CampoAnexo from './CampoAnexo';
 import {
   PARA_MIM, PARA_OUTRA, perguntaParaQuem, colaboradorDoChamado, validarParaQuem,
 } from '../../lib/paraQuem';
@@ -56,10 +56,11 @@ export default function NovoChamadoAdm() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const inputArquivo = useRef(null);
 
   const [descricao, setDescricao] = useState('');
   const [anexos, setAnexos] = useState([]);
+  // Arquivos de cada documento pedido em separado: { [chave do documento]: File[] }.
+  const [anexosDoc, setAnexosDoc] = useState({});
   const [erro, setErro] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [sucesso, setSucesso] = useState(null);   // { numero, atendenteNome, aguardandoAprovacao }
@@ -111,6 +112,7 @@ export default function NovoChamadoAdm() {
     setChaveAnterior(chaveAtual);
     setDescricao('');
     setAnexos([]);
+    setAnexosDoc({});
     setErro('');
     setSucesso(null);
     setExtras(form ? form.estadoInicial() : {});
@@ -257,8 +259,26 @@ export default function NovoChamadoAdm() {
   const cls = getClasse(classe);
   const srv = getServico(classe, servico);
   // Descrição e anexo só onde a planilha pede.
-  const temDescricao = usaDescricao(classe, servico);
-  const temAnexo = usaAnexo(classe, servico);
+  // Plano de saúde abre aos poucos: descrição e anexos só depois do motivo.
+  const liberado = detalhesLiberados(classe, servico, extras);
+  const temDescricao = usaDescricao(classe, servico) && liberado;
+  const temAnexo = usaAnexo(classe, servico) && liberado;
+  // Plano de saúde: o motivo escolhido decide se o anexo é obrigatório e quais
+  // documentos pedir (planilha do DP).
+  // Plano de saúde: o motivo (e o vínculo) decide quais documentos pedir, cada
+  // um no seu campo de anexo (planilha do DP).
+  const { documentos: docsPedidos, aviso: avisoDocs } = temAnexo
+    ? documentosDoServico(classe, servico, extras) : { documentos: [], aviso: '' };
+  const docsFaltando = docsPedidos.filter((d) => d.obrigatorio && !(anexosDoc[d.chave] || []).length);
+  const MSG_ANEXO = 'Anexe este documento.';
+  const MSG_ANEXOS = 'Anexe os documentos marcados como obrigatórios.';
+  // Só sobe o que está num campo da tela agora: arquivo de um documento que
+  // saiu da lista (trocou o vínculo) não vai junto.
+  const arquivosDoChamado = () => [
+    ...docsPedidos.flatMap((d) => (anexosDoc[d.chave] || []).map((arquivo) => ({ arquivo, documento: d.rotulo }))),
+    ...anexos,
+  ];
+  const errosDocs = Object.fromEntries(docsFaltando.map((d) => [`doc_${d.chave}`, MSG_ANEXO]));
 
   // Mobilização desdobra os adicionais em chamados próprios. Calculado durante
   // o preenchimento para a pessoa ver o que vai acontecer antes de enviar —
@@ -284,6 +304,7 @@ export default function NovoChamadoAdm() {
         ...(paraQuemErro ? { para_quem: paraQuemErro } : {}),
         ...doForm.erros,
         ...errosDoEsquema(config?.campos_extras || [], extras),
+        ...errosDocs,
       },
       semCampo: doForm.semCampo,
     };
@@ -295,18 +316,11 @@ export default function NovoChamadoAdm() {
   // e o "Voltar" fica a um dedo do título no celular.
   const sair = () => {
     const alterado = !!descricao.trim() || anexos.length > 0
+      || Object.values(anexosDoc).some((l) => l.length > 0)
       || preencheuAlgo(extras, form ? form.estadoInicial() : {});
     if (alterado && !window.confirm('Sair e descartar o que você preencheu?')) return;
     navigate('/administrativo/novo');
   };
-
-  const adicionarAnexos = (e) => {
-    const novos = Array.from(e.target.files || []);
-    if (novos.length) setAnexos((atual) => [...atual, ...novos]);
-    e.target.value = ''; // permite reescolher o mesmo arquivo depois de remover
-  };
-
-  const removerAnexo = (idx) => setAnexos((atual) => atual.filter((_, i) => i !== idx));
 
   // O botão fica no fim do formulário e o aviso no topo: em serviço com muitos
   // campos, o erro nasce fora da tela e a pessoa acha que o clique não pegou.
@@ -347,6 +361,7 @@ export default function NovoChamadoAdm() {
       || (form ? form.validar(extras) : '')
       || validarCamposExtras(definicao, extras);
     if (erroExtra) return falharValidacao(erroExtra);
+    if (docsFaltando.length) return falharValidacao(MSG_ANEXOS);
     setErro('');
     setEnviando(true);
     const colaboradorId = colaboradorDoChamado({
@@ -386,7 +401,7 @@ export default function NovoChamadoAdm() {
         descricao,
         // Campos do serviço + campos extras cadastrados, no mesmo objeto.
         campos: form ? mesclarComExtras(extras, definicao) : limparValores(definicao, extras),
-        arquivos: temAnexo ? anexos : [],
+        arquivos: temAnexo ? arquivosDoChamado() : [],
         solicitanteId: user.id,
         config,
         colaboradorId,
@@ -591,37 +606,44 @@ export default function NovoChamadoAdm() {
           </div>
           )}
 
-          {temAnexo && (
-          <div className="adm-campo">
-            <span className="adm-campo-rotulo">Anexos</span>
-            <input
-              ref={inputArquivo}
-              type="file"
-              multiple
-              onChange={adicionarAnexos}
-              style={{ display: 'none' }}
-              aria-hidden="true"
-              tabIndex={-1}
+          {temAnexo && docsPedidos.length > 0 && (
+            <div className="adm-grupo-cab">
+              <h3>Documentos</h3>
+              <p>Anexe cada documento no seu campo.</p>
+            </div>
+          )}
+          {temAnexo && avisoDocs && (
+            <div className="adm-aviso tom-info">
+              <FileText size={16} aria-hidden="true" />
+              <span>{avisoDocs}</span>
+            </div>
+          )}
+          {temAnexo && docsPedidos.map((d) => (
+            <CampoAnexo
+              key={d.chave}
+              chave={`doc_${d.chave}`}
+              rotulo={d.rotulo}
+              obrigatorio={d.obrigatorio}
+              dica={d.dica}
+              arquivos={anexosDoc[d.chave] || []}
+              onAdicionar={(novos) => setAnexosDoc((atual) => ({
+                ...atual, [d.chave]: [...(atual[d.chave] || []), ...novos],
+              }))}
+              onRemover={(idx) => setAnexosDoc((atual) => ({
+                ...atual, [d.chave]: (atual[d.chave] || []).filter((_, i) => i !== idx),
+              }))}
+              erro={errosCampo[`doc_${d.chave}`]}
             />
-            <button type="button" className="adm-anexo-btn" onClick={() => inputArquivo.current?.click()}>
-              <Paperclip size={16} aria-hidden="true" /> Anexar arquivos
-            </button>
-            {anexos.length > 0 && (
-              <ul className="adm-anexo-lista">
-                {anexos.map((a, i) => (
-                  <li key={`${a.name}-${i}`} className="adm-anexo-item">
-                    <FileText size={16} aria-hidden="true" />
-                    <span className="adm-anexo-nome" title={a.name}>{a.name}</span>
-                    <span className="adm-anexo-tam">{formatarTamanho(a.size)}</span>
-                    <button type="button" className="adm-anexo-x" onClick={() => removerAnexo(i)}
-                      title="Remover" aria-label={`Remover ${a.name}`}>
-                      <X size={15} aria-hidden="true" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          ))}
+
+          {temAnexo && (
+            <CampoAnexo
+              chave="anexos"
+              rotulo={docsPedidos.length ? 'Outros anexos' : 'Anexos'}
+              arquivos={anexos}
+              onAdicionar={(novos) => setAnexos((atual) => [...atual, ...novos])}
+              onRemover={(idx) => setAnexos((atual) => atual.filter((_, i) => i !== idx))}
+            />
           )}
         </div>
 

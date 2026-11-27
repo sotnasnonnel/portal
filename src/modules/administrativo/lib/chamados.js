@@ -460,10 +460,16 @@ export async function criarChamado({
   const exigeAprovacao = aprovadores.length > 0;
 
   const anexos = [];
-  for (const file of arquivos) {
+  for (const item of arquivos) {
+    // Item é um File, ou { arquivo, documento } quando o serviço pede documento
+    // a documento (plano de saúde): o rótulo vai junto, e a tela do chamado
+    // mostra "CPF — arquivo.pdf" para o DP não abrir um por um.
+    const file = item instanceof Blob ? item : item.arquivo;
+    const documento = item instanceof Blob ? '' : item.documento;
     // Sequencial de propósito: o upload já tem retry próprio e subir tudo de uma
     // vez atrapalha quem está em VPN/link fraco de obra.
-    anexos.push(await enviarArquivo(BUCKET_ADM, file));
+    const enviado = await enviarArquivo(BUCKET_ADM, file);
+    anexos.push(documento ? { ...enviado, documento } : enviado);
   }
 
   const agora = new Date();

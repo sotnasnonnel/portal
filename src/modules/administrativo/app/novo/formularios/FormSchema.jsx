@@ -1,8 +1,9 @@
 import { Fragment } from 'react';
+import { Info } from 'lucide-react';
 import CampoExtra from '../CampoExtra';
 import CampoCentroCusto from '../CampoCentroCusto';
 import { schemaDoServico } from './schemas';
-import { campoAplica } from '../../../lib/camposExtras';
+import { campoAplica, opcoesDoCampo } from '../../../lib/camposExtras';
 
 /**
  * Desenha o formulário de um serviço a partir do esquema declarado em
@@ -41,6 +42,9 @@ export default function FormSchema({
     const novo = { ...valores, [chave]: valor };
     for (const c of schema) {
       if (!campoAplica(c, novo) && novo[c.chave]) novo[c.chave] = '';
+      // Idem para a opção que sumiu da lista (trocou o plano, o motivo antigo
+      // não existe no novo).
+      else if (c.opcoesPor && novo[c.chave] && !opcoesDoCampo(c, novo).includes(novo[c.chave])) novo[c.chave] = '';
     }
     onChange(novo);
   };
@@ -81,13 +85,19 @@ export default function FormSchema({
           />
         ) : (
           <CampoExtra
-            campo={campo}
+            campo={campo.opcoesPor ? { ...campo, opcoes: opcoesDoCampo(campo, valores) } : campo}
             valor={valores[campo.chave]}
             onChange={mexer}
             onPatch={remendar}
             pessoas={pessoas}
             erro={erros[campo.chave]}
           />
+        )}
+        {campo.avisoPor?.(valores) && (
+          <div className="adm-aviso tom-info">
+            <Info size={16} aria-hidden="true" />
+            <span>{campo.avisoPor(valores)}</span>
+          </div>
         )}
       </Fragment>
     );

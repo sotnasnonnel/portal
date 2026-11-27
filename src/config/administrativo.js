@@ -194,7 +194,12 @@ export const CLASSES_ADM = [
     label: 'Atendimento DP',
     icon: IdCard,
     servicos: [
-      { slug: 'plano-saude', label: 'Plano de saúde e odontológico' },
+      // Assunto "Plano Médico – Inclusão de dependente": a fila do DP separa
+      // os pedidos sem abrir um por um.
+      {
+        slug: 'plano-saude', label: 'Plano de saúde e odontológico',
+        assuntoPor: (v) => [v.categoria, v.motivo].filter(Boolean).join(' – '),
+      },
       { slug: 'ponto', label: 'Tratativas de ponto' },
       { slug: 'beneficios', label: 'Solicitação de benefícios' },
       { slug: 'atualizacao-cadastral', label: 'Atualização cadastral' },
@@ -242,7 +247,8 @@ export const getServico = (classeSlug, servicoSlug) =>
 export const assuntoDoServico = (classeSlug, servicoSlug, valores = {}) => {
   const srv = getServico(classeSlug, servicoSlug);
   if (!srv) return '';
-  const doCampo = srv.assuntoPorCampo ? valores[srv.assuntoPorCampo] : '';
+  const doCampo = srv.assuntoPor ? srv.assuntoPor(valores)
+    : srv.assuntoPorCampo ? valores[srv.assuntoPorCampo] : '';
   return doCampo || srv.label;
 };
 

@@ -59,6 +59,15 @@ const vazio = (v) => v === undefined || v === null
 export const campoAplica = (campo, valores = {}) => !campo.aplica || campo.aplica(valores);
 
 /**
+ * Opções de uma seleção que dependem de outros campos (o motivo do plano de
+ * saúde muda com o plano e o tipo): `opcoesPor(valores)` manda; sem ele, a
+ * lista fixa `opcoes`.
+ */
+export const opcoesDoCampo = (campo, valores = {}) => (
+  campo.opcoesPor ? campo.opcoesPor(valores) : (campo.opcoes || [])
+);
+
+/**
  * Valida o preenchimento contra a definição cadastrada.
  * Devolve '' quando está tudo certo, ou a mensagem do primeiro problema.
  */
@@ -68,6 +77,10 @@ export function validarCamposExtras(definicao = [], valores = {}) {
     const v = valores[campo.chave];
     if (campo.obrigatorio && vazio(v)) {
       return `Preencha o campo "${campo.rotulo}".`;
+    }
+    // Opção que deixou de existir (trocou o plano depois de escolher o motivo).
+    if (!vazio(v) && campo.opcoesPor && !opcoesDoCampo(campo, valores).includes(v)) {
+      return `Escolha de novo o campo "${campo.rotulo}".`;
     }
     if (!vazio(v) && campo.tipo === 'numero' && Number.isNaN(Number(v))) {
       return `O campo "${campo.rotulo}" deve ser um número.`;
